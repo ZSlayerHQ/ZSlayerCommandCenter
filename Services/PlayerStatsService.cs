@@ -8,7 +8,8 @@ namespace ZSlayerCommandCenter.Services;
 [Injectable(InjectionType.Singleton)]
 public class PlayerStatsService(
     SaveServer saveServer,
-    ProfileActivityService profileActivityService)
+    ProfileActivityService profileActivityService,
+    ConfigService configService)
 {
     private const string RoublesTpl = "5449016a4bdc2d6f028b456f";
     private const string DollarsTpl = "5696686a4bdc2da3298b456a";
@@ -23,6 +24,7 @@ public class PlayerStatsService(
         var profiles = saveServer.GetProfiles();
         var activeIds = profileActivityService.GetActiveProfileIdsWithinMinutes(5);
         var activeSet = new HashSet<string>(activeIds.Select(id => id.ToString()));
+        var headlessId = configService.GetConfig().Headless.ProfileId;
 
         var players = new List<PlayerSummaryDto>();
 
@@ -31,16 +33,19 @@ public class PlayerStatsService(
             var pmc = profile.CharacterData?.PmcData;
             if (pmc?.Info == null) continue;
 
+            var sid = sessionId.ToString();
+            var isHeadless = !string.IsNullOrEmpty(headlessId) && sid == headlessId;
             var roubles = CalculateRoubles(pmc.Inventory?.Items);
 
             players.Add(new PlayerSummaryDto
             {
-                SessionId = sessionId.ToString(),
+                SessionId = sid,
                 Nickname = pmc.Info.Nickname ?? "Unknown",
                 Level = pmc.Info.Level ?? 0,
                 Side = pmc.Info.Side ?? "",
-                Online = activeSet.Contains(sessionId.ToString()),
-                Roubles = roubles
+                Online = activeSet.Contains(sid),
+                Roubles = roubles,
+                IsHeadless = isHeadless
             });
         }
 
@@ -51,10 +56,12 @@ public class PlayerStatsService(
             return b.Level.CompareTo(a.Level);
         });
 
+        var realPlayers = players.Where(p => !p.IsHeadless).ToList();
+
         return new PlayerOverviewDto
         {
-            TotalProfiles = players.Count,
-            OnlineCount = activeSet.Count,
+            TotalProfiles = realPlayers.Count,
+            OnlineCount = realPlayers.Count(p => p.Online),
             Players = players
         };
     }
@@ -62,10 +69,11 @@ public class PlayerStatsService(
     public EconomyDto GetEconomy()
     {
         var overview = GetPlayerOverview();
-        var totalRoubles = overview.Players.Sum(p => p.Roubles);
-        var avgWealth = overview.Players.Count > 0 ? totalRoubles / overview.Players.Count : 0;
+        var realPlayers = overview.Players.Where(p => !p.IsHeadless).ToList();
+        var totalRoubles = realPlayers.Sum(p => p.Roubles);
+        var avgWealth = realPlayers.Count > 0 ? totalRoubles / realPlayers.Count : 0;
 
-        var topPlayers = overview.Players
+        var topPlayers = realPlayers
             .OrderByDescending(p => p.Roubles)
             .Take(5)
             .ToList();

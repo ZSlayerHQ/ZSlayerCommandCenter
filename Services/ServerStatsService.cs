@@ -36,7 +36,9 @@ public class ServerStatsService(
             ModCount = modList.Count,
             Mods = modList,
             MemoryMb = GC.GetTotalMemory(false) / (1024 * 1024),
-            WorkingSetMb = process.WorkingSet64 / (1024 * 1024)
+            WorkingSetMb = process.WorkingSet64 / (1024 * 1024),
+            GcMemoryMb = GC.GetTotalMemory(false) / (1024 * 1024),
+            ThreadCount = process.Threads.Count
         };
     }
 

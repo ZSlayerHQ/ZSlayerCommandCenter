@@ -30,6 +30,12 @@ public record ServerStatusDto
 
     [JsonPropertyName("workingSetMb")]
     public long WorkingSetMb { get; set; }
+
+    [JsonPropertyName("gcMemoryMb")]
+    public long GcMemoryMb { get; set; }
+
+    [JsonPropertyName("threadCount")]
+    public int ThreadCount { get; set; }
 }
 
 public record ModInfoDto
@@ -77,6 +83,9 @@ public record PlayerSummaryDto
 
     [JsonPropertyName("roubles")]
     public long Roubles { get; set; }
+
+    [JsonPropertyName("isHeadless")]
+    public bool IsHeadless { get; set; }
 }
 
 // ── Economy ──

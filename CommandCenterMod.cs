@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
+using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Utils;
 using ZSlayerCommandCenter.Models;
 using ZSlayerCommandCenter.Services;
@@ -16,6 +17,7 @@ public class CommandCenterMod(
     HeadlessProcessService headlessProcessService,
     ActivityLogService activityLogService,
     OfferRegenerationService offerRegenerationService,
+    HttpConfig httpConfig,
     ISptLogger<CommandCenterMod> logger) : IOnLoad
 {
     /// <summary>Detected server URLs, available for mail/API use.</summary>
@@ -67,17 +69,54 @@ public class CommandCenterMod(
         activityLogService.CleanupOldLogs();
         activityLogService.LogAction(ActionType.ServerStart, "", "Server started");
 
-        // Detect IPs and log startup banner
-        var lanIp = GetLanIp();
-        var publicIp = GetPublicIp();
-        PrintStartupBanner(lanIp, publicIp);
+        // Detect bound IP and build URLs based on bind mode
+        var boundIp = httpConfig.Ip;
+        var port = httpConfig.Port;
+        string MakeUrl(string ip) => $"https://{ip}:{port}/zslayer/cc/";
 
-        // Store for mail/API use
+        var urlLines = new List<string>();
         var mailLines = new List<string> { "ZSlayer Command Center URLs:" };
-        mailLines.Add($"  Local: https://127.0.0.1:6969/zslayer/cc/");
-        if (lanIp != null) mailLines.Add($"  LAN: https://{lanIp}:6969/zslayer/cc/");
-        if (publicIp != null) mailLines.Add($"  Public: https://{publicIp}:6969/zslayer/cc/");
-        else mailLines.Add("  Public IP unknown — ask the server host for the public IP.");
+        string? publicIp = null;
+        string footer;
+
+        if (boundIp == "0.0.0.0")
+        {
+            // Default bind — accepts connections from anywhere
+            var lanIp = GetLanIp();
+            publicIp = GetPublicIp();
+            urlLines.Add($"Local:   {MakeUrl("127.0.0.1")}");
+            mailLines.Add($"  Local: {MakeUrl("127.0.0.1")}");
+            if (lanIp != null) { urlLines.Add($"LAN:     {MakeUrl(lanIp)}"); mailLines.Add($"  LAN: {MakeUrl(lanIp)}"); }
+            if (publicIp != null) { urlLines.Add($"Public:  {MakeUrl(publicIp)}"); mailLines.Add($"  Public: {MakeUrl(publicIp)}"); }
+            else mailLines.Add("  Public IP unknown — ask the server host for the public IP.");
+            footer = "Share the LAN or Public URL with players for remote access";
+        }
+        else if (IsPrivateIp(boundIp))
+        {
+            // Bound to a LAN IP — loopback won't work
+            publicIp = GetPublicIp();
+            urlLines.Add($"LAN:     {MakeUrl(boundIp)}");
+            mailLines.Add($"  LAN: {MakeUrl(boundIp)}");
+            if (publicIp != null) { urlLines.Add($"Public:  {MakeUrl(publicIp)}"); mailLines.Add($"  Public: {MakeUrl(publicIp)}"); }
+            else mailLines.Add("  Public IP unknown — ask the server host for the public IP.");
+            footer = "Share the LAN or Public URL with players for remote access";
+        }
+        else if (boundIp == "127.0.0.1")
+        {
+            // Localhost only
+            urlLines.Add($"Local:   {MakeUrl("127.0.0.1")}");
+            mailLines.Add($"  Local: {MakeUrl("127.0.0.1")}");
+            footer = "Server bound to localhost — only accessible from this machine";
+        }
+        else
+        {
+            // Specific IP (VPN, etc.)
+            urlLines.Add($"Connect: {MakeUrl(boundIp)}");
+            mailLines.Add($"  Connect: {MakeUrl(boundIp)}");
+            footer = "Server bound to specific IP — use this address to connect";
+        }
+
+        PrintStartupBanner(urlLines, publicIp, footer);
         ServerUrls = string.Join("\n", mailLines);
 
         // Start headless auto-start timer (if configured)
@@ -86,7 +125,7 @@ public class CommandCenterMod(
         return Task.CompletedTask;
     }
 
-    private void PrintStartupBanner(string? lanIp, string? publicIp)
+    private void PrintStartupBanner(List<string> urlLines, string? publicIp, string footer)
     {
         const string cyan = "\x1b[96m";
         const string gold = "\x1b[93m";
@@ -97,15 +136,7 @@ public class CommandCenterMod(
 
         var title = $"⚡ ZSlayerHQ Command Center v{ModMetadata.StaticVersion} ⚡";
         var subtitle = "Open in your browser to manage your server:";
-        var footer = "Share the LAN or Public URL with players for remote access";
         var quote = $"\"{StartupQuotes[Random.Shared.Next(StartupQuotes.Length)]}\"";
-
-        var urlLines = new List<string>
-        {
-            $"Local:   https://127.0.0.1:6969/zslayer/cc/"
-        };
-        if (lanIp != null) urlLines.Add($"LAN:     https://{lanIp}:6969/zslayer/cc/");
-        if (publicIp != null) urlLines.Add($"Public:  https://{publicIp}:6969/zslayer/cc/");
 
         // Build headless info line (if available)
         string? headlessLine = null;
@@ -349,6 +380,16 @@ public class CommandCenterMod(
         }
 
         logger.Info($"{gold}╚{bar}╝{reset}");
+    }
+
+    private static bool IsPrivateIp(string ip)
+    {
+        if (!IPAddress.TryParse(ip, out var addr)) return false;
+        var bytes = addr.GetAddressBytes();
+        if (bytes.Length != 4) return false;
+        return bytes[0] == 10
+            || (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
+            || (bytes[0] == 192 && bytes[1] == 168);
     }
 
     private static string? GetLanIp()

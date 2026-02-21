@@ -2026,7 +2026,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <div class="dash-widget" id="widgetServerStatus">
         <div class="dash-widget-header">
           <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Server Status</span>
-          <span id="dashLastRefresh" style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)"></span>
         </div>
         <div class="dash-widget-body">
           <div class="dash-stat-row">
@@ -2035,11 +2034,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             <div class="dash-stat"><span class="dash-stat-label">CC Version</span><span class="dash-stat-value sm" id="dashCcVer">--</span></div>
           </div>
           <div class="dash-stat-row">
-            <div class="dash-stat"><span class="dash-stat-label">Memory</span><span class="dash-stat-value sm" id="dashMemory">--</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">Working Set</span><span class="dash-stat-value sm" id="dashMemory">--</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">GC Heap</span><span class="dash-stat-value sm" id="dashGcMemory">--</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">Threads</span><span class="dash-stat-value sm" id="dashThreads">--</span></div>
             <div class="dash-stat"><span class="dash-stat-label">Mods Loaded</span><span class="dash-stat-value sm" id="dashModCount">--</span></div>
           </div>
           <details style="margin-top:8px">
-            <summary style="cursor:pointer;font-size:11px;color:var(--text-dim);font-family:var(--font-mono);letter-spacing:1px;text-transform:uppercase">Mod List</summary>
+            <summary style="cursor:pointer;font-size:11px;color:var(--text-dim);font-family:var(--font-mono);letter-spacing:1px;text-transform:uppercase"><span id="dashModSummary">Mod List</span></summary>
             <div id="dashModList" style="max-height:180px;overflow-y:auto;margin-top:8px;font-size:12px"></div>
           </details>
         </div>
@@ -2049,7 +2050,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <div class="dash-widget" id="widgetPlayers">
         <div class="dash-widget-header">
           <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Players</span>
-          <span id="dashOnlineBadge" style="font-size:11px;font-family:var(--font-mono);color:var(--success-bright)"></span>
+          <span style="display:flex;align-items:center;gap:12px"><span id="dashHeadlessBadge" style="font-size:12px;font-family:var(--font-mono);font-weight:700;color:var(--text-muted);display:none"></span><span id="dashOnlineBadge" style="font-size:11px;font-family:var(--font-mono);color:var(--success-bright)"></span></span>
         </div>
         <div class="dash-widget-body">
           <div class="dash-stat-row">
@@ -2096,7 +2097,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <button class="btn btn-accent btn-sm" onclick="openBroadcastModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Broadcast</button>
       <button class="btn btn-sm" onclick="sendUrlsToPlayers()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> Send URLs to Players</button>
       <button class="btn btn-sm" onclick="refreshDashboard()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh Data</button>
-      <button class="btn btn-ghost btn-sm" onclick="switchMainTab('items')">Items Tab</button>
+      <span style="margin-left:auto;font-size:10px;font-family:var(--font-mono);color:var(--text-muted)">Server Local Time: <span id="dashLiveClock"></span></span>
     </div>
 
     <!-- Activity Log -->
@@ -3258,6 +3259,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       refreshDashboard();
       startDashboardTimers();
     });
+    // Live clock
+    setInterval(function() {
+      var el = document.getElementById('dashLiveClock');
+      if (el) el.textContent = new Date().toLocaleTimeString();
+    }, 1000);
   }
 
   function startDashboardTimers() {
@@ -3284,7 +3290,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     pollConsole();
     pollHeadless();
     pollHeadlessStatus();
-    document.getElementById('dashLastRefresh').textContent = new Date().toLocaleTimeString();
+    // Live clock handles time display
   };
 
   function loadServerStatus() {
@@ -3293,12 +3299,15 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       document.getElementById('dashSptVer').textContent = d.sptVersion || '--';
       document.getElementById('dashCcVer').textContent = d.ccVersion || '--';
       document.getElementById('dashMemory').textContent = d.workingSetMb + ' MB';
+      document.getElementById('dashGcMemory').textContent = d.gcMemoryMb + ' MB';
+      document.getElementById('dashThreads').textContent = d.threadCount;
       document.getElementById('dashModCount').textContent = d.modCount;
+      document.getElementById('dashModSummary').textContent = d.modCount + ' mods loaded';
       var modHtml = '';
       (d.mods || []).forEach(function(m) {
         modHtml += '<div style="padding:3px 0;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between">' +
           '<span style="color:var(--text)">' + escH(m.name) + '</span>' +
-          '<span style="color:var(--text-muted)">' + escH(m.version) + '</span></div>';
+          '<span style="color:var(--text-muted);padding-right:8px">' + escH(m.version) + '</span></div>';
       });
       document.getElementById('dashModList').innerHTML = modHtml || '<span style="color:var(--text-muted)">No mods</span>';
     }).catch(function(e) { console.error('Status error:', e); });
@@ -3308,28 +3317,41 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     api('dashboard/players').then(function(d) {
       document.getElementById('dashTotalProfiles').textContent = d.totalProfiles;
       document.getElementById('dashOnlineCount').textContent = d.onlineCount;
+      var onlineEl = document.getElementById('dashOnlineCount');
+      onlineEl.style.color = d.onlineCount > 0 ? 'var(--success-bright)' : '#8b3a3a';
       document.getElementById('dashOnlineBadge').textContent = d.onlineCount > 0 ? d.onlineCount + ' online' : '';
+      document.getElementById('dashOnlineBadge').style.color = d.onlineCount > 0 ? 'var(--success-bright)' : '#8b3a3a';
+      // Headless badge in header
+      var headless = (d.players || []).find(function(p) { return p.isHeadless; });
+      var hlBadge = document.getElementById('dashHeadlessBadge');
+      if (headless) {
+        hlBadge.style.display = '';
+        hlBadge.innerHTML = '\uD83E\uDD16 Headless Client';
+      } else {
+        hlBadge.style.display = 'none';
+      }
       var html = '';
       (d.players || []).forEach(function(p) {
+        if (p.isHeadless) return;
         html += '<div class="dash-player">' +
           '<span class="online-dot ' + (p.online ? 'on' : 'off') + '"></span>' +
           '<span class="p-name">' + escH(p.nickname) + '</span>' +
-          '<span class="p-detail">Lvl ' + p.level + '</span>' +
-          '<span class="p-detail">' + escH(p.side) + '</span>' +
-          '<span class="p-detail">' + formatRoubles(p.roubles) + '</span></div>';
+          '<span class="p-detail">Lvl ' + p.level + ' · ' + escH(p.side).toUpperCase() + '</span></div>';
       });
       document.getElementById('dashPlayerList').innerHTML = html || '<div style="padding:12px;color:var(--text-muted);text-align:center">No profiles found</div>';
     }).catch(function(e) { console.error('Players error:', e); });
   }
 
+  var RANK_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
   function loadEconomy() {
     api('dashboard/economy').then(function(d) {
       document.getElementById('dashTotalRoubles').textContent = formatRoubles(d.totalRoubles);
       document.getElementById('dashAvgWealth').textContent = formatRoubles(d.averageWealth);
       var html = '';
       (d.topPlayers || []).forEach(function(p, i) {
+        var rankColor = i < 3 ? RANK_COLORS[i] : 'var(--accent-dim)';
         html += '<div class="dash-player">' +
-          '<span style="color:var(--accent-dim);font-family:var(--font-mono);font-size:11px;width:18px">#' + (i+1) + '</span>' +
+          '<span style="color:' + rankColor + ';font-family:var(--font-mono);font-size:11px;width:18px;font-weight:700">#' + (i+1) + '</span>' +
           '<span class="p-name">' + escH(p.nickname) + '</span>' +
           '<span class="p-detail">' + formatRoubles(p.roubles) + '</span></div>';
       });
@@ -3337,9 +3359,29 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }).catch(function(e) { console.error('Economy error:', e); });
   }
 
+  var MAP_NAMES = {
+    'factory4_day': 'Factory (Day)',
+    'factory4_night': 'Factory (Night)',
+    'bigmap': 'Customs',
+    'Woods': 'Woods',
+    'Shoreline': 'Shoreline',
+    'Interchange': 'Interchange',
+    'laboratory': 'The Lab',
+    'Lighthouse': 'Lighthouse',
+    'RezervBase': 'Reserve',
+    'TarkovStreets': 'Streets',
+    'Sandbox': 'Ground Zero',
+    'Sandbox_high': 'Ground Zero (High)',
+    'city': 'Streets'
+  };
+  function mapDisplayName(key) {
+    if (key === 'Unknown') return 'Map data unavailable';
+    return MAP_NAMES[key] || key;
+  }
+
   function loadRaidStats() {
     api('dashboard/raids').then(function(d) {
-      document.getElementById('dashTotalRaids').textContent = d.totalRaids;
+      document.getElementById('dashTotalRaids').textContent = d.totalRaids.toLocaleString();
       document.getElementById('dashSurvivalRate').textContent = d.totalRaids > 0 ? d.survivalRate + '%' : '--';
       document.getElementById('dashAvgTime').textContent = d.totalRaids > 0 ? formatSeconds(d.avgPlayTimeSeconds) : '--';
       // Raids by map bar chart
@@ -3349,7 +3391,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       entries.forEach(function(e) {
         var pct = (e[1] / maxCount * 100).toFixed(0);
         html += '<div class="dash-bar-row">' +
-          '<span class="dash-bar-label">' + escH(e[0]) + '</span>' +
+          '<span class="dash-bar-label">' + escH(mapDisplayName(e[0])) + '</span>' +
           '<div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + pct + '%"></div></div>' +
           '<span class="dash-bar-count">' + e[1] + '</span></div>';
       });
@@ -3693,9 +3735,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function formatRoubles(n) {
     if (n == null) return '--';
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
-    return n.toLocaleString();
+    if (n >= 1000000000) return '₽' + (n / 1000000000).toFixed(1) + 'B';
+    if (n >= 1000000) return '₽' + (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return '₽' + (n / 1000).toFixed(0) + 'K';
+    return '₽' + n.toLocaleString();
   }
 
   function formatSeconds(s) {
