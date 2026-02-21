@@ -2115,6 +2115,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <button class="btn btn-accent btn-sm" onclick="openBroadcastModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Broadcast</button>
       <button class="btn btn-sm" onclick="sendUrlsToPlayers()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> Send URLs to Players</button>
       <button class="btn btn-sm" onclick="refreshDashboard()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh Data</button>
+      <button class="btn btn-sm" onclick="openLogPopout()" title="Open logs in popout window"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Popout Logs</button>
       <span style="margin-left:auto;font-size:10px;font-family:var(--font-mono);color:var(--text-muted)">Server Local Time: <span id="dashLiveClock"></span></span>
     </div>
 
@@ -3562,6 +3563,116 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var body = document.getElementById('consoleBody');
     body.scrollTop = body.scrollHeight;
     document.getElementById('consoleJump').style.display = 'none';
+  };
+
+  // ── Log Popout Window ──
+  window.openLogPopout = function() {
+    var popout = window.open('', 'cc_log_popout', 'width=1400,height=800,resizable=yes,scrollbars=no');
+    if (!popout) { toast('Popout blocked — allow popups for this site', 'error'); return; }
+
+    var apiBase = location.origin + '/zslayer/cc/';
+    var headers = { 'X-Session-Id': sessionId, 'X-Password': ccPassword };
+
+    popout.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Command Center — Logs</title>' +
+    '<style>' +
+      '@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap");' +
+      '*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }' +
+      'body { font-family: "Rajdhani", sans-serif; background: #080808; color: #c8bfa8; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }' +
+      '::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: #0c0c0c; } ::-webkit-scrollbar-thumb { background: #2a2620; border-radius: 3px; }' +
+      '.pop-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: #141310; border-bottom: 1px solid #2a2620; flex-shrink: 0; }' +
+      '.pop-header-title { font-family: "Share Tech Mono", monospace; font-size: 12px; color: #c8aa6e; letter-spacing: 2px; text-transform: uppercase; }' +
+      '.pop-header-status { font-family: "Share Tech Mono", monospace; font-size: 10px; color: #6a6050; }' +
+      '.pop-panels { display: flex; flex: 1; overflow: hidden; }' +
+      '.pop-panel { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #2a2620; overflow: hidden; }' +
+      '.pop-panel:last-child { border-right: none; }' +
+      '.pop-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; background: #1c1b17; border-bottom: 1px solid #1f1d18; flex-shrink: 0; }' +
+      '.pop-panel-title { font-family: "Share Tech Mono", monospace; font-size: 11px; color: #6a6050; text-transform: uppercase; letter-spacing: 1.5px; }' +
+      '.pop-panel-count { font-family: "Share Tech Mono", monospace; font-size: 10px; color: #4a4438; }' +
+      '.pop-body { flex: 1; overflow-y: auto; padding: 6px 14px; font-size: 12px; font-family: "Share Tech Mono", monospace; line-height: 1.6; }' +
+      '.log-line { white-space: pre-wrap; word-break: break-all; }' +
+      '.log-line .ts { color: #4a4438; margin-right: 8px; }' +
+      '.log-line .src { color: #a08a50; margin-right: 6px; }' +
+      '.log-line.level-info .msg { color: #6a6050; }' +
+      '.log-line.level-success .msg { color: #6aad6a; }' +
+      '.log-line.level-warning .msg { color: #c87a3e; }' +
+      '.log-line.level-error .msg { color: #c45050; }' +
+      '.log-line.level-debug .msg { color: #4a4438; }' +
+      '.pop-empty { padding: 24px; text-align: center; color: #4a4438; font-style: italic; }' +
+    '</style></head><body>' +
+    '<div class="pop-header">' +
+      '<span class="pop-header-title">Command Center — Logs</span>' +
+      '<span class="pop-header-status" id="popStatus">Connecting...</span>' +
+    '</div>' +
+    '<div class="pop-panels">' +
+      '<div class="pop-panel">' +
+        '<div class="pop-panel-header"><span class="pop-panel-title">Server Console</span><span class="pop-panel-count" id="popServerCount"></span></div>' +
+        '<div class="pop-body" id="popServerBody"><div class="pop-empty">Loading...</div></div>' +
+      '</div>' +
+      '<div class="pop-panel">' +
+        '<div class="pop-panel-header"><span class="pop-panel-title">Headless Client</span><span class="pop-panel-count" id="popHeadlessCount"></span></div>' +
+        '<div class="pop-body" id="popHeadlessBody"><div class="pop-empty">Loading...</div></div>' +
+      '</div>' +
+    '</div>' +
+    '<script>' +
+    'var apiBase = ' + JSON.stringify(apiBase) + ';' +
+    'var headers = ' + JSON.stringify(headers) + ';' +
+    'var serverEntries = [], headlessEntries = [];' +
+    'var serverSince = new Date().toISOString(), headlessSince = new Date().toISOString();' +
+    'var initialLoad = true;' +
+    '' +
+    'function escH(s) { return s ? s.replace(/&/g,"\\&amp;").replace(/</g,"\\&lt;").replace(/>/g,"\\&gt;") : ""; }' +
+    '' +
+    'function renderEntries(entries, bodyId, countId) {' +
+    '  var body = document.getElementById(bodyId);' +
+    '  var html = "";' +
+    '  for (var i = 0; i < entries.length; i++) {' +
+    '    var e = entries[i];' +
+    '    var lvl = (e.level || "info").toLowerCase();' +
+    '    var ts = new Date(e.timestamp).toLocaleTimeString();' +
+    '    html += \'<div class="log-line level-\' + lvl + \'">\' +' +
+    '      \'<span class="ts">\' + ts + \'</span>\' +' +
+    '      (e.source ? \'<span class="src">[\' + escH(e.source) + \']</span>\' : "") +' +
+    '      \'<span class="msg">\' + escH(e.message) + \'</span></div>\';' +
+    '  }' +
+    '  var wasBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 60;' +
+    '  body.innerHTML = html || \'<div class="pop-empty">No output</div>\';' +
+    '  document.getElementById(countId).textContent = "(" + entries.length + ")";' +
+    '  if (wasBottom) body.scrollTop = body.scrollHeight;' +
+    '}' +
+    '' +
+    'function poll() {' +
+    '  var sq = initialLoad ? "lines=500" : "since=" + encodeURIComponent(serverSince);' +
+    '  var hq = initialLoad ? "lines=500" : "since=" + encodeURIComponent(headlessSince);' +
+    '  Promise.all([' +
+    '    fetch(apiBase + "console?" + sq, { headers: headers }).then(function(r){ return r.json(); }).catch(function(){ return null; }),' +
+    '    fetch(apiBase + "headless-console?" + hq, { headers: headers }).then(function(r){ return r.json(); }).catch(function(){ return null; })' +
+    '  ]).then(function(results) {' +
+    '    var s = results[0], h = results[1];' +
+    '    document.getElementById("popStatus").textContent = "Connected — polling every 2s";' +
+    '    if (s && s.entries && s.entries.length > 0) {' +
+    '      if (initialLoad) serverEntries = s.entries; else serverEntries = serverEntries.concat(s.entries);' +
+    '      if (serverEntries.length > 1000) serverEntries = serverEntries.slice(-500);' +
+    '      serverSince = s.entries[s.entries.length - 1].timestamp;' +
+    '      renderEntries(serverEntries, "popServerBody", "popServerCount");' +
+    '    } else if (initialLoad) { renderEntries([], "popServerBody", "popServerCount"); }' +
+    '    if (h && h.configured !== false && h.entries && h.entries.length > 0) {' +
+    '      if (initialLoad) headlessEntries = h.entries; else headlessEntries = headlessEntries.concat(h.entries);' +
+    '      if (headlessEntries.length > 1000) headlessEntries = headlessEntries.slice(-500);' +
+    '      headlessSince = h.entries[h.entries.length - 1].timestamp;' +
+    '      renderEntries(headlessEntries, "popHeadlessBody", "popHeadlessCount");' +
+    '    } else if (h && h.configured === false) {' +
+    '      document.getElementById("popHeadlessBody").innerHTML = \'<div class="pop-empty">Headless log not configured</div>\';' +
+    '    } else if (initialLoad) { renderEntries([], "popHeadlessBody", "popHeadlessCount"); }' +
+    '    initialLoad = false;' +
+    '  }).catch(function() {' +
+    '    document.getElementById("popStatus").textContent = "Connection error";' +
+    '  });' +
+    '}' +
+    '' +
+    'poll();' +
+    'setInterval(poll, 2000);' +
+    '<\/script></body></html>');
+    popout.document.close();
   };
 
   // Headless Process Manager
