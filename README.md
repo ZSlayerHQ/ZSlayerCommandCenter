@@ -13,6 +13,8 @@
 
 A browser-based command center that gives server admins full control over their SPT / FIKA server — manage players, tweak the flea market, control headless clients, and much more. No restarts. No config file hunting. Just open a tab and run your server.
 
+> **Note:** This project is actively in development. This README covers the highlights — a comprehensive guide with screenshots, detailed docs, and full configuration reference will be added as the project approaches v3.0 release.
+
 </div>
 
 ---
