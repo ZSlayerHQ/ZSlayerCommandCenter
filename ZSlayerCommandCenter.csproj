@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>ZSlayerCommandCenter</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Library</OutputType>
+    <Version>2.2.0</Version>
+    <OutputPath>bin\$(Configuration)\$(ProjectName)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SPTarkov.Common" Version="4.0.5" />
+    <PackageReference Include="SPTarkov.DI" Version="4.0.5" />
+    <PackageReference Include="SPTarkov.Server.Core" Version="4.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="res\**" CopyToOutputDirectory="PreserveNewest" />
+    <Content Update="config\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="config\data\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="config\logs\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,59 @@
+{
+  "access": {
+    "mode": "whitelist",
+    "whitelist": [],
+    "blacklist": [],
+    "allowAllWhenEmpty": true,
+    "banList": []
+  },
+  "logging": {
+    "logGiveEvents": true
+  },
+  "dashboard": {
+    "refreshIntervalSeconds": 30,
+    "consoleBufferSize": 500,
+    "consolePollingMs": 3000,
+    "activityRetentionDays": 30,
+    "headlessLogPath": ""
+  },
+  "items": {
+    "presets": [
+      {
+        "id": "medkit-starter",
+        "name": "Medkit Starter Pack",
+        "description": "Basic medical supplies to get you started",
+        "items": [
+          { "tpl": "590c657e86f77412b013051d", "count": 3, "note": "Grizzly" },
+          { "tpl": "5755356824597772cb798962", "count": 5, "note": "AI-2" },
+          { "tpl": "544fb45d4bdc2dee738b4568", "count": 3, "note": "Salewa" }
+        ]
+      },
+      {
+        "id": "ammo-pack",
+        "name": "Ammo Resupply",
+        "description": "Common ammo types for general use",
+        "items": [
+          { "tpl": "56dff3afd2720bba668b4567", "count": 120, "note": "5.45x39 PS" },
+          { "tpl": "58dd3ad986f77403051cba8f", "count": 120, "note": "7.62x39 PS" },
+          { "tpl": "5a26abfac4a28200741e1e01", "count": 100, "note": "5.56x45 M855A1" }
+        ]
+      }
+    ]
+  },
+  "flea": {
+    "globalBuyMultiplier": 1.0,
+    "categoryMultipliers": {},
+    "itemOverrides": {},
+    "fleaTaxMultiplier": 1.0,
+    "fleaMinUserLevel": 0,
+    "fleaOfferCount": 0,
+    "fleaBlacklist": []
+  },
+  "headless": {
+    "autoStart": false,
+    "autoStartDelaySec": 30,
+    "autoRestart": true,
+    "profileId": "",
+    "exePath": ""
+  }
+}
