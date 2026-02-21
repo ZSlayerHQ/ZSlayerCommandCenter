@@ -91,7 +91,7 @@ public class CommandCenterMod(
             if (lanIp != null) { urlLines.Add($"LAN:     {MakeUrl(lanIp)}"); mailLines.Add($"  LAN: {MakeUrl(lanIp)}"); }
             if (publicIp != null) { urlLines.Add($"Public:  {MakeUrl(publicIp)}"); mailLines.Add($"  Public: {MakeUrl(publicIp)}"); }
             else mailLines.Add("  Public IP unknown — ask the server host for the public IP.");
-            footer = "Share the LAN or Public URL with players for remote access";
+            footer = "Share the LAN or Public URL with players to access the Command Center";
         }
         else if (IsPrivateIp(boundIp))
         {
@@ -101,7 +101,7 @@ public class CommandCenterMod(
             mailLines.Add($"  LAN: {MakeUrl(boundIp)}");
             if (publicIp != null) { urlLines.Add($"Public:  {MakeUrl(publicIp)}"); mailLines.Add($"  Public: {MakeUrl(publicIp)}"); }
             else mailLines.Add("  Public IP unknown — ask the server host for the public IP.");
-            footer = "Share the LAN or Public URL with players for remote access";
+            footer = "Share the Public URL with remote players, or use the LAN URL on your local network";
         }
         else if (boundIp == "127.0.0.1")
         {
@@ -115,7 +115,7 @@ public class CommandCenterMod(
             // Specific IP (VPN, etc.)
             urlLines.Add($"Connect: {MakeUrl(boundIp)}");
             mailLines.Add($"  Connect: {MakeUrl(boundIp)}");
-            footer = "Server bound to specific IP — use this address to connect";
+            footer = "Share this URL with players connected to the same network";
         }
 
         PrintStartupBanner(urlLines, publicIp, footer);
