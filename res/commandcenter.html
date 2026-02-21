@@ -304,7 +304,7 @@ body {
 .btn-xs { padding: 3px 10px; font-size: 11px; }
 
 /* ── Inputs ── */
-input[type="text"], input[type="number"] {
+input[type="text"], input[type="number"], input[type="password"] {
   padding: 8px 12px;
   background: var(--bg-input);
   border: 1px solid var(--border);
@@ -493,11 +493,28 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .login-logo-icon svg { width: 20px; height: 20px; color: #0a0a0a; }
 
 .login-logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-brand {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 20px;
   color: var(--accent);
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   text-transform: uppercase;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.login-subtitle {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 5.5px;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-top: 4px;
 }
 
 .login-box p {
@@ -1882,12 +1899,19 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <div class="login-logo-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
       </div>
-      <span class="login-logo-text">ZSlayerHQ Command Center</span>
+      <div class="login-logo-text">
+        <span class="login-brand">ZSlayerHQ</span>
+        <span class="login-subtitle">Command Center</span>
+      </div>
     </div>
-    <p>Enter your SPT Session ID to connect. Find this in your SPT launcher profile settings.</p>
+    <p>Enter your SPT Profile ID to connect. Find this in your SPT launcher profile settings.</p>
     <div class="form-group">
-      <label>Session ID</label>
-      <input type="text" id="sessionInput" placeholder="Paste your session ID here..." autocomplete="off" style="width:100%">
+      <label>Profile ID</label>
+      <input type="text" id="sessionInput" placeholder="Paste your profile ID here..." autocomplete="off" style="width:100%">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="passwordInput" placeholder="Enter password (if configured)" autocomplete="off" style="width:100%">
     </div>
     <button class="btn btn-accent" id="connectBtn" onclick="connect()" style="width:100%;padding:11px;font-size:14px;margin-top:6px">CONNECT</button>
     <div class="login-error" id="loginError"></div>
@@ -2751,6 +2775,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   // STATE
   // ═══════════════════════════════════════════════════════
   var sessionId = localStorage.getItem('zslayer_session') || '';
+  var ccPassword = localStorage.getItem('zslayer_password') || '';
   var profileName = '';
   var cart = JSON.parse(localStorage.getItem('zslayer_cart') || '[]');
   var flatCats = [];
@@ -2774,7 +2799,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var BASE = '/zslayer/cc/';
   function api(endpoint, opts) {
     opts = opts || {};
-    var h = { 'X-Session-Id': sessionId };
+    var h = { 'X-Session-Id': sessionId, 'X-Password': ccPassword };
     if (opts.body) h['Content-Type'] = 'application/json';
     return fetch(BASE + endpoint, Object.assign({}, opts, { headers: Object.assign(h, opts.headers || {}) }))
       .then(function(r) { return r.json().then(function(d) { if (!r.ok) throw new Error(d.error || 'Request failed'); return d; }); });
@@ -2799,31 +2824,37 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   // ═══════════════════════════════════════════════════════
   window.connect = function() {
     var input = document.getElementById('sessionInput');
+    var pwInput = document.getElementById('passwordInput');
     var errEl = document.getElementById('loginError');
     var btn = document.getElementById('connectBtn');
     var id = input.value.trim();
-    if (!id) { errEl.textContent = 'Please enter a session ID'; errEl.style.display = 'block'; return; }
+    var pw = pwInput.value;
+    if (!id) { errEl.textContent = 'Please enter a profile ID'; errEl.style.display = 'block'; return; }
     btn.disabled = true; btn.textContent = 'CONNECTING...'; errEl.style.display = 'none';
     sessionId = id;
+    ccPassword = pw;
     api('auth').then(function(data) {
-      if (!data.authorized) { errEl.textContent = data.reason || 'Access denied'; errEl.style.display = 'block'; sessionId = ''; return; }
+      if (!data.authorized) { errEl.textContent = data.reason || 'Access denied'; errEl.style.display = 'block'; sessionId = ''; ccPassword = ''; return; }
       profileName = data.profileName;
       localStorage.setItem('zslayer_session', id);
+      localStorage.setItem('zslayer_password', pw);
       showMain();
     }).catch(function(e) {
-      errEl.textContent = e.message || 'Connection failed'; errEl.style.display = 'block'; sessionId = '';
+      errEl.textContent = e.message || 'Connection failed'; errEl.style.display = 'block'; sessionId = ''; ccPassword = '';
     }).finally(function() { btn.disabled = false; btn.textContent = 'CONNECT'; });
   };
 
   window.logout = function() {
-    sessionId = ''; profileName = '';
+    sessionId = ''; profileName = ''; ccPassword = '';
     localStorage.removeItem('zslayer_session');
+    localStorage.removeItem('zslayer_password');
     document.getElementById('loginScreen').style.display = '';
     document.getElementById('mainContainer').style.display = 'none';
     document.getElementById('heroBanner').style.display = 'none';
     document.getElementById('headerProfile').style.display = 'none';
     document.getElementById('navBar').style.display = 'none';
     document.getElementById('sessionInput').value = '';
+    document.getElementById('passwordInput').value = '';
   };
 
   function showMain() {
@@ -3111,6 +3142,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (e.key === 'Enter') { clearTimeout(searchTimer); currentSearch = this.value.trim(); currentOffset = 0; searchItems(); }
   });
   document.getElementById('sessionInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') window.connect(); });
+  document.getElementById('passwordInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') window.connect(); });
 
   // ═══════════════════════════════════════════════════════
   // GIVE
@@ -5103,10 +5135,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   // ═══════════════════════════════════════════════════════
   if (sessionId) {
     document.getElementById('sessionInput').value = sessionId;
+    document.getElementById('passwordInput').value = ccPassword;
     api('auth').then(function(data) {
       if (data.authorized) { profileName = data.profileName; showMain(); }
-      else { sessionId = ''; localStorage.removeItem('zslayer_session'); }
-    }).catch(function() { sessionId = ''; localStorage.removeItem('zslayer_session'); });
+      else { sessionId = ''; ccPassword = ''; localStorage.removeItem('zslayer_session'); localStorage.removeItem('zslayer_password'); }
+    }).catch(function() { sessionId = ''; ccPassword = ''; localStorage.removeItem('zslayer_session'); localStorage.removeItem('zslayer_password'); });
   }
 })();
 </script>

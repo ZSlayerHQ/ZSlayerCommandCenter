@@ -156,7 +156,7 @@ public class CommandCenterHttpListener(
             switch (path)
             {
                 case "banner" when method == "GET":
-                    await ServeStaticFile(context, "banner.png");
+                    await ServeStaticFile(context, "banner.svg");
                     break;
                 case "auth" when method == "GET":
                     await HandleAuth(context, headerSessionId);
@@ -250,12 +250,32 @@ public class CommandCenterHttpListener(
             await WriteJson(context, 400, new AuthResponse
             {
                 Authorized = false,
-                Reason = "Missing X-Session-Id header"
+                Reason = "Missing profile ID"
             });
             return;
         }
 
         var authorized = accessControlService.IsAuthorized(headerSessionId);
+
+        // Check password if configured
+        if (authorized)
+        {
+            var configPassword = configService.GetConfig().Access.Password;
+            if (!string.IsNullOrEmpty(configPassword))
+            {
+                var headerPassword = context.Request.Headers["X-Password"].FirstOrDefault() ?? "";
+                if (headerPassword != configPassword)
+                {
+                    await WriteJson(context, 200, new AuthResponse
+                    {
+                        Authorized = false,
+                        Reason = "Invalid password"
+                    });
+                    return;
+                }
+            }
+        }
+
         var profileName = authorized ? accessControlService.GetProfileName(headerSessionId) : "";
 
         await WriteJson(context, 200, new AuthResponse
@@ -1125,6 +1145,18 @@ public class CommandCenterHttpListener(
             return false;
         }
 
+        // Check password if configured
+        var configPassword = configService.GetConfig().Access.Password;
+        if (!string.IsNullOrEmpty(configPassword))
+        {
+            var headerPassword = context.Request.Headers["X-Password"].FirstOrDefault() ?? "";
+            if (headerPassword != configPassword)
+            {
+                await WriteJson(context, 403, new { error = "Invalid password" });
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -1132,7 +1164,7 @@ public class CommandCenterHttpListener(
     {
         context.Response.Headers["Access-Control-Allow-Origin"] = "*";
         context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS";
-        context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, X-Session-Id";
+        context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, X-Session-Id, X-Password";
     }
 
     private static async Task WriteJson<T>(HttpContext context, int statusCode, T data)

@@ -92,6 +92,8 @@ public class CommandCenterMod(
         const string gold = "\x1b[93m";
         const string dim = "\x1b[90m";
         const string reset = "\x1b[0m";
+        const string green = "\x1b[92m";
+        const string white = "\x1b[97m";
 
         var title = $"⚡ ZSlayerHQ Command Center v{ModMetadata.StaticVersion} ⚡";
         var subtitle = "Open in your browser to manage your server:";
@@ -123,24 +125,95 @@ public class CommandCenterMod(
             ? "Public IP not detected — Google 'what is my IP' to find it"
             : null;
 
+        // Pre-compute flea table layout for width calculation and rendering
+        var fd = offerRegenerationService.StartupDisplay;
+        var fleaTableWidthLines = new List<string>();
+        var fleaDataRows = new List<(string LP, string LC, string RP, string RC)>();
+        var fleaSepPos = 0;
+        string fleaHdrRP = "", fleaHdrRC = "";
+
+        if (fd is { HasModifiers: true })
+        {
+            // Buy price: single combined line with category breakdown if applicable
+            string buyVP, buyVC;
+            if (fd.ExampleMultSource == "global×category" && fd.ExampleBasePrice > 0)
+            {
+                var catMult = fd.ExampleEffectiveMult / fd.BuyMultiplier;
+                buyVP = $"{fd.ExampleEffectiveMult:F2}x ({fd.BuyMultiplier:F2}x global × {catMult:F2}x category)";
+                buyVC = $"{green}{fd.ExampleEffectiveMult:F2}x {dim}({white}{fd.BuyMultiplier:F2}x {dim}global × {white}{catMult:F2}x {dim}category){reset}";
+            }
+            else if (fd.ExampleMultSource == "item" && fd.ExampleBasePrice > 0)
+            {
+                buyVP = $"{fd.ExampleEffectiveMult:F2}x (per-item override)";
+                buyVC = $"{green}{fd.ExampleEffectiveMult:F2}x {dim}(per-item override){reset}";
+            }
+            else
+            {
+                buyVP = $"{fd.BuyMultiplier:F2}x";
+                buyVC = $"{cyan}{fd.BuyMultiplier:F2}x{reset}";
+            }
+
+            // Right-side price/tax examples with aligned arrows
+            string prRP = "", prRC = "", txRP = "", txRC = "";
+            if (fd.ExampleBasePrice > 0)
+            {
+                var bpStr = $"{fd.ExampleBasePrice:N0}";
+                var btStr = fd.ExampleBaseTax > 0 ? $"{fd.ExampleBaseTax:N0}" : "";
+                var maxBW = Math.Max(bpStr.Length, btStr.Length);
+                prRP = $"₽ {bpStr.PadRight(maxBW)}  →  ₽ {fd.ExampleModifiedPrice:N0}";
+                prRC = $"{white}₽ {bpStr.PadRight(maxBW)}  {dim}→  {cyan}₽ {fd.ExampleModifiedPrice:N0}{reset}";
+                if (fd.ExampleBaseTax > 0)
+                {
+                    txRP = $"₽ {btStr.PadRight(maxBW)}  →  ₽ {fd.ExampleModifiedTax:N0}";
+                    txRC = $"{white}₽ {btStr.PadRight(maxBW)}  {dim}→  {cyan}₽ {fd.ExampleModifiedTax:N0}{reset}";
+                }
+            }
+
+            // Example header
+            if (fd.ExampleName.Length > 0)
+            {
+                fleaHdrRP = $"Example: {fd.ExampleName}";
+                fleaHdrRC = $"{cyan}Example: {fd.ExampleName}{reset}";
+            }
+
+            // Row data: label, value plain/colored, right plain/colored
+            var rows = new (string Lbl, string VP, string VC, string RP, string RC)[]
+            {
+                ("Buy Price:", buyVP, buyVC, prRP, prRC),
+                ("Tax Multiplier:", $"{fd.TaxMultiplier:F2}x", $"{cyan}{fd.TaxMultiplier:F2}x{reset}", txRP, txRC),
+                ("Max Player Offers:", $"{fd.MaxOffers}", $"{cyan}{fd.MaxOffers}{reset}", "", ""),
+                ("Listing Duration:", $"{fd.DurationHours}h", $"{cyan}{fd.DurationHours}h{reset}", "", ""),
+                ("Barter Offers:", $"{fd.BarterPercent}%", $"{cyan}{fd.BarterPercent}%{reset}", "", ""),
+                ("Prices Modified:", $"{fd.ModifiedPrices:N0}/{fd.TotalPrices:N0}", $"{cyan}{fd.ModifiedPrices:N0}/{fd.TotalPrices:N0}{reset}", "", ""),
+            };
+
+            const int lblW = 19; // "Max Player Offers:" is longest
+            var maxVLen = rows.Max(r => r.VP.Length);
+            fleaSepPos = 3 + lblW + 1 + maxVLen + 2;
+
+            foreach (var (lbl, vp, vc, rp, rc) in rows)
+            {
+                var lp = $"   {lbl.PadRight(lblW)} {vp}";
+                var lc = $"   {white}{lbl.PadRight(lblW)}{reset} {vc}";
+                fleaDataRows.Add((lp, lc, rp, rc));
+            }
+
+            // Plain text lines for box width calculation
+            var hdr = "   Changes".PadRight(fleaSepPos) + "│" + (fleaHdrRP.Length > 0 ? $"  {fleaHdrRP}  " : "  ");
+            fleaTableWidthLines.Add(hdr);
+            foreach (var (lp, _, rp, _) in fleaDataRows)
+            {
+                var line = lp.PadRight(fleaSepPos) + "│" + (rp.Length > 0 ? $"  {rp}  " : "  ");
+                fleaTableWidthLines.Add(line);
+            }
+        }
+
         // Determine box inner width from ALL content lines
         var allContent = new List<string> { title, subtitle, footer, quote };
         allContent.AddRange(urlLines);
         if (headlessLine != null) allContent.Add(headlessLine);
         if (noPublicLine != null) allContent.Add(noPublicLine);
-
-        // Include flea table lines in width calc so box auto-sizes
-        var fleaPreview = offerRegenerationService.StartupDisplay;
-        if (fleaPreview is { HasModifiers: true, ExampleBasePrice: > 0 })
-        {
-            // Check widest rows: effective multiplier + price, and header + example name
-            var effLabel = fleaPreview.ExampleMultSource == "global" ? "" : $" ({fleaPreview.ExampleMultSource})";
-            var effLeft = $"   Effective:         {fleaPreview.ExampleEffectiveMult:F2}x{effLabel}";
-            var effRight = $"  Base: {fleaPreview.ExampleBasePrice:N0}  →  Mod: {fleaPreview.ExampleModifiedPrice:N0}";
-            allContent.Add(effLeft.PadRight(31) + "│" + effRight);
-            var headerRight = $"  Example: {fleaPreview.ExampleName}";
-            allContent.Add("   Changes".PadRight(31) + "│" + headerRight);
-        }
+        allContent.AddRange(fleaTableWidthLines);
 
         var innerWidth = allContent.Max(s => s.Length) + 6;
 
@@ -162,8 +235,13 @@ public class CommandCenterMod(
         logger.Info($"{gold}║{reset}{Center(subtitle)}{gold}║{reset}");
         logger.Info($"{gold}║{reset}{Center("")}{gold}║{reset}");
 
+        var maxUrlLen = urlLines.Max(u => u.Length);
+        var urlLeftPad = (innerWidth - maxUrlLen) / 2;
         foreach (var url in urlLines)
-            logger.Info($"{gold}║{reset}{cyan}{Center(url)}{reset}{gold}║{reset}");
+        {
+            var urlRightPad = innerWidth - urlLeftPad - url.Length;
+            logger.Info($"{gold}║{reset}{cyan}{new string(' ', urlLeftPad)}{url}{new string(' ', Math.Max(0, urlRightPad))}{reset}{gold}║{reset}");
+        }
 
         logger.Info($"{gold}║{reset}{Center("")}{gold}║{reset}");
 
@@ -194,42 +272,14 @@ public class CommandCenterMod(
         logger.Info($"{gold}╠{bar}╣{reset}");
         logger.Info($"{gold}║{reset}{dim}{Center(quote)}{reset}{gold}║{reset}");
 
-        // ── Helpers for status & flea sections ──
-        const string green = "\x1b[92m";
-        const string white = "\x1b[97m";
-
+        // ── Helpers ──
         void BlankLine() =>
             logger.Info($"{gold}║{reset}{new string(' ', innerWidth)}{gold}║{reset}");
 
-        // Print a left-aligned line (plain for width calc, colored for display)
         void StatusLine(string plainText, string coloredText)
         {
             var pad = Math.Max(0, innerWidth - 3 - plainText.Length);
             logger.Info($"{gold}║{reset}   {coloredText}{new string(' ', pad)}{reset}{gold}║{reset}");
-        }
-
-        // Two-column table row — separator │ at fixed position
-        var sepPos = Math.Min(31, innerWidth - 12);
-        void TableRow(string leftPlain, string leftColored, string rightPlain = "", string rightColored = "")
-        {
-            var lp = leftPlain.PadRight(sepPos);
-            var rp = rightPlain.Length > 0 ? "  " + rightPlain : "";
-            var totalPad = Math.Max(0, innerWidth - lp.Length - 1 - rp.Length);
-            var leftPadCount = Math.Max(0, sepPos - leftPlain.Length);
-            var rc = rightColored.Length > 0 ? "  " + rightColored : "";
-            logger.Info($"{gold}║{reset}{leftColored}{new string(' ', leftPadCount)}{dim}│{reset}{rc}{new string(' ', totalPad)}{reset}{gold}║{reset}");
-        }
-
-        void TableSep()
-        {
-            var rightDash = Math.Max(0, innerWidth - sepPos - 1);
-            logger.Info($"{gold}║{reset}{dim}{new string('─', sepPos)}┼{new string('─', rightDash)}{reset}{gold}║{reset}");
-        }
-
-        string TruncatePath(string path, int maxLen)
-        {
-            if (path.Length <= maxLen) return path;
-            return "..." + path[^(maxLen - 3)..];
         }
 
         // ═══ Config status line ═══
@@ -254,7 +304,6 @@ public class CommandCenterMod(
         BlankLine();
 
         // ═══ Flea Modifiers Section ═══
-        var fd = offerRegenerationService.StartupDisplay;
         if (fd is { HasModifiers: true })
         {
             logger.Info($"{gold}╠{bar}╣{reset}");
@@ -262,65 +311,32 @@ public class CommandCenterMod(
 
             // Title + underline (centered)
             var fleaTitle = "Flea Modifiers Applied";
-            var fleaTitleLeftPad = (innerWidth - fleaTitle.Length) / 2;
-            var fleaTitleRightPad = innerWidth - fleaTitle.Length - fleaTitleLeftPad;
-            logger.Info($"{gold}║{reset}{new string(' ', fleaTitleLeftPad)}{green}{fleaTitle}{reset}{new string(' ', fleaTitleRightPad)}{gold}║{reset}");
-            var ul = new string('─', fleaTitle.Length);
-            logger.Info($"{gold}║{reset}{new string(' ', fleaTitleLeftPad)}{dim}{ul}{reset}{new string(' ', fleaTitleRightPad)}{gold}║{reset}");
+            var ftlp = (innerWidth - fleaTitle.Length) / 2;
+            var ftrp = innerWidth - fleaTitle.Length - ftlp;
+            logger.Info($"{gold}║{reset}{new string(' ', ftlp)}{green}{fleaTitle}{reset}{new string(' ', ftrp)}{gold}║{reset}");
+            logger.Info($"{gold}║{reset}{new string(' ', ftlp)}{dim}{new string('─', fleaTitle.Length)}{reset}{new string(' ', ftrp)}{gold}║{reset}");
             BlankLine();
 
             // Table header
-            var maxRight = innerWidth - sepPos - 3;
-            var exLabel = fd.ExampleName.Length > 0
-                ? (fd.ExampleName.Length > maxRight - 10
-                    ? "Example: " + fd.ExampleName[..(maxRight - 13)] + "..."
-                    : "Example: " + fd.ExampleName)
-                : "";
-            TableRow(
-                "   Changes", $"   {cyan}Changes{reset}",
-                exLabel, exLabel.Length > 0 ? $"{cyan}{exLabel}{reset}" : "");
-            TableSep();
+            var hLeftPad = Math.Max(0, fleaSepPos - "   Changes".Length);
+            var hRP = fleaHdrRP.Length > 0 ? "  " + fleaHdrRP : "";
+            var hRC = fleaHdrRC.Length > 0 ? "  " + fleaHdrRC : "";
+            var hRightPad = Math.Max(0, innerWidth - fleaSepPos - 1 - hRP.Length);
+            logger.Info($"{gold}║{reset}   {cyan}Changes{reset}{new string(' ', hLeftPad)}{dim}│{reset}{hRC}{new string(' ', hRightPad)}{gold}║{reset}");
 
-            // Global multiplier
-            TableRow(
-                $"   Global Multiplier: {fd.BuyMultiplier:F2}x",
-                $"   {white}Global Multiplier: {cyan}{fd.BuyMultiplier:F2}x{reset}");
+            // Separator
+            var rightDash = Math.Max(0, innerWidth - fleaSepPos - 1);
+            logger.Info($"{gold}║{reset}{dim}{new string('─', fleaSepPos)}┼{new string('─', rightDash)}{reset}{gold}║{reset}");
 
-            // Categories (show count + stacking note)
-            if (fd.CategoryCount > 0)
-                TableRow(
-                    $"   + Categories:      {fd.CategoryCount} (stacks)",
-                    $"   {white}+ Categories:      {cyan}{fd.CategoryCount}{dim} (stacks){reset}");
-
-            // Effective multiplier + price example on right
-            if (fd.ExampleBasePrice > 0)
+            // Data rows
+            foreach (var (lp, lc, rp, rc) in fleaDataRows)
             {
-                var effLabel = fd.ExampleMultSource == "global" ? "" : $" ({fd.ExampleMultSource})";
-                TableRow(
-                    $"   Effective:         {fd.ExampleEffectiveMult:F2}x{effLabel}",
-                    $"   {white}Effective:         {green}{fd.ExampleEffectiveMult:F2}x{dim}{effLabel}{reset}",
-                    $"Base: {fd.ExampleBasePrice:N0}  →  Mod: {fd.ExampleModifiedPrice:N0}",
-                    $"{dim}Base: {white}{fd.ExampleBasePrice:N0}  {dim}→  {cyan}Mod: {fd.ExampleModifiedPrice:N0}{reset}");
+                var leftPad = Math.Max(0, fleaSepPos - lp.Length);
+                var rPlain = rp.Length > 0 ? "  " + rp : "";
+                var rColor = rc.Length > 0 ? "  " + rc : "";
+                var rightPad = Math.Max(0, innerWidth - fleaSepPos - 1 - rPlain.Length);
+                logger.Info($"{gold}║{reset}{lc}{new string(' ', leftPad)}{dim}│{reset}{rColor}{new string(' ', rightPad)}{gold}║{reset}");
             }
-
-            // Tax multiplier
-            if (fd.ExampleBaseTax > 0)
-                TableRow(
-                    $"   Tax Multiplier:    {fd.TaxMultiplier:F2}x",
-                    $"   {white}Tax Multiplier:    {cyan}{fd.TaxMultiplier:F2}x{reset}",
-                    $"Tax:  {fd.ExampleBaseTax:N0}  →  Mod: {fd.ExampleModifiedTax:N0}",
-                    $"{dim}Tax:  {white}{fd.ExampleBaseTax:N0}  {dim}→  {cyan}Mod: {fd.ExampleModifiedTax:N0}{reset}");
-            else
-                TableRow(
-                    $"   Tax Multiplier:    {fd.TaxMultiplier:F2}x",
-                    $"   {white}Tax Multiplier:    {cyan}{fd.TaxMultiplier:F2}x{reset}");
-
-            // Remaining settings
-            TableRow($"   Max Player Offers: {fd.MaxOffers}", $"   {white}Max Player Offers: {cyan}{fd.MaxOffers}{reset}");
-            TableRow($"   Listing Duration:  {fd.DurationHours}h", $"   {white}Listing Duration:  {cyan}{fd.DurationHours}h{reset}");
-            TableRow($"   Barter Offers:     {fd.BarterPercent}%", $"   {white}Barter Offers:     {cyan}{fd.BarterPercent}%{reset}");
-            TableRow($"   Prices Modified:   {fd.ModifiedPrices}/{fd.TotalPrices}",
-                     $"   {white}Prices Modified:   {cyan}{fd.ModifiedPrices}/{fd.TotalPrices}{reset}");
 
             BlankLine();
         }

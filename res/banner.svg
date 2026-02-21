@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2100 300" width="2100" height="300">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&amp;family=Share+Tech+Mono&amp;display=swap');
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070706"/>
+      <stop offset="25%" stop-color="#141209"/>
+      <stop offset="50%" stop-color="#1a1710"/>
+      <stop offset="75%" stop-color="#141209"/>
+      <stop offset="100%" stop-color="#070706"/>
+    </linearGradient>
+
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="35%">
+      <stop offset="0%" stop-color="#c8aa6e" stop-opacity="0.08"/>
+      <stop offset="60%" stop-color="#c8aa6e" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#c8aa6e" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="50%" stop-color="transparent"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.5)"/>
+    </radialGradient>
+
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#c8aa6e" stroke-opacity="0.035" stroke-width="0.5"/>
+    </pattern>
+
+    <pattern id="scanlines" width="2" height="4" patternUnits="userSpaceOnUse">
+      <rect width="2" height="2" fill="black" fill-opacity="0.02"/>
+    </pattern>
+
+    <filter id="textGlow" x="-15%" y="-30%" width="130%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="glow"/>
+      <feColorMatrix in="glow" type="matrix" values="1 0 0 0 0  0 0.82 0 0 0  0 0 0.43 0 0  0 0 0 0.5 0" result="gold"/>
+      <feMerge>
+        <feMergeNode in="gold"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="subtitleGlow" x="-10%" y="-30%" width="120%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="glow"/>
+      <feColorMatrix in="glow" type="matrix" values="1 0 0 0 0  0 0.82 0 0 0  0 0 0.43 0 0  0 0 0 0.3 0" result="gold"/>
+      <feMerge>
+        <feMergeNode in="gold"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c8aa6e" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#c8aa6e" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#c8aa6e" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="lineLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c8aa6e" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#c8aa6e" stop-opacity="0.4"/>
+    </linearGradient>
+
+    <linearGradient id="lineRight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c8aa6e" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#c8aa6e" stop-opacity="0"/>
+    </linearGradient>
+
+    <clipPath id="clip">
+      <rect width="2100" height="300"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#clip)">
+    <!-- Base background -->
+    <rect width="2100" height="300" fill="url(#bg)"/>
+
+    <!-- Grid overlay -->
+    <rect width="2100" height="300" fill="url(#grid)"/>
+
+    <!-- Center radial glow -->
+    <ellipse cx="1050" cy="140" rx="700" ry="160" fill="url(#centerGlow)"/>
+
+    <!-- Vignette -->
+    <rect width="2100" height="300" fill="url(#vignette)"/>
+
+    <!-- Top/bottom border lines -->
+    <rect x="0" y="0" width="2100" height="1" fill="#c8aa6e" fill-opacity="0.12"/>
+    <rect x="0" y="299" width="2100" height="1" fill="#c8aa6e" fill-opacity="0.12"/>
+
+    <!-- Horizontal accent line through center (faded) -->
+    <rect x="0" y="149" width="2100" height="1" fill="url(#lineGrad)" opacity="0.5"/>
+
+    <!-- Left decorative line cluster -->
+    <rect x="120" y="148" width="380" height="1" fill="url(#lineLeft)"/>
+    <rect x="120" y="152" width="280" height="1" fill="url(#lineLeft)" opacity="0.5"/>
+    <!-- Left diamond -->
+    <polygon points="120,150 125,145 130,150 125,155" fill="#c8aa6e" fill-opacity="0.35"/>
+    <!-- Left corner bracket top-left -->
+    <path d="M 80,60 L 80,45 L 95,45" fill="none" stroke="#c8aa6e" stroke-opacity="0.15" stroke-width="1"/>
+    <!-- Left corner bracket bottom-left -->
+    <path d="M 80,240 L 80,255 L 95,255" fill="none" stroke="#c8aa6e" stroke-opacity="0.15" stroke-width="1"/>
+
+    <!-- Right decorative line cluster -->
+    <rect x="1600" y="148" width="380" height="1" fill="url(#lineRight)"/>
+    <rect x="1700" y="152" width="280" height="1" fill="url(#lineRight)" opacity="0.5"/>
+    <!-- Right diamond -->
+    <polygon points="1980,150 1975,145 1970,150 1975,155" fill="#c8aa6e" fill-opacity="0.35"/>
+    <!-- Right corner bracket top-right -->
+    <path d="M 2020,60 L 2020,45 L 2005,45" fill="none" stroke="#c8aa6e" stroke-opacity="0.15" stroke-width="1"/>
+    <!-- Right corner bracket bottom-right -->
+    <path d="M 2020,240 L 2020,255 L 2005,255" fill="none" stroke="#c8aa6e" stroke-opacity="0.15" stroke-width="1"/>
+
+    <!-- Small tick marks along center line -->
+    <rect x="510" y="146" width="1" height="8" fill="#c8aa6e" fill-opacity="0.2"/>
+    <rect x="530" y="147" width="1" height="6" fill="#c8aa6e" fill-opacity="0.12"/>
+    <rect x="1570" y="146" width="1" height="8" fill="#c8aa6e" fill-opacity="0.2"/>
+    <rect x="1590" y="147" width="1" height="6" fill="#c8aa6e" fill-opacity="0.12"/>
+
+    <!-- Main title: ZSLAYER -->
+    <text x="1050" y="135" text-anchor="middle"
+          font-family="'Rajdhani', sans-serif"
+          font-size="88" font-weight="700" letter-spacing="18"
+          fill="#c8aa6e" filter="url(#textGlow)">ZSLAYER</text>
+
+    <!-- Subtitle: COMMAND CENTER -->
+    <text x="1050" y="192" text-anchor="middle"
+          font-family="'Share Tech Mono', monospace"
+          font-size="24" font-weight="400" letter-spacing="14"
+          fill="#c8aa6e" fill-opacity="0.5" filter="url(#subtitleGlow)">COMMAND CENTER</text>
+
+    <!-- Version tag (subtle) -->
+    <text x="1050" y="232" text-anchor="middle"
+          font-family="'Share Tech Mono', monospace"
+          font-size="10" letter-spacing="4"
+          fill="#c8aa6e" fill-opacity="0.18">SERVER ADMINISTRATION TOOLKIT</text>
+
+    <!-- Scanline overlay -->
+    <rect width="2100" height="300" fill="url(#scanlines)"/>
+
+    <!-- Top inner glow line -->
+    <rect x="300" y="40" width="1500" height="1" fill="url(#lineGrad)" opacity="0.15"/>
+    <!-- Bottom inner glow line -->
+    <rect x="300" y="260" width="1500" height="1" fill="url(#lineGrad)" opacity="0.15"/>
+  </g>
+</svg>

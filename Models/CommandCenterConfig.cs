@@ -55,6 +55,9 @@ public record AccessControlConfig
     [JsonPropertyName("allowAllWhenEmpty")]
     public bool AllowAllWhenEmpty { get; set; } = true;
 
+    [JsonPropertyName("password")]
+    public string Password { get; set; } = "";
+
     [JsonPropertyName("banList")]
     public List<BanEntryConfig> BanList { get; set; } = [];
 }
