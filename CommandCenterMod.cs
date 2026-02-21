@@ -4,6 +4,7 @@ using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Utils;
+using SPTarkov.Server.Core.Servers;
 using ZSlayerCommandCenter.Models;
 using ZSlayerCommandCenter.Services;
 
@@ -17,7 +18,7 @@ public class CommandCenterMod(
     HeadlessProcessService headlessProcessService,
     ActivityLogService activityLogService,
     OfferRegenerationService offerRegenerationService,
-    HttpConfig httpConfig,
+    ConfigServer configServer,
     ISptLogger<CommandCenterMod> logger) : IOnLoad
 {
     /// <summary>Detected server URLs, available for mail/API use.</summary>
@@ -70,8 +71,9 @@ public class CommandCenterMod(
         activityLogService.LogAction(ActionType.ServerStart, "", "Server started");
 
         // Detect bound IP and build URLs based on bind mode
-        var boundIp = httpConfig.Ip;
-        var port = httpConfig.Port;
+        var httpCfg = configServer.GetConfig<HttpConfig>();
+        var boundIp = httpCfg.Ip;
+        var port = httpCfg.Port;
         string MakeUrl(string ip) => $"https://{ip}:{port}/zslayer/cc/";
 
         var urlLines = new List<string>();
