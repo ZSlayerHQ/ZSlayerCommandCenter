@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Utils;
+using SPTarkov.Server.Core.Servers;
 using ZSlayerCommandCenter.Models;
 
 namespace ZSlayerCommandCenter.Services;
@@ -9,6 +10,8 @@ namespace ZSlayerCommandCenter.Services;
 [Injectable(InjectionType.Singleton)]
 public class HeadlessProcessService(
     ConfigService configService,
+    SaveServer saveServer,
+    HeadlessLogService headlessLogService,
     ISptLogger<HeadlessProcessService> logger)
 {
     private Process? _process;
@@ -43,6 +46,13 @@ public class HeadlessProcessService(
 
         _available = !string.IsNullOrEmpty(_exePath) && File.Exists(_exePath);
         _workingDir = _available ? Path.GetDirectoryName(_exePath)! : "";
+
+        // Point the log service at the BepInEx log file
+        if (_available)
+        {
+            var bepInExLog = Path.Combine(_workingDir, "BepInEx", "LogOutput.log");
+            headlessLogService.SetLogFile(bepInExLog);
+        }
 
         // Auto-read profileId from HeadlessConfig.json if not set in our config
         if (_available && string.IsNullOrEmpty(config.ProfileId))
@@ -114,7 +124,10 @@ public class HeadlessProcessService(
             var psi = new ProcessStartInfo(_exePath, args)
             {
                 WorkingDirectory = _workingDir,
-                UseShellExecute = false
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
             };
 
             _process = Process.Start(psi);
@@ -123,6 +136,14 @@ public class HeadlessProcessService(
                 _process.EnableRaisingEvents = true;
                 _process.Exited += OnProcessExited;
                 _startedAt = DateTime.UtcNow;
+
+                // Reset log service so it reads the fresh BepInEx log from the top
+                headlessLogService.Reset();
+
+                // Drain stdout/stderr so the process doesn't block on full buffers
+                _process.BeginOutputReadLine();
+                _process.BeginErrorReadLine();
+
                 logger.Success($"HeadlessProcessService: started (PID {_process.Id})");
             }
         }
@@ -186,6 +207,7 @@ public class HeadlessProcessService(
             AutoStartDelaySec = config.AutoStartDelaySec,
             AutoRestart = config.AutoRestart,
             ProfileId = config.ProfileId,
+            ProfileName = ResolveProfileName(config.ProfileId),
             ExePath = _exePath
         };
     }
@@ -213,6 +235,19 @@ public class HeadlessProcessService(
                     Start();
             });
         }
+    }
+
+    private string ResolveProfileName(string profileId)
+    {
+        if (string.IsNullOrEmpty(profileId)) return "";
+        try
+        {
+            var profiles = saveServer.GetProfiles();
+            if (profiles.TryGetValue(profileId, out var profile))
+                return profile.CharacterData?.PmcData?.Info?.Nickname ?? "";
+        }
+        catch { /* ignore */ }
+        return "";
     }
 
     private static string FormatUptime(long seconds)

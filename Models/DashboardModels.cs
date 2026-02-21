@@ -278,6 +278,9 @@ public record HeadlessStatusDto
     [JsonPropertyName("profileId")]
     public string ProfileId { get; set; } = "";
 
+    [JsonPropertyName("profileName")]
+    public string ProfileName { get; set; } = "";
+
     [JsonPropertyName("exePath")]
     public string ExePath { get; set; } = "";
 }

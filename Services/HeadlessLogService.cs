@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Utils;
 using ZSlayerCommandCenter.Models;
@@ -5,41 +6,65 @@ using ZSlayerCommandCenter.Models;
 namespace ZSlayerCommandCenter.Services;
 
 [Injectable(InjectionType.Singleton)]
-public class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
+public partial class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
 {
-    private string _basePath = "";
-    private string _currentLogDir = "";
+    private string _logFilePath = "";
     private long _lastReadPosition;
-    private DateTime _lastDirScan = DateTime.MinValue;
-    private string? _cachedLatestDir;
     private readonly List<ConsoleEntry> _buffer = new();
     private const int MaxBuffer = 500;
-    private static readonly TimeSpan DirScanInterval = TimeSpan.FromSeconds(10);
 
-    public bool IsConfigured => !string.IsNullOrEmpty(_basePath);
-    public string BasePath => _basePath;
+    public bool IsConfigured => !string.IsNullOrEmpty(_logFilePath);
 
-    public void Configure(string basePath, string modPath)
+    /// <summary>
+    /// Configure with an explicit log file path, or auto-detect BepInEx/LogOutput.log from modPath.
+    /// </summary>
+    public void Configure(string explicitPath, string modPath)
     {
-        _basePath = basePath?.Trim() ?? "";
+        var path = explicitPath?.Trim() ?? "";
 
-        // Auto-detect: check {game root}/Logs/ (up 4) and {SPT root}/Logs/ (up 3)
-        if (!IsConfigured && !string.IsNullOrEmpty(modPath))
+        if (!string.IsNullOrEmpty(path) && File.Exists(path))
         {
-            // modPath = {game_root}/SPT/user/mods/ZSlayerCommandCenter
-            var sptRoot = Path.GetFullPath(Path.Combine(modPath, "..", "..", ".."));
-            var gameRoot = Path.GetFullPath(Path.Combine(sptRoot, ".."));
-
-            foreach (var candidate in new[] { Path.Combine(gameRoot, "Logs"), Path.Combine(sptRoot, "Logs") })
-            {
-                if (Directory.Exists(candidate) && Directory.GetDirectories(candidate, "log_*").Length > 0)
-                {
-                    _basePath = candidate;
-                    return;
-                }
-            }
+            _logFilePath = path;
+            logger.Info($"HeadlessLogService: using configured path — {_logFilePath}");
+            return;
         }
 
+        // Auto-detect: modPath = {game_root}/SPT/user/mods/ZSlayerCommandCenter → up 4 levels
+        if (!string.IsNullOrEmpty(modPath))
+        {
+            var gameRoot = Path.GetFullPath(Path.Combine(modPath, "..", "..", "..", ".."));
+            var candidate = Path.Combine(gameRoot, "BepInEx", "LogOutput.log");
+            if (File.Exists(candidate))
+            {
+                _logFilePath = candidate;
+                logger.Info($"HeadlessLogService: auto-detected BepInEx log — {_logFilePath}");
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Set (or change) the log file to poll. Called by HeadlessProcessService when
+    /// it knows the working directory of the headless client.
+    /// </summary>
+    public void SetLogFile(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return;
+        _logFilePath = path;
+        logger.Info($"HeadlessLogService: watching — {_logFilePath}");
+    }
+
+    /// <summary>
+    /// Reset read position to start of file and clear buffer.
+    /// Call when the headless process (re)starts so we read the fresh log from the top.
+    /// </summary>
+    public void Reset()
+    {
+        _lastReadPosition = 0;
+        lock (_buffer)
+        {
+            _buffer.Clear();
+        }
     }
 
     public List<ConsoleEntry> GetEntriesSince(DateTime since)
@@ -60,41 +85,20 @@ public class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
         }
     }
 
-    private string? FindLatestLogDir()
-    {
-        if (!Directory.Exists(_basePath)) return null;
-
-        // Cache directory scan — only rescan every 10s
-        if (DateTime.UtcNow - _lastDirScan < DirScanInterval && _cachedLatestDir != null)
-            return _cachedLatestDir;
-
-        _cachedLatestDir = Directory.GetDirectories(_basePath, "log_*")
-            .OrderByDescending(Path.GetFileName)
-            .FirstOrDefault();
-        _lastDirScan = DateTime.UtcNow;
-        return _cachedLatestDir;
-    }
-
     private void PollNewEntries()
     {
         if (!IsConfigured) return;
-
-        var latestDir = FindLatestLogDir();
-        if (latestDir == null) return;
-
-        // If log directory changed (new client launch), reset position
-        if (latestDir != _currentLogDir)
-        {
-            _currentLogDir = latestDir;
-            _lastReadPosition = 0;
-        }
-
-        var logFile = Path.Combine(latestDir, "application.log");
-        if (!File.Exists(logFile)) return;
+        if (!File.Exists(_logFilePath)) return;
 
         try
         {
-            using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var fs = new FileStream(_logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+            // BepInEx overwrites LogOutput.log on each game launch — if file is shorter
+            // than our last position, the client restarted and we should read from the top.
+            if (fs.Length < _lastReadPosition)
+                _lastReadPosition = 0;
+
             if (fs.Length <= _lastReadPosition) return;
 
             fs.Seek(_lastReadPosition, SeekOrigin.Begin);
@@ -105,14 +109,13 @@ public class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
             var lines = newContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             lock (_buffer)
             {
-                foreach (var line in lines)
+                foreach (var l in lines)
                 {
-                    var entry = ParseLine(line.TrimEnd('\r'));
+                    var entry = ParseLine(l.TrimEnd('\r'));
                     if (entry != null)
                         _buffer.Add(entry);
                 }
 
-                // Trim once after batch insert instead of per-entry O(n) RemoveAt(0)
                 if (_buffer.Count > MaxBuffer)
                     _buffer.RemoveRange(0, _buffer.Count - MaxBuffer);
             }
@@ -123,33 +126,45 @@ public class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
         }
     }
 
+    // BepInEx format: [Level   : Source] Message
+    // Level is right-padded, Source is right-padded
+    [GeneratedRegex(@"^\[(\w+)\s*:\s*([^\]]*?)\s*\]\s*(.*)$")]
+    private static partial Regex BepInExPattern();
+
     private static ConsoleEntry? ParseLine(string line)
     {
         if (string.IsNullOrWhiteSpace(line)) return null;
 
-        // Format: 2026-02-21 05:11:41.079 +00:00|0.16.9.0.40087|Info|source|message
-        var parts = line.Split('|', 5);
-        if (parts.Length >= 5)
+        var m = BepInExPattern().Match(line);
+        if (m.Success)
         {
-            var level = parts[2].Trim().ToLowerInvariant();
+            var level = m.Groups[1].Value.ToLowerInvariant();
+            // Normalize BepInEx levels
+            if (level == "message") level = "info";
             if (level == "warn") level = "warning";
-
-            DateTime.TryParse(parts[0].Trim(), out var ts);
+            if (level == "fatal") level = "error";
 
             return new ConsoleEntry
             {
-                Timestamp = ts == default ? DateTime.UtcNow : ts,
+                Timestamp = DateTime.UtcNow,
                 Level = level,
-                Source = parts[3].Trim(),
-                Message = parts[4].Trim()
+                Source = m.Groups[2].Value.Trim(),
+                Message = m.Groups[3].Value
             };
         }
 
-        // Fallback for lines that don't match the expected format
+        // Fallback for unstructured lines (stack traces, etc.)
+        var inferredLevel = "info";
+        if (line.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("exception", StringComparison.OrdinalIgnoreCase))
+            inferredLevel = "error";
+        else if (line.Contains("warn", StringComparison.OrdinalIgnoreCase))
+            inferredLevel = "warning";
+
         return new ConsoleEntry
         {
             Timestamp = DateTime.UtcNow,
-            Level = "info",
+            Level = inferredLevel,
             Source = "",
             Message = line
         };

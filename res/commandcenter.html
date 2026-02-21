@@ -302,6 +302,26 @@ body {
 
 .btn-sm { padding: 5px 12px; font-size: 12px; }
 .btn-xs { padding: 3px 10px; font-size: 11px; }
+.btn-disabled { opacity: 0.35; pointer-events: none; cursor: default; }
+
+/* ── Headless Status Pill ── */
+.hl-status-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 12px; border-radius: 10px;
+  font-size: 12px; font-weight: 600; font-family: var(--font-body);
+  letter-spacing: 0.3px; white-space: nowrap;
+}
+.hl-status-pill.pill-stopped { background: #8b3a3a; color: #e8d0d0; }
+.hl-status-pill.pill-running { background: #4a7c59; color: #d0e8d4; }
+.hl-status-pill.pill-transition { background: #6b5a28; color: #f0e0d0; }
+.hl-status-pill.pill-unavailable { background: var(--bg-hover); color: var(--text-muted); }
+
+@keyframes hl-spin { to { transform: rotate(360deg); } }
+.hl-spinner {
+  display: inline-block; width: 10px; height: 10px;
+  border: 2px solid currentColor; border-top-color: transparent;
+  border-radius: 50%; animation: hl-spin 0.7s linear infinite;
+}
 
 /* ── Inputs ── */
 input[type="text"], input[type="number"], input[type="password"] {
@@ -334,7 +354,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
    ══════════════════════════════════════════════════════════ */
 .hero-banner {
   position: relative;
-  height: 180px;
+  height: 56px;
   background: linear-gradient(135deg, #0a0a08 0%, #1a1710 30%, #12100c 70%, #0a0a08 100%);
   border-bottom: 1px solid var(--border);
   overflow: hidden;
@@ -362,29 +382,28 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   position: relative;
   z-index: 1;
   text-align: center;
-  padding: 20px;
+  padding: 8px 20px;
 }
 
 .hero-placeholder-inner {
-  border: 1px dashed var(--border-light);
-  padding: 16px 32px;
-  border-radius: var(--radius-md);
-  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
 }
 
 .hero-placeholder-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 8px;
 }
 
-.hero-placeholder-icon svg { width: 32px; height: 32px; color: var(--text-muted); }
+.hero-placeholder-icon svg { width: 20px; height: 20px; color: var(--text-muted); }
 
 .hero-placeholder-text {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--text-dim);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -392,9 +411,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .hero-placeholder-sub {
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--text-muted);
-  opacity: 0.5;
-  margin-top: 4px;
+  color: var(--text-dim);
+  margin-left: 8px;
 }
 
 .hero-image {
@@ -426,7 +444,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .hero-bottom-fade {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 40px;
+  height: 16px;
   background: linear-gradient(transparent, var(--bg-base));
   z-index: 4;
 }
@@ -666,6 +684,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 16px;
+  align-items: start;
 }
 .dash-grid .full-width { grid-column: 1 / -1; }
 @media (max-width: 860px) { .dash-grid { grid-template-columns: 1fr; } }
@@ -748,7 +767,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 .dash-bar-chart { display: flex; flex-direction: column; gap: 6px; }
 .dash-bar-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
-.dash-bar-label { width: 100px; text-align: right; color: var(--text-dim); font-family: var(--font-mono); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-bar-label { width: 140px; text-align: right; color: var(--text-dim); font-family: var(--font-mono); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dash-bar-track { flex: 1; height: 16px; background: var(--bg-dark); border-radius: 2px; overflow: hidden; }
 .dash-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-dim), var(--accent)); border-radius: 2px; transition: width 0.4s ease; }
 .dash-bar-count { width: 36px; text-align: right; font-family: var(--font-mono); color: var(--text); font-size: 11px; }
@@ -1621,7 +1640,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   .search-row { flex-direction: column; }
   .cat-dropdown { width: 100%; }
   .cat-panel { width: 100%; }
-  .hero-banner { height: 120px; }
+  .hero-banner { height: 48px; }
   .preset-grid { grid-template-columns: 1fr; }
   .nav-bar { padding: 0 8px; }
   .nav-btn { padding: 10px 10px; font-size: 10px; letter-spacing: 0.8px; }
@@ -1929,7 +1948,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
       </div>
       <div class="hero-placeholder-text">ZSlayerHQ Command Center</div>
-      <div class="hero-placeholder-sub">Replace hero-image src with your custom graphic</div>
     </div>
   </div>
   <div class="hero-scanline"></div>
@@ -2157,7 +2175,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--accent-dim)"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           <span style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-dim)">Headless Client</span>
         </span>
-        <span id="headlessStatusBadge" style="font-size:11px;font-family:var(--font-mono)"></span>
+        <span id="headlessStatusBadge" class="hl-status-pill"></span>
       </div>
       <div id="headlessManagerBody" style="padding:16px">
         <div id="headlessUnavailable" style="display:none;text-align:center;color:var(--text-muted);padding:12px">
@@ -2183,14 +2201,20 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
                 <input type="checkbox" id="hlAutoRestart" onchange="saveHeadlessConfig()"> Auto-restart on crash
               </label>
               <div style="display:flex;align-items:center;gap:8px">
-                <span style="color:var(--text-dim);white-space:nowrap">Delay:</span>
+                <span style="color:var(--text-dim);white-space:nowrap">Auto-start delay:</span>
                 <input type="range" id="hlDelay" min="1" max="300" value="30" oninput="document.getElementById('hlDelayVal').textContent=this.value+'s'" onchange="saveHeadlessConfig()" style="flex:1;accent-color:var(--accent)">
                 <span id="hlDelayVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:35px">30s</span>
               </div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="color:var(--text-dim);white-space:nowrap">Profile ID:</span>
-                <input type="text" id="hlProfileId" placeholder="Enter profile ID" style="flex:1;padding:3px 8px;font-size:11px;font-family:var(--font-mono);background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:var(--radius);color:var(--text)">
-                <button class="btn btn-sm" onclick="saveHeadlessConfig()" style="padding:3px 10px">Save</button>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div id="hlProfileDisplay" style="display:none;font-size:12px">
+                  <span id="hlProfileName" style="color:var(--text-bright);font-weight:600"></span>
+                  <span id="hlProfileIdSmall" style="color:var(--text-muted);font-size:10px;font-family:var(--font-mono);margin-left:6px"></span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="color:var(--text-dim);white-space:nowrap">Profile ID:</span>
+                  <input type="text" id="hlProfileId" placeholder="Enter profile ID" style="flex:1;padding:3px 8px;font-size:11px;font-family:var(--font-mono);background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:var(--radius);color:var(--text)">
+                  <button class="btn btn-sm" onclick="saveHeadlessConfig()" style="padding:3px 10px">Save</button>
+                </div>
               </div>
             </div>
             <div id="hlProfileWarning" style="display:none;font-size:11px;color:var(--warning);margin-top:8px">Profile ID required — enter the session ID of the headless profile to enable start.</div>
@@ -3326,7 +3350,24 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var hlBadge = document.getElementById('dashHeadlessBadge');
       if (headless) {
         hlBadge.style.display = '';
-        hlBadge.innerHTML = '\uD83E\uDD16 Headless Client';
+        hlBadge.innerHTML = '\uD83E\uDD16 Headless Client <span id="dashHlStatusPill" class="hl-status-pill pill-stopped" style="font-size:10px;padding:1px 8px;margin-left:4px;vertical-align:middle">Stopped</span>';
+        // Fetch actual headless process state
+        api('headless/status').then(function(hs) {
+          var pill = document.getElementById('dashHlStatusPill');
+          if (!pill) return;
+          if (!hs.available) {
+            pill.className = 'hl-status-pill pill-unavailable';
+            pill.textContent = 'N/A';
+          } else if (hs.running) {
+            pill.className = 'hl-status-pill pill-running';
+            pill.textContent = 'Running';
+          } else {
+            pill.className = 'hl-status-pill pill-stopped';
+            pill.textContent = 'Stopped';
+          }
+          pill.style.fontSize = '10px';
+          pill.style.padding = '1px 8px';
+        }).catch(function(){});
       } else {
         hlBadge.style.display = 'none';
       }
@@ -3524,6 +3565,51 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   };
 
   // Headless Process Manager
+  var headlessAction = null; // null | 'starting' | 'stopping' | 'restarting'
+
+  function setHeadlessBadge(state, pid) {
+    var badge = document.getElementById('headlessStatusBadge');
+    badge.className = 'hl-status-pill';
+    if (state === 'running') {
+      badge.classList.add('pill-running');
+      badge.innerHTML = '● Running' + (pid ? ' <span style="color:rgba(255,255,255,0.5);font-size:10px;margin-left:4px">PID ' + pid + '</span>' : '');
+    } else if (state === 'stopped') {
+      badge.classList.add('pill-stopped');
+      badge.textContent = '● Stopped';
+    } else if (state === 'starting') {
+      badge.classList.add('pill-transition');
+      badge.innerHTML = '<span class="hl-spinner"></span> Starting\u2026';
+    } else if (state === 'stopping') {
+      badge.classList.add('pill-transition');
+      badge.innerHTML = '<span class="hl-spinner"></span> Stopping\u2026';
+    } else if (state === 'restarting') {
+      badge.classList.add('pill-transition');
+      badge.innerHTML = '<span class="hl-spinner"></span> Restarting\u2026';
+    } else {
+      badge.classList.add('pill-unavailable');
+      badge.textContent = 'Unavailable';
+    }
+  }
+
+  function setHeadlessBtnStates(state, hasProfile) {
+    var btnStart = document.getElementById('btnHeadlessStart');
+    var btnStop = document.getElementById('btnHeadlessStop');
+    var btnRestart = document.getElementById('btnHeadlessRestart');
+    if (state === 'transition') {
+      btnStart.disabled = true; btnStart.classList.add('btn-disabled');
+      btnStop.disabled = true; btnStop.classList.add('btn-disabled');
+      btnRestart.disabled = true; btnRestart.classList.add('btn-disabled');
+    } else if (state === 'running') {
+      btnStart.disabled = true; btnStart.classList.add('btn-disabled');
+      btnStop.disabled = false; btnStop.classList.remove('btn-disabled');
+      btnRestart.disabled = false; btnRestart.classList.remove('btn-disabled');
+    } else {
+      btnStart.disabled = !hasProfile; btnStart.classList.toggle('btn-disabled', !hasProfile);
+      btnStop.disabled = true; btnStop.classList.add('btn-disabled');
+      btnRestart.disabled = true; btnRestart.classList.add('btn-disabled');
+    }
+  }
+
   function pollHeadlessStatus() {
     api('headless/status').then(function(d) {
       var card = document.getElementById('headlessManagerCard');
@@ -3533,24 +3619,43 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       if (!d.available) {
         unavail.style.display = 'block';
         controls.style.display = 'none';
-        document.getElementById('headlessStatusBadge').innerHTML = '<span style="color:var(--text-muted)">Unavailable</span>';
+        setHeadlessBadge('unavailable');
         return;
       }
       unavail.style.display = 'none';
       controls.style.display = 'block';
-      var badge = document.getElementById('headlessStatusBadge');
-      if (d.running) {
-        badge.innerHTML = '<span style="color:var(--success-bright)">● Running</span>' + (d.pid ? ' <span style="color:var(--text-muted)">(PID ' + d.pid + ')</span>' : '');
+
+      // Badge — show transition state if action in progress, otherwise actual state
+      if (headlessAction) {
+        setHeadlessBadge(headlessAction);
       } else {
-        badge.innerHTML = '<span style="color:var(--text-muted)">● Stopped</span>';
+        setHeadlessBadge(d.running ? 'running' : 'stopped', d.pid);
       }
+
+      // Profile name display
+      var profDisplay = document.getElementById('hlProfileDisplay');
+      var profName = document.getElementById('hlProfileName');
+      var profIdSmall = document.getElementById('hlProfileIdSmall');
+      if (d.profileName) {
+        profDisplay.style.display = 'block';
+        profName.textContent = d.profileName;
+        profIdSmall.textContent = d.profileId;
+      } else {
+        profDisplay.style.display = 'none';
+      }
+
       var info = '';
       if (d.running && d.uptime) info += 'Uptime: ' + d.uptime;
       if (d.restartCount > 0) info += (info ? '  |  ' : '') + 'Restarts: ' + d.restartCount;
       document.getElementById('headlessUptimeInfo').textContent = info;
-      document.getElementById('btnHeadlessStart').disabled = d.running || !d.profileId;
-      document.getElementById('btnHeadlessStop').disabled = !d.running;
-      document.getElementById('btnHeadlessRestart').disabled = !d.running;
+
+      // Button states
+      if (headlessAction) {
+        setHeadlessBtnStates('transition', false);
+      } else {
+        setHeadlessBtnStates(d.running ? 'running' : 'stopped', !!d.profileId);
+      }
+
       var crash = document.getElementById('headlessCrashInfo');
       if (d.lastCrashReason && !d.running) {
         crash.style.display = 'block';
@@ -3570,27 +3675,36 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   window.startHeadless = function() {
+    headlessAction = 'starting';
+    pollHeadlessStatus();
     api('headless/start', { method: 'POST' }).then(function(d) {
+      headlessAction = null;
       if (d.running) showToast('Headless client started (PID ' + d.pid + ')', 'success');
       else showToast(d.lastCrashReason || 'Failed to start', 'error');
       pollHeadlessStatus();
-    }).catch(function() { showToast('Failed to start headless', 'error'); });
+    }).catch(function() { headlessAction = null; showToast('Failed to start headless', 'error'); pollHeadlessStatus(); });
   };
 
   window.stopHeadless = function() {
     if (!confirm('Stop the headless client?')) return;
+    headlessAction = 'stopping';
+    pollHeadlessStatus();
     api('headless/stop', { method: 'POST' }).then(function() {
+      headlessAction = null;
       showToast('Headless client stopped', 'success');
       pollHeadlessStatus();
-    }).catch(function() { showToast('Failed to stop', 'error'); });
+    }).catch(function() { headlessAction = null; showToast('Failed to stop', 'error'); pollHeadlessStatus(); });
   };
 
   window.restartHeadless = function() {
+    headlessAction = 'restarting';
+    pollHeadlessStatus();
     api('headless/restart', { method: 'POST' }).then(function(d) {
+      headlessAction = null;
       if (d.running) showToast('Headless client restarted (PID ' + d.pid + ')', 'success');
       else showToast(d.lastCrashReason || 'Failed to restart', 'error');
       pollHeadlessStatus();
-    }).catch(function() { showToast('Failed to restart', 'error'); });
+    }).catch(function() { headlessAction = null; showToast('Failed to restart', 'error'); pollHeadlessStatus(); });
   };
 
   window.saveHeadlessConfig = function() {
@@ -3662,7 +3776,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         (e.source ? '<span class="src">[' + escH(e.source) + ']</span>' : '') +
         '<span class="msg">' + escH(msg) + '</span></div>';
     }
-    body.innerHTML = html || '<div style="padding:24px;text-align:center;color:var(--text-muted)">No headless output</div>';
+    body.innerHTML = html || '<div style="padding:24px;text-align:center;color:var(--text-dim);font-style:italic">No log output yet &mdash; start the headless client to see logs here</div>';
     var isNearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
     if (isNearBottom) body.scrollTop = body.scrollHeight;
     var jump = document.getElementById('headlessJump');
