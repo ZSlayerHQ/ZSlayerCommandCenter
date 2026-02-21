@@ -35,14 +35,11 @@ public class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
                 if (Directory.Exists(candidate) && Directory.GetDirectories(candidate, "log_*").Length > 0)
                 {
                     _basePath = candidate;
-                    logger.Info($"HeadlessLogService: auto-detected logs at '{_basePath}'");
                     return;
                 }
             }
         }
 
-        if (IsConfigured)
-            logger.Info($"HeadlessLogService: configured with path '{_basePath}'");
     }
 
     public List<ConsoleEntry> GetEntriesSince(DateTime since)

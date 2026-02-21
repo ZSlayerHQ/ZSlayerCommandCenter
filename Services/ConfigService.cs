@@ -72,7 +72,6 @@ public class ConfigService(
         }
 
         _config = modHelper.GetJsonDataFromFile<CommandCenterConfig>(_modPath, "config/config.json");
-        logger.Info("ZSlayerCommandCenter: Config loaded");
 
         // Re-save to persist any new fields added in updates
         SaveConfig();

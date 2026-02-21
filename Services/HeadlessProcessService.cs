@@ -44,9 +44,6 @@ public class HeadlessProcessService(
         _available = !string.IsNullOrEmpty(_exePath) && File.Exists(_exePath);
         _workingDir = _available ? Path.GetDirectoryName(_exePath)! : "";
 
-        if (_available)
-            logger.Info($"HeadlessProcessService: found EXE at '{_exePath}'");
-
         // Auto-read profileId from HeadlessConfig.json if not set in our config
         if (_available && string.IsNullOrEmpty(config.ProfileId))
         {
@@ -79,8 +76,6 @@ public class HeadlessProcessService(
             return;
 
         var delay = Math.Clamp(config.AutoStartDelaySec, 1, 300);
-        logger.Info($"HeadlessProcessService: auto-start in {delay}s");
-
         _autoStartCts = new CancellationTokenSource();
         var token = _autoStartCts.Token;
 

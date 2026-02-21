@@ -35,9 +35,8 @@ public class OfferRegenerationService(
     private DateTime? _lastRegeneratedUtc;
     private int _lastModifiedPriceCount;
 
-    /// <summary>Status summaries populated during startup for banner display.</summary>
-    public string? SnapshotSummary { get; private set; }
-    public string? AppliedSummary { get; private set; }
+    /// <summary>Structured flea display info for the startup banner.</summary>
+    public FleaStartupDisplay? StartupDisplay { get; private set; }
 
     // Well-known items for debug sampling
     private static readonly (string Id, string Name)[] DebugSampleItems =
@@ -47,6 +46,15 @@ public class OfferRegenerationService(
         ("544fb45d4bdc2dee738b4568", "Salewa"),
         ("59faff1d86f7746c51718c9c", "Bitcoin"),
         ("5c94bbff86f7747ee735c08f", "TerraGroup Labs keycard"),
+    ];
+
+    // Preferred example items for startup display (in priority order)
+    private static readonly (string Id, string Name)[] StartupExampleItems =
+    [
+        ("63a3a93f8a56922e82001f5d", "Dorms 314 marked key"),
+        ("5c94bbff86f7747ee735c08f", "Labs keycard"),
+        ("59faff1d86f7746c51718c9c", "Bitcoin"),
+        ("5447a9cd4bdc2dbd208b4567", "M4A1"),
     ];
 
     /// <summary>
@@ -73,11 +81,6 @@ public class OfferRegenerationService(
                 _snapshotCommunityItemTax = globals.Configuration.RagFair.CommunityItemTax;
                 _snapshotCommunityRequirementTax = globals.Configuration.RagFair.CommunityRequirementTax;
                 _snapshotTaken = true;
-                SnapshotSummary = $"Snapshot — offers=[{string.Join(",", _snapshotOfferCounts)}] " +
-                    $"duration={_snapshotOfferDuration}h barter={_snapshotBarterChance}% " +
-                    $"tax={_snapshotCommunityItemTax}%/{_snapshotCommunityRequirementTax}% " +
-                    $"prices={_snapshotPrices.Count}";
-                logger.Info($"ZSlayerCC Flea: {SnapshotSummary}");
             }
 
             // ── Restore from snapshot ──
@@ -133,8 +136,6 @@ public class OfferRegenerationService(
             // ── Apply price multipliers directly to prices dictionary ──
             var prices = databaseService.GetPrices();
             var modifiedCount = 0;
-            string? sampleName = null;
-            double sampleOrig = 0, sampleNew = 0;
 
             foreach (var (tplId, originalPrice) in _snapshotPrices!)
             {
@@ -143,29 +144,60 @@ public class OfferRegenerationService(
                 prices[tplId] = newPrice;
 
                 if (Math.Abs(mult - 1.0) > 0.001)
-                {
                     modifiedCount++;
-                    // Capture first sample for logging
-                    if (sampleName == null)
-                    {
-                        sampleName = tplId.ToString();
-                        sampleOrig = originalPrice;
-                        sampleNew = newPrice;
-                    }
-                }
             }
 
             _lastModifiedPriceCount = modifiedCount;
 
-            var sampleLog = modifiedCount > 0 && sampleName != null
-                ? $" (sample: {sampleName} {sampleOrig:F0} → {sampleNew:F0})"
-                : "";
-            AppliedSummary = $"Applied — buy={flea.GlobalBuyMultiplier:F2}x tax={flea.FleaTaxMultiplier:F1}x " +
-                $"offers={flea.PlayerMaxOffers} duration={flea.OfferDurationHours}h " +
-                $"barter={ragfairConfig.Dynamic.Barter.ChancePercent}% " +
-                $"cats={flea.CategoryMultipliers.Count} " +
-                $"prices={modifiedCount}/{_snapshotPrices.Count}{sampleLog}";
-            logger.Info($"ZSlayerCC Flea: {AppliedSummary}");
+            // ── Build startup display info ──
+            var exName = "";
+            double exBasePrice = 0, exModPrice = 0, exEffMult = 0, exBaseTax = 0, exModTax = 0;
+            var exMultSource = "";
+            var baseTaxRate = (_snapshotCommunityItemTax!.Value + (float)_snapshotCommunityRequirementTax!.Value) / 100.0;
+
+            var locales = localeService.GetLocaleDb("en");
+            foreach (var (candidateId, fallbackName) in StartupExampleItems)
+            {
+                MongoId mongoId = candidateId;
+                if (_snapshotPrices!.TryGetValue(mongoId, out var origPrice) && origPrice > 0)
+                {
+                    locales.TryGetValue($"{candidateId} Name", out var localeName);
+                    exName = !string.IsNullOrEmpty(localeName) ? localeName : fallbackName;
+                    exBasePrice = origPrice;
+                    var (mult, multSource) = fleaPriceService.GetEffectiveBuyMultiplier(candidateId);
+                    exModPrice = Math.Round(origPrice * mult);
+                    exEffMult = mult;
+                    exMultSource = multSource;
+                    exBaseTax = Math.Round(exBasePrice * baseTaxRate);
+                    exModTax = Math.Round(exModPrice * baseTaxRate * flea.FleaTaxMultiplier);
+                    break;
+                }
+            }
+
+            var hasModifiers = Math.Abs(flea.GlobalBuyMultiplier - 1.0) > 0.001 ||
+                               Math.Abs(flea.FleaTaxMultiplier - 1.0) > 0.001 ||
+                               flea.CategoryMultipliers.Count > 0 ||
+                               modifiedCount > 0;
+
+            StartupDisplay = new FleaStartupDisplay
+            {
+                HasModifiers = hasModifiers,
+                BuyMultiplier = flea.GlobalBuyMultiplier,
+                TaxMultiplier = flea.FleaTaxMultiplier,
+                MaxOffers = flea.PlayerMaxOffers,
+                DurationHours = flea.OfferDurationHours,
+                BarterPercent = ragfairConfig.Dynamic.Barter.ChancePercent,
+                CategoryCount = flea.CategoryMultipliers.Count,
+                ModifiedPrices = modifiedCount,
+                TotalPrices = _snapshotPrices!.Count,
+                ExampleName = exName,
+                ExampleBasePrice = exBasePrice,
+                ExampleModifiedPrice = exModPrice,
+                ExampleEffectiveMult = exEffMult,
+                ExampleMultSource = exMultSource,
+                ExampleBaseTax = exBaseTax,
+                ExampleModifiedTax = exModTax,
+            };
         }
     }
 
@@ -284,4 +316,24 @@ public class OfferRegenerationService(
             Samples = samples
         };
     }
+}
+
+public record FleaStartupDisplay
+{
+    public bool HasModifiers { get; init; }
+    public double BuyMultiplier { get; init; }
+    public double TaxMultiplier { get; init; }
+    public int MaxOffers { get; init; }
+    public int DurationHours { get; init; }
+    public double BarterPercent { get; init; }
+    public int CategoryCount { get; init; }
+    public int ModifiedPrices { get; init; }
+    public int TotalPrices { get; init; }
+    public string ExampleName { get; init; } = "";
+    public double ExampleBasePrice { get; init; }
+    public double ExampleModifiedPrice { get; init; }
+    public double ExampleEffectiveMult { get; init; }
+    public string ExampleMultSource { get; init; } = "";
+    public double ExampleBaseTax { get; init; }
+    public double ExampleModifiedTax { get; init; }
 }
