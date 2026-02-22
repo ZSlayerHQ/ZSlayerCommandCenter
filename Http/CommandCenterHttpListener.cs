@@ -404,7 +404,7 @@ public class CommandCenterHttpListener(
     private async Task HandleDashboardRaids(HttpContext context, string headerSessionId)
     {
         if (!await ValidateAccess(context, headerSessionId)) return;
-        var result = raidTrackingService.GetRaidStats();
+        var result = telemetryService.GetLifetimeStats();
         await WriteJson(context, 200, result);
     }
 
@@ -782,6 +782,14 @@ public class CommandCenterHttpListener(
         {
             switch (path)
             {
+                case "telemetry/hello":
+                {
+                    var body = await ReadBody<TelemetryHelloPayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    telemetryService.UpdateHello(body);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
                 case "telemetry/raid-state":
                 {
                     var body = await ReadBody<RaidStatePayload>(context);

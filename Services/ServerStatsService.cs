@@ -9,7 +9,8 @@ namespace ZSlayerCommandCenter.Services;
 [Injectable(InjectionType.Singleton)]
 public class ServerStatsService(
     Watermark watermark,
-    LauncherController launcherController)
+    LauncherController launcherController,
+    TelemetryService telemetryService)
 {
     private readonly DateTime _startTime = DateTime.UtcNow;
 
@@ -27,6 +28,11 @@ public class ServerStatsService(
 
         var process = Process.GetCurrentProcess();
 
+        // Extract FIKA server version from loaded mods
+        var fikaServerVersion = mods.TryGetValue("Fika", out var fikaMod)
+            ? fikaMod.Version?.ToString() ?? "" : "";
+        var (hlTelemetryVer, hlFikaVer) = telemetryService.GetHeadlessVersions();
+
         return new ServerStatusDto
         {
             Uptime = FormatUptime(uptime),
@@ -38,7 +44,10 @@ public class ServerStatsService(
             MemoryMb = GC.GetTotalMemory(false) / (1024 * 1024),
             WorkingSetMb = process.WorkingSet64 / (1024 * 1024),
             GcMemoryMb = GC.GetTotalMemory(false) / (1024 * 1024),
-            ThreadCount = process.Threads.Count
+            ThreadCount = process.Threads.Count,
+            FikaServerVersion = fikaServerVersion,
+            HeadlessTelemetryVersion = hlTelemetryVer,
+            HeadlessFikaVersion = hlFikaVer
         };
     }
 

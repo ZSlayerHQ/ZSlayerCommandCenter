@@ -36,6 +36,15 @@ public record ServerStatusDto
 
     [JsonPropertyName("threadCount")]
     public int ThreadCount { get; set; }
+
+    [JsonPropertyName("fikaServerVersion")]
+    public string FikaServerVersion { get; set; } = "";
+
+    [JsonPropertyName("headlessTelemetryVersion")]
+    public string HeadlessTelemetryVersion { get; set; } = "";
+
+    [JsonPropertyName("headlessFikaVersion")]
+    public string HeadlessFikaVersion { get; set; } = "";
 }
 
 public record ModInfoDto

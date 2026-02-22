@@ -6,6 +6,15 @@ namespace ZSlayerCommandCenter.Models;
 //  INBOUND — POSTed by the headless telemetry plugin
 // ══════════════════════════════════════════════════════════════════════
 
+public record TelemetryHelloPayload
+{
+    [JsonPropertyName("telemetryVersion")]
+    public string TelemetryVersion { get; set; } = "";
+
+    [JsonPropertyName("fikaClientVersion")]
+    public string FikaClientVersion { get; set; } = "";
+}
+
 public record RaidStatePayload
 {
     [JsonPropertyName("status")]

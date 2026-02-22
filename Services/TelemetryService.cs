@@ -14,6 +14,10 @@ public class TelemetryService(
 {
     private readonly object _lock = new();
 
+    // Headless version info (from hello handshake)
+    private string _headlessTelemetryVersion = "";
+    private string _headlessFikaVersion = "";
+
     // Current state (overwritten each update)
     private RaidStatePayload? _currentRaidState;
     private PerformancePayload? _currentPerformance;
@@ -123,6 +127,21 @@ public class TelemetryService(
     // ══════════════════════════════════════════════════════════════
     //  UPDATE methods (called from POST endpoints)
     // ══════════════════════════════════════════════════════════════
+
+    public void UpdateHello(TelemetryHelloPayload payload)
+    {
+        lock (_lock)
+        {
+            _headlessTelemetryVersion = payload.TelemetryVersion;
+            _headlessFikaVersion = payload.FikaClientVersion;
+        }
+        logger.Info($"Headless connected — Telemetry: {payload.TelemetryVersion}, Fika.Core: {payload.FikaClientVersion}");
+    }
+
+    public (string TelemetryVersion, string FikaClientVersion) GetHeadlessVersions()
+    {
+        lock (_lock) { return (_headlessTelemetryVersion, _headlessFikaVersion); }
+    }
 
     public void UpdateRaidState(RaidStatePayload payload)
     {
