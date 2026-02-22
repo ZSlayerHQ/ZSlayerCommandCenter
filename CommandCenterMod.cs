@@ -5,6 +5,7 @@ using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Servers;
+using SPTarkov.Server.Core.Services;
 using ZSlayerCommandCenter.Models;
 using ZSlayerCommandCenter.Services;
 
@@ -18,6 +19,8 @@ public class CommandCenterMod(
     HeadlessProcessService headlessProcessService,
     ActivityLogService activityLogService,
     OfferRegenerationService offerRegenerationService,
+    TelemetryService telemetryService,
+    SeasonalEventService seasonalEventService,
     ConfigServer configServer,
     ISptLogger<CommandCenterMod> logger) : IOnLoad
 {
@@ -54,6 +57,9 @@ public class CommandCenterMod(
     {
         configService.LoadConfig();
         var config = configService.GetConfig();
+
+        // Wire up late-bound services
+        telemetryService.SetSeasonService(seasonalEventService);
 
         // Configure and install console interceptor
         consoleBufferService.Configure(config.Dashboard.ConsoleBufferSize);

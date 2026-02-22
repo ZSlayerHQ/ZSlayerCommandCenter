@@ -841,7 +841,13 @@ public class CommandCenterHttpListener(
                 case "telemetry/raid-summary":
                 {
                     var body = await ReadBody<RaidSummaryPayload>(context);
-                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    if (body == null)
+                    {
+                        logger.Warning("[HTTP] raid-summary POST received but body was null/invalid");
+                        await WriteJson(context, 400, new { error = "Invalid body" });
+                        return;
+                    }
+                    logger.Info($"[HTTP] raid-summary POST received — map: {body.Map}, players: {body.Players.Count}, kills: {body.TotalKills}, deaths: {body.TotalDeaths}");
                     telemetryService.FinishRaid(body);
                     await WriteJson(context, 200, new { ok = true });
                     break;
@@ -852,6 +858,23 @@ public class CommandCenterHttpListener(
                     if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
                     telemetryService.UpdateDamageStats(body);
                     await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
+                case "telemetry/positions":
+                {
+                    var body = await ReadBody<PositionPayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    telemetryService.UpdatePositions(body);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
+                case "telemetry/map-refresh-rate":
+                {
+                    // POST from dashboard to change rate
+                    var body = await ReadBody<MapRefreshRateRequest>(context);
+                    if (body != null)
+                        telemetryService.SetMapRefreshRate(body.IntervalSec);
+                    await WriteJson(context, 200, new { ok = true, intervalSec = telemetryService.GetMapRefreshRate() });
                     break;
                 }
                 default:
@@ -880,6 +903,30 @@ public class CommandCenterHttpListener(
                 }
                 case "telemetry/raid-history":
                     await WriteJson(context, 200, telemetryService.GetRaidHistory());
+                    break;
+                case "telemetry/lifetime-stats":
+                    await WriteJson(context, 200, telemetryService.GetLifetimeStats());
+                    break;
+                case "telemetry/performance-history":
+                    await WriteJson(context, 200, telemetryService.GetPerformanceHistory());
+                    break;
+                case "telemetry/alerts":
+                {
+                    var sinceStr = context.Request.Query["since"].FirstOrDefault();
+                    DateTime? since = null;
+                    if (DateTime.TryParse(sinceStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var sinceVal))
+                        since = sinceVal;
+                    var alertLimit = 50;
+                    if (int.TryParse(context.Request.Query["limit"].FirstOrDefault(), out var al))
+                        alertLimit = Math.Clamp(al, 1, 200);
+                    await WriteJson(context, 200, telemetryService.GetAlerts(since, alertLimit));
+                    break;
+                }
+                case "telemetry/positions":
+                    await WriteJson(context, 200, telemetryService.GetCurrent().Positions);
+                    break;
+                case "telemetry/map-refresh-rate":
+                    await WriteJson(context, 200, new { intervalSec = telemetryService.GetMapRefreshRate() });
                     break;
                 default:
                 {

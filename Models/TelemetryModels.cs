@@ -64,6 +64,36 @@ public record PerformancePayload
 
     [JsonPropertyName("memoryMb")]
     public long MemoryMb { get; set; }
+
+    [JsonPropertyName("cpuUsage")]
+    public double CpuUsage { get; set; }
+
+    [JsonPropertyName("systemInfo")]
+    public SystemInfoPayload? SystemInfo { get; set; }
+}
+
+public record SystemInfoPayload
+{
+    [JsonPropertyName("cpuModel")]
+    public string CpuModel { get; set; } = "";
+
+    [JsonPropertyName("cpuCores")]
+    public int CpuCores { get; set; }
+
+    [JsonPropertyName("cpuFrequencyMhz")]
+    public int CpuFrequencyMhz { get; set; }
+
+    [JsonPropertyName("gpuModel")]
+    public string GpuModel { get; set; } = "";
+
+    [JsonPropertyName("gpuVramMb")]
+    public int GpuVramMb { get; set; }
+
+    [JsonPropertyName("totalRamMb")]
+    public int TotalRamMb { get; set; }
+
+    [JsonPropertyName("os")]
+    public string Os { get; set; } = "";
 }
 
 public record KillPayload
@@ -389,6 +419,12 @@ public record TelemetryCurrentDto
 
     [JsonPropertyName("damageStats")]
     public DamageStatsPayload? DamageStats { get; set; }
+
+    [JsonPropertyName("positions")]
+    public List<PlayerPositionEntry> Positions { get; set; } = [];
+
+    [JsonPropertyName("season")]
+    public string Season { get; set; } = "";
 }
 
 public record KillFeedEntry
@@ -494,4 +530,295 @@ public record RaidHistoryDetail
 
     [JsonPropertyName("damageStats")]
     public DamageStatsPayload? DamageStats { get; set; }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  POSITIONS — Live minimap data
+// ══════════════════════════════════════════════════════════════════════
+
+public record PositionPayload
+{
+    [JsonPropertyName("map")]
+    public string Map { get; set; } = "";
+
+    [JsonPropertyName("positions")]
+    public List<PlayerPositionEntry> Positions { get; set; } = [];
+}
+
+public record PlayerPositionEntry
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("profileId")]
+    public string ProfileId { get; set; } = "";
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "";
+
+    [JsonPropertyName("x")]
+    public double X { get; set; }
+
+    [JsonPropertyName("y")]
+    public double Y { get; set; }
+
+    [JsonPropertyName("z")]
+    public double Z { get; set; }
+
+    [JsonPropertyName("rotation")]
+    public double Rotation { get; set; }
+
+    [JsonPropertyName("alive")]
+    public bool Alive { get; set; }
+
+    [JsonPropertyName("side")]
+    public string Side { get; set; } = "";
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  ALERTS — Raid event notifications
+// ══════════════════════════════════════════════════════════════════════
+
+public record AlertEntry
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "";
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = "";
+
+    [JsonPropertyName("timestamp")]
+    public DateTime Timestamp { get; set; }
+
+    [JsonPropertyName("map")]
+    public string Map { get; set; } = "";
+
+    [JsonPropertyName("icon")]
+    public string Icon { get; set; } = "";
+}
+
+public record AlertResponse
+{
+    [JsonPropertyName("alerts")]
+    public List<AlertEntry> Alerts { get; set; } = [];
+
+    [JsonPropertyName("total")]
+    public int Total { get; set; }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  LIFETIME STATS — Aggregated player statistics
+// ══════════════════════════════════════════════════════════════════════
+
+public record LifetimeStatsDto
+{
+    [JsonPropertyName("totalRaids")]
+    public int TotalRaids { get; set; }
+
+    [JsonPropertyName("survived")]
+    public int Survived { get; set; }
+
+    [JsonPropertyName("deaths")]
+    public int Deaths { get; set; }
+
+    [JsonPropertyName("survivalRate")]
+    public double SurvivalRate { get; set; }
+
+    [JsonPropertyName("totalKills")]
+    public int TotalKills { get; set; }
+
+    [JsonPropertyName("pmcKills")]
+    public int PmcKills { get; set; }
+
+    [JsonPropertyName("scavKills")]
+    public int ScavKills { get; set; }
+
+    [JsonPropertyName("bossKills")]
+    public int BossKills { get; set; }
+
+    [JsonPropertyName("avgKillsPerRaid")]
+    public double AvgKillsPerRaid { get; set; }
+
+    [JsonPropertyName("totalDamage")]
+    public int TotalDamage { get; set; }
+
+    [JsonPropertyName("totalXp")]
+    public int TotalXp { get; set; }
+
+    [JsonPropertyName("totalHeadshots")]
+    public int TotalHeadshots { get; set; }
+
+    [JsonPropertyName("longestShot")]
+    public double LongestShot { get; set; }
+
+    [JsonPropertyName("favoriteMap")]
+    public string FavoriteMap { get; set; } = "";
+
+    [JsonPropertyName("avgRaidDurationSec")]
+    public int AvgRaidDurationSec { get; set; }
+
+    [JsonPropertyName("totalPlayTimeSec")]
+    public int TotalPlayTimeSec { get; set; }
+
+    [JsonPropertyName("raidsByMap")]
+    public Dictionary<string, int> RaidsByMap { get; set; } = new();
+
+    [JsonPropertyName("killsByWeapon")]
+    public Dictionary<string, int> KillsByWeapon { get; set; } = new();
+
+    [JsonPropertyName("recentTrend")]
+    public List<RaidTrendEntry> RecentTrend { get; set; } = [];
+}
+
+public record RaidTrendEntry
+{
+    [JsonPropertyName("timestamp")]
+    public DateTime Timestamp { get; set; }
+
+    [JsonPropertyName("map")]
+    public string Map { get; set; } = "";
+
+    [JsonPropertyName("survived")]
+    public bool Survived { get; set; }
+
+    [JsonPropertyName("kills")]
+    public int Kills { get; set; }
+
+    [JsonPropertyName("duration")]
+    public int Duration { get; set; }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  WEATHER — Forcing settings
+// ══════════════════════════════════════════════════════════════════════
+
+public record WeatherForceDto
+{
+    [JsonPropertyName("enabled")]
+    public bool Enabled { get; set; }
+
+    [JsonPropertyName("hourOfDay")]
+    public int HourOfDay { get; set; } = -1;
+
+    [JsonPropertyName("cloudinessType")]
+    public int CloudinessType { get; set; } = -1;
+
+    [JsonPropertyName("rainType")]
+    public int RainType { get; set; } = -1;
+
+    [JsonPropertyName("fogType")]
+    public int FogType { get; set; } = -1;
+
+    [JsonPropertyName("windType")]
+    public int WindType { get; set; } = -1;
+
+    [JsonPropertyName("timeFlowType")]
+    public int TimeFlowType { get; set; } = -1;
+
+    [JsonPropertyName("randomWeather")]
+    public bool RandomWeather { get; set; } = true;
+
+    [JsonPropertyName("randomTime")]
+    public bool RandomTime { get; set; } = true;
+}
+
+public record WeatherForceRequest
+{
+    [JsonPropertyName("hourOfDay")]
+    public int? HourOfDay { get; set; }
+
+    [JsonPropertyName("cloudinessType")]
+    public int? CloudinessType { get; set; }
+
+    [JsonPropertyName("rainType")]
+    public int? RainType { get; set; }
+
+    [JsonPropertyName("fogType")]
+    public int? FogType { get; set; }
+
+    [JsonPropertyName("windType")]
+    public int? WindType { get; set; }
+
+    [JsonPropertyName("timeFlowType")]
+    public int? TimeFlowType { get; set; }
+
+    [JsonPropertyName("randomWeather")]
+    public bool? RandomWeather { get; set; }
+
+    [JsonPropertyName("randomTime")]
+    public bool? RandomTime { get; set; }
+}
+
+public record WeatherCurrentResponse
+{
+    [JsonPropertyName("forced")]
+    public WeatherForceDto Forced { get; set; } = new();
+
+    [JsonPropertyName("options")]
+    public WeatherOptionsDto Options { get; set; } = new();
+}
+
+public record WeatherOptionsDto
+{
+    [JsonPropertyName("cloudiness")]
+    public List<WeatherOptionItem> Cloudiness { get; set; } = [];
+
+    [JsonPropertyName("rain")]
+    public List<WeatherOptionItem> Rain { get; set; } = [];
+
+    [JsonPropertyName("fog")]
+    public List<WeatherOptionItem> Fog { get; set; } = [];
+
+    [JsonPropertyName("wind")]
+    public List<WeatherOptionItem> Wind { get; set; } = [];
+
+    [JsonPropertyName("timeFlow")]
+    public List<WeatherOptionItem> TimeFlow { get; set; } = [];
+}
+
+public record WeatherOptionItem
+{
+    [JsonPropertyName("value")]
+    public int Value { get; set; }
+
+    [JsonPropertyName("label")]
+    public string Label { get; set; } = "";
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  MAP REFRESH RATE
+// ══════════════════════════════════════════════════════════════════════
+
+public record MapRefreshRateRequest
+{
+    [JsonPropertyName("intervalSec")]
+    public float IntervalSec { get; set; } = 1.0f;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  PERFORMANCE HISTORY — Rolling buffer for charts
+// ══════════════════════════════════════════════════════════════════════
+
+public record PerformanceHistoryEntry
+{
+    [JsonPropertyName("timestamp")]
+    public DateTime Timestamp { get; set; }
+
+    [JsonPropertyName("cpuPercent")]
+    public double CpuPercent { get; set; }
+
+    [JsonPropertyName("ramPercent")]
+    public double RamPercent { get; set; }
+
+    [JsonPropertyName("ramUsedMb")]
+    public long RamUsedMb { get; set; }
+
+    [JsonPropertyName("ramTotalMb")]
+    public int RamTotalMb { get; set; }
+
+    [JsonPropertyName("fps")]
+    public int Fps { get; set; }
 }

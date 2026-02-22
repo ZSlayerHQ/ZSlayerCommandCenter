@@ -830,6 +830,29 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   font-size: 12px;
   letter-spacing: 0.5px;
 }
+.raidinfo-system-bar {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.system-info-label {
+  color: var(--accent);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-right: 6px;
+}
+.system-info-item { color: var(--text); }
+.system-info-sep { color: var(--border); }
 .raidinfo-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -969,14 +992,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   border-left: 3px solid transparent;
 }
 .telem-kill-entry:last-child { border-bottom: none; }
-.telem-kill-entry.kill-border-pmc { border-left-color: var(--accent); }
-.telem-kill-entry.kill-border-boss { border-left-color: #c45050; }
+.telem-kill-entry.kill-border-pmc { border-left-color: var(--success-bright); }
+.telem-kill-entry.kill-border-boss { border-left-color: var(--warning); }
+.telem-kill-entry.kill-border-raider { border-left-color: var(--warning); }
 .telem-kill-time { color: var(--text-muted); font-size: 10px; white-space: nowrap; }
 .telem-kill-detail { flex: 1; }
 .telem-kill-dist { color: var(--text-muted); font-size: 10px; white-space: nowrap; font-family: var(--font-mono); }
-.telem-kill-name.pmc { color: var(--accent); font-weight: 600; }
-.telem-kill-name.boss { color: #c45050; font-weight: 600; }
-.telem-kill-name.scav, .telem-kill-name.raider, .telem-kill-name.rogue, .telem-kill-name.follower { color: var(--text-dim); }
+.telem-kill-name.pmc { color: var(--success-bright); font-weight: 600; }
+.telem-kill-name.boss { color: var(--warning); font-weight: 600; }
+.telem-kill-name.raider, .telem-kill-name.rogue { color: var(--warning); font-weight: 600; }
+.telem-kill-name.scav, .telem-kill-name.follower { color: var(--text-dim); }
 .telem-kill-weapon { color: var(--text); }
 .telem-kill-meta { color: var(--text-muted); font-size: 10px; }
 .telem-headshot { background: rgba(196,80,80,0.2); color: #c45050; font-weight: 700; padding: 0 4px; border-radius: 3px; font-size: 10px; }
@@ -1101,6 +1126,331 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 }
 .player-scoreboard td { padding: 4px 6px; border-bottom: 1px solid var(--border-subtle); }
 .player-scoreboard td.num { text-align: center; font-family: var(--font-mono); }
+
+/* ── System Gauges (CPU/RAM semicircle + history charts) ── */
+.system-gauges-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin: 12px 0;
+}
+.system-gauges-panel .section-header {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.gauge-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+}
+.gauge-row + .gauge-row {
+  border-top: 1px solid var(--border-subtle);
+}
+.gauge-container {
+  flex-shrink: 0;
+  width: 130px;
+  text-align: center;
+}
+.gauge-svg {
+  width: 120px;
+  height: 70px;
+}
+.gauge-value {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+}
+.gauge-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.gauge-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.chart-container {
+  flex: 1;
+  position: relative;
+  height: 90px;
+  min-width: 0;
+}
+.chart-container canvas {
+  width: 100%;
+  height: 100%;
+}
+.chart-tooltip {
+  position: absolute;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+  display: none;
+}
+
+/* ── Alerts ── */
+.alert-bell {
+  position: relative;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 14px;
+  color: var(--text-dim);
+  transition: color 0.2s;
+}
+.alert-bell:hover { color: var(--accent); }
+.alert-bell .alert-count {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--error-bright);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+}
+.alert-feed {
+  max-height: 300px;
+  overflow-y: auto;
+  display: none;
+}
+.alert-feed.open { display: block; }
+.alert-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+.alert-entry:last-child { border-bottom: none; }
+.alert-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+.alert-icon.boss-spawn { color: #c45050; }
+.alert-icon.pmc-kill { color: var(--accent); }
+.alert-icon.headshot { color: #c45050; }
+.alert-icon.raid-start { color: var(--success-bright); }
+.alert-icon.raid-end { color: var(--text-muted); }
+.alert-icon.extract { color: var(--success-bright); }
+.alert-msg { flex: 1; color: var(--text); }
+.alert-time { color: var(--text-muted); font-size: 10px; white-space: nowrap; }
+
+/* Toast notifications */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+}
+.toast {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  animation: toastIn 0.3s ease;
+  max-width: 320px;
+}
+.toast.toast-out { animation: toastOut 0.3s ease forwards; }
+.toast.toast-boss { border-left-color: #c45050; }
+.toast.toast-kill { border-left-color: var(--accent); }
+.toast.toast-headshot { border-left-color: #c45050; }
+.toast.toast-raid { border-left-color: var(--success-bright); }
+@keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(40px); } }
+
+/* ── Lifetime Stats ── */
+.lifetime-stats-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin: 12px 0;
+}
+.lifetime-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+.lifetime-stat-card {
+  text-align: center;
+  padding: 10px 6px;
+  background: var(--bg-dark);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+.lifetime-stat-value {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  display: block;
+}
+.lifetime-stat-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.lifetime-stat-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ── Live Map ── */
+.live-map-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin: 12px 0;
+}
+.live-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.live-map-header .section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.live-map-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.live-map-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.live-map-controls input[type="range"] {
+  width: 100px;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+.live-map-controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+.live-map-controls .rate-label {
+  min-width: 40px;
+  text-align: right;
+  color: var(--text-muted);
+}
+.live-map-controls select {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.live-map-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  background: #0a0c0e;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  cursor: grab;
+}
+.live-map-canvas-wrap:active { cursor: grabbing; }
+.live-map-canvas-wrap canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+.live-map-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+.live-map-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.live-map-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.live-map-no-raid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
 
 /* Console */
 .console-panel {
@@ -2258,12 +2608,107 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <span id="telemRaidStatusBadge" class="telem-raid-status idle">Idle</span>
       <div class="dash-stat"><span class="dash-stat-label">Map</span><span class="dash-stat-value sm" id="telemMap">--</span></div>
       <div class="dash-stat"><span class="dash-stat-label">Elapsed</span><span class="dash-stat-value sm" id="telemTimer">--</span></div>
-      <div class="dash-stat"><span class="dash-stat-label">Remaining</span><span class="dash-stat-value sm" id="telemTimeLeft">--</span></div>
       <div class="dash-stat"><span class="dash-stat-label">Time of Day</span><span class="dash-stat-value sm" id="telemTimeOfDay">--</span></div>
+      <div class="dash-stat"><span class="dash-stat-label">Season</span><span class="dash-stat-value sm" id="telemSeason">--</span></div>
       <div class="dash-stat"><span class="dash-stat-label">FPS</span><span class="telem-fps" id="telemFps">--</span></div>
       <div class="dash-stat"><span class="dash-stat-label">FPS Avg</span><span class="telem-fps" id="telemFpsAvg" style="font-size:12px;font-weight:500">--</span></div>
+      <div class="dash-stat"><span class="dash-stat-label">CPU</span><span class="dash-stat-value sm" id="telemCpu">--</span></div>
       <div class="dash-stat"><span class="dash-stat-label">Memory</span><span class="dash-stat-value sm" id="telemMemory">--</span></div>
       <span id="raidInfoIdleMsg" class="raidinfo-idle-msg">Waiting for raid...</span>
+    </div>
+
+    <!-- System Info Bar (headless PC specs) -->
+    <div id="telemSystemInfo" class="raidinfo-system-bar" style="display:none">
+      <span class="system-info-label">Headless PC</span>
+      <span class="system-info-item" id="sysInfoCpu"></span>
+      <span class="system-info-sep">|</span>
+      <span class="system-info-item" id="sysInfoGpu"></span>
+      <span class="system-info-sep">|</span>
+      <span class="system-info-item" id="sysInfoRam"></span>
+      <span class="system-info-sep">|</span>
+      <span class="system-info-item" id="sysInfoOs"></span>
+    </div>
+
+    <!-- System Gauges (CPU/RAM) -->
+    <div class="system-gauges-panel" id="systemGaugesPanel" style="display:none">
+      <div class="section-header">System Performance</div>
+      <!-- CPU Row -->
+      <div class="gauge-row">
+        <div class="gauge-container">
+          <svg class="gauge-svg" viewBox="0 0 120 70" id="cpuGaugeSvg">
+            <!-- Background zone arcs -->
+            <path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke="rgba(74,124,89,0.15)" stroke-width="12" stroke-linecap="round" id="cpuZoneGreen"/>
+            <!-- Active arc track -->
+            <path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke="rgba(200,170,110,0.08)" stroke-width="12" stroke-linecap="round"/>
+            <!-- Fill arc -->
+            <path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke="#4a7c59" stroke-width="12" stroke-linecap="round"
+                  id="cpuGaugeArc" stroke-dasharray="157.08" stroke-dashoffset="157.08" style="transition: stroke-dashoffset 0.5s ease, stroke 0.5s ease"/>
+          </svg>
+          <div class="gauge-value" id="cpuGaugeValue" style="margin-top:-10px">--%</div>
+          <div class="gauge-label">CPU</div>
+        </div>
+        <div class="chart-container" id="cpuChartContainer">
+          <canvas id="cpuChart"></canvas>
+          <div class="chart-tooltip" id="cpuChartTooltip"></div>
+        </div>
+      </div>
+      <!-- RAM Row -->
+      <div class="gauge-row">
+        <div class="gauge-container">
+          <svg class="gauge-svg" viewBox="0 0 120 70" id="ramGaugeSvg">
+            <path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke="rgba(200,170,110,0.08)" stroke-width="12" stroke-linecap="round"/>
+            <path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke="#4a7c59" stroke-width="12" stroke-linecap="round"
+                  id="ramGaugeArc" stroke-dasharray="157.08" stroke-dashoffset="157.08" style="transition: stroke-dashoffset 0.5s ease, stroke 0.5s ease"/>
+          </svg>
+          <div class="gauge-value" id="ramGaugeValue" style="margin-top:-10px">--%</div>
+          <div class="gauge-label">RAM</div>
+          <div class="gauge-sub" id="ramGaugeSub"></div>
+        </div>
+        <div class="chart-container" id="ramChartContainer">
+          <canvas id="ramChart"></canvas>
+          <div class="chart-tooltip" id="ramChartTooltip"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts Section -->
+    <div class="raidinfo-section" style="margin-bottom:12px" id="alertsSection" style="display:none">
+      <div class="raidinfo-section-header" style="cursor:pointer" onclick="toggleAlertFeed()">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg> Alerts <span class="alert-count" id="alertBadge" style="display:none">0</span></span>
+      </div>
+      <div class="raidinfo-section-body alert-feed" id="alertFeed">
+        <div class="telem-no-data">No alerts yet</div>
+      </div>
+    </div>
+
+    <!-- Live Map -->
+    <div class="live-map-panel" id="liveMapPanel" style="display:none">
+      <div class="live-map-header">
+        <span class="section-title">Live Map</span>
+        <div class="live-map-controls">
+          <label>Layer: <select id="mapLayerSelect"><option value="0">Ground</option></select></label>
+          <label>
+            Refresh:
+            <input type="range" id="mapRefreshSlider" min="-1.301" max="1" step="0.01" value="0">
+            <span class="rate-label" id="mapRefreshLabel">1.0s</span>
+          </label>
+          <label><input type="checkbox" id="mapShowNames" checked> Names</label>
+          <label><input type="checkbox" id="mapShowDead"> Dead</label>
+        </div>
+      </div>
+      <div class="live-map-canvas-wrap" id="mapCanvasWrap">
+        <canvas id="mapCanvas"></canvas>
+        <div class="live-map-no-raid" id="mapNoRaid">Waiting for raid...</div>
+      </div>
+      <div class="live-map-legend">
+        <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#4a7c59"></span> PMC</span>
+        <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#c8aa6e"></span> AI PMC</span>
+        <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#5b8cb8"></span> Scav</span>
+        <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#c87a3e"></span> Boss</span>
+        <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#b06030"></span> Raider/Rogue</span>
+        <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#6e4a7c"></span> Follower</span>
+        <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:rgba(255,255,255,0.25)"></span> Dead</span>
+      </div>
     </div>
 
     <!-- Two-Column Layout: Players+Bots | Kill Feed -->
@@ -2291,13 +2736,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <div class="raidinfo-section-body" id="telemBotsSection">
             <div class="telem-no-data" id="telemBotsEmpty">No bot data</div>
             <div class="telem-bots" id="telemBotsInner" style="display:none">
+              <div class="telem-bot-group"><span class="telem-bot-label">PMCs</span><span class="telem-bot-value" id="telemPmcs">--</span></div>
               <div class="telem-bot-group"><span class="telem-bot-label">Scavs</span><span class="telem-bot-value" id="telemScavs">--</span></div>
               <div class="telem-bot-group"><span class="telem-bot-label">Raiders</span><span class="telem-bot-value" id="telemRaiders">--</span></div>
               <div class="telem-bot-group"><span class="telem-bot-label">Rogues</span><span class="telem-bot-value" id="telemRogues">--</span></div>
               <div class="telem-bot-group"><span class="telem-bot-label">Total AI</span><span class="telem-bot-value" id="telemTotalAI">--</span></div>
-              <div class="telem-bot-group" id="telemBossGroup" style="display:none">
+              <div class="telem-bot-group" id="telemBossGroup">
                 <span class="telem-bot-label">Bosses</span>
-                <div class="telem-boss-list" id="telemBossList"></div>
+                <div class="telem-boss-list" id="telemBossList"><span style="color:var(--text-dim);font-size:11px">None</span></div>
               </div>
             </div>
           </div>
@@ -2327,6 +2773,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </div>
       </div>
 
+    </div>
+
+    <!-- Lifetime Stats -->
+    <div class="lifetime-stats-panel" id="lifetimeStatsPanel" style="display:none">
+      <div class="section-header" style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border-subtle)">Lifetime Stats</div>
+      <div class="lifetime-stats-grid" id="lifetimeStatsGrid"></div>
     </div>
 
     <!-- Raid History (full-width) -->
@@ -3976,21 +4428,31 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         document.getElementById('telemRaidStatusBadge').textContent = 'Idle';
         document.getElementById('telemMap').textContent = '--';
         document.getElementById('telemTimer').textContent = '--';
-        document.getElementById('telemTimeLeft').textContent = '--';
         document.getElementById('telemTimeOfDay').textContent = '--';
         document.getElementById('telemFps').textContent = '--';
         document.getElementById('telemFps').className = 'telem-fps';
         document.getElementById('telemFpsAvg').textContent = '--';
+        document.getElementById('telemCpu').textContent = '--';
+        document.getElementById('telemCpu').style.color = '';
         document.getElementById('telemMemory').textContent = '--';
         document.getElementById('telemPlayerTable').style.display = 'none';
         document.getElementById('telemPlayersEmpty').style.display = '';
         document.getElementById('telemBotsInner').style.display = 'none';
         document.getElementById('telemBotsEmpty').style.display = '';
         // Keep combat stats visible after raid ends (don't hide)
+        updateMapForRaid('', false);
+        document.getElementById('telemSeason').textContent = d.season || '--';
         return;
       }
 
       idleMsg.style.display = 'none';
+
+      // Update live map
+      updateMapForRaid(rs.map || '', true);
+      // Try loading map images for current map
+      if (_mapConfig) {
+        Object.keys(_mapConfig.layers).forEach(function(lv) { tryLoadMapImage(rs.map, lv); });
+      }
 
       // Status badge
       var badge = document.getElementById('telemRaidStatusBadge');
@@ -4000,9 +4462,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
       // Header stats
       document.getElementById('telemMap').textContent = mapDisplayName(rs.map || '');
-      document.getElementById('telemTimer').textContent = rs.raidTimer ? formatSeconds(rs.raidTimer) : '--';
-      document.getElementById('telemTimeLeft').textContent = rs.raidTimeLeft ? formatSeconds(rs.raidTimeLeft) : '--';
+      document.getElementById('telemTimer').textContent = rs.raidTimer > 0 ? formatSeconds(rs.raidTimer) : '--';
       document.getElementById('telemTimeOfDay').textContent = rs.timeOfDay || '--';
+      document.getElementById('telemSeason').textContent = d.season || '--';
 
       // FPS with min/max range
       var fpsEl = document.getElementById('telemFps');
@@ -4024,7 +4486,27 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       } else {
         fpsAvgEl.textContent = '--';
       }
+      // CPU usage
+      var cpuEl = document.getElementById('telemCpu');
+      if (perf.cpuUsage > 0) {
+        cpuEl.textContent = perf.cpuUsage + '%';
+        cpuEl.style.color = perf.cpuUsage > 80 ? 'var(--danger)' : perf.cpuUsage > 50 ? 'var(--warning)' : '';
+      } else {
+        cpuEl.textContent = '--';
+        cpuEl.style.color = '';
+      }
       document.getElementById('telemMemory').textContent = perf.memoryMb ? Number(perf.memoryMb).toLocaleString() + ' MB' : '--';
+
+      // System info (render once when received)
+      if (perf.systemInfo && perf.systemInfo.cpuModel) {
+        var si = perf.systemInfo;
+        var sysBar = document.getElementById('telemSystemInfo');
+        sysBar.style.display = '';
+        document.getElementById('sysInfoCpu').textContent = si.cpuModel + ' (' + si.cpuCores + ' cores)';
+        document.getElementById('sysInfoGpu').textContent = si.gpuModel + (si.gpuVramMb ? ' (' + si.gpuVramMb + ' MB)' : '');
+        document.getElementById('sysInfoRam').textContent = si.totalRamMb ? (si.totalRamMb >= 1024 ? (si.totalRamMb / 1024).toFixed(0) + ' GB' : si.totalRamMb + ' MB') + ' RAM' : '';
+        document.getElementById('sysInfoOs').textContent = si.os || '';
+      }
 
       // Player table with kills column
       if (players.length > 0) {
@@ -4042,8 +4524,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           } else if (p.pingMs != null) {
             pingHtml = '<span class="telem-ping ' + pingClass(p.pingMs) + '">' + p.pingMs + 'ms</span>';
           }
+          var nameColor = (p.type === 'pmc') ? 'var(--success-bright)' : 'var(--accent)';
           phtml += '<tr' + (alive ? '' : ' class="dead"') + '>' +
-            '<td style="color:var(--accent);font-weight:600">' + escH(p.name) + '</td>' +
+            '<td style="color:' + nameColor + ';font-weight:600">' + escH(p.name) + '</td>' +
             '<td>' + p.level + '</td>' +
             '<td style="text-transform:uppercase;font-size:10px;letter-spacing:1px;color:var(--text-dim)">' + escH(p.side || '') + '</td>' +
             '<td style="font-family:var(--font-mono);font-weight:600">' + (kills > 0 ? kills : '--') + '</td>' +
@@ -4057,19 +4540,28 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         document.getElementById('telemPlayersEmpty').style.display = '';
       }
 
-      // Bots
-      if (bots.scavs || bots.raiders || bots.rogues || bots.totalAI) {
+      // Bots + PMC counts
+      var hasBots = bots.scavs || bots.raiders || bots.rogues || bots.totalAI;
+      var hasPmcs = rs.players && (rs.players.pmcAlive > 0 || rs.players.pmcDead > 0);
+      if (hasBots || hasPmcs) {
         document.getElementById('telemBotsInner').style.display = '';
         document.getElementById('telemBotsEmpty').style.display = 'none';
+
+        // PMC counts from raid state
+        if (rs.players) {
+          document.getElementById('telemPmcs').innerHTML = '<span class="alive">' + (rs.players.pmcAlive || 0) + '</span> / <span class="dead-count">' + (rs.players.pmcDead || 0) + '</span>';
+        } else {
+          document.getElementById('telemPmcs').innerHTML = '--';
+        }
+
         document.getElementById('telemScavs').innerHTML = formatAliveDeadCount(bots.scavs);
         document.getElementById('telemRaiders').innerHTML = formatAliveDeadCount(bots.raiders);
         document.getElementById('telemRogues').innerHTML = formatAliveDeadCount(bots.rogues);
         document.getElementById('telemTotalAI').innerHTML = formatAliveDeadCount(bots.totalAI);
 
-        var bossGroup = document.getElementById('telemBossGroup');
+        // Bosses — always visible
         var bosses = bots.bosses || [];
         if (bosses.length > 0) {
-          bossGroup.style.display = '';
           var bossHtml = '';
           bosses.forEach(function(b) {
             var cls = b.alive ? 'boss-alive' : 'boss-dead';
@@ -4077,7 +4569,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           });
           document.getElementById('telemBossList').innerHTML = bossHtml;
         } else {
-          bossGroup.style.display = 'none';
+          document.getElementById('telemBossList').innerHTML = '<span style="color:var(--text-dim);font-size:11px">None</span>';
         }
       } else {
         document.getElementById('telemBotsInner').style.display = 'none';
@@ -4122,6 +4614,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         var borderCls = '';
         if (k.victim.type === 'pmc') borderCls = ' kill-border-pmc';
         else if (k.victim.type === 'boss') borderCls = ' kill-border-boss';
+        else if (k.victim.type === 'raider' || k.victim.type === 'rogue') borderCls = ' kill-border-raider';
 
         // Handle unknown/environmental deaths
         var killerHtml = '';
@@ -4845,11 +5338,768 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   function formatSeconds(s) {
-    if (!s) return '--';
+    if (s == null) return '--';
     var m = Math.floor(s / 60);
     var sec = s % 60;
     return m + 'm ' + sec + 's';
   }
+
+  // ═══════════════════════════════════════════════════════
+  // SYSTEM GAUGES — CPU/RAM semicircle + history charts
+  // ═══════════════════════════════════════════════════════
+
+  var _perfHistory = [];
+  var _perfHistoryTimer = null;
+  var _alertsData = [];
+  var _lastAlertTimestamp = null;
+  var _alertTimer = null;
+  var _lifetimeStatsLoaded = false;
+
+  // Semicircle arc length for SVG gauge (half circle r=50, from 10,65 to 110,65)
+  var GAUGE_ARC_LEN = 157.08;
+
+  function gaugeColor(pct) {
+    if (pct > 90) return '#8b3a3a';
+    if (pct > 80) return '#c87a3e';
+    if (pct > 60) return '#c8aa6e';
+    return '#4a7c59';
+  }
+
+  function updateGauge(arcId, valueId, pct, suffix) {
+    var arc = document.getElementById(arcId);
+    var val = document.getElementById(valueId);
+    if (!arc || !val) return;
+    var clamped = Math.min(Math.max(pct, 0), 100);
+    var offset = GAUGE_ARC_LEN * (1 - clamped / 100);
+    arc.setAttribute('stroke-dashoffset', offset.toFixed(2));
+    arc.setAttribute('stroke', gaugeColor(clamped));
+    val.textContent = clamped.toFixed(1) + (suffix || '%');
+    val.style.color = gaugeColor(clamped);
+  }
+
+  function drawHistoryChart(canvasId, tooltipId, data, label, unit, color) {
+    var canvas = document.getElementById(canvasId);
+    var tooltip = document.getElementById(tooltipId);
+    if (!canvas || data.length < 2) return;
+
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    ctx.scale(dpr, dpr);
+
+    var w = rect.width;
+    var h = rect.height;
+    var pad = { top: 8, right: 8, bottom: 20, left: 40 };
+    var plotW = w - pad.left - pad.right;
+    var plotH = h - pad.top - pad.bottom;
+
+    // Auto-scale Y axis to data range with padding
+    var vals = data.map(function(d) { return d.value; });
+    var minV = Math.min.apply(null, vals);
+    var maxV = Math.max.apply(null, vals);
+    var range = maxV - minV;
+    if (range < 1) { range = 10; minV = Math.max(0, minV - 5); maxV = minV + range; }
+    else { minV = Math.max(0, minV - range * 0.15); maxV = maxV + range * 0.15; range = maxV - minV; }
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Y-axis grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.font = '9px monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.textAlign = 'right';
+    var ySteps = 4;
+    for (var i = 0; i <= ySteps; i++) {
+      var yVal = minV + (range * i / ySteps);
+      var yPos = pad.top + plotH - (plotH * i / ySteps);
+      ctx.beginPath();
+      ctx.moveTo(pad.left, yPos);
+      ctx.lineTo(w - pad.right, yPos);
+      ctx.stroke();
+      ctx.fillText(yVal.toFixed(1) + unit, pad.left - 4, yPos + 3);
+    }
+
+    // X-axis labels (time)
+    ctx.textAlign = 'center';
+    var now = Date.now();
+    var windowMs = 5 * 60 * 1000; // 5 minutes
+    var tMin = now - windowMs;
+    for (var m = 1; m <= 4; m++) {
+      var tx = pad.left + plotW * (1 - m / 5);
+      ctx.fillText(m + 'm ago', tx, h - 2);
+    }
+    ctx.fillText('now', pad.left + plotW, h - 2);
+
+    if (data.length < 2) return;
+
+    // Plot line
+    ctx.beginPath();
+    var points = [];
+    for (var j = 0; j < data.length; j++) {
+      var ts = new Date(data[j].timestamp).getTime();
+      var x = pad.left + plotW * ((ts - tMin) / windowMs);
+      var y = pad.top + plotH - (plotH * (data[j].value - minV) / range);
+      x = Math.max(pad.left, Math.min(pad.left + plotW, x));
+      points.push({ x: x, y: y, val: data[j].value, ts: ts });
+      if (j === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = color || '#c8aa6e';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Gradient fill below line
+    var grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+    grad.addColorStop(0, 'rgba(200,170,110,0.1)');
+    grad.addColorStop(1, 'rgba(200,170,110,0)');
+    ctx.lineTo(points[points.length - 1].x, pad.top + plotH);
+    ctx.lineTo(points[0].x, pad.top + plotH);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Hover handler
+    canvas.onmousemove = function(e) {
+      var cr = canvas.getBoundingClientRect();
+      var mx = e.clientX - cr.left;
+      var closest = null, minDist = Infinity;
+      for (var k = 0; k < points.length; k++) {
+        var dist = Math.abs(points[k].x - mx);
+        if (dist < minDist) { minDist = dist; closest = points[k]; }
+      }
+      if (closest && minDist < 20) {
+        tooltip.style.display = 'block';
+        tooltip.textContent = closest.val.toFixed(1) + unit + ' at ' + new Date(closest.ts).toLocaleTimeString();
+        tooltip.style.left = Math.min(closest.x, w - 120) + 'px';
+        tooltip.style.top = (closest.y - 24) + 'px';
+      } else {
+        tooltip.style.display = 'none';
+      }
+    };
+    canvas.onmouseleave = function() { tooltip.style.display = 'none'; };
+  }
+
+  function loadPerformanceHistory() {
+    api('telemetry/performance-history').then(function(data) {
+      if (!Array.isArray(data)) return;
+      _perfHistory = data;
+      var panel = document.getElementById('systemGaugesPanel');
+      if (data.length > 0) {
+        panel.style.display = '';
+        // Update gauges with latest values
+        var latest = data[data.length - 1];
+        updateGauge('cpuGaugeArc', 'cpuGaugeValue', latest.cpuPercent);
+        updateGauge('ramGaugeArc', 'ramGaugeValue', latest.ramPercent);
+        // RAM sub-text
+        var ramSub = document.getElementById('ramGaugeSub');
+        if (latest.ramUsedMb && latest.ramTotalMb) {
+          var usedGB = (latest.ramUsedMb / 1024).toFixed(1);
+          var totalGB = (latest.ramTotalMb / 1024).toFixed(0);
+          ramSub.textContent = usedGB + ' / ' + totalGB + ' GB';
+        }
+        // Draw charts
+        var cpuData = data.map(function(d) { return { timestamp: d.timestamp, value: d.cpuPercent }; });
+        var ramData = data.map(function(d) { return { timestamp: d.timestamp, value: d.ramPercent }; });
+        drawHistoryChart('cpuChart', 'cpuChartTooltip', cpuData, 'CPU', '%', '#c8aa6e');
+        drawHistoryChart('ramChart', 'ramChartTooltip', ramData, 'RAM', '%', '#c8aa6e');
+      }
+    }).catch(function(e) { console.error('Perf history error:', e); });
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // ALERTS — Raid event notifications
+  // ═══════════════════════════════════════════════════════
+
+  var _alertIcons = {
+    'boss-spawn': '\u{1F451}',
+    'pmc-kill': '\u{1F480}',
+    'headshot': '\u{1F3AF}',
+    'raid-start': '\u{1F680}',
+    'raid-end': '\u{1F3C1}',
+    'extract': '\u{1F6AA}'
+  };
+
+  function loadAlerts() {
+    var url = 'telemetry/alerts';
+    if (_lastAlertTimestamp) url += '?since=' + encodeURIComponent(_lastAlertTimestamp);
+    api(url).then(function(d) {
+      var alerts = d.alerts || [];
+      if (alerts.length === 0 && _alertsData.length === 0) return;
+
+      // Merge new alerts
+      if (alerts.length > 0) {
+        // Show toasts for new alerts
+        if (_lastAlertTimestamp) {
+          alerts.forEach(function(a) { showAlertToast(a); });
+        }
+        _alertsData = alerts.concat(_alertsData).slice(0, 100);
+        _lastAlertTimestamp = alerts[0].timestamp;
+      }
+
+      // Update badge
+      var badge = document.getElementById('alertBadge');
+      if (_alertsData.length > 0) {
+        badge.style.display = '';
+        badge.textContent = _alertsData.length;
+      } else {
+        badge.style.display = 'none';
+      }
+
+      // Render feed
+      renderAlertFeed();
+    }).catch(function(e) { console.error('Alerts error:', e); });
+  }
+
+  function renderAlertFeed() {
+    var feed = document.getElementById('alertFeed');
+    if (_alertsData.length === 0) {
+      feed.innerHTML = '<div class="telem-no-data">No alerts yet</div>';
+      return;
+    }
+    var html = '';
+    _alertsData.forEach(function(a) {
+      var ts = new Date(a.timestamp);
+      var timeStr = ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+      var icon = _alertIcons[a.type] || '\u{1F514}';
+      html += '<div class="alert-entry">' +
+        '<span class="alert-icon ' + (a.type || '') + '">' + icon + '</span>' +
+        '<span class="alert-msg">' + escH(a.message) + '</span>' +
+        '<span class="alert-time">' + timeStr + '</span>' +
+        '</div>';
+    });
+    feed.innerHTML = html;
+  }
+
+  function toggleAlertFeed() {
+    var feed = document.getElementById('alertFeed');
+    feed.classList.toggle('open');
+    // Clear badge when opened
+    if (feed.classList.contains('open')) {
+      var badge = document.getElementById('alertBadge');
+      badge.style.display = 'none';
+    }
+  }
+
+  function showAlertToast(alert) {
+    var container = document.getElementById('toastContainer');
+    if (!container) return;
+    var toastCls = 'toast';
+    if (alert.type === 'boss-spawn') toastCls += ' toast-boss';
+    else if (alert.type === 'pmc-kill') toastCls += ' toast-kill';
+    else if (alert.type === 'headshot') toastCls += ' toast-headshot';
+    else toastCls += ' toast-raid';
+
+    var icon = _alertIcons[alert.type] || '\u{1F514}';
+    var el = document.createElement('div');
+    el.className = toastCls;
+    el.innerHTML = icon + ' ' + escH(alert.message);
+    container.appendChild(el);
+    setTimeout(function() {
+      el.classList.add('toast-out');
+      setTimeout(function() { el.remove(); }, 300);
+    }, 5000);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // LIFETIME STATS — Aggregated player statistics
+  // ═══════════════════════════════════════════════════════
+
+  function loadLifetimeStats() {
+    api('telemetry/lifetime-stats').then(function(d) {
+      var panel = document.getElementById('lifetimeStatsPanel');
+      if (d.totalRaids === 0) { panel.style.display = 'none'; return; }
+      panel.style.display = '';
+
+      var kd = d.deaths > 0 ? (d.totalKills / d.deaths).toFixed(1) : d.totalKills;
+      var playtimeHrs = (d.totalPlayTimeSec / 3600).toFixed(1);
+
+      var html = '';
+      html += lsCard(d.totalRaids, 'Raids');
+      html += lsCard(d.survivalRate + '%', 'Survival', d.survived + ' / ' + d.totalRaids);
+      html += lsCard(kd, 'K/D Ratio');
+      html += lsCard(d.totalKills, 'Total Kills');
+      html += lsCard(d.pmcKills, 'PMC Kills');
+      html += lsCard(d.scavKills, 'Scav Kills');
+      html += lsCard(d.bossKills, 'Boss Kills');
+      html += lsCard(d.avgKillsPerRaid, 'Avg Kills/Raid');
+      html += lsCard(d.totalHeadshots, 'Headshots');
+      if (d.longestShot > 0) html += lsCard(d.longestShot + 'm', 'Longest Shot');
+      html += lsCard(d.favoriteMap || '--', 'Favorite Map');
+      html += lsCard(formatSeconds(d.avgRaidDurationSec), 'Avg Duration');
+      html += lsCard(playtimeHrs + 'h', 'Total Playtime');
+      if (d.totalDamage > 0) html += lsCard(d.totalDamage.toLocaleString(), 'Total Damage');
+      if (d.totalXp > 0) html += lsCard(d.totalXp.toLocaleString(), 'Total XP');
+
+      document.getElementById('lifetimeStatsGrid').innerHTML = html;
+      _lifetimeStatsLoaded = true;
+    }).catch(function(e) { console.error('Lifetime stats error:', e); });
+  }
+
+  function lsCard(value, label, sub) {
+    return '<div class="lifetime-stat-card">' +
+      '<span class="lifetime-stat-value">' + value + '</span>' +
+      '<span class="lifetime-stat-label">' + label + '</span>' +
+      (sub ? '<span class="lifetime-stat-sub">' + sub + '</span>' : '') +
+      '</div>';
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // LIVE MAP
+  // ═══════════════════════════════════════════════════════
+
+  // Map config data from DynamicMaps (bounds, rotation, layers)
+  var MAP_CONFIG = {
+    'bigmap': { name: 'Customs', rotation: 180, bounds: { min: { x: -372, y: -306 }, max: { x: 698, y: 235 } }, defaultLevel: 0,
+      layers: { '-1': { z: [-100, 0.5] }, '0': { z: [-100, 100] }, '1': { z: [2.7, 100] }, '2': { z: [6.5, 100] }, '3': { z: [9.8, 100] } } },
+    'factory4_day': { name: 'Factory', rotation: 90, bounds: { min: { x: -65, y: -64.5 }, max: { x: 77.6, y: 67.2 } }, defaultLevel: 0,
+      layers: { '-1': { z: [-100, -1] }, '0': { z: [-1, 3] }, '1': { z: [3, 6] }, '2': { z: [6, 100] } } },
+    'factory4_night': { name: 'Factory', rotation: 90, bounds: { min: { x: -65, y: -64.5 }, max: { x: 77.6, y: 67.2 } }, defaultLevel: 0,
+      layers: { '-1': { z: [-100, -1] }, '0': { z: [-1, 3] }, '1': { z: [3, 6] }, '2': { z: [6, 100] } } },
+    'Sandbox': { name: 'Ground Zero', rotation: 180, bounds: { min: { x: -99, y: -124 }, max: { x: 249, y: 364 } }, defaultLevel: 0,
+      layers: { '-1': { z: [-100, 21] }, '0': { z: [-100, 100] }, '1': { z: [26, 32.3] }, '2': { z: [32.3, 100] } } },
+    'Sandbox_high': { name: 'Ground Zero', rotation: 180, bounds: { min: { x: -99, y: -124 }, max: { x: 249, y: 364 } }, defaultLevel: 0,
+      layers: { '-1': { z: [-100, 21] }, '0': { z: [-100, 100] }, '1': { z: [26, 32.3] }, '2': { z: [32.3, 100] } } },
+    'Interchange': { name: 'Interchange', rotation: 180, bounds: { min: { x: -364, y: -443 }, max: { x: 534, y: 452 } }, defaultLevel: 0,
+      layers: { '0': { z: [-100, 100] }, '1': { z: [25, 34] }, '2': { z: [34, 100] } } },
+    'laboratory': { name: 'Labs', rotation: 270, bounds: { min: { x: -292, y: -441 }, max: { x: -96, y: -223 } }, defaultLevel: 0,
+      layers: { '-1': { z: [-100, -0.9] }, '0': { z: [-0.9, 3] }, '1': { z: [3, 100] } } },
+    'Labyrinth': { name: 'Labyrinth', rotation: 90, bounds: { min: { x: -52.5, y: -36.5 }, max: { x: 50.7, y: 75.3 } }, defaultLevel: 0,
+      layers: { '0': { z: [-100, -1] } } },
+    'Lighthouse': { name: 'Lighthouse', rotation: 180, bounds: { min: { x: -545, y: -998 }, max: { x: 512, y: 721 } }, defaultLevel: 0,
+      layers: { '0': { z: [-100, 100] } } },
+    'RezervBase': { name: 'Reserve', rotation: 180, bounds: { min: { x: -303.5, y: -275 }, max: { x: 292, y: 271.5 } }, defaultLevel: 0,
+      layers: { '-1': { z: [-100, -8] }, '0': { z: [-8, 100] } } },
+    'Shoreline': { name: 'Shoreline', rotation: 180, bounds: { min: { x: -1060, y: -415 }, max: { x: 508, y: 622 } }, defaultLevel: 0,
+      layers: { '-1': { z: [-100, -5] }, '0': { z: [-100, 100] }, '1': { z: [-1, 2] }, '2': { z: [2, 100] } } },
+    'TarkovStreets': { name: 'Streets', rotation: 180, bounds: { min: { x: -279, y: -299 }, max: { x: 324, y: 533 } }, defaultLevel: 0,
+      layers: { '-1': { z: [-5, 0] }, '0': { z: [-100, 100] }, '1': { z: [3, 10] }, '2': { z: [6, 15] }, '3': { z: [9, 15] }, '4': { z: [12, 15] } } },
+    'Woods': { name: 'Woods', rotation: 180, bounds: { min: { x: -756, y: -915 }, max: { x: 647, y: 443 } }, defaultLevel: 0,
+      layers: { '-1': { z: [-100, 5.1] }, '0': { z: [-100, 100] }, '1': { z: [9.6, 100] } } }
+  };
+
+  // Entity colors
+  var MAP_COLORS = {
+    pmc: '#4a7c59',      // green
+    scav: '#5b8cb8',     // blue
+    boss: '#c87a3e',     // orange
+    raider: '#b06030',   // darker orange
+    rogue: '#b06030',
+    follower: '#6e4a7c', // purple
+    unknown: '#888'
+  };
+
+  // Map state
+  var _mapPositions = [];
+  var _mapCurrentMap = '';
+  var _mapConfig = null;
+  var _mapZoom = 1;
+  var _mapPanX = 0, _mapPanY = 0;
+  var _mapDragging = false;
+  var _mapDragStart = { x: 0, y: 0 };
+  var _mapPanStart = { x: 0, y: 0 };
+  var _mapRefreshMs = 1000;
+  var _mapRefreshTimer = null;
+  var _mapSelectedLayer = '0';
+  var _mapImageCache = {};
+  var _mapRaidActive = false;
+
+  // Initialize map refresh rate from localStorage
+  (function() {
+    var saved = localStorage.getItem('cc_mapRefreshMs');
+    if (saved) _mapRefreshMs = parseInt(saved) || 1000;
+  })();
+
+  function mapSliderToMs(val) {
+    // Logarithmic: slider value -1.301 to 1 maps to 0.05s to 10s
+    return Math.round(Math.pow(10, parseFloat(val)) * 1000);
+  }
+
+  function mapMsToSlider(ms) {
+    return Math.log10(ms / 1000);
+  }
+
+  function mapFormatRate(ms) {
+    if (ms < 1000) return (ms / 1000).toFixed(2) + 's';
+    if (ms >= 10000) return (ms / 1000).toFixed(0) + 's';
+    return (ms / 1000).toFixed(1) + 's';
+  }
+
+  function initMapSlider() {
+    var slider = document.getElementById('mapRefreshSlider');
+    var label = document.getElementById('mapRefreshLabel');
+    slider.value = mapMsToSlider(_mapRefreshMs);
+    label.textContent = mapFormatRate(_mapRefreshMs);
+
+    slider.addEventListener('input', function() {
+      _mapRefreshMs = mapSliderToMs(this.value);
+      label.textContent = mapFormatRate(_mapRefreshMs);
+    });
+
+    slider.addEventListener('change', function() {
+      _mapRefreshMs = mapSliderToMs(this.value);
+      label.textContent = mapFormatRate(_mapRefreshMs);
+      localStorage.setItem('cc_mapRefreshMs', _mapRefreshMs);
+      // Notify server so plugin adjusts its send rate
+      api('telemetry/map-refresh-rate', 'POST', { intervalSec: _mapRefreshMs / 1000 });
+      restartMapPolling();
+    });
+  }
+
+  function restartMapPolling() {
+    if (_mapRefreshTimer) clearInterval(_mapRefreshTimer);
+    if (_mapRaidActive) {
+      _mapRefreshTimer = setInterval(loadMapPositions, _mapRefreshMs);
+    }
+  }
+
+  function loadMapPositions() {
+    api('telemetry/positions').then(function(positions) {
+      _mapPositions = positions || [];
+      drawMap();
+    }).catch(function() {});
+  }
+
+  function gameToMap(gx, gz, config) {
+    // Apply coordinate rotation
+    var rad = config.rotation * Math.PI / 180;
+    var cos = Math.cos(rad);
+    var sin = Math.sin(rad);
+    var rx = gx * cos - gz * sin;
+    var ry = gx * sin + gz * cos;
+    return { x: rx, y: ry };
+  }
+
+  function updateMapForRaid(mapId, raidActive) {
+    var panel = document.getElementById('liveMapPanel');
+    var noRaid = document.getElementById('mapNoRaid');
+    var canvas = document.getElementById('mapCanvas');
+
+    _mapRaidActive = raidActive;
+
+    if (!raidActive) {
+      panel.style.display = 'none';
+      if (_mapRefreshTimer) { clearInterval(_mapRefreshTimer); _mapRefreshTimer = null; }
+      return;
+    }
+
+    panel.style.display = '';
+    noRaid.style.display = 'none';
+    canvas.style.display = '';
+
+    // Resolve map config
+    _mapCurrentMap = mapId;
+    _mapConfig = MAP_CONFIG[mapId] || null;
+
+    if (_mapConfig) {
+      // Populate layer selector
+      var sel = document.getElementById('mapLayerSelect');
+      sel.innerHTML = '';
+      var levels = Object.keys(_mapConfig.layers).sort(function(a, b) { return parseInt(a) - parseInt(b); });
+      levels.forEach(function(lv) {
+        var opt = document.createElement('option');
+        opt.value = lv;
+        var lvNum = parseInt(lv);
+        opt.textContent = lvNum === 0 ? 'Ground' : lvNum < 0 ? 'Underground ' + lv : 'Floor ' + lv;
+        sel.appendChild(opt);
+      });
+      _mapSelectedLayer = '' + (_mapConfig.defaultLevel || 0);
+      sel.value = _mapSelectedLayer;
+    }
+
+    // Reset zoom/pan
+    _mapZoom = 1;
+    _mapPanX = 0;
+    _mapPanY = 0;
+
+    // Start polling
+    restartMapPolling();
+    loadMapPositions();
+  }
+
+  function drawMap() {
+    var canvas = document.getElementById('mapCanvas');
+    var wrap = document.getElementById('mapCanvasWrap');
+    if (!canvas || !wrap) return;
+
+    var dpr = window.devicePixelRatio || 1;
+    var w = wrap.clientWidth;
+    var h = wrap.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // Clear
+    ctx.fillStyle = '#0a0c0e';
+    ctx.fillRect(0, 0, w, h);
+
+    if (!_mapConfig) {
+      // Unknown map — draw positions as-is
+      ctx.fillStyle = '#333';
+      ctx.font = '13px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Map: ' + (_mapCurrentMap || 'Unknown') + ' (no config)', w / 2, h / 2);
+      drawPositionsRaw(ctx, w, h);
+      return;
+    }
+
+    var config = _mapConfig;
+    var bounds = config.bounds;
+    var mapW = bounds.max.x - bounds.min.x;
+    var mapH = bounds.max.y - bounds.min.y;
+
+    // Calculate scale to fit map in canvas with padding
+    var pad = 30;
+    var scaleX = (w - pad * 2) / mapW;
+    var scaleY = (h - pad * 2) / mapH;
+    var scale = Math.min(scaleX, scaleY) * _mapZoom;
+
+    // Center offset
+    var cx = w / 2 + _mapPanX;
+    var cy = h / 2 + _mapPanY;
+
+    // Map center in game coords
+    var mapCx = (bounds.min.x + bounds.max.x) / 2;
+    var mapCy = (bounds.min.y + bounds.max.y) / 2;
+
+    // Check if we have a map image loaded
+    var imgKey = _mapCurrentMap + '_' + _mapSelectedLayer;
+    var img = _mapImageCache[imgKey];
+    if (img && img.complete && img.naturalWidth > 0) {
+      // Draw map image
+      var imgX = cx + (bounds.min.x - mapCx) * scale;
+      var imgY = cy + (bounds.min.y - mapCy) * scale;
+      var imgW = mapW * scale;
+      var imgH = mapH * scale;
+      ctx.drawImage(img, imgX, imgY, imgW, imgH);
+    } else {
+      // Draw placeholder grid
+      ctx.strokeStyle = 'rgba(200,170,110,0.08)';
+      ctx.lineWidth = 1;
+      var gridSize = 50;
+      for (var gx = bounds.min.x; gx <= bounds.max.x; gx += gridSize) {
+        var sx = cx + (gx - mapCx) * scale;
+        ctx.beginPath(); ctx.moveTo(sx, cy + (bounds.min.y - mapCy) * scale); ctx.lineTo(sx, cy + (bounds.max.y - mapCy) * scale); ctx.stroke();
+      }
+      for (var gy = bounds.min.y; gy <= bounds.max.y; gy += gridSize) {
+        var sy = cy + (gy - mapCy) * scale;
+        ctx.beginPath(); ctx.moveTo(cx + (bounds.min.x - mapCx) * scale, sy); ctx.lineTo(cx + (bounds.max.x - mapCx) * scale, sy); ctx.stroke();
+      }
+
+      // Map border
+      ctx.strokeStyle = 'rgba(200,170,110,0.15)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(
+        cx + (bounds.min.x - mapCx) * scale,
+        cy + (bounds.min.y - mapCy) * scale,
+        mapW * scale, mapH * scale
+      );
+
+      // Map name
+      ctx.fillStyle = 'rgba(200,170,110,0.3)';
+      ctx.font = '16px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(config.name, cx, cy - 10);
+      ctx.font = '10px monospace';
+      ctx.fillText('Map image not loaded', cx, cy + 10);
+    }
+
+    // Draw entities
+    var showNames = document.getElementById('mapShowNames').checked;
+    var showDead = document.getElementById('mapShowDead').checked;
+    var selectedLayerZ = _mapConfig.layers[_mapSelectedLayer] ? _mapConfig.layers[_mapSelectedLayer].z : null;
+
+    _mapPositions.forEach(function(p) {
+      if (!showDead && !p.alive) return;
+
+      // Layer filter: check if entity's Y (elevation) is within selected layer's Z range
+      var onLayer = true;
+      if (selectedLayerZ && _mapSelectedLayer !== '0') {
+        onLayer = p.y >= selectedLayerZ[0] && p.y <= selectedLayerZ[1];
+      }
+
+      // Transform game coords to map coords
+      var mp = gameToMap(p.x, p.z, config);
+
+      // Screen position
+      var sx = cx + (mp.x - mapCx) * scale;
+      var sy = cy + (mp.y - mapCy) * scale;
+
+      // Determine color
+      var color = MAP_COLORS[p.type] || MAP_COLORS.unknown;
+      var alpha = p.alive ? (onLayer ? 1.0 : 0.3) : 0.25;
+      var radius = (p.type === 'boss') ? 6 : (p.type === 'pmc') ? 5 : 4;
+
+      // Draw dot
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      // Draw rotation arrow for PMCs
+      if (p.alive && p.type === 'pmc' && p.rotation != null) {
+        var arrowLen = radius + 6;
+        var angle = -(p.rotation - config.rotation) * Math.PI / 180;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx + Math.sin(angle) * arrowLen, sy - Math.cos(angle) * arrowLen);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      // Dead X marker
+      if (!p.alive) {
+        ctx.strokeStyle = 'rgba(200,60,60,0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(sx - 3, sy - 3); ctx.lineTo(sx + 3, sy + 3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(sx + 3, sy - 3); ctx.lineTo(sx - 3, sy + 3); ctx.stroke();
+      }
+
+      // Name label
+      if (showNames && p.alive && (p.type === 'pmc' || p.type === 'boss')) {
+        ctx.fillStyle = color;
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(p.name, sx, sy - radius - 3);
+      }
+
+      ctx.globalAlpha = 1;
+    });
+
+    // Draw compass
+    ctx.fillStyle = 'rgba(200,170,110,0.5)';
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('N', w - 20, 18);
+    ctx.fillStyle = 'rgba(200,170,110,0.3)';
+    ctx.font = '9px monospace';
+    ctx.fillText('S', w - 20, h - 8);
+    ctx.fillText('W', 10, h / 2 + 4);
+    ctx.textAlign = 'left';
+    ctx.fillText('E', w - 14, h / 2 + 4);
+
+    // Entity count
+    var aliveCount = _mapPositions.filter(function(p) { return p.alive; }).length;
+    ctx.fillStyle = 'rgba(200,170,110,0.4)';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(aliveCount + ' alive / ' + _mapPositions.length + ' total', 8, 16);
+  }
+
+  function drawPositionsRaw(ctx, w, h) {
+    // Fallback for unknown maps: auto-fit all positions
+    if (_mapPositions.length === 0) return;
+    var minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    _mapPositions.forEach(function(p) {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.z < minZ) minZ = p.z;
+      if (p.z > maxZ) maxZ = p.z;
+    });
+    var rangeX = Math.max(maxX - minX, 10);
+    var rangeZ = Math.max(maxZ - minZ, 10);
+    var pad = 40;
+    _mapPositions.forEach(function(p) {
+      var sx = pad + ((p.x - minX) / rangeX) * (w - pad * 2);
+      var sy = pad + ((p.z - minZ) / rangeZ) * (h - pad * 2);
+      ctx.beginPath();
+      ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = MAP_COLORS[p.type] || '#888';
+      ctx.globalAlpha = p.alive ? 1 : 0.25;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  // Map interaction (zoom/pan)
+  (function() {
+    var wrap = document.getElementById('mapCanvasWrap');
+    if (!wrap) return;
+
+    wrap.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      var delta = e.deltaY > 0 ? 0.9 : 1.1;
+      _mapZoom = Math.max(0.3, Math.min(10, _mapZoom * delta));
+      drawMap();
+    }, { passive: false });
+
+    wrap.addEventListener('mousedown', function(e) {
+      if (e.button !== 0) return;
+      _mapDragging = true;
+      _mapDragStart = { x: e.clientX, y: e.clientY };
+      _mapPanStart = { x: _mapPanX, y: _mapPanY };
+    });
+
+    window.addEventListener('mousemove', function(e) {
+      if (!_mapDragging) return;
+      _mapPanX = _mapPanStart.x + (e.clientX - _mapDragStart.x);
+      _mapPanY = _mapPanStart.y + (e.clientY - _mapDragStart.y);
+      drawMap();
+    });
+
+    window.addEventListener('mouseup', function() {
+      _mapDragging = false;
+    });
+
+    // Layer selector
+    var layerSel = document.getElementById('mapLayerSelect');
+    if (layerSel) {
+      layerSel.addEventListener('change', function() {
+        _mapSelectedLayer = this.value;
+        drawMap();
+      });
+    }
+
+    // Init slider
+    initMapSlider();
+  })();
+
+  // Try to load map images from server
+  function tryLoadMapImage(mapId, layer) {
+    var key = mapId + '_' + layer;
+    if (_mapImageCache[key]) return;
+    // Map internal name to image filename
+    var fileMap = {
+      'bigmap': 'customs', 'factory4_day': 'factory', 'factory4_night': 'factory',
+      'Sandbox': 'ground_zero', 'Sandbox_high': 'ground_zero',
+      'Interchange': 'interchange', 'laboratory': 'labs', 'Labyrinth': 'labyrinth',
+      'Lighthouse': 'lighthouse', 'RezervBase': 'reserve', 'Shoreline': 'shoreline',
+      'TarkovStreets': 'streets', 'Woods': 'woods'
+    };
+    var prefix = fileMap[mapId];
+    if (!prefix) return;
+    var suffix = prefix === 'factory' || prefix === 'labyrinth' || prefix === 'labs' ? 'layer' : 'level';
+    var filename = prefix + '_' + suffix + '_' + layer + '.png';
+    var img = new Image();
+    img.onload = function() { drawMap(); };
+    img.src = 'maps/' + filename;
+    _mapImageCache[key] = img;
+  }
+
+  // Update raidInfoInit to include new data loading
+  var _origRaidInfoInit = raidInfoInit;
+
+  // Override loadTelemetry to also load perf history, alerts, and map positions
+  var _origLoadTelemetry = loadTelemetry;
+  var _telemTickCount = 0;
+
+  loadTelemetry = function() {
+    _origLoadTelemetry();
+    _telemTickCount++;
+    // Load perf history every other tick (~6s)
+    if (_telemTickCount % 2 === 0) loadPerformanceHistory();
+    // Load alerts every tick
+    loadAlerts();
+    // Load lifetime stats once, then every 10 ticks (~30s)
+    if (!_lifetimeStatsLoaded || _telemTickCount % 10 === 0) loadLifetimeStats();
+  };
 
   // ═══════════════════════════════════════════════════════
   // PLAYER MANAGEMENT

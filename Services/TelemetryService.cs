@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Services;
 using ZSlayerCommandCenter.Models;
@@ -125,10 +126,13 @@ public class TelemetryService(
 
     public void UpdateRaidState(RaidStatePayload payload)
     {
+        bool wasActive;
+        bool wasIdle;
+
         lock (_lock)
         {
-            var wasActive = _currentRaidState != null && _currentRaidState.Status != "idle";
-            var wasIdle = _currentRaidState == null || _currentRaidState.Status == "idle";
+            wasActive = _currentRaidState != null && _currentRaidState.Status != "idle";
+            wasIdle = _currentRaidState == null || _currentRaidState.Status == "idle";
             _currentRaidState = payload;
 
             // Start a new raid tracking session
@@ -154,9 +158,16 @@ public class TelemetryService(
                 _currentPlayers = null;
                 _currentBots = null;
                 _currentDamageStats = null;
+                _currentPositions = [];
                 _currentRaidId = "";
             }
         }
+
+        // Generate alerts on status transitions
+        if (payload.Status is "loading" or "deploying" && wasIdle)
+            AddAlert("raid-start", $"Raid starting on {payload.Map}", payload.Map, "rocket");
+        if (payload.Status == "idle" && wasActive)
+            AddAlert("raid-end", "Raid ended", payload.Map, "flag");
 
         logger.Info($"[Telemetry] Raid state → {payload.Status}, map: {payload.Map}, timer: {payload.RaidTimer}s");
     }
@@ -167,6 +178,7 @@ public class TelemetryService(
         {
             _currentPerformance = payload;
         }
+        RecordPerformanceHistory(payload);
     }
 
     public void AddKill(KillPayload payload)
@@ -228,6 +240,12 @@ public class TelemetryService(
             _currentRaidKills.Add(entry);
         }
 
+        // Generate alerts for notable kills
+        if (payload.Victim.Type == "pmc")
+            AddAlert("pmc-kill", $"{killerName} killed {victimName}", payload.Map, "skull");
+        if (payload.IsHeadshot)
+            AddAlert("headshot", $"Headshot! {killerName} → {victimName} ({Math.Round(payload.Distance)}m)", payload.Map, "crosshair");
+
         logger.Info($"[Telemetry] Kill: {killerName} → {victimName} [{weaponName}] ({bodyPart}, {payload.Distance:F0}m)");
     }
 
@@ -275,6 +293,8 @@ public class TelemetryService(
             }
         }
 
+        AddAlert("boss-spawn", $"Boss spawned: {payload.Boss}", payload.Map, "crown");
+
         logger.Info($"TelemetryService: Boss spawned — {payload.Boss} on {payload.Map} at {payload.RaidTime}s");
     }
 
@@ -284,6 +304,7 @@ public class TelemetryService(
         {
             _currentRaidExtracts.Add(payload);
         }
+        AddAlert("extract", $"{payload.Player.Name} extracted ({payload.Outcome})", payload.Map, "door-open");
     }
 
     public void FinishRaid(RaidSummaryPayload payload)
@@ -369,8 +390,34 @@ public class TelemetryService(
     //  GET methods (called from dashboard GET endpoints)
     // ══════════════════════════════════════════════════════════════
 
+    // Late-bound season service (injected after construction to avoid DI ordering issues)
+    private SeasonalEventService? _seasonService;
+    public void SetSeasonService(SeasonalEventService svc) => _seasonService = svc;
+
     public TelemetryCurrentDto GetCurrent()
     {
+        // Get season from server-side SeasonalEventService (not plugin)
+        var season = "";
+        try
+        {
+            if (_seasonService != null)
+            {
+                var s = _seasonService.GetActiveWeatherSeason();
+                season = s switch
+                {
+                    Season.SUMMER => "Summer",
+                    Season.AUTUMN => "Autumn",
+                    Season.WINTER => "Winter",
+                    Season.SPRING => "Spring",
+                    Season.AUTUMN_LATE => "Late Autumn",
+                    Season.SPRING_EARLY => "Early Spring",
+                    Season.STORM => "Storm",
+                    _ => s.ToString()
+                };
+            }
+        }
+        catch { /* ignore */ }
+
         lock (_lock)
         {
             var isActive = _currentRaidState != null && _currentRaidState.Status != "idle";
@@ -381,7 +428,9 @@ public class TelemetryService(
                 Performance = _currentPerformance,
                 Players = _currentPlayers?.Players ?? [],
                 Bots = _currentBots,
-                DamageStats = _currentDamageStats
+                DamageStats = _currentDamageStats,
+                Positions = isActive ? _currentPositions : [],
+                Season = season
             };
         }
     }
@@ -426,6 +475,217 @@ public class TelemetryService(
                 Kills = record.Kills,
                 Extracts = record.Extracts,
                 DamageStats = record.DamageStats
+            };
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  Positions (for live minimap)
+    // ══════════════════════════════════════════════════════════════
+
+    private List<PlayerPositionEntry> _currentPositions = [];
+
+    // Map refresh rate (configurable via frontend slider)
+    private float _mapRefreshRate = 1.0f; // seconds
+
+    public float GetMapRefreshRate() => _mapRefreshRate;
+    public void SetMapRefreshRate(float rate)
+    {
+        _mapRefreshRate = Math.Clamp(rate, 0.05f, 10f);
+        logger.Info($"[Telemetry] Map refresh rate set to {_mapRefreshRate}s");
+    }
+
+    public void UpdatePositions(PositionPayload payload)
+    {
+        lock (_lock)
+        {
+            _currentPositions = payload.Positions ?? [];
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  Performance history buffer (rolling 5 minutes)
+    // ══════════════════════════════════════════════════════════════
+
+    private readonly List<PerformanceHistoryEntry> _perfHistory = new();
+    private const int MaxPerfHistory = 60; // 5 min at 5s intervals
+
+    public void RecordPerformanceHistory(PerformancePayload payload)
+    {
+        lock (_lock)
+        {
+            var ramTotalMb = payload.SystemInfo?.TotalRamMb ?? 0;
+            var ramPercent = ramTotalMb > 0 ? Math.Round((double)payload.MemoryMb / ramTotalMb * 100, 1) : 0;
+            _perfHistory.Add(new PerformanceHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                CpuPercent = payload.CpuUsage,
+                RamPercent = ramPercent,
+                RamUsedMb = payload.MemoryMb,
+                RamTotalMb = ramTotalMb,
+                Fps = payload.Fps
+            });
+            if (_perfHistory.Count > MaxPerfHistory)
+                _perfHistory.RemoveRange(0, _perfHistory.Count - MaxPerfHistory);
+        }
+    }
+
+    public List<PerformanceHistoryEntry> GetPerformanceHistory()
+    {
+        lock (_lock)
+        {
+            return [.. _perfHistory];
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  Lifetime stats (aggregated from raid history)
+    // ══════════════════════════════════════════════════════════════
+
+    public LifetimeStatsDto GetLifetimeStats()
+    {
+        lock (_lock)
+        {
+            if (_raidHistory.Count == 0)
+                return new LifetimeStatsDto();
+
+            var totalRaids = _raidHistory.Count;
+            var survived = _raidHistory.Count(r => r.Summary.Survived > 0);
+            var deaths = totalRaids - survived;
+            var totalKills = 0;
+            var pmcKills = 0;
+            var scavKills = 0;
+            var bossKills = 0;
+            var totalDamage = 0;
+            var totalXp = 0;
+            var totalHeadshots = 0;
+            double longestShot = 0;
+            var totalDurationSec = 0;
+            var raidsByMap = new Dictionary<string, int>();
+            var killsByWeapon = new Dictionary<string, int>();
+
+            foreach (var raid in _raidHistory)
+            {
+                totalDurationSec += raid.Summary.Duration;
+
+                // Map counts
+                var mapName = !string.IsNullOrEmpty(raid.Summary.MapName) ? raid.Summary.MapName : raid.Summary.Map;
+                if (!string.IsNullOrEmpty(mapName))
+                    raidsByMap[mapName] = raidsByMap.GetValueOrDefault(mapName) + 1;
+
+                // Player stats
+                foreach (var p in raid.Players)
+                {
+                    totalKills += p.Kills;
+                    pmcKills += p.KilledPmc;
+                    scavKills += p.KilledScav;
+                    bossKills += p.KilledBoss;
+                    totalDamage += p.DamageDealt;
+                    totalXp += p.XpEarned;
+                }
+
+                // Kill feed stats
+                foreach (var k in raid.Kills)
+                {
+                    if (k.IsHeadshot) totalHeadshots++;
+                    if (k.Distance > longestShot) longestShot = k.Distance;
+
+                    // Weapon kill counts
+                    var weapon = !string.IsNullOrEmpty(k.WeaponName) ? k.WeaponName : "Unknown";
+                    killsByWeapon[weapon] = killsByWeapon.GetValueOrDefault(weapon) + 1;
+                }
+
+                // Damage stats
+                if (raid.DamageStats != null)
+                {
+                    if (raid.DamageStats.LongestShot > longestShot)
+                        longestShot = raid.DamageStats.LongestShot;
+                }
+            }
+
+            // Top 10 weapons
+            var topWeapons = killsByWeapon
+                .OrderByDescending(kv => kv.Value)
+                .Take(10)
+                .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+            // Favorite map
+            var favoriteMap = raidsByMap.Count > 0
+                ? raidsByMap.OrderByDescending(kv => kv.Value).First().Key
+                : "";
+
+            // Recent trend (last 20 raids)
+            var trend = _raidHistory.Take(20).Select(r => new RaidTrendEntry
+            {
+                Timestamp = r.Summary.Timestamp,
+                Map = !string.IsNullOrEmpty(r.Summary.MapName) ? r.Summary.MapName : r.Summary.Map,
+                Survived = r.Summary.Survived > 0,
+                Kills = r.Summary.TotalKills,
+                Duration = r.Summary.Duration
+            }).ToList();
+
+            return new LifetimeStatsDto
+            {
+                TotalRaids = totalRaids,
+                Survived = survived,
+                Deaths = deaths,
+                SurvivalRate = totalRaids > 0 ? Math.Round((double)survived / totalRaids * 100, 1) : 0,
+                TotalKills = totalKills,
+                PmcKills = pmcKills,
+                ScavKills = scavKills,
+                BossKills = bossKills,
+                AvgKillsPerRaid = totalRaids > 0 ? Math.Round((double)totalKills / totalRaids, 1) : 0,
+                TotalDamage = totalDamage,
+                TotalXp = totalXp,
+                TotalHeadshots = totalHeadshots,
+                LongestShot = Math.Round(longestShot, 1),
+                FavoriteMap = favoriteMap,
+                AvgRaidDurationSec = totalRaids > 0 ? totalDurationSec / totalRaids : 0,
+                TotalPlayTimeSec = totalDurationSec,
+                RaidsByMap = raidsByMap,
+                KillsByWeapon = topWeapons,
+                RecentTrend = trend
+            };
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  Alerts
+    // ══════════════════════════════════════════════════════════════
+
+    private readonly List<AlertEntry> _alerts = new();
+    private const int MaxAlerts = 200;
+    private int _alertCounter;
+
+    public void AddAlert(string type, string message, string map = "", string icon = "")
+    {
+        lock (_lock)
+        {
+            _alerts.Add(new AlertEntry
+            {
+                Id = $"a{Interlocked.Increment(ref _alertCounter)}",
+                Type = type,
+                Message = message,
+                Timestamp = DateTime.UtcNow,
+                Map = map,
+                Icon = icon
+            });
+            if (_alerts.Count > MaxAlerts)
+                _alerts.RemoveRange(0, _alerts.Count - MaxAlerts);
+        }
+    }
+
+    public AlertResponse GetAlerts(DateTime? since = null, int limit = 50)
+    {
+        lock (_lock)
+        {
+            var filtered = since.HasValue
+                ? _alerts.Where(a => a.Timestamp > since.Value).ToList()
+                : _alerts;
+            return new AlertResponse
+            {
+                Alerts = filtered.TakeLast(Math.Min(limit, MaxAlerts)).Reverse().ToList(),
+                Total = _alerts.Count
             };
         }
     }
