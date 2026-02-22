@@ -59,6 +59,18 @@ Real-time raid monitoring powered by the headless telemetry plugin. Watch raids 
   - Total hits, headshots, headshot %, total damage dealt
   - Longest shot distance, average engagement distance
   - Body part hit distribution as a horizontal bar chart
+- **Live Minimap** — real-time overhead map of the current raid:
+  - Color-coded entity dots (PMC, scav, boss, raider, follower, dead)
+  - Multi-layer support with level selector (underground, ground, upper floors)
+  - PMC rotation arrows showing facing direction
+  - Smooth pan and zoom with mouse drag/scroll
+  - Auto-follow mode that tracks the logged-in player's position
+  - Map image overlays for all official Tarkov maps
+  - Adjustable refresh rate slider (50ms to 10s)
+  - Name labels, dead toggle, layer filtering
+  - Pop-out window — standalone map viewer that works independently of the main UI
+- **Alerts** — inline raid event notifications (boss spawns, kills, headshots, extracts) with expandable history
+- **Collapsible Performance Panel** — system gauges collapse/expand state persists across sessions
 - **Raid History** — searchable log of all completed raids with:
   - Map, date, duration, player count, kills, deaths
   - Expandable detail view with full player scoreboard (kills by type, damage, XP, outcome badges)
@@ -290,8 +302,11 @@ All endpoints are prefixed with `/zslayer/cc/`. Authentication is via `X-Session
 |--------|----------|-------------|
 | GET | `/telemetry/current` | Full live state (raid, players, bots, perf, damage) |
 | GET | `/telemetry/kills` | Kill feed for current raid |
+| GET | `/telemetry/positions` | Entity positions for live map |
+| GET | `/telemetry/alerts` | Raid event alerts (boss spawns, kills, etc.) |
 | GET | `/telemetry/history` | Raid history list |
 | GET | `/telemetry/history/{id}` | Detailed raid with player scoreboard |
+| POST | `/telemetry/map-refresh-rate` | Set map position polling interval |
 | POST | `/telemetry/raid-state` | (plugin) Report raid status |
 | POST | `/telemetry/players` | (plugin) Report player list |
 | POST | `/telemetry/performance` | (plugin) Report FPS/memory |
