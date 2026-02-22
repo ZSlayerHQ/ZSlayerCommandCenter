@@ -32,6 +32,7 @@ public class CommandCenterHttpListener(
     OfferRegenerationService offerRegenerationService,
     HeadlessLogService headlessLogService,
     HeadlessProcessService headlessProcessService,
+    TelemetryService telemetryService,
     DatabaseService databaseService,
     ConfigServer configServer,
     SaveServer saveServer,
@@ -124,6 +125,13 @@ public class CommandCenterHttpListener(
                     await HandleQuestRoute(context, headerSessionId, questId, action, method);
                     return;
                 }
+            }
+
+            // Handle telemetry routes (POST = no auth, GET = auth required)
+            if (path.StartsWith("telemetry/"))
+            {
+                await HandleTelemetryRoute(context, headerSessionId, path, method);
+                return;
             }
 
             // Handle headless routes with prefix matching
@@ -763,6 +771,146 @@ public class CommandCenterHttpListener(
         accessControlService.UnbanPlayer(body.SessionId);
         activityLogService.LogAction(ActionType.PlayerUnban, headerSessionId, $"Unbanned {name}");
         await WriteJson(context, 200, new PlayerActionResponse { Success = true, Message = $"Unbanned {name}" });
+    }
+
+    // ── Telemetry Handlers ──
+
+    private async Task HandleTelemetryRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        // POST endpoints — from headless plugin, no session auth required (localhost only)
+        if (method == "POST")
+        {
+            switch (path)
+            {
+                case "telemetry/raid-state":
+                {
+                    var body = await ReadBody<RaidStatePayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    telemetryService.UpdateRaidState(body);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
+                case "telemetry/performance":
+                {
+                    var body = await ReadBody<PerformancePayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    telemetryService.UpdatePerformance(body);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
+                case "telemetry/kill":
+                {
+                    var body = await ReadBody<KillPayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    telemetryService.AddKill(body);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
+                case "telemetry/players":
+                {
+                    var body = await ReadBody<PlayerStatusPayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    telemetryService.UpdatePlayers(body);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
+                case "telemetry/bots":
+                {
+                    var body = await ReadBody<BotCountPayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    telemetryService.UpdateBots(body);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
+                case "telemetry/boss-spawn":
+                {
+                    var body = await ReadBody<BossSpawnPayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    telemetryService.AddBossSpawn(body);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
+                case "telemetry/extract":
+                {
+                    var body = await ReadBody<ExtractPayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    telemetryService.AddExtract(body);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
+                case "telemetry/raid-summary":
+                {
+                    var body = await ReadBody<RaidSummaryPayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    telemetryService.FinishRaid(body);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
+                case "telemetry/damage-stats":
+                {
+                    var body = await ReadBody<DamageStatsPayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    telemetryService.UpdateDamageStats(body);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
+                default:
+                    await WriteJson(context, 404, new { error = "Not found" });
+                    break;
+            }
+            return;
+        }
+
+        // GET endpoints — from dashboard, session auth required
+        if (method == "GET")
+        {
+            if (!await ValidateAccess(context, headerSessionId)) return;
+
+            switch (path)
+            {
+                case "telemetry/current":
+                    await WriteJson(context, 200, telemetryService.GetCurrent());
+                    break;
+                case "telemetry/kill-feed":
+                {
+                    var limitStr = context.Request.Query["limit"].FirstOrDefault();
+                    var limit = int.TryParse(limitStr, out var lv) ? Math.Clamp(lv, 1, 100) : 50;
+                    await WriteJson(context, 200, telemetryService.GetKillFeed(limit));
+                    break;
+                }
+                case "telemetry/raid-history":
+                    await WriteJson(context, 200, telemetryService.GetRaidHistory());
+                    break;
+                default:
+                {
+                    // GET telemetry/raid-history/{id}
+                    if (path.StartsWith("telemetry/raid-history/"))
+                    {
+                        var raidId = path.Substring("telemetry/raid-history/".Length);
+                        if (string.IsNullOrEmpty(raidId))
+                        {
+                            await WriteJson(context, 400, new { error = "Missing raid ID" });
+                            return;
+                        }
+                        var detail = telemetryService.GetRaidDetail(raidId);
+                        if (detail == null)
+                        {
+                            await WriteJson(context, 404, new { error = "Raid not found" });
+                            return;
+                        }
+                        await WriteJson(context, 200, detail);
+                    }
+                    else
+                    {
+                        await WriteJson(context, 404, new { error = "Not found" });
+                    }
+                    break;
+                }
+            }
+            return;
+        }
+
+        await WriteJson(context, 405, new { error = "Method not allowed" });
     }
 
     // ── Headless Process Handlers ──

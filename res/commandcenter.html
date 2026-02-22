@@ -811,6 +811,297 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .activity-badge.ServerStart { background: rgba(200,170,110,0.1); color: var(--text-dim); }
 .activity-badge.ConfigChange { background: rgba(200,122,62,0.15); color: var(--warning); }
 
+/* ── Raid Info Tab Layout ── */
+.raidinfo-status-bar {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.raidinfo-status-bar .dash-stat-label { margin-bottom: 0; }
+.raidinfo-idle-msg {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+.raidinfo-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: start;
+}
+@media (max-width: 960px) { .raidinfo-columns { grid-template-columns: 1fr; } }
+.raidinfo-section {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.raidinfo-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+}
+.raidinfo-section-header svg { width: 14px; height: 14px; color: var(--accent-dim); margin-right: 8px; }
+.raidinfo-section-body { padding: 12px 16px; }
+
+/* ── Telemetry: Live Raid ── */
+.telem-raid-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.telem-raid-status {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.telem-raid-status.in-raid { background: rgba(106,173,106,0.2); color: var(--success-bright); }
+.telem-raid-status.loading, .telem-raid-status.deploying { background: rgba(200,170,110,0.15); color: var(--accent); }
+.telem-raid-status.extracting, .telem-raid-status.post-raid { background: rgba(100,150,200,0.15); color: #8ab4d8; }
+.telem-raid-status.idle { background: rgba(100,100,100,0.15); color: var(--text-dim); }
+
+.telem-fps { font-family: var(--font-mono); font-weight: 700; font-size: 14px; }
+.telem-fps.fps-good { color: #4a7c59; }
+.telem-fps.fps-mid { color: #c87a3e; }
+.telem-fps.fps-low { color: #8b3a3a; }
+
+.telem-player-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.telem-player-table th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.telem-player-table td { padding: 6px 8px; border-bottom: 1px solid var(--border-subtle); }
+.telem-player-table tr.dead td { opacity: 0.45; }
+
+.telem-health-bar {
+  width: 60px; height: 8px;
+  background: var(--bg-dark);
+  border-radius: 2px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+.telem-health-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+.telem-health-fill.hp-high { background: var(--success-bright); }
+.telem-health-fill.hp-mid { background: var(--warning); }
+.telem-health-fill.hp-low { background: var(--error-bright); }
+
+.telem-ping { font-family: var(--font-mono); font-size: 11px; }
+.telem-ping.ping-good { color: #4a7c59; }
+.telem-ping.ping-fair { color: #c8aa6e; }
+.telem-ping.ping-warn { color: #c87a3e; }
+.telem-ping.ping-bad { color: #8b3a3a; }
+
+.telem-bots {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+.telem-bot-group { display: flex; flex-direction: column; gap: 2px; }
+.telem-bot-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-family: var(--font-mono); }
+.telem-bot-value { font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--font-display); }
+.telem-bot-value .alive { color: var(--success-bright); }
+.telem-bot-value .dead-count { color: var(--text-muted); }
+
+.telem-boss-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.telem-boss-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.telem-boss-tag.boss-alive { background: rgba(200,80,80,0.2); color: #c45050; }
+.telem-boss-tag.boss-dead { background: rgba(100,100,100,0.15); color: var(--text-muted); text-decoration: line-through; }
+
+/* ── Telemetry: Kill Feed ── */
+.telem-kill-feed {
+  max-height: 500px;
+  overflow-y: auto;
+}
+.telem-kill-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  line-height: 1.4;
+  border-left: 3px solid transparent;
+}
+.telem-kill-entry:last-child { border-bottom: none; }
+.telem-kill-entry.kill-border-pmc { border-left-color: var(--accent); }
+.telem-kill-entry.kill-border-boss { border-left-color: #c45050; }
+.telem-kill-time { color: var(--text-muted); font-size: 10px; white-space: nowrap; }
+.telem-kill-detail { flex: 1; }
+.telem-kill-dist { color: var(--text-muted); font-size: 10px; white-space: nowrap; font-family: var(--font-mono); }
+.telem-kill-name.pmc { color: var(--accent); font-weight: 600; }
+.telem-kill-name.boss { color: #c45050; font-weight: 600; }
+.telem-kill-name.scav, .telem-kill-name.raider, .telem-kill-name.rogue, .telem-kill-name.follower { color: var(--text-dim); }
+.telem-kill-weapon { color: var(--text); }
+.telem-kill-meta { color: var(--text-muted); font-size: 10px; }
+.telem-headshot { background: rgba(196,80,80,0.2); color: #c45050; font-weight: 700; padding: 0 4px; border-radius: 3px; font-size: 10px; }
+.telem-kill-arrow { color: var(--text-muted); margin: 0 2px; }
+
+/* ── Telemetry: Raid History ── */
+.telem-history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.telem-history-table th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.telem-history-table td { padding: 6px 8px; border-bottom: 1px solid var(--border-subtle); color: var(--text); }
+.telem-history-table tr { cursor: pointer; }
+.telem-history-table tr:hover td { background: var(--bg-hover); }
+.telem-history-detail {
+  display: none;
+  padding: 12px 16px;
+  background: var(--bg-dark);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.telem-history-detail.open { display: block; }
+.telem-history-sub { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 10px; }
+.telem-no-data { text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px; font-family: var(--font-mono); }
+
+/* ── Combat Stats Panel ── */
+.combat-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.combat-stat-item {
+  text-align: center;
+  padding: 8px 4px;
+  background: var(--bg-dark);
+  border-radius: var(--radius-sm);
+}
+.combat-stat-value {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+}
+.combat-stat-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+.body-part-chart { margin-top: 8px; }
+.body-part-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.body-part-label {
+  width: 70px;
+  text-align: right;
+  color: var(--text-dim);
+  font-size: 10px;
+}
+.body-part-bar-bg {
+  flex: 1;
+  height: 10px;
+  background: var(--bg-dark);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.body-part-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  min-width: 1px;
+}
+.body-part-bar-fill.bp-head { background: #c45050; }
+.body-part-count {
+  width: 24px;
+  text-align: right;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+/* ── Outcome Badges ── */
+.outcome-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.outcome-badge.survived { background: rgba(106,173,106,0.2); color: var(--success-bright); }
+.outcome-badge.kia { background: rgba(196,80,80,0.2); color: #c45050; }
+.outcome-badge.mia { background: rgba(200,170,110,0.15); color: var(--accent); }
+.outcome-badge.runthrough { background: rgba(200,170,110,0.1); color: #b8a060; }
+
+/* ── Player Scoreboard ── */
+.player-scoreboard { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; }
+.player-scoreboard th {
+  text-align: left;
+  padding: 4px 6px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  border-bottom: 1px solid var(--border);
+}
+.player-scoreboard td { padding: 4px 6px; border-bottom: 1px solid var(--border-subtle); }
+.player-scoreboard td.num { text-align: center; font-family: var(--font-mono); }
+
 /* Console */
 .console-panel {
   background: #0a0a0a;
@@ -1894,6 +2185,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 <div class="nav-bar" id="navBar">
   <div class="nav-bar-inner">
     <button class="nav-btn active" data-nav="dashboard" onclick="switchMainTab('dashboard')">Dashboard</button>
+    <button class="nav-btn" data-nav="raidinfo" onclick="switchMainTab('raidinfo')">Raid Info</button>
     <button class="nav-btn" data-nav="items" onclick="switchMainTab('items')">Items</button>
     <button class="nav-btn" data-nav="players" onclick="switchMainTab('players')">Players</button>
     <button class="nav-btn" data-nav="flea" onclick="switchMainTab('flea')">Flea Market</button>
@@ -1957,6 +2249,103 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 <!-- ═══════ MAIN INTERFACE ═══════ -->
 <div class="main-container" id="mainContainer">
+
+  <!-- ═══════ RAID INFO TAB ═══════ -->
+  <div class="main-tab-panel" id="main-raidinfo">
+
+    <!-- Status Bar -->
+    <div class="raidinfo-status-bar" id="raidInfoStatusBar">
+      <span id="telemRaidStatusBadge" class="telem-raid-status idle">Idle</span>
+      <div class="dash-stat"><span class="dash-stat-label">Map</span><span class="dash-stat-value sm" id="telemMap">--</span></div>
+      <div class="dash-stat"><span class="dash-stat-label">Elapsed</span><span class="dash-stat-value sm" id="telemTimer">--</span></div>
+      <div class="dash-stat"><span class="dash-stat-label">Remaining</span><span class="dash-stat-value sm" id="telemTimeLeft">--</span></div>
+      <div class="dash-stat"><span class="dash-stat-label">Time of Day</span><span class="dash-stat-value sm" id="telemTimeOfDay">--</span></div>
+      <div class="dash-stat"><span class="dash-stat-label">FPS</span><span class="telem-fps" id="telemFps">--</span></div>
+      <div class="dash-stat"><span class="dash-stat-label">FPS Avg</span><span class="telem-fps" id="telemFpsAvg" style="font-size:12px;font-weight:500">--</span></div>
+      <div class="dash-stat"><span class="dash-stat-label">Memory</span><span class="dash-stat-value sm" id="telemMemory">--</span></div>
+      <span id="raidInfoIdleMsg" class="raidinfo-idle-msg">Waiting for raid...</span>
+    </div>
+
+    <!-- Two-Column Layout: Players+Bots | Kill Feed -->
+    <div class="raidinfo-columns">
+
+      <!-- Left Column: Players + Bots -->
+      <div>
+        <div class="raidinfo-section" style="margin-bottom:16px">
+          <div class="raidinfo-section-header">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Players</span>
+          </div>
+          <div class="raidinfo-section-body" id="telemPlayersSection">
+            <div class="telem-no-data" id="telemPlayersEmpty">No players in raid</div>
+            <table class="telem-player-table" id="telemPlayerTable" style="display:none">
+              <thead><tr><th>Player</th><th>Lvl</th><th>Side</th><th>Kills</th><th>Status</th><th>Health</th><th>Ping</th></tr></thead>
+              <tbody id="telemPlayerBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="raidinfo-section">
+          <div class="raidinfo-section-header">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> AI / Bots</span>
+          </div>
+          <div class="raidinfo-section-body" id="telemBotsSection">
+            <div class="telem-no-data" id="telemBotsEmpty">No bot data</div>
+            <div class="telem-bots" id="telemBotsInner" style="display:none">
+              <div class="telem-bot-group"><span class="telem-bot-label">Scavs</span><span class="telem-bot-value" id="telemScavs">--</span></div>
+              <div class="telem-bot-group"><span class="telem-bot-label">Raiders</span><span class="telem-bot-value" id="telemRaiders">--</span></div>
+              <div class="telem-bot-group"><span class="telem-bot-label">Rogues</span><span class="telem-bot-value" id="telemRogues">--</span></div>
+              <div class="telem-bot-group"><span class="telem-bot-label">Total AI</span><span class="telem-bot-value" id="telemTotalAI">--</span></div>
+              <div class="telem-bot-group" id="telemBossGroup" style="display:none">
+                <span class="telem-bot-label">Bosses</span>
+                <div class="telem-boss-list" id="telemBossList"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Kill Feed + Combat Stats -->
+      <div>
+        <div class="raidinfo-section" style="margin-bottom:16px">
+          <div class="raidinfo-section-header">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Kill Feed</span>
+            <span id="telemKillCount" style="font-size:11px;font-family:var(--font-mono);color:var(--text-muted)"></span>
+          </div>
+          <div class="raidinfo-section-body" style="padding:8px 16px">
+            <div class="telem-kill-feed" id="telemKillFeed">
+              <div class="telem-no-data">No kills recorded yet</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="raidinfo-section" id="telemCombatStatsSection" style="display:none">
+          <div class="raidinfo-section-header">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Combat Stats</span>
+          </div>
+          <div class="raidinfo-section-body" id="telemCombatStatsBody">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Raid History (full-width) -->
+    <div class="raidinfo-section">
+      <div class="raidinfo-section-header">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg> Raid History</span>
+        <span id="telemHistoryCount" style="font-size:11px;font-family:var(--font-mono);color:var(--text-muted)"></span>
+      </div>
+      <div style="max-height:500px;overflow-y:auto">
+        <table class="telem-history-table" id="telemHistoryTable">
+          <thead><tr><th>Map</th><th>Date</th><th>Duration</th><th>Players</th><th>Survived</th><th>Kills</th><th>Deaths</th><th>Bosses</th></tr></thead>
+          <tbody id="telemHistoryBody">
+            <tr><td colspan="8" class="telem-no-data">No raid history yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
 
   <!-- ═══════ ITEMS TAB ═══════ -->
   <div class="main-tab-panel" id="main-items">
@@ -2928,12 +3317,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       p.classList.toggle('active', p.id === 'main-' + tab);
     });
 
-    // Lazy-load players on first visit
+    // Lazy-load tabs on first visit
     if (tab === 'players' && !playersLoaded) loadPlayerRoster();
-    // Lazy-load quests on first visit
     if (tab === 'quests' && !questsLoaded) loadQuestBrowser();
-    // Lazy-load flea on first visit
     if (tab === 'flea' && !fleaLoaded) fleaInit();
+    if (tab === 'raidinfo' && !raidInfoLoaded) raidInfoInit();
+
+    // Manage raid info polling — start when on tab, stop when leaving
+    if (tab === 'raidinfo') {
+      startRaidInfoPolling();
+    } else {
+      stopRaidInfoPolling();
+    }
   };
 
   // ═══════════════════════════════════════════════════════
@@ -3275,6 +3670,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var activityTotal = 0;
   var ACTIVITY_PAGE = 20;
   var dashConfig = { refreshIntervalSeconds: 30, consolePollingMs: 3000 };
+  var raidInfoLoaded = false;
+  var raidInfoTimer = null;
 
   function initDashboard() {
     // Fetch config first, then load data
@@ -3440,6 +3837,487 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       document.getElementById('dashRaidsByMap').innerHTML = html || '<div style="color:var(--text-muted);font-size:12px">No raids recorded yet</div>';
     }).catch(function(e) { console.error('Raids error:', e); });
   }
+
+  // ═══════════════════════════════════════════════════════
+  // TELEMETRY — Live Raid, Kill Feed, Raid History
+  // ═══════════════════════════════════════════════════════
+
+  function raidInfoInit() {
+    raidInfoLoaded = true;
+    loadTelemetry();
+    loadRaidHistory();
+    startRaidInfoPolling();
+  }
+
+  function startRaidInfoPolling() {
+    if (raidInfoTimer) return;
+    raidInfoTimer = setInterval(loadTelemetry, 3000);
+  }
+
+  function stopRaidInfoPolling() {
+    if (raidInfoTimer) { clearInterval(raidInfoTimer); raidInfoTimer = null; }
+  }
+
+  function loadTelemetry() {
+    loadTelemetryCurrent();
+    loadKillFeed();
+  }
+
+  function fpsClass(fps) {
+    if (fps >= 50) return 'fps-good';
+    if (fps >= 30) return 'fps-mid';
+    return 'fps-low';
+  }
+
+  function pingClass(ms) {
+    if (ms < 50) return 'ping-good';
+    if (ms < 100) return 'ping-fair';
+    if (ms < 150) return 'ping-warn';
+    return 'ping-bad';
+  }
+
+  function healthClass(pct) {
+    if (pct > 0.6) return 'hp-high';
+    if (pct > 0.3) return 'hp-mid';
+    return 'hp-low';
+  }
+
+  function actorClass(type) {
+    if (type === 'pmc') return 'pmc';
+    if (type === 'boss') return 'boss';
+    return type || 'scav';
+  }
+
+  function formatAliveDeadCount(ad) {
+    if (!ad) return '--';
+    return '<span class="alive">' + ad.alive + '</span> / <span class="dead-count">' + ad.dead + '</span>';
+  }
+
+  // Cache kill feed data for player kill count derivation
+  var _cachedKillFeed = [];
+
+  function countPlayerKills(playerName) {
+    var count = 0;
+    _cachedKillFeed.forEach(function(k) {
+      if (k.killer && k.killer.name === playerName) count++;
+    });
+    return count;
+  }
+
+  function renderBodyPartChart(bp) {
+    if (!bp) return '';
+    var parts = [
+      { label: 'Head', val: bp.head || 0, cls: 'bp-head' },
+      { label: 'Chest', val: bp.chest || 0, cls: '' },
+      { label: 'Stomach', val: bp.stomach || 0, cls: '' },
+      { label: 'L. Arm', val: bp.leftArm || 0, cls: '' },
+      { label: 'R. Arm', val: bp.rightArm || 0, cls: '' },
+      { label: 'L. Leg', val: bp.leftLeg || 0, cls: '' },
+      { label: 'R. Leg', val: bp.rightLeg || 0, cls: '' }
+    ];
+    var max = 1;
+    parts.forEach(function(p) { if (p.val > max) max = p.val; });
+    var html = '<div class="body-part-chart">';
+    parts.forEach(function(p) {
+      var pct = Math.round((p.val / max) * 100);
+      html += '<div class="body-part-row">' +
+        '<span class="body-part-label">' + p.label + '</span>' +
+        '<div class="body-part-bar-bg"><div class="body-part-bar-fill ' + p.cls + '" style="width:' + pct + '%"></div></div>' +
+        '<span class="body-part-count">' + p.val + '</span></div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function renderCombatStats(ds) {
+    var section = document.getElementById('telemCombatStatsSection');
+    if (!ds || ds.totalHits === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+    var hsPct = ds.totalHits > 0 ? Math.round((ds.headshotCount / ds.totalHits) * 100) : 0;
+    var html = '<div class="combat-stats-grid">' +
+      '<div class="combat-stat-item"><span class="combat-stat-value">' + ds.totalHits + '</span><span class="combat-stat-label">Hits</span></div>' +
+      '<div class="combat-stat-item"><span class="combat-stat-value">' + ds.headshotCount + '</span><span class="combat-stat-label">Headshots</span></div>' +
+      '<div class="combat-stat-item"><span class="combat-stat-value">' + hsPct + '%</span><span class="combat-stat-label">HS Rate</span></div>' +
+      '<div class="combat-stat-item"><span class="combat-stat-value">' + ds.totalDamageDealt + '</span><span class="combat-stat-label">Damage</span></div>' +
+      '<div class="combat-stat-item"><span class="combat-stat-value">' + Math.round(ds.longestShot) + 'm</span><span class="combat-stat-label">Longest Shot</span></div>' +
+      '<div class="combat-stat-item"><span class="combat-stat-value">' + Math.round(ds.avgDistance) + 'm</span><span class="combat-stat-label">Avg Distance</span></div>' +
+      '</div>';
+    html += renderBodyPartChart(ds.bodyParts);
+    document.getElementById('telemCombatStatsBody').innerHTML = html;
+  }
+
+  function outcomeBadge(outcome) {
+    var cls = 'kia';
+    var label = outcome || 'Unknown';
+    switch ((outcome || '').toLowerCase()) {
+      case 'survived': cls = 'survived'; label = 'Survived'; break;
+      case 'killed': cls = 'kia'; label = 'KIA'; break;
+      case 'mia': cls = 'mia'; label = 'MIA'; break;
+      case 'run-through': case 'runthrough': case 'runner': cls = 'runthrough'; label = 'Run Through'; break;
+    }
+    return '<span class="outcome-badge ' + cls + '">' + label + '</span>';
+  }
+
+  function loadTelemetryCurrent() {
+    api('telemetry/current').then(function(d) {
+      var idleMsg = document.getElementById('raidInfoIdleMsg');
+      var rs = d.raidState || {};
+      var perf = d.performance || {};
+      var players = d.players || [];
+      var bots = d.bots || {};
+      var damageStats = d.damageStats;
+
+      if (!d.raidActive) {
+        idleMsg.style.display = '';
+        document.getElementById('telemRaidStatusBadge').className = 'telem-raid-status idle';
+        document.getElementById('telemRaidStatusBadge').textContent = 'Idle';
+        document.getElementById('telemMap').textContent = '--';
+        document.getElementById('telemTimer').textContent = '--';
+        document.getElementById('telemTimeLeft').textContent = '--';
+        document.getElementById('telemTimeOfDay').textContent = '--';
+        document.getElementById('telemFps').textContent = '--';
+        document.getElementById('telemFps').className = 'telem-fps';
+        document.getElementById('telemFpsAvg').textContent = '--';
+        document.getElementById('telemMemory').textContent = '--';
+        document.getElementById('telemPlayerTable').style.display = 'none';
+        document.getElementById('telemPlayersEmpty').style.display = '';
+        document.getElementById('telemBotsInner').style.display = 'none';
+        document.getElementById('telemBotsEmpty').style.display = '';
+        // Keep combat stats visible after raid ends (don't hide)
+        return;
+      }
+
+      idleMsg.style.display = 'none';
+
+      // Status badge
+      var badge = document.getElementById('telemRaidStatusBadge');
+      var statusClass = (rs.status || 'idle').replace(/\s+/g, '-');
+      badge.className = 'telem-raid-status ' + statusClass;
+      badge.textContent = rs.status || 'idle';
+
+      // Header stats
+      document.getElementById('telemMap').textContent = mapDisplayName(rs.map || '');
+      document.getElementById('telemTimer').textContent = rs.raidTimer ? formatSeconds(rs.raidTimer) : '--';
+      document.getElementById('telemTimeLeft').textContent = rs.raidTimeLeft ? formatSeconds(rs.raidTimeLeft) : '--';
+      document.getElementById('telemTimeOfDay').textContent = rs.timeOfDay || '--';
+
+      // FPS with min/max range
+      var fpsEl = document.getElementById('telemFps');
+      if (perf.fps) {
+        var fpsText = perf.fps + ' FPS';
+        if (perf.fpsMin && perf.fpsMax) fpsText += ' (' + perf.fpsMin + '-' + perf.fpsMax + ')';
+        fpsEl.textContent = fpsText;
+        fpsEl.className = 'telem-fps ' + fpsClass(perf.fps);
+      } else {
+        fpsEl.textContent = '--';
+        fpsEl.className = 'telem-fps';
+      }
+      var fpsAvgEl = document.getElementById('telemFpsAvg');
+      if (perf.fpsAvg) {
+        fpsAvgEl.textContent = perf.fpsAvg + ' avg';
+        fpsAvgEl.className = 'telem-fps ' + fpsClass(perf.fpsAvg);
+        fpsAvgEl.style.fontSize = '12px';
+        fpsAvgEl.style.fontWeight = '500';
+      } else {
+        fpsAvgEl.textContent = '--';
+      }
+      document.getElementById('telemMemory').textContent = perf.memoryMb ? Number(perf.memoryMb).toLocaleString() + ' MB' : '--';
+
+      // Player table with kills column
+      if (players.length > 0) {
+        document.getElementById('telemPlayerTable').style.display = '';
+        document.getElementById('telemPlayersEmpty').style.display = 'none';
+        var phtml = '';
+        players.forEach(function(p) {
+          var alive = p.alive !== false;
+          var hpPct = Math.round((p.health || 0) * 100);
+          var hpCls = healthClass(p.health || 0);
+          var kills = countPlayerKills(p.name);
+          var pingHtml = '--';
+          if (p.pingMs != null && p.pingMs === 0) {
+            pingHtml = '<span class="telem-ping ping-good">Local</span>';
+          } else if (p.pingMs != null) {
+            pingHtml = '<span class="telem-ping ' + pingClass(p.pingMs) + '">' + p.pingMs + 'ms</span>';
+          }
+          phtml += '<tr' + (alive ? '' : ' class="dead"') + '>' +
+            '<td style="color:var(--accent);font-weight:600">' + escH(p.name) + '</td>' +
+            '<td>' + p.level + '</td>' +
+            '<td style="text-transform:uppercase;font-size:10px;letter-spacing:1px;color:var(--text-dim)">' + escH(p.side || '') + '</td>' +
+            '<td style="font-family:var(--font-mono);font-weight:600">' + (kills > 0 ? kills : '--') + '</td>' +
+            '<td>' + (alive ? '<span style="color:var(--success-bright)">Alive</span>' : '<span style="color:var(--error-bright)">Dead</span>') + '</td>' +
+            '<td><div class="telem-health-bar"><div class="telem-health-fill ' + hpCls + '" style="width:' + hpPct + '%"></div></div> <span style="font-size:10px;color:var(--text-dim)">' + hpPct + '%</span></td>' +
+            '<td>' + pingHtml + '</td></tr>';
+        });
+        document.getElementById('telemPlayerBody').innerHTML = phtml;
+      } else {
+        document.getElementById('telemPlayerTable').style.display = 'none';
+        document.getElementById('telemPlayersEmpty').style.display = '';
+      }
+
+      // Bots
+      if (bots.scavs || bots.raiders || bots.rogues || bots.totalAI) {
+        document.getElementById('telemBotsInner').style.display = '';
+        document.getElementById('telemBotsEmpty').style.display = 'none';
+        document.getElementById('telemScavs').innerHTML = formatAliveDeadCount(bots.scavs);
+        document.getElementById('telemRaiders').innerHTML = formatAliveDeadCount(bots.raiders);
+        document.getElementById('telemRogues').innerHTML = formatAliveDeadCount(bots.rogues);
+        document.getElementById('telemTotalAI').innerHTML = formatAliveDeadCount(bots.totalAI);
+
+        var bossGroup = document.getElementById('telemBossGroup');
+        var bosses = bots.bosses || [];
+        if (bosses.length > 0) {
+          bossGroup.style.display = '';
+          var bossHtml = '';
+          bosses.forEach(function(b) {
+            var cls = b.alive ? 'boss-alive' : 'boss-dead';
+            bossHtml += '<span class="telem-boss-tag ' + cls + '">' + escH(b.name) + '</span>';
+          });
+          document.getElementById('telemBossList').innerHTML = bossHtml;
+        } else {
+          bossGroup.style.display = 'none';
+        }
+      } else {
+        document.getElementById('telemBotsInner').style.display = 'none';
+        document.getElementById('telemBotsEmpty').style.display = '';
+      }
+
+      // Combat stats panel
+      renderCombatStats(damageStats);
+    }).catch(function(e) {
+      console.error('Telemetry current error:', e);
+    });
+  }
+
+  function loadKillFeed() {
+    api('telemetry/kill-feed').then(function(d) {
+      var kills = d.kills || [];
+      _cachedKillFeed = kills; // Cache for player kill count derivation
+      var isLive = d.isLive;
+      var countEl = document.getElementById('telemKillCount');
+      if (kills.length === 0) {
+        countEl.textContent = '';
+      } else if (isLive) {
+        countEl.textContent = kills.length + ' kills';
+      } else {
+        countEl.textContent = 'Last Raid \u2014 ' + kills.length + ' kills';
+      }
+      var feed = document.getElementById('telemKillFeed');
+      if (kills.length === 0) {
+        feed.innerHTML = '<div class="telem-no-data">No kills recorded yet</div>';
+        return;
+      }
+      var html = '';
+      kills.forEach(function(k) {
+        var ts = new Date(k.timestamp);
+        var timeStr = ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        var victimCls = actorClass(k.victim.type);
+        var hs = k.isHeadshot ? ' <span class="telem-headshot">HS</span>' : '';
+        var dist = k.distance > 0 ? Math.round(k.distance) + 'm' : '';
+        var bodyPart = (k.bodyPart && k.bodyPart !== 'None' && k.bodyPart !== 'Unknown') ? k.bodyPart : '';
+
+        // Color-coded border based on victim type
+        var borderCls = '';
+        if (k.victim.type === 'pmc') borderCls = ' kill-border-pmc';
+        else if (k.victim.type === 'boss') borderCls = ' kill-border-boss';
+
+        // Handle unknown/environmental deaths
+        var killerHtml = '';
+        var weaponHtml = '';
+        if (!k.killer.name && !k.weaponName) {
+          killerHtml = '<span style="color:var(--text-muted);font-style:italic">KIA</span>';
+        } else {
+          var killerCls = actorClass(k.killer.type);
+          killerHtml = '<span class="telem-kill-name ' + killerCls + '">' + escH(k.killer.name || 'Unknown') + '</span>';
+          if (k.weaponName) {
+            weaponHtml = ' <span class="telem-kill-weapon">[' + escH(k.weaponName) + ']</span>';
+          }
+        }
+
+        // Build meta info
+        var metaParts = [];
+        if (bodyPart) metaParts.push(bodyPart);
+        var metaHtml = metaParts.length > 0 ? ' <span class="telem-kill-meta">(' + metaParts.join(', ') + ')</span>' : '';
+
+        html += '<div class="telem-kill-entry' + borderCls + '">' +
+          '<span class="telem-kill-time">' + timeStr + '</span>' +
+          '<span class="telem-kill-detail">' +
+            killerHtml +
+            '<span class="telem-kill-arrow"> \u2192 </span>' +
+            weaponHtml + ' ' +
+            '<span class="telem-kill-name ' + victimCls + '">' + escH(k.victim.name) + '</span>' +
+            hs + metaHtml +
+          '</span>' +
+          (dist ? '<span class="telem-kill-dist">' + dist + '</span>' : '') +
+          '</div>';
+      });
+      feed.innerHTML = html;
+    }).catch(function(e) {
+      console.error('Kill feed error:', e);
+    });
+  }
+
+  function loadRaidHistory() {
+    api('telemetry/raid-history').then(function(d) {
+      var raids = d.raids || [];
+      var countEl = document.getElementById('telemHistoryCount');
+      countEl.textContent = raids.length > 0 ? raids.length + ' raids' : '';
+      var body = document.getElementById('telemHistoryBody');
+      if (raids.length === 0) {
+        body.innerHTML = '<tr><td colspan="8" class="telem-no-data">No raid history yet</td></tr>';
+        return;
+      }
+      var html = '';
+      raids.forEach(function(r, idx) {
+        var ts = new Date(r.timestamp);
+        var dateStr = ts.toLocaleDateString() + ' ' + ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        var bossHtml = '';
+        (r.bosses || []).forEach(function(b) {
+          var cls = b.alive ? 'boss-alive' : 'boss-dead';
+          bossHtml += '<span class="telem-boss-tag ' + cls + '" style="font-size:9px;padding:1px 5px">' + escH(b.name) + '</span> ';
+        });
+        if (!bossHtml) bossHtml = '<span style="color:var(--text-muted)">--</span>';
+        html += '<tr onclick="toggleRaidDetail(\'' + escH(r.id) + '\', this)" data-raid-id="' + escH(r.id) + '">' +
+          '<td style="color:var(--accent)">' + escH(r.mapName || mapDisplayName(r.map)) + '</td>' +
+          '<td style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim)">' + dateStr + '</td>' +
+          '<td>' + formatSeconds(r.duration) + '</td>' +
+          '<td>' + r.playerCount + '</td>' +
+          '<td style="color:var(--success-bright)">' + r.survived + '</td>' +
+          '<td>' + r.totalKills + '</td>' +
+          '<td style="color:var(--error-bright)">' + (r.totalDeaths || 0) + '</td>' +
+          '<td>' + bossHtml + '</td></tr>' +
+          '<tr class="telem-history-detail-row" style="display:none"><td colspan="8"><div class="telem-history-detail" id="raidDetail-' + escH(r.id) + '"><div class="telem-no-data">Loading...</div></div></td></tr>';
+      });
+      body.innerHTML = html;
+    }).catch(function(e) {
+      console.error('Raid history error:', e);
+    });
+  }
+
+  window.toggleRaidDetail = function(raidId, rowEl) {
+    var detailRow = rowEl.nextElementSibling;
+    if (!detailRow) return;
+    var isOpen = detailRow.style.display !== 'none';
+    if (isOpen) {
+      detailRow.style.display = 'none';
+      return;
+    }
+    detailRow.style.display = '';
+    var detail = document.getElementById('raidDetail-' + raidId);
+    if (detail.dataset.loaded) return;
+    api('telemetry/raid-history/' + raidId).then(function(d) {
+      detail.dataset.loaded = '1';
+      var html = '';
+
+      // Summary stats bar
+      if (d.summary) {
+        html += '<div class="telem-history-sub">' +
+          '<div class="dash-stat"><span class="dash-stat-label">Duration</span><span class="dash-stat-value sm">' + formatSeconds(d.summary.duration) + '</span></div>' +
+          '<div class="dash-stat"><span class="dash-stat-label">Players</span><span class="dash-stat-value sm">' + d.summary.playerCount + '</span></div>' +
+          '<div class="dash-stat"><span class="dash-stat-label">Survived</span><span class="dash-stat-value sm" style="color:var(--success-bright)">' + d.summary.survived + '</span></div>' +
+          '<div class="dash-stat"><span class="dash-stat-label">Kills</span><span class="dash-stat-value sm">' + d.summary.totalKills + '</span></div>' +
+          '<div class="dash-stat"><span class="dash-stat-label">Deaths</span><span class="dash-stat-value sm" style="color:var(--error-bright)">' + (d.summary.totalDeaths || 0) + '</span></div>' +
+          '</div>';
+      }
+
+      // Boss status
+      if (d.summary && d.summary.bosses && d.summary.bosses.length > 0) {
+        html += '<div style="margin-bottom:12px">';
+        d.summary.bosses.forEach(function(b) {
+          var cls = b.alive ? 'boss-alive' : 'boss-dead';
+          var killedByStr = (!b.alive && b.killedBy) ? ' (killed by ' + escH(b.killedBy) + ')' : '';
+          html += '<span class="telem-boss-tag ' + cls + '">' + escH(b.name) + killedByStr + '</span> ';
+        });
+        html += '</div>';
+      }
+
+      // Player Scoreboard — sorted by kills descending
+      if (d.players && d.players.length > 0) {
+        var sorted = d.players.slice().sort(function(a, b) { return (b.kills || 0) - (a.kills || 0); });
+        html += '<table class="player-scoreboard">' +
+          '<thead><tr>' +
+          '<th>Player</th><th>Outcome</th><th>Kills</th><th>PMC</th><th>Scav</th><th>Boss</th>' +
+          '<th>Deaths</th><th>Damage</th><th>XP</th><th>Extract</th>' +
+          '</tr></thead><tbody>';
+        sorted.forEach(function(p) {
+          html += '<tr>' +
+            '<td style="color:var(--accent);font-weight:600">' + escH(p.name) + '</td>' +
+            '<td>' + outcomeBadge(p.outcome) + '</td>' +
+            '<td class="num" style="font-weight:700">' + (p.kills || 0) + '</td>' +
+            '<td class="num">' + (p.killedPmc || 0) + '</td>' +
+            '<td class="num">' + (p.killedScav || 0) + '</td>' +
+            '<td class="num">' + (p.killedBoss || 0) + '</td>' +
+            '<td class="num">' + (p.deaths || 0) + '</td>' +
+            '<td class="num">' + (p.damageDealt || '--') + '</td>' +
+            '<td class="num">' + (p.xpEarned || '--') + '</td>' +
+            '<td style="color:var(--text-dim);font-size:10px">' + escH(p.extractPoint || '--') + '</td>' +
+            '</tr>';
+        });
+        html += '</tbody></table>';
+      }
+
+      // Combat Stats (body part chart if available)
+      if (d.damageStats && d.damageStats.totalHits > 0) {
+        var ds = d.damageStats;
+        var hsPct = ds.totalHits > 0 ? Math.round((ds.headshotCount / ds.totalHits) * 100) : 0;
+        html += '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:6px">Combat Stats</div>';
+        html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;font-family:var(--font-mono);font-size:11px">' +
+          '<span>Hits: <strong>' + ds.totalHits + '</strong></span>' +
+          '<span>Headshots: <strong>' + ds.headshotCount + '</strong> (' + hsPct + '%)</span>' +
+          '<span>Damage: <strong>' + ds.totalDamageDealt + '</strong></span>' +
+          '<span>Longest: <strong>' + Math.round(ds.longestShot) + 'm</strong></span>' +
+          '<span>Avg: <strong>' + Math.round(ds.avgDistance) + 'm</strong></span>' +
+          '</div>';
+        html += renderBodyPartChart(ds.bodyParts);
+      }
+
+      // Kill Timeline for this raid
+      if (d.kills && d.kills.length > 0) {
+        html += '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-mono);margin:12px 0 4px">Kill Timeline (' + d.kills.length + ')</div>';
+        html += '<div style="max-height:300px;overflow-y:auto">';
+        d.kills.forEach(function(k) {
+          var killerCls = actorClass(k.killer.type);
+          var victimCls = actorClass(k.victim.type);
+          var hs = k.isHeadshot ? ' <span class="telem-headshot">HS</span>' : '';
+          var dist = k.distance > 0 ? Math.round(k.distance) + 'm' : '';
+          var bodyPart = (k.bodyPart && k.bodyPart !== 'None' && k.bodyPart !== 'Unknown') ? k.bodyPart : '';
+          var meta = [];
+          if (bodyPart) meta.push(bodyPart);
+          var metaHtml = meta.length > 0 ? ' <span class="telem-kill-meta">(' + meta.join(', ') + ')</span>' : '';
+
+          var borderCls = '';
+          if (k.victim.type === 'pmc') borderCls = ' kill-border-pmc';
+          else if (k.victim.type === 'boss') borderCls = ' kill-border-boss';
+
+          var killerHtml = '';
+          var weaponHtml = '';
+          if (!k.killer.name && !k.weaponName) {
+            killerHtml = '<span style="color:var(--text-muted);font-style:italic">KIA</span>';
+          } else {
+            killerHtml = '<span class="telem-kill-name ' + killerCls + '">' + escH(k.killer.name || 'Unknown') + '</span>';
+            if (k.weaponName) weaponHtml = ' <span class="telem-kill-weapon">[' + escH(k.weaponName) + ']</span>';
+          }
+
+          html += '<div class="telem-kill-entry' + borderCls + '">' +
+            '<span class="telem-kill-detail">' +
+              killerHtml + '<span class="telem-kill-arrow"> \u2192 </span>' +
+              weaponHtml + ' ' +
+              '<span class="telem-kill-name ' + victimCls + '">' + escH(k.victim.name) + '</span>' +
+              hs + metaHtml +
+            '</span>' +
+            (dist ? '<span class="telem-kill-dist">' + dist + '</span>' : '') +
+            '</div>';
+        });
+        html += '</div>';
+      }
+
+      detail.innerHTML = html || '<div class="telem-no-data">No detail available</div>';
+    }).catch(function(e) {
+      detail.innerHTML = '<div class="telem-no-data">Failed to load detail</div>';
+    });
+  };
 
   window.loadActivity = function() {
     var typeFilter = document.getElementById('activityTypeFilter').value;
