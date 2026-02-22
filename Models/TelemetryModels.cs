@@ -352,6 +352,52 @@ public record RaidSummaryPlayer
 
     [JsonPropertyName("lootValue")]
     public long LootValue { get; set; }
+
+    // ── Enhanced stats from SessionCounters ──
+
+    [JsonPropertyName("armorDamage")]
+    public int ArmorDamage { get; set; }
+
+    [JsonPropertyName("headshots")]
+    public int Headshots { get; set; }
+
+    [JsonPropertyName("hits")]
+    public int Hits { get; set; }
+
+    [JsonPropertyName("ammoUsed")]
+    public int AmmoUsed { get; set; }
+
+    [JsonPropertyName("longestKill")]
+    public double LongestKill { get; set; }
+
+    [JsonPropertyName("killStreak")]
+    public int KillStreak { get; set; }
+
+    [JsonPropertyName("level")]
+    public int Level { get; set; }
+
+    [JsonPropertyName("side")]
+    public string Side { get; set; } = "";
+
+    // ── XP breakdown ──
+
+    [JsonPropertyName("xpKill")]
+    public int XpKill { get; set; }
+
+    [JsonPropertyName("xpKillStreak")]
+    public int XpKillStreak { get; set; }
+
+    [JsonPropertyName("xpDamage")]
+    public int XpDamage { get; set; }
+
+    [JsonPropertyName("xpLooting")]
+    public int XpLooting { get; set; }
+
+    [JsonPropertyName("xpExitStatus")]
+    public int XpExitStatus { get; set; }
+
+    [JsonPropertyName("xpBodyPart")]
+    public int XpBodyPart { get; set; }
 }
 
 public record DamageStatsPayload

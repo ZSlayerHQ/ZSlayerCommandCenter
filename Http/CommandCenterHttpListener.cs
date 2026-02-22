@@ -161,6 +161,19 @@ public class CommandCenterHttpListener(
                 }
             }
 
+            // Public endpoints (no auth required)
+            if (path == "profiles" && method == "GET")
+            {
+                await HandleProfiles(context);
+                return;
+            }
+
+            if (path == "server-vitals" && method == "GET")
+            {
+                await HandleServerVitals(context);
+                return;
+            }
+
             switch (path)
             {
                 case "banner" when method == "GET":
@@ -292,6 +305,70 @@ public class CommandCenterHttpListener(
             ProfileName = profileName,
             SessionId = headerSessionId,
             Reason = authorized ? null : "Access denied"
+        });
+    }
+
+    private async Task HandleProfiles(HttpContext context)
+    {
+        var config = configService.GetConfig();
+        var hasPassword = !string.IsNullOrEmpty(config.Access.Password);
+
+        var profiles = saveServer.GetProfiles();
+        var entries = new List<ProfileEntry>();
+
+        foreach (var (sid, profile) in profiles)
+        {
+            var pmc = profile.CharacterData?.PmcData;
+            if (pmc?.Info == null) continue;
+
+            entries.Add(new ProfileEntry
+            {
+                SessionId = sid.ToString(),
+                Nickname = pmc.Info.Nickname ?? "Unknown",
+                Side = pmc.Info.Side ?? "",
+                Level = pmc.Info.Level ?? 0
+            });
+        }
+
+        await WriteJson(context, 200, new ProfileListResponse
+        {
+            Profiles = entries,
+            HasPassword = hasPassword
+        });
+    }
+
+    private async Task HandleServerVitals(HttpContext context)
+    {
+        // Player counts (sanitized — no names or session IDs)
+        var overview = playerStatsService.GetPlayerOverview();
+        var online = overview.Players.Count(p => p.Online);
+        var total = overview.Players.Count;
+
+        // Active raid from telemetry
+        var telemetry = telemetryService.GetCurrent();
+        object? activeRaid = null;
+        if (telemetry.RaidActive && telemetry.RaidState != null)
+        {
+            var rs = telemetry.RaidState;
+            var elapsedSec = rs.RaidTimer - rs.RaidTimeLeft;
+            activeRaid = new
+            {
+                map = rs.Map,
+                playersInRaid = rs.Players?.PmcAlive ?? 0,
+                timeElapsedSec = Math.Max(0, elapsedSec),
+                status = rs.Status
+            };
+        }
+
+        // Server uptime
+        var status = serverStatsService.GetStatus();
+
+        await WriteJson(context, 200, new
+        {
+            playersOnline = online,
+            totalProfiles = total,
+            activeRaid,
+            serverUptime = status.Uptime
         });
     }
 

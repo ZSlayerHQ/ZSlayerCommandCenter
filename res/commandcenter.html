@@ -466,8 +466,37 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   position: absolute;
   inset: 0;
   background:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(200,170,110,0.035) 39px, rgba(200,170,110,0.035) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(200,170,110,0.035) 39px, rgba(200,170,110,0.035) 40px),
     radial-gradient(ellipse at 30% 40%, rgba(200,170,110,0.04) 0%, transparent 50%),
     radial-gradient(ellipse at 70% 60%, rgba(200,170,110,0.03) 0%, transparent 50%);
+}
+
+.login-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px);
+  pointer-events: none;
+}
+
+.login-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(200,170,110,0.05), transparent 70%);
+  animation: loginGlow 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes loginGlow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes loginBoxIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .login-box {
@@ -475,10 +504,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 44px;
-  width: 420px;
+  width: 520px;
   max-width: 90vw;
   position: relative;
   box-shadow: var(--shadow-lg), var(--shadow-glow);
+  animation: loginBoxIn 0.4s ease-out;
 }
 
 .login-box::before {
@@ -561,6 +591,300 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   margin-top: 10px;
   display: none;
   text-align: center;
+}
+
+.login-steps-container { position: relative; }
+
+.login-step {
+  opacity: 0;
+  transform: translateX(10px);
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+  position: absolute;
+  width: 100%;
+}
+.login-step.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+  position: relative;
+}
+
+/* Profile Avatars */
+.profile-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+.profile-avatar.usec { background: rgba(59,130,246,0.2); color: #60a5fa; }
+.profile-avatar.bear { background: rgba(239,68,68,0.2); color: #f87171; }
+.profile-avatar.savage { background: rgba(168,162,158,0.2); color: #a8a29e; }
+
+/* Last-Used Highlight */
+.profile-card.last-used {
+  border-left: 3px solid var(--accent);
+  background: rgba(200,170,110,0.04);
+}
+.profile-card-last-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* Login Footer */
+.login-footer {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 16px;
+  letter-spacing: 1px;
+  position: relative;
+  z-index: 1001;
+}
+
+.profile-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.profile-grid::-webkit-scrollbar { width: 4px; }
+.profile-grid::-webkit-scrollbar-track { background: transparent; }
+.profile-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.profile-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(200,170,110,0.15);
+  background: rgba(200,170,110,0.04);
+}
+
+.profile-card .profile-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-bright);
+  flex: 1;
+}
+
+.profile-card .profile-card-level {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.faction-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  line-height: 1;
+}
+
+.faction-badge.usec { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.faction-badge.bear { background: rgba(239,68,68,0.15); color: #f87171; }
+.faction-badge.savage { background: rgba(168,162,158,0.15); color: #a8a29e; }
+
+.login-back {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  text-align: center;
+  width: 100%;
+  transition: color 0.15s;
+}
+
+.login-back:hover { color: var(--accent); }
+
+.login-selected-profile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.profile-loading {
+  text-align: center;
+  padding: 32px 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.profile-empty {
+  text-align: center;
+  padding: 32px 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SERVER VITALS WIDGET (login screen)
+   ══════════════════════════════════════════════════════════ */
+.server-vitals {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 220px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  z-index: 201;
+  box-shadow: var(--shadow-lg);
+  animation: loginBoxIn 0.5s ease-out 0.2s both;
+  font-family: var(--font-mono);
+}
+
+.server-vitals::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: linear-gradient(90deg, transparent 5%, var(--accent) 50%, transparent 95%);
+}
+
+.server-vitals-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.server-vitals-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.server-vitals-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34,197,94,0.5);
+  animation: vitalsPulse 2s ease-in-out infinite;
+}
+
+.server-vitals-dot.amber {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245,158,11,0.5);
+}
+
+@keyframes vitalsPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.server-vitals-divider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 10px;
+}
+
+.server-vitals-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.server-vitals-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-bright);
+}
+
+.server-vitals-stat .sv-diamond {
+  color: var(--accent);
+  font-size: 8px;
+}
+
+.server-vitals-stat .sv-label {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.server-vitals-raid {
+  font-size: 11px;
+}
+
+.server-vitals-raid-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.server-vitals-raid-label svg {
+  width: 10px;
+  height: 10px;
+}
+
+.server-vitals-raid-info {
+  color: var(--text-bright);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.server-vitals-raid-info .sv-muted {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.server-vitals-uptime {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -2554,6 +2878,30 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 <!-- ═══════ LOGIN ═══════ -->
 <div class="login-overlay" id="loginScreen">
   <div class="login-bg"></div>
+
+  <!-- Server Vitals Widget -->
+  <div class="server-vitals" id="serverVitals" style="display:none">
+    <div class="server-vitals-header">
+      <span class="server-vitals-title">Server Status</span>
+      <span class="server-vitals-dot" id="svDot"></span>
+    </div>
+    <div class="server-vitals-divider"></div>
+    <div class="server-vitals-stats">
+      <div class="server-vitals-stat"><span class="sv-diamond">&#9670;</span> <span id="svOnline">0</span> <span class="sv-label">Online</span></div>
+      <div class="server-vitals-stat"><span class="sv-diamond">&#9670;</span> <span id="svTotal">0</span> <span class="sv-label">Total</span></div>
+    </div>
+    <div class="server-vitals-raid" id="svRaidSection">
+      <div class="server-vitals-raid-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span>Active Raid</span>
+      </div>
+      <div class="server-vitals-raid-info" id="svRaidInfo">
+        <span class="sv-muted">No active raid</span>
+      </div>
+    </div>
+    <div class="server-vitals-uptime" id="svUptime"></div>
+  </div>
+
   <div class="login-box">
     <div class="login-logo">
       <div class="login-logo-icon">
@@ -2564,17 +2912,32 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <span class="login-subtitle">Command Center</span>
       </div>
     </div>
-    <p>Enter your SPT Profile ID to connect. Find this in your SPT launcher profile settings.</p>
-    <div class="form-group">
-      <label>Profile ID</label>
-      <input type="text" id="sessionInput" placeholder="Paste your profile ID here..." autocomplete="off" style="width:100%">
+
+    <div class="login-steps-container">
+      <!-- Step 1: Profile Select -->
+      <div class="login-step active" id="loginStep1">
+        <p>Select a profile to connect.</p>
+        <div class="profile-grid" id="profileGrid">
+          <div class="profile-loading">Loading profiles...</div>
+        </div>
+        <div class="login-error" id="loginError1"></div>
+      </div>
+
+      <!-- Step 2: Password -->
+      <div class="login-step" id="loginStep2">
+        <div class="login-selected-profile" id="selectedProfileDisplay"></div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off" style="width:100%" onkeydown="if(event.key==='Enter')connect()">
+        </div>
+        <button class="btn btn-accent" id="connectBtn" onclick="connect()" style="width:100%;padding:11px;font-size:14px;margin-top:6px">CONNECT</button>
+        <div class="login-error" id="loginError2"></div>
+        <div class="login-back" onclick="loginBackToProfiles()">&larr; Back to profiles</div>
+      </div>
     </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="passwordInput" placeholder="Enter password (if configured)" autocomplete="off" style="width:100%">
+    <div class="login-footer" id="loginFooter">
+      Command Center v2.2.1
     </div>
-    <button class="btn btn-accent" id="connectBtn" onclick="connect()" style="width:100%;padding:11px;font-size:14px;margin-top:6px">CONNECT</button>
-    <div class="login-error" id="loginError"></div>
   </div>
 </div>
 
@@ -2705,8 +3068,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       </div>
       <div class="live-map-legend">
         <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#4a7c59"></span> PMC</span>
-        <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#c8aa6e"></span> AI PMC</span>
-        <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#5b8cb8"></span> Scav</span>
+        <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#c45050"></span> AI PMC</span>
+        <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#c8aa6e"></span> Scav</span>
         <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#c87a3e"></span> Boss</span>
         <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#b06030"></span> Raider/Rogue</span>
         <span class="live-map-legend-item"><span class="live-map-legend-dot" style="background:#6e4a7c"></span> Follower</span>
@@ -3707,23 +4070,148 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   // ═══════════════════════════════════════════════════════
-  // AUTH
+  // AUTH — Profile Selector
   // ═══════════════════════════════════════════════════════
+  var selectedLoginId = '';
+  var selectedLoginName = '';
+  var serverHasPassword = false;
+
+  // ═══════════════════════════════════════════════════════
+  // SERVER VITALS (login screen widget)
+  // ═══════════════════════════════════════════════════════
+  var vitalsTimer = null;
+
+  function fetchVitals() {
+    fetch(BASE + 'server-vitals')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var el = document.getElementById('serverVitals');
+        el.style.display = '';
+        document.getElementById('svOnline').textContent = d.playersOnline;
+        document.getElementById('svTotal').textContent = d.totalProfiles;
+        document.getElementById('svUptime').textContent = 'Uptime: ' + d.serverUptime;
+
+        var dot = document.getElementById('svDot');
+        var raidInfo = document.getElementById('svRaidInfo');
+        if (d.activeRaid) {
+          dot.className = 'server-vitals-dot';
+          var sec = d.activeRaid.timeElapsedSec || 0;
+          var mm = String(Math.floor(sec / 60)).padStart(2, '0');
+          var ss = String(sec % 60).padStart(2, '0');
+          raidInfo.innerHTML = escH(d.activeRaid.map) + ' &middot; ' + d.activeRaid.playersInRaid + ' PMCs'
+            + '<br><span class="sv-muted">\u23F1 ' + mm + ':' + ss + ' elapsed</span>';
+        } else {
+          dot.className = 'server-vitals-dot amber';
+          raidInfo.innerHTML = '<span class="sv-muted">No active raid</span>';
+        }
+      })
+      .catch(function() {
+        // silently ignore — widget stays hidden or stale
+      });
+  }
+
+  function startVitalsPolling() {
+    fetchVitals();
+    if (!vitalsTimer) vitalsTimer = setInterval(fetchVitals, 10000);
+  }
+
+  function stopVitalsPolling() {
+    if (vitalsTimer) { clearInterval(vitalsTimer); vitalsTimer = null; }
+    var el = document.getElementById('serverVitals');
+    if (el) el.style.display = 'none';
+  }
+
+  function loadProfileList() {
+    var grid = document.getElementById('profileGrid');
+    grid.innerHTML = '<div class="profile-loading">Loading profiles...</div>';
+    document.getElementById('loginError1').style.display = 'none';
+
+    fetch(BASE + 'profiles')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        serverHasPassword = data.hasPassword;
+        var profiles = data.profiles || [];
+        if (profiles.length === 0) {
+          grid.innerHTML = '<div class="profile-empty">No profiles found on this server.</div>';
+          return;
+        }
+        var lastUsedSid = localStorage.getItem('zslayer_session') || '';
+        profiles = profiles.filter(function(p) { return !(p.nickname || '').toLowerCase().includes('headless'); });
+        var html = '';
+        profiles.forEach(function(p) {
+          var factionClass = (p.side || '').toLowerCase();
+          if (factionClass !== 'usec' && factionClass !== 'bear') factionClass = 'savage';
+          var factionLabel = p.side || 'Savage';
+          var firstLetter = (p.nickname || '?').charAt(0).toUpperCase();
+          var isLastUsed = p.sessionId === lastUsedSid;
+          var cardClass = 'profile-card' + (isLastUsed ? ' last-used' : '');
+          html += '<div class="' + cardClass + '" onclick="selectProfile(\'' + escH(p.sessionId) + '\',\'' + escH(p.nickname) + '\')">'
+            + '<div class="profile-avatar ' + factionClass + '">' + escH(firstLetter) + '</div>'
+            + '<span class="profile-card-name">' + escH(p.nickname) + '</span>'
+            + '<span class="faction-badge ' + factionClass + '">' + escH(factionLabel) + '</span>'
+            + '<span class="profile-card-level">Lv ' + p.level + '</span>'
+            + (isLastUsed ? '<span class="profile-card-last-tag">LAST USED</span>' : '')
+            + '</div>';
+        });
+        grid.innerHTML = html;
+      })
+      .catch(function(e) {
+        grid.innerHTML = '';
+        var errEl = document.getElementById('loginError1');
+        errEl.textContent = 'Failed to load profiles: ' + (e.message || 'Connection error');
+        errEl.style.display = 'block';
+      });
+  }
+
+  window.selectProfile = function(sid, name) {
+    selectedLoginId = sid;
+    selectedLoginName = name;
+    if (serverHasPassword) {
+      // Show password step
+      document.getElementById('loginStep1').classList.remove('active');
+      document.getElementById('loginStep2').classList.add('active');
+      document.getElementById('selectedProfileDisplay').textContent = name;
+      document.getElementById('loginError2').style.display = 'none';
+      var pwInput = document.getElementById('passwordInput');
+      pwInput.value = '';
+      setTimeout(function() { pwInput.focus(); }, 60);
+    } else {
+      // No password — connect directly
+      sessionId = sid;
+      ccPassword = '';
+      api('auth').then(function(data) {
+        if (!data.authorized) {
+          var errEl = document.getElementById('loginError1');
+          errEl.textContent = data.reason || 'Access denied';
+          errEl.style.display = 'block';
+          sessionId = ''; ccPassword = '';
+          return;
+        }
+        profileName = data.profileName;
+        localStorage.setItem('zslayer_session', sid);
+        localStorage.setItem('zslayer_password', '');
+        showMain();
+      }).catch(function(e) {
+        var errEl = document.getElementById('loginError1');
+        errEl.textContent = e.message || 'Connection failed';
+        errEl.style.display = 'block';
+        sessionId = ''; ccPassword = '';
+      });
+    }
+  };
+
   window.connect = function() {
-    var input = document.getElementById('sessionInput');
     var pwInput = document.getElementById('passwordInput');
-    var errEl = document.getElementById('loginError');
+    var errEl = document.getElementById('loginError2');
     var btn = document.getElementById('connectBtn');
-    var id = input.value.trim();
     var pw = pwInput.value;
-    if (!id) { errEl.textContent = 'Please enter a profile ID'; errEl.style.display = 'block'; return; }
     btn.disabled = true; btn.textContent = 'CONNECTING...'; errEl.style.display = 'none';
-    sessionId = id;
+    sessionId = selectedLoginId;
     ccPassword = pw;
     api('auth').then(function(data) {
       if (!data.authorized) { errEl.textContent = data.reason || 'Access denied'; errEl.style.display = 'block'; sessionId = ''; ccPassword = ''; return; }
       profileName = data.profileName;
-      localStorage.setItem('zslayer_session', id);
+      localStorage.setItem('zslayer_session', selectedLoginId);
       localStorage.setItem('zslayer_password', pw);
       showMain();
     }).catch(function(e) {
@@ -3731,8 +4219,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }).finally(function() { btn.disabled = false; btn.textContent = 'CONNECT'; });
   };
 
+  window.loginBackToProfiles = function() {
+    document.getElementById('loginStep2').classList.remove('active');
+    document.getElementById('loginStep1').classList.add('active');
+    selectedLoginId = '';
+    selectedLoginName = '';
+  };
+
   window.logout = function() {
     sessionId = ''; profileName = ''; ccPassword = '';
+    selectedLoginId = ''; selectedLoginName = '';
     localStorage.removeItem('zslayer_session');
     localStorage.removeItem('zslayer_password');
     document.getElementById('loginScreen').style.display = '';
@@ -3740,11 +4236,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('heroBanner').style.display = 'none';
     document.getElementById('headerProfile').style.display = 'none';
     document.getElementById('navBar').style.display = 'none';
-    document.getElementById('sessionInput').value = '';
+    // Reset to step 1
+    document.getElementById('loginStep1').classList.add('active');
+    document.getElementById('loginStep2').classList.remove('active');
     document.getElementById('passwordInput').value = '';
+    loadProfileList();
+    startVitalsPolling();
   };
 
   function showMain() {
+    stopVitalsPolling();
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainContainer').style.display = 'block';
     document.getElementById('heroBanner').style.display = 'flex';
@@ -4034,8 +4535,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   document.getElementById('searchInput').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { clearTimeout(searchTimer); currentSearch = this.value.trim(); currentOffset = 0; searchItems(); }
   });
-  document.getElementById('sessionInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') window.connect(); });
-  document.getElementById('passwordInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') window.connect(); });
 
   // ═══════════════════════════════════════════════════════
   // GIVE
@@ -4767,20 +5266,45 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         var sorted = d.players.slice().sort(function(a, b) { return (b.kills || 0) - (a.kills || 0); });
         html += '<table class="player-scoreboard">' +
           '<thead><tr>' +
-          '<th>Player</th><th>Outcome</th><th>Kills</th><th>PMC</th><th>Scav</th><th>Boss</th>' +
-          '<th>Deaths</th><th>Damage</th><th>XP</th><th>Extract</th>' +
+          '<th>Player</th><th>Side</th><th>Outcome</th><th>Kills</th><th>HS</th>' +
+          '<th>Damage</th><th>Armor</th><th>Accuracy</th><th>Longest</th>' +
+          '<th>XP</th><th>Extract</th>' +
           '</tr></thead><tbody>';
         sorted.forEach(function(p) {
+          var hasEnhanced = p.hits > 0 || p.ammoUsed > 0 || p.damageDealt > 0 || p.headshots > 0;
+          var accPct = hasEnhanced && p.ammoUsed > 0 ? Math.round((p.accuracy || 0) * 100) + '%' : '--';
+          var dmg = p.damageDealt > 0 ? p.damageDealt : '--';
+          var armDmg = p.armorDamage > 0 ? p.armorDamage : '--';
+          var hs = hasEnhanced ? (p.headshots || 0) : '--';
+          var longest = p.longestKill > 0 ? Math.round(p.longestKill) + 'm' : '--';
+          var sideLabel = (p.side || '').toUpperCase();
+          var lvl = p.level > 0 ? ' <span style="color:var(--text-muted);font-size:10px">Lv' + p.level + '</span>' : '';
+
+          // XP tooltip with breakdown
+          var xpVal = p.xpEarned > 0 ? p.xpEarned : '--';
+          var xpTitle = '';
+          if (p.xpEarned > 0) {
+            var parts = [];
+            if (p.xpKill) parts.push('Kill: ' + p.xpKill);
+            if (p.xpKillStreak) parts.push('Streak: ' + p.xpKillStreak);
+            if (p.xpDamage) parts.push('Damage: ' + p.xpDamage);
+            if (p.xpLooting) parts.push('Loot: ' + p.xpLooting);
+            if (p.xpExitStatus) parts.push('Extract: ' + p.xpExitStatus);
+            if (p.xpBodyPart) parts.push('Bodypart: ' + p.xpBodyPart);
+            if (parts.length > 0) xpTitle = ' title="' + escH(parts.join(' | ')) + '"';
+          }
+
           html += '<tr>' +
-            '<td style="color:var(--accent);font-weight:600">' + escH(p.name) + '</td>' +
+            '<td style="color:var(--accent);font-weight:600">' + escH(p.name) + lvl + '</td>' +
+            '<td class="num" style="font-size:10px;color:var(--text-muted)">' + sideLabel + '</td>' +
             '<td>' + outcomeBadge(p.outcome) + '</td>' +
             '<td class="num" style="font-weight:700">' + (p.kills || 0) + '</td>' +
-            '<td class="num">' + (p.killedPmc || 0) + '</td>' +
-            '<td class="num">' + (p.killedScav || 0) + '</td>' +
-            '<td class="num">' + (p.killedBoss || 0) + '</td>' +
-            '<td class="num">' + (p.deaths || 0) + '</td>' +
-            '<td class="num">' + (p.damageDealt || '--') + '</td>' +
-            '<td class="num">' + (p.xpEarned || '--') + '</td>' +
+            '<td class="num">' + hs + '</td>' +
+            '<td class="num">' + dmg + '</td>' +
+            '<td class="num">' + armDmg + '</td>' +
+            '<td class="num">' + accPct + '</td>' +
+            '<td class="num">' + longest + '</td>' +
+            '<td class="num"' + xpTitle + ' style="cursor:' + (xpTitle ? 'help' : 'default') + '">' + xpVal + '</td>' +
             '<td style="color:var(--text-dim);font-size:10px">' + escH(p.extractPoint || '--') + '</td>' +
             '</tr>';
         });
@@ -5083,222 +5607,319 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   };
 
   // ── Map Popout Window ──
+  var _mapPopoutWindow = null;
+  var _mapPopoutCheckTimer = null;
+
+  function setMainMapMinimized(minimized) {
+    var panel = document.getElementById('liveMapPanel');
+    if (!panel) return;
+    var wrap = document.getElementById('mapCanvasWrap');
+    var legend = document.querySelector('.live-map-legend');
+    var placeholder = document.getElementById('mapPopoutPlaceholder');
+    if (minimized) {
+      if (wrap) wrap.style.display = 'none';
+      if (legend) legend.style.display = 'none';
+      if (!placeholder) {
+        placeholder = document.createElement('div');
+        placeholder.id = 'mapPopoutPlaceholder';
+        placeholder.style.cssText = 'padding:20px;text-align:center;color:#6a6050;font-size:12px;font-family:var(--font-mono)';
+        placeholder.innerHTML = 'Map is popped out <button class="btn-sm" onclick="closeMapPopout()" style="margin-left:8px;padding:2px 8px;font-size:11px">Restore</button>';
+        panel.appendChild(placeholder);
+      }
+    } else {
+      if (wrap) wrap.style.display = '';
+      if (legend) legend.style.display = '';
+      if (!placeholder) placeholder = document.getElementById('mapPopoutPlaceholder');
+      if (placeholder) placeholder.remove();
+    }
+  }
+
+  window.closeMapPopout = function() {
+    if (_mapPopoutWindow && !_mapPopoutWindow.closed) _mapPopoutWindow.close();
+    _mapPopoutWindow = null;
+    if (_mapPopoutCheckTimer) { clearInterval(_mapPopoutCheckTimer); _mapPopoutCheckTimer = null; }
+    setMainMapMinimized(false);
+  };
+
   window.openMapPopout = function() {
-    var popout = window.open('', 'cc_map_popout', 'width=1200,height=900,resizable=yes,scrollbars=no');
-    if (!popout) { toast('Popout blocked — allow popups for this site', 'error'); return; }
+    if (_mapPopoutWindow && !_mapPopoutWindow.closed) { _mapPopoutWindow.focus(); return; }
 
-    var apiBase = location.origin + '/zslayer/cc/';
-    var headers = { 'X-Session-Id': sessionId, 'X-Password': ccPassword };
-    var mapConfigJson = JSON.stringify(MAP_CONFIG);
-    var mapColorsJson = JSON.stringify(MAP_COLORS);
+    var popApiBase = location.origin + '/zslayer/cc/';
+    var popHeaders = JSON.stringify({ 'X-Session-Id': sessionId, 'X-Password': ccPassword });
+    var popSessionId = JSON.stringify(sessionId);
+    var popMapConfig = JSON.stringify(MAP_CONFIG);
+    var popMapColors = JSON.stringify(MAP_COLORS);
 
-    popout.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Command Center — Live Map</title>' +
-    '<style>' +
-      '@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap");' +
-      '*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }' +
-      'body { font-family: "Rajdhani", sans-serif; background: #080808; color: #c8bfa8; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }' +
-      '::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: #0c0c0c; } ::-webkit-scrollbar-thumb { background: #2a2620; border-radius: 3px; }' +
-      '.pop-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: #141310; border-bottom: 1px solid #2a2620; flex-shrink: 0; }' +
-      '.pop-header-title { font-family: "Share Tech Mono", monospace; font-size: 12px; color: #c8aa6e; letter-spacing: 2px; text-transform: uppercase; }' +
-      '.pop-header-status { font-family: "Share Tech Mono", monospace; font-size: 10px; color: #6a6050; }' +
-      '.pop-controls { display: flex; gap: 14px; align-items: center; padding: 6px 16px; background: #111; border-bottom: 1px solid #1f1d18; flex-shrink: 0; font-size: 11px; }' +
-      '.pop-controls label { display: flex; align-items: center; gap: 4px; color: #8a7e6a; }' +
-      '.pop-controls select, .pop-controls input[type=range] { background: #1a1a1a; color: #c8bfa8; border: 1px solid #2a2620; border-radius: 3px; font-size: 10px; }' +
-      '.pop-canvas-wrap { flex: 1; position: relative; overflow: hidden; }' +
-      '.pop-canvas-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }' +
-      '.pop-legend { display: flex; gap: 14px; padding: 6px 16px; background: #111; border-top: 1px solid #1f1d18; flex-shrink: 0; font-size: 10px; font-family: "Share Tech Mono", monospace; color: #6a6050; }' +
-      '.pop-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }' +
-    '</style></head><body>' +
-    '<div class="pop-header">' +
-      '<span class="pop-header-title">Command Center — Live Map</span>' +
-      '<span class="pop-header-status" id="popStatus">Connecting...</span>' +
-    '</div>' +
-    '<div class="pop-controls">' +
-      '<label>Layer: <select id="popLayerSelect"><option value="0">Ground</option></select></label>' +
-      '<label>Refresh: <input type="range" id="popRefreshSlider" min="-1.301" max="1" step="0.01" value="0"> <span id="popRefreshLabel">1.0s</span></label>' +
-      '<label><input type="checkbox" id="popShowNames" checked> Names</label>' +
-      '<label><input type="checkbox" id="popShowDead"> Dead</label>' +
-      '<label><input type="checkbox" id="popFollowPlayer" checked> Follow</label>' +
-    '</div>' +
-    '<div class="pop-canvas-wrap" id="popCanvasWrap"><canvas id="popCanvas"></canvas></div>' +
-    '<div class="pop-legend">' +
-      '<span><span class="pop-legend-dot" style="background:#4a7c59"></span>PMC</span>' +
-      '<span><span class="pop-legend-dot" style="background:#c8aa6e"></span>AI PMC</span>' +
-      '<span><span class="pop-legend-dot" style="background:#5b8cb8"></span>Scav</span>' +
-      '<span><span class="pop-legend-dot" style="background:#c87a3e"></span>Boss</span>' +
-      '<span><span class="pop-legend-dot" style="background:#b06030"></span>Raider/Rogue</span>' +
-      '<span><span class="pop-legend-dot" style="background:#6e4a7c"></span>Follower</span>' +
-      '<span><span class="pop-legend-dot" style="background:rgba(255,255,255,0.25)"></span>Dead</span>' +
-    '</div>' +
-    '<script>' +
-    'var apiBase = ' + JSON.stringify(apiBase) + ';' +
-    'var headers = ' + JSON.stringify(headers) + ';' +
-    'var sessionId = ' + JSON.stringify(sessionId) + ';' +
-    'var MAP_CONFIG = ' + mapConfigJson + ';' +
-    'var MAP_COLORS = ' + mapColorsJson + ';' +
-    'var _positions = [], _currentMap = "", _mapConfig = null, _zoom = 1, _panX = 0, _panY = 0;' +
-    'var _dragging = false, _dragStart = {x:0,y:0}, _panStart = {x:0,y:0}, _selectedLayer = "0";' +
-    'var _followPlayer = true, _refreshMs = 1000, _refreshTimer = null, _imgCache = {};' +
-    '' +
-    'function gameToMap(gx, gz, cfg) {' +
-    '  var rad = cfg.rotation * Math.PI / 180;' +
-    '  return { x: gx * Math.cos(rad) - gz * Math.sin(rad), y: gx * Math.sin(rad) + gz * Math.cos(rad) };' +
-    '}' +
-    '' +
-    'function drawMap() {' +
-    '  var canvas = document.getElementById("popCanvas");' +
-    '  var wrap = document.getElementById("popCanvasWrap");' +
-    '  if (!canvas || !wrap) return;' +
-    '  var dpr = window.devicePixelRatio || 1;' +
-    '  var w = wrap.clientWidth, h = wrap.clientHeight;' +
-    '  canvas.width = w * dpr; canvas.height = h * dpr;' +
-    '  var ctx = canvas.getContext("2d");' +
-    '  ctx.scale(dpr, dpr);' +
-    '  ctx.fillStyle = "#0a0c0e"; ctx.fillRect(0, 0, w, h);' +
-    '  if (!_mapConfig) {' +
-    '    ctx.fillStyle = "#333"; ctx.font = "13px monospace"; ctx.textAlign = "center";' +
-    '    ctx.fillText("Map: " + (_currentMap || "Unknown") + " (no config)", w/2, h/2);' +
-    '    return;' +
-    '  }' +
-    '  var cfg = _mapConfig, bounds = cfg.bounds;' +
-    '  var mapW = bounds.max.x - bounds.min.x, mapH = bounds.max.y - bounds.min.y;' +
-    '  var pad = 30;' +
-    '  var scale = Math.min((w - pad*2) / mapW, (h - pad*2) / mapH) * _zoom;' +
-    '  var mapCx = (bounds.min.x + bounds.max.x) / 2, mapCy = (bounds.min.y + bounds.max.y) / 2;' +
-    '  if (_followPlayer && sessionId) {' +
-    '    var me = _positions.find(function(p){ return p.profileId === sessionId && p.alive; });' +
-    '    if (me) { var mp = gameToMap(me.x, me.z, cfg); _panX = -(mp.x - mapCx) * scale; _panY = -(mp.y - mapCy) * scale; }' +
-    '  }' +
-    '  var cx = w/2 + _panX, cy = h/2 + _panY;' +
-    '  var imgKey = _currentMap + "_" + _selectedLayer;' +
-    '  var img = _imgCache[imgKey];' +
-    '  if (img && img.complete && img.naturalWidth > 0) {' +
-    '    var imgX = cx + (bounds.min.x - mapCx) * scale;' +
-    '    var imgY = cy + (bounds.min.y - mapCy) * scale;' +
-    '    ctx.drawImage(img, imgX, imgY, mapW * scale, mapH * scale);' +
-    '  } else {' +
-    '    ctx.strokeStyle = "rgba(200,170,110,0.08)"; ctx.lineWidth = 1;' +
-    '    for (var gx = bounds.min.x; gx <= bounds.max.x; gx += 50) {' +
-    '      var sx = cx + (gx - mapCx) * scale;' +
-    '      ctx.beginPath(); ctx.moveTo(sx, cy + (bounds.min.y - mapCy) * scale); ctx.lineTo(sx, cy + (bounds.max.y - mapCy) * scale); ctx.stroke();' +
-    '    }' +
-    '    for (var gy = bounds.min.y; gy <= bounds.max.y; gy += 50) {' +
-    '      var sy = cy + (gy - mapCy) * scale;' +
-    '      ctx.beginPath(); ctx.moveTo(cx + (bounds.min.x - mapCx) * scale, sy); ctx.lineTo(cx + (bounds.max.x - mapCx) * scale, sy); ctx.stroke();' +
-    '    }' +
-    '    ctx.strokeStyle = "rgba(200,170,110,0.15)"; ctx.lineWidth = 1;' +
-    '    ctx.strokeRect(cx + (bounds.min.x - mapCx) * scale, cy + (bounds.min.y - mapCy) * scale, mapW * scale, mapH * scale);' +
-    '    ctx.fillStyle = "rgba(200,170,110,0.3)"; ctx.font = "16px monospace"; ctx.textAlign = "center";' +
-    '    ctx.fillText(cfg.name, cx, cy - 10);' +
-    '    ctx.font = "10px monospace"; ctx.fillText("Map image not loaded", cx, cy + 10);' +
-    '  }' +
-    '  var showNames = document.getElementById("popShowNames").checked;' +
-    '  var showDead = document.getElementById("popShowDead").checked;' +
-    '  var layerZ = cfg.layers[_selectedLayer] ? cfg.layers[_selectedLayer].z : null;' +
-    '  _positions.forEach(function(p) {' +
-    '    if (!showDead && !p.alive) return;' +
-    '    var onLayer = true;' +
-    '    if (layerZ && _selectedLayer !== "0") onLayer = p.y >= layerZ[0] && p.y <= layerZ[1];' +
-    '    var mp = gameToMap(p.x, p.z, cfg);' +
-    '    var sx = cx + (mp.x - mapCx) * scale, sy = cy + (mp.y - mapCy) * scale;' +
-    '    var color = MAP_COLORS[p.type] || MAP_COLORS.unknown;' +
-    '    var alpha = p.alive ? (onLayer ? 1.0 : 0.3) : 0.25;' +
-    '    var radius = p.type === "boss" ? 6 : p.type === "pmc" ? 5 : 4;' +
-    '    ctx.globalAlpha = alpha; ctx.beginPath(); ctx.arc(sx, sy, radius, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();' +
-    '    if (p.alive && p.type === "pmc" && p.rotation != null) {' +
-    '      var arrowLen = radius + 6, angle = -(p.rotation - cfg.rotation) * Math.PI / 180;' +
-    '      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + Math.sin(angle) * arrowLen, sy - Math.cos(angle) * arrowLen);' +
-    '      ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();' +
-    '    }' +
-    '    if (!p.alive) { ctx.strokeStyle = "rgba(200,60,60,0.6)"; ctx.lineWidth = 1.5;' +
-    '      ctx.beginPath(); ctx.moveTo(sx-3,sy-3); ctx.lineTo(sx+3,sy+3); ctx.stroke();' +
-    '      ctx.beginPath(); ctx.moveTo(sx+3,sy-3); ctx.lineTo(sx-3,sy+3); ctx.stroke();' +
-    '    }' +
-    '    if (showNames && p.alive && (p.type === "pmc" || p.type === "boss")) {' +
-    '      ctx.fillStyle = color; ctx.font = "9px monospace"; ctx.textAlign = "center"; ctx.fillText(p.name, sx, sy - radius - 3);' +
-    '    }' +
-    '    ctx.globalAlpha = 1;' +
-    '  });' +
-    '  ctx.fillStyle = "rgba(200,170,110,0.5)"; ctx.font = "bold 11px monospace"; ctx.textAlign = "center"; ctx.fillText("N", w-20, 18);' +
-    '  ctx.fillStyle = "rgba(200,170,110,0.3)"; ctx.font = "9px monospace";' +
-    '  ctx.fillText("S", w-20, h-8); ctx.fillText("W", 10, h/2+4); ctx.textAlign = "left"; ctx.fillText("E", w-14, h/2+4);' +
-    '  var aliveCount = _positions.filter(function(p){ return p.alive; }).length;' +
-    '  ctx.fillStyle = "rgba(200,170,110,0.4)"; ctx.font = "10px monospace"; ctx.textAlign = "left";' +
-    '  ctx.fillText(aliveCount + " alive / " + _positions.length + " total", 8, 16);' +
-    '}' +
-    '' +
-    'function tryLoadImg(mapId, layer) {' +
-    '  var key = mapId + "_" + layer; if (_imgCache[key]) return;' +
-    '  var fm = { bigmap:"customs", factory4_day:"factory", factory4_night:"factory", Sandbox:"ground_zero", Sandbox_high:"ground_zero",' +
-    '    Interchange:"interchange", laboratory:"labs", Labyrinth:"labyrinth", Lighthouse:"lighthouse",' +
-    '    RezervBase:"reserve", Shoreline:"shoreline", TarkovStreets:"streets", Woods:"woods" };' +
-    '  var prefix = fm[mapId]; if (!prefix) return;' +
-    '  var suffix = (prefix==="factory"||prefix==="labyrinth"||prefix==="labs") ? "layer" : "level";' +
-    '  var img = new Image(); img.onload = function(){ drawMap(); };' +
-    '  img.src = apiBase.replace("/zslayer/cc/","") + "/zslayer/cc/maps/" + prefix + "_" + suffix + "_" + layer + ".png";' +
-    '  _imgCache[key] = img;' +
-    '}' +
-    '' +
-    'function updateMap(mapId) {' +
-    '  if (mapId === _currentMap) return;' +
-    '  _currentMap = mapId; _mapConfig = MAP_CONFIG[mapId] || null;' +
-    '  _zoom = 1; _panX = 0; _panY = 0; _selectedLayer = "0";' +
-    '  if (_mapConfig) {' +
-    '    var sel = document.getElementById("popLayerSelect"); sel.innerHTML = "";' +
-    '    Object.keys(_mapConfig.layers).sort(function(a,b){ return parseInt(a)-parseInt(b); }).forEach(function(lv) {' +
-    '      var o = document.createElement("option"); o.value = lv;' +
-    '      o.textContent = lv === "0" ? "Ground" : lv === "-1" ? "Underground" : "Level " + lv;' +
-    '      sel.appendChild(o);' +
-    '    });' +
-    '    _selectedLayer = "" + (_mapConfig.defaultLevel || 0); sel.value = _selectedLayer;' +
-    '    Object.keys(_mapConfig.layers).forEach(function(lv){ tryLoadImg(mapId, lv); });' +
-    '  }' +
-    '}' +
-    '' +
-    'function poll() {' +
-    '  Promise.all([' +
-    '    fetch(apiBase + "telemetry/positions", { headers: headers }).then(function(r){ return r.json(); }).catch(function(){ return null; }),' +
-    '    fetch(apiBase + "telemetry/current", { headers: headers }).then(function(r){ return r.json(); }).catch(function(){ return null; })' +
-    '  ]).then(function(res) {' +
-    '    var pos = res[0], cur = res[1];' +
-    '    document.getElementById("popStatus").textContent = "Connected — " + (_currentMap || "no raid");' +
-    '    if (pos) _positions = pos;' +
-    '    if (cur && cur.raidState === "InRaid" && cur.map) updateMap(cur.map);' +
-    '    drawMap();' +
-    '  }).catch(function() {' +
-    '    document.getElementById("popStatus").textContent = "Connection error";' +
-    '  });' +
-    '}' +
-    '' +
-    'function startPolling() { if (_refreshTimer) clearInterval(_refreshTimer); _refreshTimer = setInterval(poll, _refreshMs); poll(); }' +
-    '' +
-    '// Interactions' +
-    'var wrap = document.getElementById("popCanvasWrap");' +
-    'wrap.addEventListener("wheel", function(e) { e.preventDefault(); _zoom = Math.max(0.3, Math.min(10, _zoom * (e.deltaY > 0 ? 0.9 : 1.1))); drawMap(); }, { passive: false });' +
-    'wrap.addEventListener("mousedown", function(e) {' +
-    '  if (e.button !== 0) return;' +
-    '  if (_followPlayer) { _followPlayer = false; document.getElementById("popFollowPlayer").checked = false; }' +
-    '  _dragging = true; _dragStart = { x: e.clientX, y: e.clientY }; _panStart = { x: _panX, y: _panY };' +
-    '});' +
-    'window.addEventListener("mousemove", function(e) {' +
-    '  if (!_dragging) return; _panX = _panStart.x + (e.clientX - _dragStart.x); _panY = _panStart.y + (e.clientY - _dragStart.y); drawMap();' +
-    '});' +
-    'window.addEventListener("mouseup", function() { _dragging = false; });' +
-    'document.getElementById("popLayerSelect").addEventListener("change", function() { _selectedLayer = this.value; drawMap(); });' +
-    'document.getElementById("popFollowPlayer").addEventListener("change", function() { _followPlayer = this.checked; if (_followPlayer) drawMap(); });' +
-    '' +
-    '// Refresh slider' +
-    'var slider = document.getElementById("popRefreshSlider");' +
-    'var slabel = document.getElementById("popRefreshLabel");' +
-    'function msToSlider(ms) { return Math.log10(ms/1000); }' +
-    'function sliderToMs(v) { return Math.round(Math.pow(10, parseFloat(v)) * 1000); }' +
-    'function fmtRate(ms) { return ms < 1000 ? (ms/1000).toFixed(2)+"s" : ms >= 10000 ? (ms/1000).toFixed(0)+"s" : (ms/1000).toFixed(1)+"s"; }' +
-    'slider.addEventListener("input", function() { _refreshMs = sliderToMs(this.value); slabel.textContent = fmtRate(_refreshMs); });' +
-    'slider.addEventListener("change", function() { _refreshMs = sliderToMs(this.value); slabel.textContent = fmtRate(_refreshMs); startPolling(); });' +
-    '' +
-    'startPolling();' +
-    '<\/script></body></html>');
-    popout.document.close();
+    var html = [
+      '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Command Center — Live Map</title>',
+      '<style>',
+      '@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap");',
+      '*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }',
+      'body { font-family: "Rajdhani", sans-serif; background: #080808; color: #c8bfa8; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }',
+      '::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: #0c0c0c; } ::-webkit-scrollbar-thumb { background: #2a2620; border-radius: 3px; }',
+      '.pop-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: #141310; border-bottom: 1px solid #2a2620; flex-shrink: 0; }',
+      '.pop-header-title { font-family: "Share Tech Mono", monospace; font-size: 12px; color: #c8aa6e; letter-spacing: 2px; text-transform: uppercase; }',
+      '.pop-header-status { font-family: "Share Tech Mono", monospace; font-size: 10px; color: #6a6050; }',
+      '.pop-controls { display: flex; gap: 14px; align-items: center; padding: 6px 16px; background: #111; border-bottom: 1px solid #1f1d18; flex-shrink: 0; font-size: 11px; flex-wrap: wrap; }',
+      '.pop-controls label { display: flex; align-items: center; gap: 4px; color: #8a7e6a; }',
+      '.pop-controls select, .pop-controls input[type=range] { background: #1a1a1a; color: #c8bfa8; border: 1px solid #2a2620; border-radius: 3px; font-size: 10px; }',
+      '.pop-canvas-wrap { flex: 1; position: relative; overflow: hidden; }',
+      '.pop-canvas-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }',
+      '.pop-legend { display: flex; gap: 14px; padding: 6px 16px; background: #111; border-top: 1px solid #1f1d18; flex-shrink: 0; font-size: 10px; font-family: "Share Tech Mono", monospace; color: #6a6050; flex-wrap: wrap; }',
+      '.pop-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }',
+      '</style></head><body>',
+      '<div class="pop-header">',
+      '  <span class="pop-header-title">Command Center — Live Map</span>',
+      '  <span class="pop-header-status" id="popStatus">Connecting...</span>',
+      '</div>',
+      '<div class="pop-controls">',
+      '  <label>Layer: <select id="popLayerSelect"><option value="0">Ground</option></select></label>',
+      '  <label>Refresh: <input type="range" id="popRefreshSlider" min="-1.301" max="1" step="0.01" value="0"> <span id="popRefreshLabel">1.0s</span></label>',
+      '  <label><input type="checkbox" id="popShowNames" checked> Names</label>',
+      '  <label><input type="checkbox" id="popShowDead"> Dead</label>',
+      '  <label><input type="checkbox" id="popFollowPlayer" checked> Follow</label>',
+      '</div>',
+      '<div class="pop-canvas-wrap" id="popCanvasWrap"><canvas id="popCanvas"></canvas></div>',
+      '<div class="pop-legend">',
+      '  <span><span class="pop-legend-dot" style="background:#4a7c59"></span>PMC</span>',
+      '  <span><span class="pop-legend-dot" style="background:#c45050"></span>AI PMC</span>',
+      '  <span><span class="pop-legend-dot" style="background:#c8aa6e"></span>Scav</span>',
+      '  <span><span class="pop-legend-dot" style="background:#c87a3e"></span>Boss</span>',
+      '  <span><span class="pop-legend-dot" style="background:#b06030"></span>Raider/Rogue</span>',
+      '  <span><span class="pop-legend-dot" style="background:#6e4a7c"></span>Follower</span>',
+      '  <span><span class="pop-legend-dot" style="background:rgba(255,255,255,0.25)"></span>Dead</span>',
+      '</div>',
+      '<script>',
+      'var apiBase = ' + JSON.stringify(popApiBase) + ';',
+      'var headers = ' + popHeaders + ';',
+      'var sessionId = ' + popSessionId + ';',
+      'var MAP_CONFIG = ' + popMapConfig + ';',
+      'var MAP_COLORS = ' + popMapColors + ';',
+      'var _positions = [], _currentMap = "", _mapConfig = null, _zoom = 1, _panX = 0, _panY = 0;',
+      'var _dragging = false, _dragStart = {x:0,y:0}, _panStart = {x:0,y:0}, _selectedLayer = "0";',
+      'var _followPlayer = true, _refreshMs = 1000, _refreshTimer = null, _imgCache = {};',
+      '',
+      'function gameToMap(gx, gz, cfg) {',
+      '  var rad = cfg.rotation * Math.PI / 180;',
+      '  return { x: gx * Math.cos(rad) - gz * Math.sin(rad), y: gx * Math.sin(rad) + gz * Math.cos(rad) };',
+      '}',
+      '',
+      'function drawIconShape(ctx, x, y, type, color, r, alpha) {',
+      '  ctx.globalAlpha = alpha;',
+      '  switch (type) {',
+      '    case "pmc": _drawChevron(ctx,x,y,r,color); break;',
+      '    case "aipmc": _drawDiamond(ctx,x,y,r,color); break;',
+      '    case "boss": _drawSkull(ctx,x,y,r,color); break;',
+      '    case "raider": case "rogue": _drawTriangle(ctx,x,y,r,color); break;',
+      '    case "follower": _drawDiamond(ctx,x,y,r*0.8,color); break;',
+      '    default: _drawCircle(ctx,x,y,r,color); break;',
+      '  }',
+      '  ctx.globalAlpha = 1;',
+      '}',
+      'function _drawChevron(ctx,x,y,r,c) {',
+      '  ctx.beginPath(); ctx.moveTo(x,y-r); ctx.lineTo(x+r*0.8,y+r*0.4); ctx.lineTo(x+r*0.35,y+r*0.1);',
+      '  ctx.lineTo(x,y+r*0.55); ctx.lineTo(x-r*0.35,y+r*0.1); ctx.lineTo(x-r*0.8,y+r*0.4); ctx.closePath();',
+      '  ctx.fillStyle="rgba(0,0,0,0.45)"; ctx.fill(); ctx.fillStyle=c; ctx.fill();',
+      '  ctx.strokeStyle="rgba(255,255,255,0.25)"; ctx.lineWidth=0.8; ctx.stroke();',
+      '}',
+      'function _drawDiamond(ctx,x,y,r,c) {',
+      '  ctx.beginPath(); ctx.moveTo(x,y-r); ctx.lineTo(x+r,y); ctx.lineTo(x,y+r); ctx.lineTo(x-r,y); ctx.closePath();',
+      '  ctx.fillStyle="rgba(0,0,0,0.45)"; ctx.fill(); ctx.fillStyle=c; ctx.fill();',
+      '  ctx.strokeStyle="rgba(255,255,255,0.2)"; ctx.lineWidth=0.8; ctx.stroke();',
+      '}',
+      'function _drawTriangle(ctx,x,y,r,c) {',
+      '  ctx.beginPath(); ctx.moveTo(x,y-r); ctx.lineTo(x+r*0.866,y+r*0.5); ctx.lineTo(x-r*0.866,y+r*0.5); ctx.closePath();',
+      '  ctx.fillStyle="rgba(0,0,0,0.45)"; ctx.fill(); ctx.fillStyle=c; ctx.fill();',
+      '  ctx.strokeStyle="rgba(255,255,255,0.2)"; ctx.lineWidth=0.8; ctx.stroke();',
+      '}',
+      'function _drawCircle(ctx,x,y,r,c) {',
+      '  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle="rgba(0,0,0,0.45)"; ctx.fill();',
+      '  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle=c; ctx.fill();',
+      '  ctx.strokeStyle="rgba(255,255,255,0.15)"; ctx.lineWidth=0.8; ctx.stroke();',
+      '}',
+      'function _drawSkull(ctx,x,y,r,c) {',
+      '  var cr=r*0.9;',
+      '  ctx.beginPath(); ctx.ellipse(x,y-r*0.1,cr,cr*0.95,0,0,Math.PI*2); ctx.fillStyle="rgba(0,0,0,0.45)"; ctx.fill();',
+      '  ctx.beginPath(); ctx.ellipse(x,y-r*0.1,cr,cr*0.95,0,0,Math.PI*2); ctx.fillStyle=c; ctx.fill();',
+      '  ctx.beginPath(); ctx.moveTo(x-r*0.5,y+r*0.25);',
+      '  ctx.quadraticCurveTo(x-r*0.35,y+r*0.85,x,y+r*0.75);',
+      '  ctx.quadraticCurveTo(x+r*0.35,y+r*0.85,x+r*0.5,y+r*0.25);',
+      '  ctx.fillStyle=c; ctx.fill();',
+      '  ctx.beginPath(); ctx.ellipse(x,y-r*0.1,cr,cr*0.95,0,0,Math.PI*2);',
+      '  ctx.strokeStyle="rgba(255,255,255,0.2)"; ctx.lineWidth=0.8; ctx.stroke();',
+      '  var er=r*0.22; ctx.fillStyle="#0a0c0e";',
+      '  ctx.beginPath(); ctx.ellipse(x-r*0.3,y-r*0.15,er,er*1.15,0,0,Math.PI*2); ctx.fill();',
+      '  ctx.beginPath(); ctx.ellipse(x+r*0.3,y-r*0.15,er,er*1.15,0,0,Math.PI*2); ctx.fill();',
+      '  ctx.beginPath(); ctx.moveTo(x-r*0.08,y+r*0.08); ctx.lineTo(x+r*0.08,y+r*0.08); ctx.lineTo(x,y+r*0.25); ctx.closePath(); ctx.fill();',
+      '}',
+      '',
+      'function drawMap() {',
+      '  var canvas = document.getElementById("popCanvas");',
+      '  var wrap = document.getElementById("popCanvasWrap");',
+      '  if (!canvas || !wrap) return;',
+      '  var dpr = window.devicePixelRatio || 1;',
+      '  var w = wrap.clientWidth, h = wrap.clientHeight;',
+      '  canvas.width = w * dpr; canvas.height = h * dpr;',
+      '  var ctx = canvas.getContext("2d");',
+      '  ctx.scale(dpr, dpr);',
+      '  ctx.fillStyle = "#0a0c0e"; ctx.fillRect(0, 0, w, h);',
+      '  if (!_mapConfig) {',
+      '    ctx.fillStyle = "#333"; ctx.font = "13px monospace"; ctx.textAlign = "center";',
+      '    ctx.fillText("Waiting for raid data...", w/2, h/2);',
+      '    return;',
+      '  }',
+      '  var cfg = _mapConfig, bounds = cfg.bounds;',
+      '  var mapW = bounds.max.x - bounds.min.x, mapH = bounds.max.y - bounds.min.y;',
+      '  var pad = 30;',
+      '  var scale = Math.min((w - pad*2) / mapW, (h - pad*2) / mapH) * _zoom;',
+      '  var mapCx = (bounds.min.x + bounds.max.x) / 2, mapCy = (bounds.min.y + bounds.max.y) / 2;',
+      '  if (_followPlayer && sessionId) {',
+      '    var me = _positions.find(function(p){ return p.profileId === sessionId && p.alive; });',
+      '    if (me) { var mp = gameToMap(me.x, me.z, cfg); _panX = -(mp.x - mapCx) * scale; _panY = -(mp.y - mapCy) * scale; }',
+      '  }',
+      '  var cx = w/2 + _panX, cy = h/2 + _panY;',
+      '  var imgKey = _currentMap + "_" + _selectedLayer;',
+      '  var img = _imgCache[imgKey];',
+      '  if (img && img.complete && img.naturalWidth > 0) {',
+      '    ctx.drawImage(img, cx + (bounds.min.x - mapCx) * scale, cy + (bounds.min.y - mapCy) * scale, mapW * scale, mapH * scale);',
+      '  } else {',
+      '    ctx.strokeStyle = "rgba(200,170,110,0.08)"; ctx.lineWidth = 1;',
+      '    for (var gx = bounds.min.x; gx <= bounds.max.x; gx += 50) {',
+      '      var sx = cx + (gx - mapCx) * scale;',
+      '      ctx.beginPath(); ctx.moveTo(sx, cy + (bounds.min.y - mapCy) * scale); ctx.lineTo(sx, cy + (bounds.max.y - mapCy) * scale); ctx.stroke();',
+      '    }',
+      '    for (var gy = bounds.min.y; gy <= bounds.max.y; gy += 50) {',
+      '      var sy = cy + (gy - mapCy) * scale;',
+      '      ctx.beginPath(); ctx.moveTo(cx + (bounds.min.x - mapCx) * scale, sy); ctx.lineTo(cx + (bounds.max.x - mapCx) * scale, sy); ctx.stroke();',
+      '    }',
+      '    ctx.strokeStyle = "rgba(200,170,110,0.15)"; ctx.lineWidth = 1;',
+      '    ctx.strokeRect(cx + (bounds.min.x - mapCx) * scale, cy + (bounds.min.y - mapCy) * scale, mapW * scale, mapH * scale);',
+      '    ctx.fillStyle = "rgba(200,170,110,0.3)"; ctx.font = "16px monospace"; ctx.textAlign = "center";',
+      '    ctx.fillText(cfg.name, cx, cy - 10);',
+      '    ctx.font = "10px monospace"; ctx.fillText("Map image not loaded", cx, cy + 10);',
+      '  }',
+      '  var showNames = document.getElementById("popShowNames").checked;',
+      '  var showDead = document.getElementById("popShowDead").checked;',
+      '  var layerZ = cfg.layers[_selectedLayer] ? cfg.layers[_selectedLayer].z : null;',
+      '  _positions.forEach(function(p) {',
+      '    if (!showDead && !p.alive) return;',
+      '    var onLayer = true;',
+      '    if (layerZ && _selectedLayer !== "0") onLayer = p.y >= layerZ[0] && p.y <= layerZ[1];',
+      '    var mp = gameToMap(p.x, p.z, cfg);',
+      '    var sx = cx + (mp.x - mapCx) * scale, sy = cy + (mp.y - mapCy) * scale;',
+      '    var color = MAP_COLORS[p.type] || MAP_COLORS.unknown;',
+      '    var alpha = p.alive ? (onLayer ? 1.0 : 0.3) : 0.25;',
+      '    var radius = p.type === "boss" ? 7 : (p.type === "pmc" || p.type === "aipmc") ? 5 : p.type === "follower" ? 3.5 : 4;',
+      '    drawIconShape(ctx, sx, sy, p.type, color, radius, alpha);',
+      '    if (p.alive && (p.type === "pmc" || p.type === "aipmc") && p.rotation != null) {',
+      '      ctx.globalAlpha = alpha; var arrowLen = radius + 6, angle = -(p.rotation - cfg.rotation) * Math.PI / 180;',
+      '      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + Math.sin(angle) * arrowLen, sy - Math.cos(angle) * arrowLen);',
+      '      ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = 1;',
+      '    }',
+      '    if (!p.alive) { ctx.globalAlpha = 0.6; ctx.strokeStyle = "#c45050"; ctx.lineWidth = 1.5;',
+      '      ctx.beginPath(); ctx.moveTo(sx-4,sy-4); ctx.lineTo(sx+4,sy+4); ctx.stroke();',
+      '      ctx.beginPath(); ctx.moveTo(sx+4,sy-4); ctx.lineTo(sx-4,sy+4); ctx.stroke(); ctx.globalAlpha = 1;',
+      '    }',
+      '    if (showNames && p.alive && (p.type === "pmc" || p.type === "aipmc" || p.type === "boss")) {',
+      '      ctx.fillStyle = color; ctx.font = "9px monospace"; ctx.textAlign = "center"; ctx.fillText(p.name, sx, sy - radius - 4);',
+      '    }',
+      '  });',
+      '  ctx.fillStyle = "rgba(200,170,110,0.5)"; ctx.font = "bold 11px monospace"; ctx.textAlign = "center"; ctx.fillText("N", w-20, 18);',
+      '  ctx.fillStyle = "rgba(200,170,110,0.3)"; ctx.font = "9px monospace";',
+      '  ctx.fillText("S", w-20, h-8); ctx.fillText("W", 10, h/2+4); ctx.textAlign = "left"; ctx.fillText("E", w-14, h/2+4);',
+      '  var aliveCount = _positions.filter(function(p){ return p.alive; }).length;',
+      '  ctx.fillStyle = "rgba(200,170,110,0.4)"; ctx.font = "10px monospace"; ctx.textAlign = "left";',
+      '  ctx.fillText(aliveCount + " alive / " + _positions.length + " total", 8, 16);',
+      '}',
+      '',
+      'function tryLoadImg(mapId, layer) {',
+      '  var key = mapId + "_" + layer; if (_imgCache[key]) return;',
+      '  var fm = { bigmap:"customs", factory4_day:"factory", factory4_night:"factory", Sandbox:"ground_zero", Sandbox_high:"ground_zero",',
+      '    Interchange:"interchange", laboratory:"labs", Labyrinth:"labyrinth", Lighthouse:"lighthouse",',
+      '    RezervBase:"reserve", Shoreline:"shoreline", TarkovStreets:"streets", Woods:"woods" };',
+      '  var prefix = fm[mapId]; if (!prefix) return;',
+      '  var suffix = (prefix==="factory"||prefix==="labyrinth"||prefix==="labs") ? "layer" : "level";',
+      '  var img = new Image(); img.onload = function(){ drawMap(); };',
+      '  img.src = apiBase + "maps/" + prefix + "_" + suffix + "_" + layer + ".png";',
+      '  _imgCache[key] = img;',
+      '}',
+      '',
+      'function updateMap(mapId) {',
+      '  if (mapId === _currentMap) return;',
+      '  _currentMap = mapId; _mapConfig = MAP_CONFIG[mapId] || null;',
+      '  _zoom = 1; _panX = 0; _panY = 0; _selectedLayer = "0";',
+      '  if (_mapConfig) {',
+      '    var sel = document.getElementById("popLayerSelect"); sel.innerHTML = "";',
+      '    Object.keys(_mapConfig.layers).sort(function(a,b){ return parseInt(a)-parseInt(b); }).forEach(function(lv) {',
+      '      var o = document.createElement("option"); o.value = lv;',
+      '      o.textContent = lv === "0" ? "Ground" : lv === "-1" ? "Underground" : "Level " + lv;',
+      '      sel.appendChild(o);',
+      '    });',
+      '    _selectedLayer = "" + (_mapConfig.defaultLevel || 0); sel.value = _selectedLayer;',
+      '    Object.keys(_mapConfig.layers).forEach(function(lv){ tryLoadImg(mapId, lv); });',
+      '  }',
+      '}',
+      '',
+      'function poll() {',
+      '  Promise.all([',
+      '    fetch(apiBase + "telemetry/positions", { headers: headers }).then(function(r){ return r.json(); }).catch(function(){ return null; }),',
+      '    fetch(apiBase + "telemetry/current", { headers: headers }).then(function(r){ return r.json(); }).catch(function(){ return null; })',
+      '  ]).then(function(res) {',
+      '    var pos = res[0], cur = res[1];',
+      '    document.getElementById("popStatus").textContent = "Connected — " + (_currentMap || "no raid");',
+      '    if (pos) _positions = pos;',
+      '    if (cur && cur.raidState === "InRaid" && cur.map) updateMap(cur.map);',
+      '    drawMap();',
+      '  }).catch(function(e) {',
+      '    document.getElementById("popStatus").textContent = "Connection error: " + e.message;',
+      '  });',
+      '}',
+      '',
+      'function startPolling() { if (_refreshTimer) clearInterval(_refreshTimer); _refreshTimer = setInterval(poll, _refreshMs); poll(); }',
+      '',
+      'var wrap = document.getElementById("popCanvasWrap");',
+      'wrap.addEventListener("wheel", function(e) { e.preventDefault(); _zoom = Math.max(0.3, Math.min(10, _zoom * (e.deltaY > 0 ? 0.9 : 1.1))); drawMap(); }, { passive: false });',
+      'wrap.addEventListener("mousedown", function(e) {',
+      '  if (e.button !== 0) return;',
+      '  if (_followPlayer) { _followPlayer = false; document.getElementById("popFollowPlayer").checked = false; }',
+      '  _dragging = true; _dragStart = { x: e.clientX, y: e.clientY }; _panStart = { x: _panX, y: _panY };',
+      '});',
+      'window.addEventListener("mousemove", function(e) {',
+      '  if (!_dragging) return; _panX = _panStart.x + (e.clientX - _dragStart.x); _panY = _panStart.y + (e.clientY - _dragStart.y); drawMap();',
+      '});',
+      'window.addEventListener("mouseup", function() { _dragging = false; });',
+      'document.getElementById("popLayerSelect").addEventListener("change", function() { _selectedLayer = this.value; drawMap(); });',
+      'document.getElementById("popFollowPlayer").addEventListener("change", function() { _followPlayer = this.checked; if (_followPlayer) drawMap(); });',
+      '',
+      'var slider = document.getElementById("popRefreshSlider");',
+      'var slabel = document.getElementById("popRefreshLabel");',
+      'function sliderToMs(v) { return Math.round(Math.pow(10, parseFloat(v)) * 1000); }',
+      'function fmtRate(ms) { return ms < 1000 ? (ms/1000).toFixed(2)+"s" : ms >= 10000 ? (ms/1000).toFixed(0)+"s" : (ms/1000).toFixed(1)+"s"; }',
+      'slider.addEventListener("input", function() { _refreshMs = sliderToMs(this.value); slabel.textContent = fmtRate(_refreshMs); });',
+      'slider.addEventListener("change", function() { _refreshMs = sliderToMs(this.value); slabel.textContent = fmtRate(_refreshMs); startPolling(); });',
+      '',
+      'window.addEventListener("resize", function() { drawMap(); });',
+      'startPolling();',
+      '<\/script></body></html>'
+    ].join('\n');
+
+    var blob = new Blob([html], { type: 'text/html' });
+    var blobUrl = URL.createObjectURL(blob);
+    var popout = window.open(blobUrl, 'cc_map_popout', 'width=1200,height=900,resizable=yes,scrollbars=no');
+    if (!popout) { toast('Popout blocked — allow popups for this site', 'error'); URL.revokeObjectURL(blobUrl); return; }
+
+    _mapPopoutWindow = popout;
+    setMainMapMinimized(true);
+
+    // Detect when popout closes to restore main map
+    _mapPopoutCheckTimer = setInterval(function() {
+      if (!_mapPopoutWindow || _mapPopoutWindow.closed) {
+        clearInterval(_mapPopoutCheckTimer);
+        _mapPopoutCheckTimer = null;
+        _mapPopoutWindow = null;
+        setMainMapMinimized(false);
+      }
+    }, 1000);
   };
 
   // Headless Process Manager
@@ -5955,7 +6576,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   // Entity colors
   var MAP_COLORS = {
     pmc: '#4a7c59',      // green
-    scav: '#5b8cb8',     // blue
+    aipmc: '#c45050',    // red — AI PMC bots
+    scav: '#c8aa6e',     // gold
     boss: '#c87a3e',     // orange
     raider: '#b06030',   // darker orange
     rogue: '#b06030',
@@ -6092,6 +6714,134 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     loadMapPositions();
   }
 
+  // ── Minimap Icon Drawing ──
+
+  function drawIconShape(ctx, x, y, type, color, r, alpha) {
+    ctx.globalAlpha = alpha;
+    switch (type) {
+      case 'pmc':    _drawChevron(ctx, x, y, r, color); break;
+      case 'aipmc':  _drawDiamond(ctx, x, y, r, color); break;
+      case 'boss':   _drawSkull(ctx, x, y, r, color); break;
+      case 'raider':
+      case 'rogue':  _drawTriangle(ctx, x, y, r, color); break;
+      case 'follower': _drawSmallDiamond(ctx, x, y, r, color); break;
+      default:       _drawCircle(ctx, x, y, r, color); break; // scav, unknown
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function _drawChevron(ctx, x, y, r, color) {
+    // Upward chevron/arrow — military PMC feel
+    ctx.beginPath();
+    ctx.moveTo(x, y - r);
+    ctx.lineTo(x + r * 0.8, y + r * 0.4);
+    ctx.lineTo(x + r * 0.35, y + r * 0.1);
+    ctx.lineTo(x, y + r * 0.55);
+    ctx.lineTo(x - r * 0.35, y + r * 0.1);
+    ctx.lineTo(x - r * 0.8, y + r * 0.4);
+    ctx.closePath();
+    // Dark backdrop
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fill();
+    // Colored fill (slightly inset via stroke trick)
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+
+  function _drawDiamond(ctx, x, y, r, color) {
+    ctx.beginPath();
+    ctx.moveTo(x, y - r);
+    ctx.lineTo(x + r, y);
+    ctx.lineTo(x, y + r);
+    ctx.lineTo(x - r, y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+
+  function _drawSmallDiamond(ctx, x, y, r, color) {
+    _drawDiamond(ctx, x, y, r * 0.8, color);
+  }
+
+  function _drawTriangle(ctx, x, y, r, color) {
+    ctx.beginPath();
+    ctx.moveTo(x, y - r);
+    ctx.lineTo(x + r * 0.866, y + r * 0.5);
+    ctx.lineTo(x - r * 0.866, y + r * 0.5);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+
+  function _drawCircle(ctx, x, y, r, color) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+
+  function _drawSkull(ctx, x, y, r, color) {
+    // Cranium (top oval)
+    var cr = r * 0.9;
+    ctx.beginPath();
+    ctx.ellipse(x, y - r * 0.1, cr, cr * 0.95, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(x, y - r * 0.1, cr, cr * 0.95, 0, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    // Jaw
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.5, y + r * 0.25);
+    ctx.quadraticCurveTo(x - r * 0.35, y + r * 0.85, x, y + r * 0.75);
+    ctx.quadraticCurveTo(x + r * 0.35, y + r * 0.85, x + r * 0.5, y + r * 0.25);
+    ctx.fillStyle = color;
+    ctx.fill();
+    // Outline
+    ctx.beginPath();
+    ctx.ellipse(x, y - r * 0.1, cr, cr * 0.95, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    // Eye sockets (dark)
+    var eyeR = r * 0.22;
+    ctx.fillStyle = '#0a0c0e';
+    ctx.beginPath();
+    ctx.ellipse(x - r * 0.3, y - r * 0.15, eyeR, eyeR * 1.15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(x + r * 0.3, y - r * 0.15, eyeR, eyeR * 1.15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Nose (small inverted triangle)
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.08, y + r * 0.08);
+    ctx.lineTo(x + r * 0.08, y + r * 0.08);
+    ctx.lineTo(x, y + r * 0.25);
+    ctx.closePath();
+    ctx.fill();
+  }
+
   function drawMap() {
     var canvas = document.getElementById('mapCanvas');
     var wrap = document.getElementById('mapCanvasWrap');
@@ -6213,20 +6963,17 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var sx = cx + (mp.x - mapCx) * scale;
       var sy = cy + (mp.y - mapCy) * scale;
 
-      // Determine color
+      // Determine color and size
       var color = MAP_COLORS[p.type] || MAP_COLORS.unknown;
       var alpha = p.alive ? (onLayer ? 1.0 : 0.3) : 0.25;
-      var radius = (p.type === 'boss') ? 6 : (p.type === 'pmc') ? 5 : 4;
+      var radius = (p.type === 'boss') ? 7 : (p.type === 'pmc' || p.type === 'aipmc') ? 5 : (p.type === 'follower') ? 3.5 : 4;
 
-      // Draw dot
-      ctx.globalAlpha = alpha;
-      ctx.beginPath();
-      ctx.arc(sx, sy, radius, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
+      // Draw icon shape
+      drawIconShape(ctx, sx, sy, p.type, color, radius, alpha);
 
       // Draw rotation arrow for PMCs
-      if (p.alive && p.type === 'pmc' && p.rotation != null) {
+      if (p.alive && (p.type === 'pmc' || p.type === 'aipmc') && p.rotation != null) {
+        ctx.globalAlpha = alpha;
         var arrowLen = radius + 6;
         var angle = -(p.rotation - config.rotation) * Math.PI / 180;
         ctx.beginPath();
@@ -6235,25 +6982,26 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
         ctx.stroke();
+        ctx.globalAlpha = 1;
       }
 
       // Dead X marker
       if (!p.alive) {
-        ctx.strokeStyle = 'rgba(200,60,60,0.6)';
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = '#c45050';
         ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(sx - 3, sy - 3); ctx.lineTo(sx + 3, sy + 3); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(sx + 3, sy - 3); ctx.lineTo(sx - 3, sy + 3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(sx - 4, sy - 4); ctx.lineTo(sx + 4, sy + 4); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(sx + 4, sy - 4); ctx.lineTo(sx - 4, sy + 4); ctx.stroke();
+        ctx.globalAlpha = 1;
       }
 
       // Name label
-      if (showNames && p.alive && (p.type === 'pmc' || p.type === 'boss')) {
+      if (showNames && p.alive && (p.type === 'pmc' || p.type === 'aipmc' || p.type === 'boss')) {
         ctx.fillStyle = color;
         ctx.font = '9px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText(p.name, sx, sy - radius - 3);
+        ctx.fillText(p.name, sx, sy - radius - 4);
       }
-
-      ctx.globalAlpha = 1;
     });
 
     // Draw compass
@@ -7837,15 +8585,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   });
 
   // ═══════════════════════════════════════════════════════
-  // AUTO-LOGIN
+  // AUTO-LOGIN + PROFILE LIST
   // ═══════════════════════════════════════════════════════
   if (sessionId) {
-    document.getElementById('sessionInput').value = sessionId;
-    document.getElementById('passwordInput').value = ccPassword;
     api('auth').then(function(data) {
       if (data.authorized) { profileName = data.profileName; showMain(); }
-      else { sessionId = ''; ccPassword = ''; localStorage.removeItem('zslayer_session'); localStorage.removeItem('zslayer_password'); }
-    }).catch(function() { sessionId = ''; ccPassword = ''; localStorage.removeItem('zslayer_session'); localStorage.removeItem('zslayer_password'); });
+      else { sessionId = ''; ccPassword = ''; localStorage.removeItem('zslayer_session'); localStorage.removeItem('zslayer_password'); loadProfileList(); startVitalsPolling(); }
+    }).catch(function() { sessionId = ''; ccPassword = ''; localStorage.removeItem('zslayer_session'); localStorage.removeItem('zslayer_password'); loadProfileList(); startVitalsPolling(); });
+  } else {
+    loadProfileList();
+    startVitalsPolling();
   }
 })();
 </script>

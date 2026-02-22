@@ -122,6 +122,30 @@ public record PresetInfo
     public List<PresetItemConfig> Items { get; set; } = [];
 }
 
+public record ProfileListResponse
+{
+    [JsonPropertyName("profiles")]
+    public List<ProfileEntry> Profiles { get; set; } = [];
+
+    [JsonPropertyName("hasPassword")]
+    public bool HasPassword { get; set; }
+}
+
+public record ProfileEntry
+{
+    [JsonPropertyName("sessionId")]
+    public string SessionId { get; set; } = "";
+
+    [JsonPropertyName("nickname")]
+    public string Nickname { get; set; } = "";
+
+    [JsonPropertyName("side")]
+    public string Side { get; set; } = "";
+
+    [JsonPropertyName("level")]
+    public int Level { get; set; }
+}
+
 public record PresetGiveResponse
 {
     [JsonPropertyName("success")]
