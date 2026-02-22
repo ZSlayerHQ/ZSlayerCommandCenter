@@ -1236,9 +1236,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .alert-feed {
   max-height: 300px;
   overflow-y: auto;
-  display: none;
 }
-.alert-feed.open { display: block; }
+.alert-feed.collapsed { display: none; }
 .alert-entry {
   display: flex;
   align-items: flex-start;
@@ -2631,7 +2630,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     <!-- System Gauges (CPU/RAM) -->
     <div class="system-gauges-panel" id="systemGaugesPanel" style="display:none">
-      <div class="section-header">System Performance</div>
+      <details id="perfDetails" open>
+      <summary class="section-header" style="cursor:pointer;list-style:none;user-select:none">System Performance <span style="font-size:10px;color:#6a6050;margin-left:6px" id="perfToggleHint">(click to collapse)</span></summary>
       <!-- CPU Row -->
       <div class="gauge-row">
         <div class="gauge-container">
@@ -2669,11 +2669,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <div class="chart-tooltip" id="ramChartTooltip"></div>
         </div>
       </div>
+      </details>
     </div>
 
     <!-- Alerts Section -->
-    <div class="raidinfo-section" style="margin-bottom:12px" id="alertsSection" style="display:none">
-      <div class="raidinfo-section-header" style="cursor:pointer" onclick="toggleAlertFeed()">
+    <div class="raidinfo-section" style="margin-bottom:12px" id="alertsSection">
+      <div class="raidinfo-section-header">
         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg> Alerts <span class="alert-count" id="alertBadge" style="display:none">0</span></span>
       </div>
       <div class="raidinfo-section-body alert-feed" id="alertFeed">
@@ -2694,6 +2695,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           </label>
           <label><input type="checkbox" id="mapShowNames" checked> Names</label>
           <label><input type="checkbox" id="mapShowDead"> Dead</label>
+          <label><input type="checkbox" id="mapFollowPlayer" checked> Follow</label>
+          <button class="btn-sm" onclick="openMapPopout()" title="Popout Map" style="padding:2px 8px;font-size:11px">&#x29C9; Popout</button>
         </div>
       </div>
       <div class="live-map-canvas-wrap" id="mapCanvasWrap">
@@ -5079,6 +5082,225 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     popout.document.close();
   };
 
+  // ── Map Popout Window ──
+  window.openMapPopout = function() {
+    var popout = window.open('', 'cc_map_popout', 'width=1200,height=900,resizable=yes,scrollbars=no');
+    if (!popout) { toast('Popout blocked — allow popups for this site', 'error'); return; }
+
+    var apiBase = location.origin + '/zslayer/cc/';
+    var headers = { 'X-Session-Id': sessionId, 'X-Password': ccPassword };
+    var mapConfigJson = JSON.stringify(MAP_CONFIG);
+    var mapColorsJson = JSON.stringify(MAP_COLORS);
+
+    popout.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Command Center — Live Map</title>' +
+    '<style>' +
+      '@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap");' +
+      '*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }' +
+      'body { font-family: "Rajdhani", sans-serif; background: #080808; color: #c8bfa8; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }' +
+      '::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: #0c0c0c; } ::-webkit-scrollbar-thumb { background: #2a2620; border-radius: 3px; }' +
+      '.pop-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: #141310; border-bottom: 1px solid #2a2620; flex-shrink: 0; }' +
+      '.pop-header-title { font-family: "Share Tech Mono", monospace; font-size: 12px; color: #c8aa6e; letter-spacing: 2px; text-transform: uppercase; }' +
+      '.pop-header-status { font-family: "Share Tech Mono", monospace; font-size: 10px; color: #6a6050; }' +
+      '.pop-controls { display: flex; gap: 14px; align-items: center; padding: 6px 16px; background: #111; border-bottom: 1px solid #1f1d18; flex-shrink: 0; font-size: 11px; }' +
+      '.pop-controls label { display: flex; align-items: center; gap: 4px; color: #8a7e6a; }' +
+      '.pop-controls select, .pop-controls input[type=range] { background: #1a1a1a; color: #c8bfa8; border: 1px solid #2a2620; border-radius: 3px; font-size: 10px; }' +
+      '.pop-canvas-wrap { flex: 1; position: relative; overflow: hidden; }' +
+      '.pop-canvas-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }' +
+      '.pop-legend { display: flex; gap: 14px; padding: 6px 16px; background: #111; border-top: 1px solid #1f1d18; flex-shrink: 0; font-size: 10px; font-family: "Share Tech Mono", monospace; color: #6a6050; }' +
+      '.pop-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }' +
+    '</style></head><body>' +
+    '<div class="pop-header">' +
+      '<span class="pop-header-title">Command Center — Live Map</span>' +
+      '<span class="pop-header-status" id="popStatus">Connecting...</span>' +
+    '</div>' +
+    '<div class="pop-controls">' +
+      '<label>Layer: <select id="popLayerSelect"><option value="0">Ground</option></select></label>' +
+      '<label>Refresh: <input type="range" id="popRefreshSlider" min="-1.301" max="1" step="0.01" value="0"> <span id="popRefreshLabel">1.0s</span></label>' +
+      '<label><input type="checkbox" id="popShowNames" checked> Names</label>' +
+      '<label><input type="checkbox" id="popShowDead"> Dead</label>' +
+      '<label><input type="checkbox" id="popFollowPlayer" checked> Follow</label>' +
+    '</div>' +
+    '<div class="pop-canvas-wrap" id="popCanvasWrap"><canvas id="popCanvas"></canvas></div>' +
+    '<div class="pop-legend">' +
+      '<span><span class="pop-legend-dot" style="background:#4a7c59"></span>PMC</span>' +
+      '<span><span class="pop-legend-dot" style="background:#c8aa6e"></span>AI PMC</span>' +
+      '<span><span class="pop-legend-dot" style="background:#5b8cb8"></span>Scav</span>' +
+      '<span><span class="pop-legend-dot" style="background:#c87a3e"></span>Boss</span>' +
+      '<span><span class="pop-legend-dot" style="background:#b06030"></span>Raider/Rogue</span>' +
+      '<span><span class="pop-legend-dot" style="background:#6e4a7c"></span>Follower</span>' +
+      '<span><span class="pop-legend-dot" style="background:rgba(255,255,255,0.25)"></span>Dead</span>' +
+    '</div>' +
+    '<script>' +
+    'var apiBase = ' + JSON.stringify(apiBase) + ';' +
+    'var headers = ' + JSON.stringify(headers) + ';' +
+    'var sessionId = ' + JSON.stringify(sessionId) + ';' +
+    'var MAP_CONFIG = ' + mapConfigJson + ';' +
+    'var MAP_COLORS = ' + mapColorsJson + ';' +
+    'var _positions = [], _currentMap = "", _mapConfig = null, _zoom = 1, _panX = 0, _panY = 0;' +
+    'var _dragging = false, _dragStart = {x:0,y:0}, _panStart = {x:0,y:0}, _selectedLayer = "0";' +
+    'var _followPlayer = true, _refreshMs = 1000, _refreshTimer = null, _imgCache = {};' +
+    '' +
+    'function gameToMap(gx, gz, cfg) {' +
+    '  var rad = cfg.rotation * Math.PI / 180;' +
+    '  return { x: gx * Math.cos(rad) - gz * Math.sin(rad), y: gx * Math.sin(rad) + gz * Math.cos(rad) };' +
+    '}' +
+    '' +
+    'function drawMap() {' +
+    '  var canvas = document.getElementById("popCanvas");' +
+    '  var wrap = document.getElementById("popCanvasWrap");' +
+    '  if (!canvas || !wrap) return;' +
+    '  var dpr = window.devicePixelRatio || 1;' +
+    '  var w = wrap.clientWidth, h = wrap.clientHeight;' +
+    '  canvas.width = w * dpr; canvas.height = h * dpr;' +
+    '  var ctx = canvas.getContext("2d");' +
+    '  ctx.scale(dpr, dpr);' +
+    '  ctx.fillStyle = "#0a0c0e"; ctx.fillRect(0, 0, w, h);' +
+    '  if (!_mapConfig) {' +
+    '    ctx.fillStyle = "#333"; ctx.font = "13px monospace"; ctx.textAlign = "center";' +
+    '    ctx.fillText("Map: " + (_currentMap || "Unknown") + " (no config)", w/2, h/2);' +
+    '    return;' +
+    '  }' +
+    '  var cfg = _mapConfig, bounds = cfg.bounds;' +
+    '  var mapW = bounds.max.x - bounds.min.x, mapH = bounds.max.y - bounds.min.y;' +
+    '  var pad = 30;' +
+    '  var scale = Math.min((w - pad*2) / mapW, (h - pad*2) / mapH) * _zoom;' +
+    '  var mapCx = (bounds.min.x + bounds.max.x) / 2, mapCy = (bounds.min.y + bounds.max.y) / 2;' +
+    '  if (_followPlayer && sessionId) {' +
+    '    var me = _positions.find(function(p){ return p.profileId === sessionId && p.alive; });' +
+    '    if (me) { var mp = gameToMap(me.x, me.z, cfg); _panX = -(mp.x - mapCx) * scale; _panY = -(mp.y - mapCy) * scale; }' +
+    '  }' +
+    '  var cx = w/2 + _panX, cy = h/2 + _panY;' +
+    '  var imgKey = _currentMap + "_" + _selectedLayer;' +
+    '  var img = _imgCache[imgKey];' +
+    '  if (img && img.complete && img.naturalWidth > 0) {' +
+    '    var imgX = cx + (bounds.min.x - mapCx) * scale;' +
+    '    var imgY = cy + (bounds.min.y - mapCy) * scale;' +
+    '    ctx.drawImage(img, imgX, imgY, mapW * scale, mapH * scale);' +
+    '  } else {' +
+    '    ctx.strokeStyle = "rgba(200,170,110,0.08)"; ctx.lineWidth = 1;' +
+    '    for (var gx = bounds.min.x; gx <= bounds.max.x; gx += 50) {' +
+    '      var sx = cx + (gx - mapCx) * scale;' +
+    '      ctx.beginPath(); ctx.moveTo(sx, cy + (bounds.min.y - mapCy) * scale); ctx.lineTo(sx, cy + (bounds.max.y - mapCy) * scale); ctx.stroke();' +
+    '    }' +
+    '    for (var gy = bounds.min.y; gy <= bounds.max.y; gy += 50) {' +
+    '      var sy = cy + (gy - mapCy) * scale;' +
+    '      ctx.beginPath(); ctx.moveTo(cx + (bounds.min.x - mapCx) * scale, sy); ctx.lineTo(cx + (bounds.max.x - mapCx) * scale, sy); ctx.stroke();' +
+    '    }' +
+    '    ctx.strokeStyle = "rgba(200,170,110,0.15)"; ctx.lineWidth = 1;' +
+    '    ctx.strokeRect(cx + (bounds.min.x - mapCx) * scale, cy + (bounds.min.y - mapCy) * scale, mapW * scale, mapH * scale);' +
+    '    ctx.fillStyle = "rgba(200,170,110,0.3)"; ctx.font = "16px monospace"; ctx.textAlign = "center";' +
+    '    ctx.fillText(cfg.name, cx, cy - 10);' +
+    '    ctx.font = "10px monospace"; ctx.fillText("Map image not loaded", cx, cy + 10);' +
+    '  }' +
+    '  var showNames = document.getElementById("popShowNames").checked;' +
+    '  var showDead = document.getElementById("popShowDead").checked;' +
+    '  var layerZ = cfg.layers[_selectedLayer] ? cfg.layers[_selectedLayer].z : null;' +
+    '  _positions.forEach(function(p) {' +
+    '    if (!showDead && !p.alive) return;' +
+    '    var onLayer = true;' +
+    '    if (layerZ && _selectedLayer !== "0") onLayer = p.y >= layerZ[0] && p.y <= layerZ[1];' +
+    '    var mp = gameToMap(p.x, p.z, cfg);' +
+    '    var sx = cx + (mp.x - mapCx) * scale, sy = cy + (mp.y - mapCy) * scale;' +
+    '    var color = MAP_COLORS[p.type] || MAP_COLORS.unknown;' +
+    '    var alpha = p.alive ? (onLayer ? 1.0 : 0.3) : 0.25;' +
+    '    var radius = p.type === "boss" ? 6 : p.type === "pmc" ? 5 : 4;' +
+    '    ctx.globalAlpha = alpha; ctx.beginPath(); ctx.arc(sx, sy, radius, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();' +
+    '    if (p.alive && p.type === "pmc" && p.rotation != null) {' +
+    '      var arrowLen = radius + 6, angle = -(p.rotation - cfg.rotation) * Math.PI / 180;' +
+    '      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + Math.sin(angle) * arrowLen, sy - Math.cos(angle) * arrowLen);' +
+    '      ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();' +
+    '    }' +
+    '    if (!p.alive) { ctx.strokeStyle = "rgba(200,60,60,0.6)"; ctx.lineWidth = 1.5;' +
+    '      ctx.beginPath(); ctx.moveTo(sx-3,sy-3); ctx.lineTo(sx+3,sy+3); ctx.stroke();' +
+    '      ctx.beginPath(); ctx.moveTo(sx+3,sy-3); ctx.lineTo(sx-3,sy+3); ctx.stroke();' +
+    '    }' +
+    '    if (showNames && p.alive && (p.type === "pmc" || p.type === "boss")) {' +
+    '      ctx.fillStyle = color; ctx.font = "9px monospace"; ctx.textAlign = "center"; ctx.fillText(p.name, sx, sy - radius - 3);' +
+    '    }' +
+    '    ctx.globalAlpha = 1;' +
+    '  });' +
+    '  ctx.fillStyle = "rgba(200,170,110,0.5)"; ctx.font = "bold 11px monospace"; ctx.textAlign = "center"; ctx.fillText("N", w-20, 18);' +
+    '  ctx.fillStyle = "rgba(200,170,110,0.3)"; ctx.font = "9px monospace";' +
+    '  ctx.fillText("S", w-20, h-8); ctx.fillText("W", 10, h/2+4); ctx.textAlign = "left"; ctx.fillText("E", w-14, h/2+4);' +
+    '  var aliveCount = _positions.filter(function(p){ return p.alive; }).length;' +
+    '  ctx.fillStyle = "rgba(200,170,110,0.4)"; ctx.font = "10px monospace"; ctx.textAlign = "left";' +
+    '  ctx.fillText(aliveCount + " alive / " + _positions.length + " total", 8, 16);' +
+    '}' +
+    '' +
+    'function tryLoadImg(mapId, layer) {' +
+    '  var key = mapId + "_" + layer; if (_imgCache[key]) return;' +
+    '  var fm = { bigmap:"customs", factory4_day:"factory", factory4_night:"factory", Sandbox:"ground_zero", Sandbox_high:"ground_zero",' +
+    '    Interchange:"interchange", laboratory:"labs", Labyrinth:"labyrinth", Lighthouse:"lighthouse",' +
+    '    RezervBase:"reserve", Shoreline:"shoreline", TarkovStreets:"streets", Woods:"woods" };' +
+    '  var prefix = fm[mapId]; if (!prefix) return;' +
+    '  var suffix = (prefix==="factory"||prefix==="labyrinth"||prefix==="labs") ? "layer" : "level";' +
+    '  var img = new Image(); img.onload = function(){ drawMap(); };' +
+    '  img.src = apiBase.replace("/zslayer/cc/","") + "/zslayer/cc/maps/" + prefix + "_" + suffix + "_" + layer + ".png";' +
+    '  _imgCache[key] = img;' +
+    '}' +
+    '' +
+    'function updateMap(mapId) {' +
+    '  if (mapId === _currentMap) return;' +
+    '  _currentMap = mapId; _mapConfig = MAP_CONFIG[mapId] || null;' +
+    '  _zoom = 1; _panX = 0; _panY = 0; _selectedLayer = "0";' +
+    '  if (_mapConfig) {' +
+    '    var sel = document.getElementById("popLayerSelect"); sel.innerHTML = "";' +
+    '    Object.keys(_mapConfig.layers).sort(function(a,b){ return parseInt(a)-parseInt(b); }).forEach(function(lv) {' +
+    '      var o = document.createElement("option"); o.value = lv;' +
+    '      o.textContent = lv === "0" ? "Ground" : lv === "-1" ? "Underground" : "Level " + lv;' +
+    '      sel.appendChild(o);' +
+    '    });' +
+    '    _selectedLayer = "" + (_mapConfig.defaultLevel || 0); sel.value = _selectedLayer;' +
+    '    Object.keys(_mapConfig.layers).forEach(function(lv){ tryLoadImg(mapId, lv); });' +
+    '  }' +
+    '}' +
+    '' +
+    'function poll() {' +
+    '  Promise.all([' +
+    '    fetch(apiBase + "telemetry/positions", { headers: headers }).then(function(r){ return r.json(); }).catch(function(){ return null; }),' +
+    '    fetch(apiBase + "telemetry/current", { headers: headers }).then(function(r){ return r.json(); }).catch(function(){ return null; })' +
+    '  ]).then(function(res) {' +
+    '    var pos = res[0], cur = res[1];' +
+    '    document.getElementById("popStatus").textContent = "Connected — " + (_currentMap || "no raid");' +
+    '    if (pos) _positions = pos;' +
+    '    if (cur && cur.raidState === "InRaid" && cur.map) updateMap(cur.map);' +
+    '    drawMap();' +
+    '  }).catch(function() {' +
+    '    document.getElementById("popStatus").textContent = "Connection error";' +
+    '  });' +
+    '}' +
+    '' +
+    'function startPolling() { if (_refreshTimer) clearInterval(_refreshTimer); _refreshTimer = setInterval(poll, _refreshMs); poll(); }' +
+    '' +
+    '// Interactions' +
+    'var wrap = document.getElementById("popCanvasWrap");' +
+    'wrap.addEventListener("wheel", function(e) { e.preventDefault(); _zoom = Math.max(0.3, Math.min(10, _zoom * (e.deltaY > 0 ? 0.9 : 1.1))); drawMap(); }, { passive: false });' +
+    'wrap.addEventListener("mousedown", function(e) {' +
+    '  if (e.button !== 0) return;' +
+    '  if (_followPlayer) { _followPlayer = false; document.getElementById("popFollowPlayer").checked = false; }' +
+    '  _dragging = true; _dragStart = { x: e.clientX, y: e.clientY }; _panStart = { x: _panX, y: _panY };' +
+    '});' +
+    'window.addEventListener("mousemove", function(e) {' +
+    '  if (!_dragging) return; _panX = _panStart.x + (e.clientX - _dragStart.x); _panY = _panStart.y + (e.clientY - _dragStart.y); drawMap();' +
+    '});' +
+    'window.addEventListener("mouseup", function() { _dragging = false; });' +
+    'document.getElementById("popLayerSelect").addEventListener("change", function() { _selectedLayer = this.value; drawMap(); });' +
+    'document.getElementById("popFollowPlayer").addEventListener("change", function() { _followPlayer = this.checked; if (_followPlayer) drawMap(); });' +
+    '' +
+    '// Refresh slider' +
+    'var slider = document.getElementById("popRefreshSlider");' +
+    'var slabel = document.getElementById("popRefreshLabel");' +
+    'function msToSlider(ms) { return Math.log10(ms/1000); }' +
+    'function sliderToMs(v) { return Math.round(Math.pow(10, parseFloat(v)) * 1000); }' +
+    'function fmtRate(ms) { return ms < 1000 ? (ms/1000).toFixed(2)+"s" : ms >= 10000 ? (ms/1000).toFixed(0)+"s" : (ms/1000).toFixed(1)+"s"; }' +
+    'slider.addEventListener("input", function() { _refreshMs = sliderToMs(this.value); slabel.textContent = fmtRate(_refreshMs); });' +
+    'slider.addEventListener("change", function() { _refreshMs = sliderToMs(this.value); slabel.textContent = fmtRate(_refreshMs); startPolling(); });' +
+    '' +
+    'startPolling();' +
+    '<\/script></body></html>');
+    popout.document.close();
+  };
+
   // Headless Process Manager
   var headlessAction = null; // null | 'starting' | 'stopping' | 'restarting'
 
@@ -5596,14 +5818,19 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }).catch(function(e) { console.error('Alerts error:', e); });
   }
 
+  var _alertsExpanded = false;
+
   function renderAlertFeed() {
     var feed = document.getElementById('alertFeed');
+    var section = document.getElementById('alertsSection');
     if (_alertsData.length === 0) {
       feed.innerHTML = '<div class="telem-no-data">No alerts yet</div>';
       return;
     }
+    var limit = _alertsExpanded ? _alertsData.length : 5;
+    var items = _alertsData.slice(0, limit);
     var html = '';
-    _alertsData.forEach(function(a) {
+    items.forEach(function(a) {
       var ts = new Date(a.timestamp);
       var timeStr = ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
       var icon = _alertIcons[a.type] || '\u{1F514}';
@@ -5613,18 +5840,20 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         '<span class="alert-time">' + timeStr + '</span>' +
         '</div>';
     });
+    if (_alertsData.length > 5) {
+      if (_alertsExpanded) {
+        html += '<div style="text-align:center;padding:4px"><a href="#" onclick="toggleAlertExpand();return false" style="color:#c8aa6e;font-size:10px">Show less</a></div>';
+      } else {
+        html += '<div style="text-align:center;padding:4px"><a href="#" onclick="toggleAlertExpand();return false" style="color:#c8aa6e;font-size:10px">Show all ' + _alertsData.length + ' alerts</a></div>';
+      }
+    }
     feed.innerHTML = html;
   }
 
-  function toggleAlertFeed() {
-    var feed = document.getElementById('alertFeed');
-    feed.classList.toggle('open');
-    // Clear badge when opened
-    if (feed.classList.contains('open')) {
-      var badge = document.getElementById('alertBadge');
-      badge.style.display = 'none';
-    }
-  }
+  window.toggleAlertExpand = function() {
+    _alertsExpanded = !_alertsExpanded;
+    renderAlertFeed();
+  };
 
   function showAlertToast(alert) {
     var container = document.getElementById('toastContainer');
@@ -5747,6 +5976,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var _mapRefreshTimer = null;
   var _mapSelectedLayer = '0';
   var _mapImageCache = {};
+  var _mapFollowPlayer = true;
   var _mapRaidActive = false;
 
   // Initialize map refresh rate from localStorage
@@ -5907,6 +6137,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     // Map center in game coords
     var mapCx = (bounds.min.x + bounds.max.x) / 2;
     var mapCy = (bounds.min.y + bounds.max.y) / 2;
+
+    // Auto-follow logged-in player
+    if (_mapFollowPlayer && sessionId) {
+      var me = _mapPositions.find(function(p) { return p.profileId === sessionId && p.alive; });
+      if (me) {
+        var mp = gameToMap(me.x, me.z, config);
+        _mapPanX = -(mp.x - mapCx) * scale;
+        _mapPanY = -(mp.y - mapCy) * scale;
+        cx = w / 2 + _mapPanX;
+        cy = h / 2 + _mapPanY;
+      }
+    }
 
     // Check if we have a map image loaded
     var imgKey = _mapCurrentMap + '_' + _mapSelectedLayer;
@@ -6073,6 +6315,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     wrap.addEventListener('mousedown', function(e) {
       if (e.button !== 0) return;
+      if (_mapFollowPlayer) {
+        _mapFollowPlayer = false;
+        var cb = document.getElementById('mapFollowPlayer');
+        if (cb) cb.checked = false;
+      }
       _mapDragging = true;
       _mapDragStart = { x: e.clientX, y: e.clientY };
       _mapPanStart = { x: _mapPanX, y: _mapPanY };
@@ -6098,8 +6345,30 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       });
     }
 
+    // Follow checkbox
+    var followCb = document.getElementById('mapFollowPlayer');
+    if (followCb) {
+      followCb.addEventListener('change', function() {
+        _mapFollowPlayer = this.checked;
+        if (_mapFollowPlayer) drawMap();
+      });
+    }
+
     // Init slider
     initMapSlider();
+  })();
+
+  // Performance panel collapse persistence
+  (function() {
+    var det = document.getElementById('perfDetails');
+    if (!det) return;
+    var saved = localStorage.getItem('cc_perfCollapsed');
+    if (saved === '1') det.removeAttribute('open');
+    det.addEventListener('toggle', function() {
+      localStorage.setItem('cc_perfCollapsed', det.open ? '0' : '1');
+      var hint = document.getElementById('perfToggleHint');
+      if (hint) hint.textContent = det.open ? '(click to collapse)' : '(click to expand)';
+    });
   })();
 
   // Try to load map images from server
