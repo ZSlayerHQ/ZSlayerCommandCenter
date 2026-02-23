@@ -92,11 +92,35 @@ public record PlayerProfileDto
     [JsonPropertyName("runThrough")]
     public int RunThrough { get; set; }
 
+    [JsonPropertyName("kills")]
+    public int Kills { get; set; }
+
     [JsonPropertyName("pmcKills")]
     public int PmcKills { get; set; }
 
     [JsonPropertyName("scavKills")]
     public int ScavKills { get; set; }
+
+    [JsonPropertyName("bossKills")]
+    public int BossKills { get; set; }
+
+    [JsonPropertyName("kdRatio")]
+    public double KdRatio { get; set; }
+
+    [JsonPropertyName("headshots")]
+    public int Headshots { get; set; }
+
+    [JsonPropertyName("longestShot")]
+    public double LongestShot { get; set; }
+
+    [JsonPropertyName("overallAccuracy")]
+    public double OverallAccuracy { get; set; }
+
+    [JsonPropertyName("longestWinStreak")]
+    public int LongestWinStreak { get; set; }
+
+    [JsonPropertyName("onlineTimeSec")]
+    public int OnlineTimeSec { get; set; }
 
     [JsonPropertyName("skills")]
     public List<PlayerSkillDto> Skills { get; set; } = [];

@@ -7509,9 +7509,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function renderProfileOverview(d) {
     var active = activeProfileTab === 'overview' ? ' active' : '';
-    var kd = (d.pmcKills || 0) + (d.scavKills || 0);
-    var deaths = (d.kia || 0) + (d.mia || 0);
-    var kdRatio = deaths > 0 ? (kd / deaths).toFixed(2) : kd > 0 ? kd + '.00' : '0.00';
     var xpPct = d.experienceToNextLevel > 0 ? Math.round(100 - (d.experienceToNextLevel / (d.experience + d.experienceToNextLevel) * 100)) : 100;
     var html = '<div class="profile-panel' + active + '" data-panel="overview">';
     html += '<div class="profile-header">';
@@ -7523,15 +7520,23 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     html += statCard('Euros', formatRoubles(d.currencies ? d.currencies.euros : 0));
     html += '</div>';
     html += '<div class="profile-header">';
-    html += statCard('Survival Rate', (d.survivalRate || 0) + '%');
     html += statCard('Total Raids', d.totalRaids || 0);
-    html += statCard('Survived', d.survived || 0);
-    html += statCard('KIA', d.kia || 0);
-    html += statCard('MIA', d.mia || 0);
-    html += statCard('Run Through', d.runThrough || 0);
+    html += statCard('Survival Rate', (d.survivalRate || 0) + '%', '', 'accent');
+    html += statCard('Kills', d.kills || 0, '', 'accent');
     html += statCard('PMC Kills', d.pmcKills || 0);
     html += statCard('Scav Kills', d.scavKills || 0);
-    html += statCard('K/D', kdRatio);
+    html += statCard('Boss Kills', d.bossKills || 0);
+    html += statCard('K/D Ratio', (d.kdRatio || 0).toFixed(2), '', 'accent');
+    html += '</div>';
+    html += '<div class="profile-header">';
+    html += statCard('Headshots', d.headshots || 0);
+    html += statCard('Longest Shot', (d.longestShot || 0).toFixed(1) + 'm');
+    html += statCard('Overall Accuracy', (d.overallAccuracy || 0).toFixed(1) + '%');
+    html += statCard('Longest Win Streak', d.longestWinStreak || 0);
+    var otSec = d.onlineTimeSec || 0;
+    var otH = Math.floor(otSec / 3600);
+    var otM = Math.floor((otSec % 3600) / 60);
+    html += statCard('Online Time', otH > 0 ? otH + 'h ' + otM + 'm' : otM + 'm');
     html += '</div>';
     html += '</div>';
     return html;

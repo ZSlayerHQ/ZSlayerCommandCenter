@@ -143,24 +143,52 @@ public class PlayerManagementService(
         try
         {
             var stats = pmc.Stats?.Eft;
+            dto.OnlineTimeSec = (int)(stats?.TotalInGameTime ?? 0);
+
+            int ammoUsed = 0, hitCount = 0;
+
             if (stats?.OverallCounters?.Items != null)
             {
                 foreach (var counter in stats.OverallCounters.Items)
                 {
-                    if (counter.Key == null || counter.Key.Count < 2) continue;
+                    if (counter.Key == null || counter.Key.Count == 0) continue;
                     var k = counter.Key;
-                    var val = (int)counter.Value;
+                    var val = (int)(counter.Value ?? 0);
 
-                    if (k.Contains("Sessions") && k.Contains("Pmc")) dto.TotalRaids = val;
-                    else if (k.Contains("ExitStatus") && k.Contains("Survived")) dto.Survived = val;
-                    else if (k.Contains("ExitStatus") && k.Contains("Killed")) dto.KIA = val;
-                    else if (k.Contains("ExitStatus") && k.Contains("MissingInAction")) dto.MIA = val;
-                    else if (k.Contains("ExitStatus") && k.Contains("Runner")) dto.RunThrough = val;
-                    else if (k.Contains("Kills") && k.Contains("Pmc")) dto.PmcKills = val;
-                    else if (k.Contains("Kills") && k.Contains("Savage")) dto.ScavKills = val;
+                    if (k.Count == 1)
+                    {
+                        var key = k.First();
+                        switch (key)
+                        {
+                            case "Kills": dto.Kills = val; break;
+                            case "KilledPmc": dto.PmcKills = val; break;
+                            case "KilledSavage": dto.ScavKills = val; break;
+                            case "KilledBoss": dto.BossKills = val; break;
+                            case "HeadShots": dto.Headshots = val; break;
+                            case "LongestShot": dto.LongestShot = counter.Value ?? 0; break;
+                            case "AmmoUsed": ammoUsed = val; break;
+                            case "HitCount": hitCount = val; break;
+                        }
+                    }
+                    else
+                    {
+                        if (k.Contains("Sessions") && k.Contains("Pmc")) dto.TotalRaids = val;
+                        else if (k.Contains("ExitStatus") && k.Contains("Survived")) dto.Survived = val;
+                        else if (k.Contains("ExitStatus") && k.Contains("Killed")) dto.KIA = val;
+                        else if (k.Contains("ExitStatus") && k.Contains("MissingInAction")) dto.MIA = val;
+                        else if (k.Contains("ExitStatus") && k.Contains("Runner")) dto.RunThrough = val;
+                        else if (k.Contains("LongestWinStreak") && k.Contains("Pmc")) dto.LongestWinStreak = val;
+                    }
                 }
                 dto.SurvivalRate = dto.TotalRaids > 0
                     ? Math.Round((double)dto.Survived / dto.TotalRaids * 100, 1)
+                    : 0;
+                var deaths = dto.KIA + dto.MIA;
+                dto.KdRatio = deaths > 0
+                    ? Math.Round((double)dto.Kills / deaths, 2)
+                    : dto.Kills;
+                dto.OverallAccuracy = ammoUsed > 0
+                    ? Math.Round((double)hitCount / ammoUsed * 100, 1)
                     : 0;
             }
         }
