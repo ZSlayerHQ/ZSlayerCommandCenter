@@ -1,442 +1,581 @@
 <div align="center">
 
+<img src="res/banner.png" alt="ZSlayer Command Center" width="600" />
+
+<br />
+
 # ZSlayer Command Center
 
-**The ultimate server admin toolkit for SPT 4.0 / FIKA**
+### The ultimate browser-based admin toolkit for SPT 4.0 / FIKA
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-c8aa6e.svg)](LICENSE)
-[![SPT](https://img.shields.io/badge/SPT-4.0.x-c8aa6e.svg)]()
-[![FIKA](https://img.shields.io/badge/FIKA-Compatible-4a7c59.svg)]()
-[![.NET](https://img.shields.io/badge/.NET-9.0-512bd4.svg)]()
-[![Version](https://img.shields.io/badge/Version-2.2.5-c8aa6e.svg)]()
+<br />
+
+[![Version](https://img.shields.io/badge/v2.3.0-c8aa6e?style=for-the-badge&label=Version&labelColor=1a1a2e)](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
+[![SPT](https://img.shields.io/badge/4.0.x-c8aa6e?style=for-the-badge&label=SPT&labelColor=1a1a2e)]()
+[![FIKA](https://img.shields.io/badge/Compatible-4a7c59?style=for-the-badge&label=FIKA&labelColor=1a1a2e)]()
+[![.NET](https://img.shields.io/badge/9.0-512bd4?style=for-the-badge&label=.NET&labelColor=1a1a2e)]()
+[![License](https://img.shields.io/badge/MIT-888?style=for-the-badge&label=License&labelColor=1a1a2e)](LICENSE)
+
+<br />
+
+**Manage players. Monitor raids in real time. Control the flea market. Run headless clients.**
+**All from a single browser tab. No restarts. No config hunting.**
+
+<br />
+
+[Discord](https://discord.gg/ZSlayerHQ) &nbsp;&bull;&nbsp; [YouTube](https://www.youtube.com/@ZSlayerHQ-ImBenCole) &nbsp;&bull;&nbsp; [Releases](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
 
 ---
-
-A browser-based command center that gives server admins full control over their SPT / FIKA server. Manage players, monitor raids in real time, control the flea market, run headless clients, and more — all from a single tab. No restarts required. No config file hunting.
-
-[Discord](https://discord.gg/ZSlayerHQ) | [YouTube](https://www.youtube.com/@ZSlayerHQ-ImBenCole)
 
 </div>
 
+<br />
+
+## Overview
+
+ZSlayer Command Center is a **server-side mod** for [SPT (Single Player Tarkov)](https://www.sp-tarkov.com/) that adds a full web-based admin panel served at `https://<your-server>:6969/zslayer/cc/`.
+
+Designed for **FIKA server admins** who want real-time visibility and control without touching JSON files or restarting their server. Every feature works through the browser — give items, watch live raid telemetry, fine-tune the flea market economy, manage headless clients, and more.
+
+**Two components:**
+
+| Component | Required | Purpose |
+|:----------|:--------:|:--------|
+| **Server Mod** | Yes | C# mod running inside the SPT server — powers the admin panel |
+| **Headless Telemetry Plugin** | No | BepInEx plugin for FIKA headless clients — streams live raid data |
+
+<br />
+
 ---
 
-## What Is This?
-
-ZSlayer Command Center is a **server-side mod** for [SPT (Single Player Tarkov)](https://www.sp-tarkov.com/) that adds a full web-based admin panel to your server. It runs alongside the SPT server process and serves a responsive dark-themed UI at `https://<your-server>:6969/zslayer/cc/`.
-
-It's designed for **FIKA server admins** who want real-time visibility and control without touching JSON files or restarting their server. Every feature works through the browser — from giving items to players, to watching live raid telemetry from a headless client, to fine-tuning the entire flea market economy.
-
-The project consists of two components:
-- **Server Mod** (required) — the C# mod that runs inside the SPT server
-- **Headless Telemetry Plugin** (optional) — a BepInEx plugin for FIKA headless clients that streams live raid data back to the command center
-
----
+<br />
 
 ## Features
 
+<br />
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
 ### Dashboard
+
 Real-time server monitoring in a single view.
 
-- **Server Stats** — uptime, player count, mod count, profile count, server version
-- **Server Console** — live-streamed server log output with color coding and auto-scroll
-- **Headless Console** — live log output from the headless client (auto-detected)
+- **Server Stats** — uptime, player count, mod list, profile count, memory usage
+- **Server Console** — live-streamed log output with color coding and auto-scroll
+- **Headless Console** — live headless client log output (auto-detected)
 - **Activity Log** — audit trail of all admin actions with timestamps
-- **Pop-out Console Window** — dedicated side-by-side view of server + headless logs
-- **Send URL to Players** — broadcast a clickable URL to all players via in-game mail
+- **Pop-out Console** — dedicated side-by-side view of server + headless logs
+- **Send URL to Players** — broadcast clickable URLs to all players via in-game mail
+- **Login Screen** — profile selector with live server status widget showing online players, raid activity, and per-player In Stash / In Raid status
 
-### Raid Info (Live Telemetry)
-Real-time raid monitoring powered by the headless telemetry plugin. Watch raids unfold from your browser.
+</td>
+<td width="50%" valign="top">
 
-- **Status Bar** — raid status, map, elapsed time, time remaining, in-game time of day
-- **Performance Metrics** — FPS (current / avg / min-max range), frame time, RAM usage
-- **Live Player Table** — all human players with health bars, level, ping, and live kill count
-- **Bot Tracker** — scav, raider, rogue, and boss counts with alive/dead status
-- **Kill Feed** — real-time kill events with:
-  - Color-coded borders (gold for PMC kills, red for boss kills)
-  - Weapon, body part, distance, and headshot indicators
-  - Arrow separator between killer and victim
-- **Combat Stats Panel** — aggregate combat analytics during and after the raid:
-  - Total hits, headshots, headshot %, total damage dealt
-  - Longest shot distance, average engagement distance
-  - Body part hit distribution as a horizontal bar chart
-- **Live Minimap** — real-time overhead map of the current raid:
-  - Color-coded entity dots (PMC, scav, boss, raider, follower, dead)
-  - Multi-layer support with level selector (underground, ground, upper floors)
-  - PMC rotation arrows showing facing direction
-  - Smooth pan and zoom with mouse drag/scroll
-  - Auto-follow mode that tracks the logged-in player's position
-  - Map image overlays for all official Tarkov maps
-  - Adjustable refresh rate slider (50ms to 10s)
-  - Name labels, dead toggle, layer filtering
-  - Pop-out window — standalone map viewer that works independently of the main UI
-- **Alerts** — inline raid event notifications (boss spawns, kills, headshots, extracts) with expandable history
-- **Collapsible Performance Panel** — system gauges collapse/expand state persists across sessions
-- **Raid History** — searchable log of all completed raids with:
-  - Map, date, duration, player count, kills, deaths
-  - Expandable detail view with full player scoreboard (kills by type, damage, XP, outcome badges)
-  - Boss status (spawned, alive/dead, killed by)
-  - Kill timeline replay with color-coded entries
-  - Combat stats with body part visualization
+### Raid Info — Live Telemetry
+
+Watch raids unfold in real time from your browser.
+
+- **Status Bar** — raid state, map, elapsed/remaining time, in-game time of day
+- **Performance Metrics** — FPS (current / avg / min-max), frame time, RAM, CPU
+- **Live Player Table** — all human players with health bars, level, ping, kill count
+- **Bot Tracker** — scav, raider, rogue, AI PMC, and boss counts (alive / dead)
+- **Kill Feed** — real-time events with weapon, body part, distance, headshot badges
+- **Combat Stats** — hits, headshots, damage, longest shot, body part distribution chart
+- **Alerts** — boss spawns, kills, extracts with expandable history
+- **Raid History** — searchable archive with full player scoreboards and kill timelines
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### Live Minimap
+
+Real-time overhead map of the current raid.
+
+- Color-coded entity dots (PMC, scav, boss, raider, follower, dead)
+- Multi-layer support with level selector (underground, ground, upper)
+- PMC rotation arrows showing facing direction
+- Smooth pan and zoom with mouse drag / scroll
+- Auto-follow mode tracking logged-in player position
+- Map image overlays for all official Tarkov maps
+- Adjustable refresh rate slider (50ms to 10s)
+- Name labels, dead toggle, layer filtering
+- **Pop-out window** — standalone map viewer
+
+</td>
+<td width="50%" valign="top">
 
 ### Player Management
+
 Full control over player profiles and progression.
 
-- **Player Roster** — all registered profiles with level, side, session status
-- **Give Items** — search the full item database, select quantity, send via in-game mail
-- **Item Presets** — save commonly given item sets (e.g. "Starter Kit", "Ammo Resupply") for one-click distribution
+- **Player Roster** — all profiles with level, side, online status, wealth
+- **Profile Stats** — 5 collapsible sections covering raid stats, combat, economy, survival, progression
+- **Give Items** — search the full item database, select quantity, send via mail
+- **Item Presets** — save commonly given item sets for one-click distribution
 - **XP & Level** — view and modify player experience points
 - **Skills** — browse and edit individual skill levels per player
-- **Quest Management** — browse all quests with search/filter, view objectives, set quest state (start, complete, fail)
-- **Send Mail** — compose and send custom in-game messages to players
+- **Quest Management** — browse all quests, view objectives, set quest state
+- **Send Mail** — compose and send custom in-game messages
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
 
 ### Flea Market Control
-Fine-tune the entire flea market economy without touching a config file.
 
-- **Global Price Multipliers** — scale all buy/sell prices up or down
-- **Category Multipliers** — independent multipliers for weapons, ammo, armor, medical, provisions, barter items, keys, containers, mods, and special equipment
+Fine-tune the entire flea market economy from the browser.
+
+- **Global Price Multiplier** — scale all buy/sell prices up or down
+- **Category Multipliers** — weapons, ammo, armor, medical, provisions, barter, keys, containers, mods, special equipment
 - **Per-Item Overrides** — set exact prices for specific items
-- **Tax Control** — adjust the flea market tax multiplier
-- **Offer Settings** — max offers per player, offer duration, barter offer toggle and frequency
+- **Tax Control** — adjust flea market community tax and requirement tax
+- **Offer Settings** — max offers per player, duration, barter toggle + frequency
 - **Market Regeneration** — force-regenerate all NPC offers with one click
 - **Restock Interval** — control how often NPC offers refresh
-- **Live Preview** — see price changes before applying (original vs modified values)
+- **Live Preview** — see price changes before applying
+
+</td>
+<td width="50%" valign="top">
 
 ### Headless Client Manager
+
 Built-in process lifecycle management for FIKA headless clients.
 
-- **Auto-Start** — automatically launch the headless client when the server starts
+- **Auto-Start** — launch headless automatically when the server starts
 - **Auto-Restart** — detect crashes and restart automatically
 - **Manual Controls** — Start / Stop / Restart buttons in the dashboard
-- **Status Monitoring** — process state, PID, uptime displayed in real time
+- **Status Monitoring** — process state, PID, uptime in real time
 - **Profile Selection** — configure which SPT profile the headless client uses
-- **Startup Banner** — formatted server info box on startup showing:
-  - Command Center URLs (local + LAN)
-  - Server IP detection
-  - Headless client status
-  - Service status summary
+- **Startup Banner** — formatted server info box with URLs, IP detection, service status
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
 
 ### Access Control
-Control who can connect to your server and who can access the admin panel.
+
+Control who can connect to your server and admin panel.
 
 - **Whitelist Mode** — only listed profile IDs can access
 - **Blacklist Mode** — block specific profile IDs
-- **Ban List** — permanent bans
-- **Allow All When Empty** — whitelist mode with empty list allows everyone (useful default)
+- **Ban List** — permanent bans with reason tracking
+- **Allow All When Empty** — empty whitelist allows everyone (useful default)
 - **Session Validation** — all API requests authenticated via SPT session ID
+- **Password Protection** — optional admin password for the web panel
+
+</td>
+<td width="50%" valign="top">
 
 ### Activity Logging
-Every admin action is tracked for accountability and debugging.
 
-- **Timestamped Entries** — who did what and when
-- **Action Types** — item gives, config changes, quest modifications, server events
+Every admin action is tracked for accountability.
+
+- **Timestamped Entries** — who did what, when, with full context
+- **Action Types** — item gives, config changes, quest mods, server events
 - **Retention Controls** — configurable log retention period
 - **Dashboard Integration** — recent activity visible on the main dashboard
+- **Searchable** — filter and browse the full audit trail
+
+</td>
+</tr>
+</table>
+
+<br />
 
 ---
 
-## Installation
+<br />
 
-### Server Mod (Required)
+## Quick Start
 
-1. Download the latest release from [Releases](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
-2. Extract the `ZSlayerCommandCenter` folder into your SPT `user/mods/` directory:
-   ```
-   SPT/
-   └── user/
-       └── mods/
-           └── ZSlayerCommandCenter/
-               ├── ZSlayerCommandCenter.dll
-               ├── config/
-               │   └── config.json
-               └── res/
-                   ├── commandcenter.html
-                   └── banner.png
-   ```
-3. Start your SPT server
-4. The startup banner will display your Command Center URLs:
-   ```
-   ╔════════════════════════════════════════════════════╗
-   ║           ZSLAYER COMMAND CENTER v2.2.5            ║
-   ║                                                    ║
-   ║  Local:  https://127.0.0.1:6969/zslayer/cc/        ║
-   ║  LAN:    https://192.168.x.x:6969/zslayer/cc/      ║
-   ║                                                    ║
-   ║  Headless: Ready (auto-start enabled)              ║
-   ╚════════════════════════════════════════════════════╝
-   ```
-5. Open the URL in any modern browser
+### 1. Install the Server Mod
 
-### Headless Telemetry Plugin (Optional)
+Download the latest release from [**Releases**](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases) and extract into your SPT `user/mods/` directory:
 
-Required only if you want live raid telemetry on the Raid Info tab.
+```
+SPT/
+└── user/
+    └── mods/
+        └── ZSlayerCommandCenter/
+            ├── ZSlayerCommandCenter.dll
+            ├── config/
+            │   └── config.json
+            └── res/
+                ├── commandcenter.html
+                └── banner.png
+```
 
-1. Download `ZSlayerHeadlessTelemetry.dll` from the release
-2. Place it in your headless client's BepInEx plugins folder:
-   ```
-   Headless/
-   └── BepInEx/
-       └── plugins/
-           └── ZSlayerHeadlessTelemetry/
-               └── ZSlayerHeadlessTelemetry.dll
-   ```
-3. The plugin activates automatically on headless clients only — it does nothing on regular game clients
-4. It auto-discovers the server URL from SPT's backend config — no manual configuration needed
+Start your SPT server. The startup banner displays your Command Center URLs:
+
+```
+╔════════════════════════════════════════════════════╗
+║           ZSLAYER COMMAND CENTER v2.3.0            ║
+║                                                    ║
+║  Local:  https://127.0.0.1:6969/zslayer/cc/        ║
+║  LAN:    https://192.168.x.x:6969/zslayer/cc/      ║
+║                                                    ║
+║  Headless: Ready (auto-start enabled)              ║
+╚════════════════════════════════════════════════════╝
+```
+
+Open the URL in any modern browser and select your profile to log in.
+
+### 2. Install Headless Telemetry *(optional)*
+
+> Only needed for live raid telemetry on the Raid Info tab.
+
+Place the plugin DLL in your headless client's BepInEx plugins folder:
+
+```
+Headless/
+└── BepInEx/
+    └── plugins/
+        └── ZSlayerHeadlessTelemetry/
+            └── ZSlayerHeadlessTelemetry.dll
+```
+
+- Activates automatically on headless clients only — does nothing on regular game clients
+- Auto-discovers the server URL from SPT's backend config — zero manual configuration
+
+<br />
 
 ---
+
+<br />
 
 ## Configuration
 
-All settings are managed through the web UI. The config file at `config/config.json` is auto-managed and auto-upgrades when new fields are added. Manual editing is supported but not required.
+All settings are managed through the web UI. The config file at `config/config.json` is auto-managed and **auto-upgrades** when new fields are added — your existing settings are always preserved.
 
 <details>
 <summary><strong>Config Sections</strong></summary>
 
+<br />
+
 | Section | Purpose |
-|---------|---------|
-| `access` | Whitelist / blacklist / ban list, access mode |
+|:--------|:--------|
+| `access` | Whitelist / blacklist / ban list, access mode, password |
 | `logging` | Enable/disable give event logging |
 | `dashboard` | Refresh intervals, console buffer size, polling rate, log retention |
 | `items` | Saved item presets for quick distribution |
-| `flea` | Global/category/item price multipliers, tax, offers, regen, barter settings |
+| `flea` | Global / category / item price multipliers, tax, offers, regen, barter settings |
 | `headless` | Auto-start, auto-restart, profile ID, EXE path, launch arguments |
 
 </details>
 
-<details>
-<summary><strong>Config Auto-Upgrade</strong></summary>
-
-When the mod updates and adds new config fields, they are automatically merged into your existing `config.json` on next server start. Your existing settings are preserved — only new fields with their defaults are added. No manual migration needed.
-
-</details>
+<br />
 
 ---
+
+<br />
 
 ## Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                        BROWSER                               │
-│           commandcenter.html (single-file UI)                │
-│     Tabs: Dashboard | Raid Info | Items | Players | Flea     │
+│                         BROWSER                              │
+│            commandcenter.html (single-file UI)               │
+│   Dashboard │ Raid Info │ Items │ Players │ Flea │ Access    │
 └──────────────────────┬───────────────────────────────────────┘
-                       │ HTTP (GET/POST JSON)
-                       │ Auth: X-Session-Id header
+                       │  HTTPS (GET/POST JSON)
+                       │  Auth: X-Session-Id + X-CC-Password
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                    SPT SERVER                                 │
+│                      SPT SERVER                              │
 │                                                              │
-│  CommandCenterHttpListener.cs ─── Routes all /zslayer/cc/*   │
+│  CommandCenterHttpListener ──── Routes all /zslayer/cc/*     │
 │       │                                                      │
-│       ├── ConfigService          (config load/save)          │
-│       ├── TelemetryService       (live raid data + history)  │
-│       ├── ServerStatsService     (server metrics)            │
-│       ├── ConsoleBufferService   (server log capture)        │
-│       ├── HeadlessLogService     (headless log tailing)      │
-│       ├── HeadlessProcessService (process lifecycle)         │
-│       ├── ItemSearchService      (item database search)      │
-│       ├── ItemGiveService        (mail-based item delivery)  │
-│       ├── PlayerManagementService(profile operations)        │
-│       ├── FleaPriceService       (price multipliers)         │
-│       ├── OfferRegenerationService(NPC offer regen)          │
-│       ├── AccessControlService   (whitelist/blacklist)       │
-│       └── ActivityLogService     (audit trail)               │
+│       ├── ConfigService            Config load / save        │
+│       ├── TelemetryService         Live raid data + history  │
+│       ├── ServerStatsService       Server metrics            │
+│       ├── PlayerStatsService       Player stats + economy    │
+│       ├── ConsoleBufferService     Server log capture        │
+│       ├── HeadlessLogService       Headless log tailing      │
+│       ├── HeadlessProcessService   Process lifecycle         │
+│       ├── ItemSearchService        Item database search      │
+│       ├── ItemGiveService          Mail-based item delivery  │
+│       ├── PlayerManagementService  Profile operations        │
+│       ├── PlayerMailService        In-game mail              │
+│       ├── QuestBrowserService      Quest browsing            │
+│       ├── FleaPriceService         Price multipliers         │
+│       ├── OfferRegenerationService NPC offer regeneration    │
+│       ├── RaidTrackingService      Raid data tracking        │
+│       ├── AccessControlService     Whitelist / blacklist     │
+│       └── ActivityLogService       Audit trail               │
 │                                                              │
 │  Entry: CommandCenterMod.cs (PostSptModLoader + 1)           │
 │  DI: [Injectable(InjectionType.Singleton)]                   │
 └──────────────────────┬───────────────────────────────────────┘
                        │
           ┌────────────┴────────────┐
-          │  (telemetry POST)       │
+          │  Telemetry POST (HTTPS) │
           ▼                         │
-┌─────────────────────┐             │
-│  HEADLESS CLIENT    │             │
-│  (BepInEx Plugin)   │             │
-│                     │             │
-│  Plugin.cs          │             │
-│  RaidEventHooks.cs  │◄── Fika Events (game created, raid start/end)
-│  OnDamagePatch.cs   │◄── Harmony Patch (Player.ApplyDamageInfo)
-│  DamageTracker.cs   │    Static hit/damage accumulator
-│  TelemetryReporter.cs│   Async HTTP POST queue
-└─────────────────────┘
+┌─────────────────────────┐         │
+│   HEADLESS CLIENT       │         │
+│   (BepInEx Plugin)      │         │
+│                         │         │
+│   Plugin.cs             │         │
+│   RaidEventHooks.cs     │◄── Fika Events (raid lifecycle)
+│   OnDamagePatch.cs      │◄── Harmony Patch (Player.ApplyDamageInfo)
+│   DamageTracker.cs      │    Static hit / damage accumulator
+│   TelemetryReporter.cs  │    Async HTTP POST queue
+└─────────────────────────┘
 ```
 
-### How Telemetry Works
+<details>
+<summary><strong>How Telemetry Works</strong></summary>
+
+<br />
 
 1. The headless client runs the BepInEx telemetry plugin
-2. When a FIKA raid starts, the plugin subscribes to game events and starts a 5-second reporting loop
-3. Every 5 seconds it POSTs player status, raid state, and performance data to the server
-4. Every 10 seconds it additionally POSTs bot counts and combat damage statistics
-5. Kill events are sent immediately as they happen
-6. At raid end, a comprehensive summary is posted with per-player stats
+2. When a FIKA raid starts, the plugin subscribes to game events and begins a periodic reporting loop
+3. Every **5 seconds** — POSTs player status, raid state, positions, and performance data
+4. Every **10 seconds** — additionally POSTs bot counts and combat damage statistics
+5. **Kill events** are sent immediately as they happen
+6. At **raid end**, a comprehensive summary is posted with per-player stats
 7. The server stores everything in memory — the frontend polls `GET /telemetry/current` to render live data
 8. Completed raids are archived to a searchable history
 
+</details>
+
+<br />
+
 ---
+
+<br />
 
 ## API Reference
 
-All endpoints are prefixed with `/zslayer/cc/`. Authentication is via `X-Session-Id` header.
+All endpoints are prefixed with `/zslayer/cc/`. Authentication via `X-Session-Id` header (and `X-CC-Password` if password is set).
+
+> Endpoints marked *(plugin)* are POST-only telemetry ingestion routes used by the headless plugin.
+
+<details>
+<summary><strong>Public (No Auth)</strong></summary>
+
+<br />
+
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| `GET` | `/profiles` | List profiles for login screen |
+| `GET` | `/server-vitals` | Online count, active raid, online player list, uptime |
+
+</details>
 
 <details>
 <summary><strong>Dashboard & Server</strong></summary>
 
+<br />
+
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/auth` | Validate session, get profile name |
-| GET | `/dashboard/stats` | Server stats (uptime, players, mods) |
-| GET | `/dashboard/console` | Server console log buffer |
-| GET | `/dashboard/headless-console` | Headless client log buffer |
-| GET | `/dashboard/activity` | Activity log entries |
-| POST | `/dashboard/send-url` | Broadcast URL to all players |
-| POST | `/headless/start` | Start headless client process |
-| POST | `/headless/stop` | Stop headless client process |
-| POST | `/headless/restart` | Restart headless client process |
-| GET | `/headless/status` | Headless process status |
+|:-------|:---------|:------------|
+| `GET` | `/auth` | Validate session, get profile name + admin flag |
+| `GET` | `/dashboard/stats` | Server stats (uptime, players, mods, memory) |
+| `GET` | `/dashboard/players` | Player roster with online status + economy |
+| `GET` | `/dashboard/raids` | Server-wide raid statistics |
+| `GET` | `/dashboard/console` | Server console log buffer |
+| `GET` | `/dashboard/headless-console` | Headless client log buffer |
+| `GET` | `/dashboard/activity` | Activity log entries |
+| `POST` | `/dashboard/send-url` | Broadcast URL to all players via mail |
+
+</details>
+
+<details>
+<summary><strong>Headless Client</strong></summary>
+
+<br />
+
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| `GET` | `/headless/status` | Headless process status + PID + uptime |
+| `POST` | `/headless/start` | Start headless client process |
+| `POST` | `/headless/stop` | Stop headless client process |
+| `POST` | `/headless/restart` | Restart headless client process |
 
 </details>
 
 <details>
 <summary><strong>Telemetry (Raid Info)</strong></summary>
 
+<br />
+
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/telemetry/current` | Full live state (raid, players, bots, perf, damage) |
-| GET | `/telemetry/kills` | Kill feed for current raid |
-| GET | `/telemetry/positions` | Entity positions for live map |
-| GET | `/telemetry/alerts` | Raid event alerts (boss spawns, kills, etc.) |
-| GET | `/telemetry/history` | Raid history list |
-| GET | `/telemetry/history/{id}` | Detailed raid with player scoreboard |
-| POST | `/telemetry/map-refresh-rate` | Set map position polling interval |
-| POST | `/telemetry/raid-state` | (plugin) Report raid status |
-| POST | `/telemetry/players` | (plugin) Report player list |
-| POST | `/telemetry/performance` | (plugin) Report FPS/memory |
-| POST | `/telemetry/bots` | (plugin) Report bot counts |
-| POST | `/telemetry/kill` | (plugin) Report kill event |
-| POST | `/telemetry/extract` | (plugin) Report extraction/death |
-| POST | `/telemetry/damage-stats` | (plugin) Report combat stats |
-| POST | `/telemetry/raid-summary` | (plugin) End-of-raid summary |
+|:-------|:---------|:------------|
+| `GET` | `/telemetry/current` | Full live state (raid, players, bots, perf, damage, positions) |
+| `GET` | `/telemetry/kills` | Kill feed for current raid |
+| `GET` | `/telemetry/positions` | Entity positions for live map |
+| `GET` | `/telemetry/alerts` | Raid event alerts (boss spawns, kills, etc.) |
+| `GET` | `/telemetry/history` | Raid history list |
+| `GET` | `/telemetry/history/{id}` | Detailed raid with player scoreboard |
+| `POST` | `/telemetry/map-refresh-rate` | Set map position polling interval |
+| `POST` | `/telemetry/raid-state` | *(plugin)* Report raid status |
+| `POST` | `/telemetry/players` | *(plugin)* Report player list |
+| `POST` | `/telemetry/performance` | *(plugin)* Report FPS / memory |
+| `POST` | `/telemetry/bots` | *(plugin)* Report bot counts |
+| `POST` | `/telemetry/kill` | *(plugin)* Report kill event |
+| `POST` | `/telemetry/extract` | *(plugin)* Report extraction / death |
+| `POST` | `/telemetry/damage-stats` | *(plugin)* Report combat stats |
+| `POST` | `/telemetry/raid-summary` | *(plugin)* End-of-raid summary |
 
 </details>
 
 <details>
 <summary><strong>Items & Players</strong></summary>
 
+<br />
+
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/items/search?q=...` | Search item database |
-| POST | `/items/give` | Give items to a player |
-| GET | `/items/presets` | List saved item presets |
-| POST | `/items/presets` | Save an item preset |
-| DELETE | `/items/presets/{name}` | Delete a preset |
-| GET | `/players/list` | All registered profiles |
-| GET | `/players/{id}/profile` | Player profile details |
-| POST | `/players/{id}/skills` | Modify player skills |
-| GET | `/quests/browse` | Browse all quests with filters |
-| POST | `/quests/state` | Set quest state for a player |
+|:-------|:---------|:------------|
+| `GET` | `/items/search?q=...` | Search item database by name / ID |
+| `POST` | `/items/give` | Give items to a player via mail |
+| `GET` | `/items/presets` | List saved item presets |
+| `POST` | `/items/presets` | Save an item preset |
+| `DELETE` | `/items/presets/{name}` | Delete a preset |
+| `GET` | `/players/list` | All registered profiles with stats |
+| `GET` | `/players/{id}/profile` | Full player profile + stats |
+| `GET` | `/players/{id}/my-raids` | Per-player raid statistics |
+| `POST` | `/players/{id}/skills` | Modify player skills |
+| `POST` | `/players/{id}/mail` | Send custom in-game mail |
+| `GET` | `/quests/browse` | Browse all quests with search / filter |
+| `POST` | `/quests/state` | Set quest state for a player |
 
 </details>
 
 <details>
 <summary><strong>Flea Market</strong></summary>
 
+<br />
+
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/flea/config` | Get flea market configuration |
-| POST | `/flea/config` | Update flea config + apply |
-| POST | `/flea/regenerate` | Force-regenerate NPC offers |
-| POST | `/flea/reset` | Reset all flea settings to defaults |
+|:-------|:---------|:------------|
+| `GET` | `/flea/config` | Get flea market configuration |
+| `POST` | `/flea/config` | Update flea config + apply immediately |
+| `POST` | `/flea/regenerate` | Force-regenerate all NPC offers |
+| `POST` | `/flea/reset` | Reset all flea settings to defaults |
 
 </details>
 
 <details>
 <summary><strong>Access Control</strong></summary>
 
+<br />
+
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/access/config` | Get access control config |
-| POST | `/access/config` | Update access mode + lists |
-| POST | `/access/ban` | Ban a profile |
-| POST | `/access/unban` | Unban a profile |
+|:-------|:---------|:------------|
+| `GET` | `/access/config` | Get access control configuration |
+| `POST` | `/access/config` | Update access mode + lists |
+| `POST` | `/access/ban` | Ban a profile |
+| `POST` | `/access/unban` | Unban a profile |
 
 </details>
 
+<br />
+
 ---
 
-## Development Roadmap
+<br />
+
+## Roadmap
 
 Development is organized into phases. Each phase is fully completed and tested before the next begins.
 
-| Status | Phase | Feature | Description |
-|:------:|:-----:|---------|-------------|
-| :white_check_mark: | 1 | **Dashboard** | Server stats, console feed, activity log, send-URL |
-| :white_check_mark: | 2 | **Player Management** | Items, XP, skills, quests, mail, presets |
-| :white_check_mark: | 2.5 | **Headless Telemetry** | Live raid monitoring, kill feed, combat stats, raid history |
-| :white_check_mark: | 3 | **Flea Market** | Price multipliers, tax, offers, regeneration, category controls |
-| :hourglass: | 4 | **Trader Control** | Trader inventory, pricing, restock, loyalty, disabling |
-| :hourglass: | 5 | **Quest Editor** | Modify quest objectives, rewards, prerequisites |
-| :hourglass: | 6 | **Progression & Skills** | XP rates, skill leveling, hideout, insurance, stamina |
-| :hourglass: | 7 | **Backup & Restore** | Database snapshots, restore points, wipe tools |
-| :hourglass: | 8 | **Scheduler & Events** | Timed events, recurring actions, automation |
-| :hourglass: | 9 | **Game Values Editor** | Ammo, armor, weapons, health, bots, loot, airdrops |
-| :hourglass: | 10 | **Config Profiles** | Save/load/export/share config presets |
-| :hourglass: | 11 | **Gear Presets** | Loadout templates, weapon builds, kit distribution |
-| :hourglass: | 12 | **Bounty Board** | Player bounties, kill targets, challenges |
-| :hourglass: | 13 | **Clan System** | Clans, shared storage, team stats |
-| :hourglass: | 14 | **Client Plugin** | BepInEx client-side mod for in-game overlay |
-| :hourglass: | 15 | **Stash Viewer** | Visual inventory browser with item images |
-| :hourglass: | 16 | **Polish & Release** | Final cleanup, docs, and v3.0 launch |
+| | Phase | Feature | Description |
+|:-:|:-----:|:--------|:------------|
+| **Done** | 1 | **Dashboard** | Server stats, console feed, activity log, send-URL, login vitals |
+| **Done** | 2 | **Player Management** | Items, XP, skills, quests, mail, presets, full profile stats |
+| **Done** | 2.5 | **Headless Telemetry** | Live raid monitoring, kill feed, combat stats, minimap, raid history |
+| **Done** | 3 | **Flea Market** | Price multipliers, tax, offers, regeneration, category controls |
+| | 4 | **Trader Control** | Trader inventory, pricing, restock, loyalty, disabling |
+| | 5 | **Quest Editor** | Modify quest objectives, rewards, prerequisites |
+| | 6 | **Progression & Skills** | XP rates, skill leveling, hideout, insurance, stamina |
+| | 7 | **Backup & Restore** | Database snapshots, restore points, wipe tools |
+| | 8 | **Scheduler & Events** | Timed events, recurring actions, automation |
+| | 9 | **Game Values Editor** | Ammo, armor, weapons, health, bots, loot, airdrops |
+| | 10 | **Config Profiles** | Save / load / export / share config presets |
+| | 11 | **Gear Presets** | Loadout templates, weapon builds, kit distribution |
+| | 12 | **Bounty Board** | Player bounties, kill targets, challenges |
+| | 13 | **Clan System** | Clans, shared storage, team stats |
+| | 14 | **Client Plugin** | BepInEx client-side mod for in-game overlay |
+| | 15 | **Stash Viewer** | Visual inventory browser with item images |
+| | 16 | **Polish & Release** | Final cleanup, docs, and v3.0 launch |
+
+<br />
 
 ---
+
+<br />
 
 ## Tech Stack
 
 | Component | Technology |
-|-----------|-----------|
-| Server Mod | C# 12 / .NET 9.0 with SPTarkov dependency injection |
-| Telemetry Plugin | C# / .NET Standard 2.1 with BepInEx 5.x + Harmony |
-| Frontend | Single HTML file — inline CSS + JS, zero build tools |
-| HTTP API | Custom `IHttpListener` routes under `/zslayer/cc/` |
-| Serialization | `System.Text.Json` (server), `Newtonsoft.Json` (plugin) |
-| Design | Tarkov-inspired dark theme with gold accent (`#c8aa6e`) |
+|:----------|:-----------|
+| **Server Mod** | C# 12 / .NET 9.0, SPTarkov DI (`[Injectable]`), custom `IHttpListener` |
+| **Telemetry Plugin** | C# / .NET Standard 2.1, BepInEx 5.x, Harmony patches |
+| **Frontend** | Single HTML file — inline CSS + JS, zero build tools, zero dependencies |
+| **API** | RESTful JSON over HTTPS at `/zslayer/cc/` |
+| **Serialization** | `System.Text.Json` (server) / `Newtonsoft.Json` (plugin) |
+| **Design** | Tarkov-inspired dark theme, gold accent `#c8aa6e`, responsive layout |
+
+<br />
 
 ---
+
+<br />
 
 ## Requirements
 
-| Requirement | Version |
-|-------------|---------|
+| | Version |
+|:--|:--------|
 | **SPT** | 4.0.x |
-| **FIKA** | Latest (optional — required for headless + telemetry) |
+| **FIKA** | Latest *(optional — required for headless + telemetry)* |
 | **Browser** | Chrome, Firefox, Edge, or any Chromium-based browser |
 | **.NET Runtime** | Bundled with SPT server — no separate install needed |
 
+<br />
+
 ---
+
+<br />
 
 ## FAQ
 
 <details>
 <summary><strong>Do players need to install anything?</strong></summary>
 
-No. The command center is entirely server-side. Players don't need any client mods to be managed through it. The optional headless telemetry plugin only runs on the headless client, not on player game clients.
+<br />
+
+No. The command center is entirely server-side. Players don't need any client mods. The optional headless telemetry plugin only runs on the headless client, not on player game clients.
 
 </details>
 
 <details>
 <summary><strong>Does it work without FIKA?</strong></summary>
 
-Yes. The server mod works on vanilla SPT. The Dashboard, Items, Players, and Flea tabs all work without FIKA. Only the Headless Client Manager and Raid Info (live telemetry) features require FIKA, since they depend on a headless client.
+<br />
+
+Yes. Dashboard, Items, Players, and Flea tabs all work on vanilla SPT. Only the Headless Client Manager and Raid Info (live telemetry) require FIKA + a headless client.
 
 </details>
 
 <details>
 <summary><strong>Will it conflict with other mods?</strong></summary>
 
-Unlikely. The command center loads after other mods (`PostSptModLoader + 1`) and makes changes through the same SPT APIs that the game uses. It doesn't replace or override any core server files. Flea/trader/quest changes are applied on top of whatever other mods have done.
+<br />
+
+Unlikely. The command center loads after other mods (`PostSptModLoader + 1`) and makes changes through the same SPT APIs the game uses. It doesn't replace any core server files. Changes are applied on top of whatever other mods have done.
 
 </details>
 
 <details>
 <summary><strong>Can I access it from my phone?</strong></summary>
+
+<br />
 
 Yes. The UI is responsive and works on mobile browsers. Use the LAN URL from any device on your network.
 
@@ -445,22 +584,45 @@ Yes. The UI is responsive and works on mobile browsers. Use the LAN URL from any
 <details>
 <summary><strong>Is it safe to update mid-wipe?</strong></summary>
 
-Yes. The mod only modifies server-side values and configs. Player profiles are never modified unless you explicitly use the player management features (give items, set skills, etc.). Config auto-upgrade preserves your existing settings.
+<br />
+
+Yes. The mod only modifies server-side values and configs. Player profiles are never touched unless you explicitly use player management features. Config auto-upgrade preserves all existing settings.
 
 </details>
 
+<details>
+<summary><strong>How do I report a bug or request a feature?</strong></summary>
+
+<br />
+
+Open an issue on [GitHub](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/issues) or join the [Discord](https://discord.gg/ZSlayerHQ). For bug reports, include your SPT version, mod version, and steps to reproduce.
+
+</details>
+
+<br />
+
 ---
+
+<br />
 
 ## Contributing
 
-This is a solo project by [ZSlayerHQ](https://github.com/ZSlayerHQ), but feedback, bug reports, and feature requests are welcome.
+This is a solo project by [**ZSlayerHQ**](https://github.com/ZSlayerHQ), but feedback and bug reports are always welcome.
 
-- **Bug Reports** — open an issue on GitHub with steps to reproduce
+- **Bug Reports** — [open an issue](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/issues) with steps to reproduce
 - **Feature Requests** — open an issue or discuss on [Discord](https://discord.gg/ZSlayerHQ)
 - **Pull Requests** — reach out on Discord first to discuss the approach
 
+<br />
+
 ---
 
-## License
+<div align="center">
 
-[MIT](LICENSE) — Built by [ZSlayerHQ / Ben Cole](https://github.com/ZSlayerHQ)
+<br />
+
+**[MIT License](LICENSE)** &nbsp;&mdash;&nbsp; Built by [ZSlayerHQ / Ben Cole](https://github.com/ZSlayerHQ)
+
+<br />
+
+</div>
