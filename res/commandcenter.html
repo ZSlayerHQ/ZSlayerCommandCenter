@@ -3588,6 +3588,91 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             </div>
             <div id="hlProfileWarning" style="display:none;font-size:11px;color:var(--warning);margin-top:8px">Profile ID required — enter the session ID of the headless profile to enable start.</div>
           </div>
+          <!-- FIKA Headless subsection -->
+          <div id="fikaHeadlessSection" style="display:none;border-top:1px solid var(--border-subtle);padding-top:12px;margin-top:12px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">FIKA Headless</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="fikaHlSyncLevel"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Sync Level to Lobby Average</span>
+              </label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="color:var(--text-dim);white-space:nowrap">Restart After Raids:</span>
+                <input type="range" id="fikaHlRestartRaids" min="0" max="50" value="0" oninput="document.getElementById('fikaHlRestartRaidsVal').textContent=this.value==0?'Off':this.value" style="flex:1;accent-color:var(--accent)">
+                <span id="fikaHlRestartRaidsVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:28px">Off</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:10px">
+              <button class="btn btn-sm" onclick="saveFikaConfig()" style="padding:4px 14px">Save FIKA Headless</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FIKA Settings Card -->
+    <div class="card" id="fikaSettingsCard" style="margin-top:16px;display:none">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:10px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--accent-dim)"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <span style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-dim)">FIKA Settings</span>
+        </span>
+      </div>
+      <div style="padding:16px">
+        <!-- Gameplay -->
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">Gameplay</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <label class="cc-toggle"><input type="checkbox" id="fikaFriendlyFire"><span class="cc-toggle-slider"></span></label>
+            <span style="color:var(--text-dim)">Friendly Fire</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <label class="cc-toggle"><input type="checkbox" id="fikaInertia"><span class="cc-toggle-slider"></span></label>
+            <span style="color:var(--text-dim)">Inertia</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <label class="cc-toggle"><input type="checkbox" id="fikaSharedQuests"><span class="cc-toggle-slider"></span></label>
+            <span style="color:var(--text-dim)">Shared Quests</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <label class="cc-toggle"><input type="checkbox" id="fikaDynVExfil"><span class="cc-toggle-slider"></span></label>
+            <span style="color:var(--text-dim)">Dynamic V-Exfils</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <label class="cc-toggle"><input type="checkbox" id="fikaTransits"><span class="cc-toggle-slider"></span></label>
+            <span style="color:var(--text-dim)">Map Transits</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <label class="cc-toggle"><input type="checkbox" id="fikaAnyoneStart"><span class="cc-toggle-slider"></span></label>
+            <span style="color:var(--text-dim)">Anyone Can Start Raid</span>
+          </label>
+        </div>
+        <!-- Server -->
+        <div style="border-top:1px solid var(--border-subtle);margin-top:14px;padding-top:12px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">Server</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <label class="cc-toggle"><input type="checkbox" id="fikaAllowSending"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">Allow Item Sending</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <label class="cc-toggle"><input type="checkbox" id="fikaLoseFIR"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">Sent Items Lose FIR</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;grid-column:span 2">
+              <label class="cc-toggle"><input type="checkbox" id="fikaAllProfiles"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">All Profiles in Launcher</span>
+            </label>
+            <div style="display:flex;align-items:center;gap:8px;grid-column:span 2">
+              <span style="color:var(--text-dim);white-space:nowrap">Session Timeout:</span>
+              <input type="range" id="fikaSessionTimeout" min="1" max="60" value="5" oninput="document.getElementById('fikaSessionTimeoutVal').textContent=this.value+' min'" style="flex:1;accent-color:var(--accent)">
+              <span id="fikaSessionTimeoutVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:45px">5 min</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;border-top:1px solid var(--border-subtle);padding-top:12px">
+          <span style="font-size:11px;color:var(--warning)">Server restart required for changes to take effect</span>
+          <button class="btn btn-sm" onclick="saveFikaConfig()" style="padding:4px 14px">Save FIKA Settings</button>
         </div>
       </div>
     </div>
@@ -4846,6 +4931,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     pollConsole();
     pollHeadless();
     pollHeadlessStatus();
+    loadFikaConfig();
     // Live clock handles time display
   };
 
@@ -6228,6 +6314,60 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     api('headless/config', { method: 'POST', body: JSON.stringify(body) }).then(function() {
       pollHeadlessStatus();
     }).catch(function() { showToast('Failed to save config', 'error'); });
+  };
+
+  // FIKA Config
+  window.loadFikaConfig = function() {
+    api('fika/config').then(function(d) {
+      var hlSection = document.getElementById('fikaHeadlessSection');
+      var fikaCard = document.getElementById('fikaSettingsCard');
+      if (!d.available) {
+        if (hlSection) hlSection.style.display = 'none';
+        if (fikaCard) fikaCard.style.display = 'none';
+        return;
+      }
+      // Show sections
+      if (hlSection) hlSection.style.display = 'block';
+      if (fikaCard) fikaCard.style.display = 'block';
+      // Headless card fields
+      document.getElementById('fikaHlSyncLevel').checked = d.setLevelToAverageOfLobby;
+      document.getElementById('fikaHlRestartRaids').value = d.restartAfterAmountOfRaids;
+      document.getElementById('fikaHlRestartRaidsVal').textContent = d.restartAfterAmountOfRaids == 0 ? 'Off' : d.restartAfterAmountOfRaids;
+      // FIKA card — gameplay
+      document.getElementById('fikaFriendlyFire').checked = d.friendlyFire;
+      document.getElementById('fikaInertia').checked = d.useInertia;
+      document.getElementById('fikaSharedQuests').checked = d.sharedQuestProgression;
+      document.getElementById('fikaDynVExfil').checked = d.dynamicVExfils;
+      document.getElementById('fikaTransits').checked = d.enableTransits;
+      document.getElementById('fikaAnyoneStart').checked = d.anyoneCanStartRaid;
+      // FIKA card — server
+      document.getElementById('fikaAllowSending').checked = d.allowItemSending;
+      document.getElementById('fikaLoseFIR').checked = d.sentItemsLoseFIR;
+      document.getElementById('fikaAllProfiles').checked = d.launcherListAllProfiles;
+      document.getElementById('fikaSessionTimeout').value = d.sessionTimeout;
+      document.getElementById('fikaSessionTimeoutVal').textContent = d.sessionTimeout + ' min';
+    }).catch(function(){});
+  };
+
+  window.saveFikaConfig = function() {
+    var body = {
+      setLevelToAverageOfLobby: document.getElementById('fikaHlSyncLevel').checked,
+      restartAfterAmountOfRaids: parseInt(document.getElementById('fikaHlRestartRaids').value),
+      friendlyFire: document.getElementById('fikaFriendlyFire').checked,
+      useInertia: document.getElementById('fikaInertia').checked,
+      sharedQuestProgression: document.getElementById('fikaSharedQuests').checked,
+      dynamicVExfils: document.getElementById('fikaDynVExfil').checked,
+      enableTransits: document.getElementById('fikaTransits').checked,
+      anyoneCanStartRaid: document.getElementById('fikaAnyoneStart').checked,
+      sessionTimeout: parseInt(document.getElementById('fikaSessionTimeout').value),
+      allowItemSending: document.getElementById('fikaAllowSending').checked,
+      sentItemsLoseFIR: document.getElementById('fikaLoseFIR').checked,
+      launcherListAllProfiles: document.getElementById('fikaAllProfiles').checked
+    };
+    api('fika/config', { method: 'POST', body: JSON.stringify(body) }).then(function(d) {
+      showToast('FIKA settings saved', 'success');
+      if (d.available) loadFikaConfig();
+    }).catch(function() { showToast('Failed to save FIKA settings', 'error'); });
   };
 
   // Headless Console

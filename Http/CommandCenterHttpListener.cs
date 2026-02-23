@@ -32,6 +32,7 @@ public class CommandCenterHttpListener(
     OfferRegenerationService offerRegenerationService,
     HeadlessLogService headlessLogService,
     HeadlessProcessService headlessProcessService,
+    FikaConfigService fikaConfigService,
     TelemetryService telemetryService,
     DatabaseService databaseService,
     ConfigServer configServer,
@@ -138,6 +139,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("headless/"))
             {
                 await HandleHeadlessRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle FIKA config routes
+            if (path.StartsWith("fika/"))
+            {
+                await HandleFikaRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -1130,6 +1138,36 @@ public class CommandCenterHttpListener(
                 configService.SaveConfig();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: config updated");
                 await WriteJson(context, 200, headlessProcessService.GetStatus());
+                break;
+            }
+            default:
+                await WriteJson(context, 404, new { error = "Not found" });
+                break;
+        }
+    }
+
+    // ── FIKA Config Handlers ──
+
+    private async Task HandleFikaRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        switch (path)
+        {
+            case "fika/config" when method == "GET":
+                await WriteJson(context, 200, fikaConfigService.GetFikaSettings());
+                break;
+            case "fika/config" when method == "POST":
+            {
+                var body = await ReadBody<FikaConfigDto>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    return;
+                }
+                var result = fikaConfigService.UpdateFikaSettings(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "FIKA: config updated");
+                await WriteJson(context, 200, result);
                 break;
             }
             default:
