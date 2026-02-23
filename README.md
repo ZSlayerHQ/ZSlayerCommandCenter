@@ -1,5 +1,3 @@
-<br />
-
 # ZSlayer Command Center
 
 ### The ultimate browser-based admin toolkit for SPT 4.0 / FIKA
