@@ -210,6 +210,9 @@ public class CommandCenterHttpListener(
                 case "dashboard/raids" when method == "GET":
                     await HandleDashboardRaids(context, headerSessionId);
                     break;
+                case "dashboard/my-raids" when method == "GET":
+                    await HandleDashboardMyRaids(context, headerSessionId);
+                    break;
                 case "dashboard/config" when method == "GET":
                     await HandleDashboardConfig(context, headerSessionId);
                     break;
@@ -481,7 +484,19 @@ public class CommandCenterHttpListener(
     private async Task HandleDashboardRaids(HttpContext context, string headerSessionId)
     {
         if (!await ValidateAccess(context, headerSessionId)) return;
-        var result = telemetryService.GetLifetimeStats();
+        var result = playerStatsService.GetServerRaidStats();
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandleDashboardMyRaids(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var result = playerStatsService.GetPlayerRaidStats(headerSessionId);
+        if (result == null)
+        {
+            await WriteJson(context, 404, new { error = "Profile not found" });
+            return;
+        }
         await WriteJson(context, 200, result);
     }
 
@@ -680,6 +695,14 @@ public class CommandCenterHttpListener(
                     await WriteJson(context, 404, new { error = "Player not found" });
                 else
                     await WriteJson(context, 200, profile);
+                break;
+
+            case "stats" when method == "GET":
+                var stats = playerManagementService.GetPlayerFullStats(targetSid);
+                if (stats == null)
+                    await WriteJson(context, 404, new { error = "Player not found" });
+                else
+                    await WriteJson(context, 200, stats);
                 break;
 
             case "stash" when method == "GET":

@@ -61,6 +61,9 @@ public class CommandCenterMod(
         // Wire up late-bound services
         telemetryService.SetSeasonService(seasonalEventService);
 
+        // Load persisted raid history from disk
+        telemetryService.Initialize();
+
         // Configure and install console interceptor
         consoleBufferService.Configure(config.Dashboard.ConsoleBufferSize);
         consoleBufferService.InstallConsoleInterceptor();

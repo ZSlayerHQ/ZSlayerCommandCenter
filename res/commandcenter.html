@@ -1531,6 +1531,51 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   display: none;
 }
 
+/* ── Performance mode toggle ── */
+.perf-mode-toggle {
+  display: inline-flex;
+  margin-left: 12px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  vertical-align: middle;
+}
+.perf-mode-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  padding: 2px 10px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.perf-mode-btn:hover { color: var(--text); }
+.perf-mode-btn.active {
+  background: var(--gold);
+  color: var(--bg-dark);
+  font-weight: 600;
+}
+
+/* ── Chart legends ── */
+.chart-legend {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 2px 0 0;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+.legend-item { display: inline-flex; align-items: center; gap: 4px; }
+.legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  border-radius: 1px;
+}
+
 /* ── Alerts ── */
 .alert-bell {
   position: relative;
@@ -1999,6 +2044,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   height: 6px; background: var(--bg-input); border-radius: 3px; margin-top: 6px; overflow: hidden;
 }
 .xp-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
+
+/* Stats sections (collapsible) */
+.stats-section { border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 10px; overflow: hidden; }
+.stats-section-header {
+  display: flex; justify-content: space-between; align-items: center; padding: 10px 16px;
+  background: var(--bg-card); cursor: pointer; user-select: none;
+  font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase;
+  letter-spacing: 0.5px; font-family: var(--font-mono);
+}
+.stats-section-header:hover { background: var(--bg-input); }
+.stats-toggle-icon::after { content: '\25B6'; font-size: 10px; color: var(--text-dim); transition: transform 0.2s; display: inline-block; }
+.stats-section.open .stats-toggle-icon::after { transform: rotate(90deg); }
+.stats-section-body { display: none; padding: 12px 16px; }
+.stats-section.open .stats-section-body { display: block; }
+.stats-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+.stats-grid .profile-stat-card { min-width: 140px; flex: 1 1 140px; max-width: 200px; }
 
 .skill-bar {
   height: 4px; background: var(--bg-input); border-radius: 2px; flex: 1; overflow: hidden;
@@ -2994,7 +3055,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <!-- System Gauges (CPU/RAM) -->
     <div class="system-gauges-panel" id="systemGaugesPanel" style="display:none">
       <details id="perfDetails" open>
-      <summary class="section-header" style="cursor:pointer;list-style:none;user-select:none">System Performance <span style="font-size:10px;color:#6a6050;margin-left:6px" id="perfToggleHint">(click to collapse)</span></summary>
+      <summary class="section-header" style="cursor:pointer;list-style:none;user-select:none">
+        <span id="perfSectionLabel">System Performance</span>
+        <span style="font-size:10px;color:#6a6050;margin-left:6px" id="perfToggleHint">(click to collapse)</span>
+        <span class="perf-mode-toggle" onclick="event.stopPropagation()">
+          <button class="perf-mode-btn active" id="perfModeSystem" onclick="setPerfMode('system')">System Wide</button>
+          <button class="perf-mode-btn" id="perfModeEft" onclick="setPerfMode('eft')">EFT</button>
+        </span>
+      </summary>
       <!-- CPU Row -->
       <div class="gauge-row">
         <div class="gauge-container">
@@ -3009,10 +3077,15 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           </svg>
           <div class="gauge-value" id="cpuGaugeValue" style="margin-top:-10px">--%</div>
           <div class="gauge-label">CPU</div>
+          <div class="gauge-sub" id="cpuGaugeSub"></div>
         </div>
         <div class="chart-container" id="cpuChartContainer">
           <canvas id="cpuChart"></canvas>
           <div class="chart-tooltip" id="cpuChartTooltip"></div>
+          <div class="chart-legend" id="cpuChartLegend" style="display:none">
+            <span class="legend-item"><span class="legend-swatch" style="background:#4a7c59"></span>EFT</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#c8aa6e"></span>Server</span>
+          </div>
         </div>
       </div>
       <!-- RAM Row -->
@@ -3030,6 +3103,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <div class="chart-container" id="ramChartContainer">
           <canvas id="ramChart"></canvas>
           <div class="chart-tooltip" id="ramChartTooltip"></div>
+          <div class="chart-legend" id="ramChartLegend" style="display:none">
+            <span class="legend-item"><span class="legend-swatch" style="background:#4a7c59"></span>EFT</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#c8aa6e"></span>Server</span>
+          </div>
         </div>
       </div>
       </details>
@@ -3291,7 +3368,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </div>
       </div>
 
-      <!-- Raid Stats -->
+      <!-- Raid Stats (Server-wide) -->
       <div class="dash-widget" id="widgetRaids">
         <div class="dash-widget-header">
           <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Raid Statistics</span>
@@ -3301,20 +3378,35 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             <div class="dash-stat"><span class="dash-stat-label">Total Raids</span><span class="dash-stat-value" id="dashTotalRaids">0</span></div>
             <div class="dash-stat"><span class="dash-stat-label">Survival Rate</span><span class="dash-stat-value" id="dashSurvivalRate">--</span></div>
             <div class="dash-stat"><span class="dash-stat-label">K/D Ratio</span><span class="dash-stat-value" id="dashKD">--</span></div>
-            <div class="dash-stat"><span class="dash-stat-label">Avg Duration</span><span class="dash-stat-value sm" id="dashAvgTime">--</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">Headshots</span><span class="dash-stat-value" id="dashHeadshots">0</span></div>
           </div>
           <div class="dash-stat-row">
             <div class="dash-stat"><span class="dash-stat-label">Total Kills</span><span class="dash-stat-value" id="dashTotalKills">0</span></div>
             <div class="dash-stat"><span class="dash-stat-label">PMC Kills</span><span class="dash-stat-value" id="dashPmcKills">0</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">Scav Kills</span><span class="dash-stat-value" id="dashScavKills">0</span></div>
             <div class="dash-stat"><span class="dash-stat-label">Boss Kills</span><span class="dash-stat-value" id="dashBossKills">0</span></div>
-            <div class="dash-stat"><span class="dash-stat-label">Headshots</span><span class="dash-stat-value" id="dashHeadshots">0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Your Raid Stats (Logged-in player) -->
+      <div class="dash-widget" id="widgetMyRaids" style="display:none">
+        <div class="dash-widget-header">
+          <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Your Raid Statistics</span>
+        </div>
+        <div class="dash-widget-body">
+          <div class="dash-stat-row">
+            <div class="dash-stat"><span class="dash-stat-label">Total Raids</span><span class="dash-stat-value" id="myTotalRaids">0</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">Survival Rate</span><span class="dash-stat-value" id="mySurvivalRate">--</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">K/D Ratio</span><span class="dash-stat-value" id="myKD">--</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">Headshots</span><span class="dash-stat-value" id="myHeadshots">0</span></div>
           </div>
           <div class="dash-stat-row">
-            <div class="dash-stat"><span class="dash-stat-label">Favorite Map</span><span class="dash-stat-value sm" id="dashFavoriteMap">--</span></div>
-            <div class="dash-stat"><span class="dash-stat-label">Total Playtime</span><span class="dash-stat-value sm" id="dashPlaytime">--</span></div>
-            <div class="dash-stat"><span class="dash-stat-label">Longest Shot</span><span class="dash-stat-value sm" id="dashLongestShot">--</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">Total Kills</span><span class="dash-stat-value" id="myTotalKills">0</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">PMC Kills</span><span class="dash-stat-value" id="myPmcKills">0</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">Scav Kills</span><span class="dash-stat-value" id="myScavKills">0</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">Boss Kills</span><span class="dash-stat-value" id="myBossKills">0</span></div>
           </div>
-          <div class="dash-bar-chart" id="dashRaidsByMap"></div>
         </div>
       </div>
 
@@ -4679,6 +4771,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     loadPlayers();
     loadEconomy();
     loadRaidStats();
+    loadMyRaidStats();
     loadActivity();
     pollConsole();
     pollHeadless();
@@ -4792,37 +4885,34 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     return MAP_NAMES[key] || key;
   }
 
+  function renderRaidStats(d, prefix) {
+    var hasRaids = d.totalRaids > 0;
+    document.getElementById(prefix + 'TotalRaids').textContent = d.totalRaids.toLocaleString();
+    document.getElementById(prefix + 'SurvivalRate').textContent = hasRaids ? d.survivalRate.toFixed(1) + '%' : '--';
+    document.getElementById(prefix + 'KD').textContent = hasRaids ? d.kdRatio.toFixed(2) : '--';
+    document.getElementById(prefix + 'TotalKills').textContent = (d.totalKills || 0).toLocaleString();
+    document.getElementById(prefix + 'PmcKills').textContent = (d.pmcKills || 0).toLocaleString();
+    document.getElementById(prefix + 'ScavKills').textContent = (d.scavKills || 0).toLocaleString();
+    document.getElementById(prefix + 'BossKills').textContent = (d.bossKills || 0).toLocaleString();
+    document.getElementById(prefix + 'Headshots').textContent = (d.headshots || 0).toLocaleString();
+  }
+
   function loadRaidStats() {
     api('dashboard/raids').then(function(d) {
-      var hasRaids = d.totalRaids > 0;
-      document.getElementById('dashTotalRaids').textContent = d.totalRaids.toLocaleString();
-      document.getElementById('dashSurvivalRate').textContent = hasRaids ? d.survivalRate.toFixed(1) + '%' : '--';
-      document.getElementById('dashAvgTime').textContent = hasRaids ? formatSeconds(d.avgRaidDurationSec) : '--';
-      // K/D ratio
-      var kd = d.deaths > 0 ? (d.totalKills / d.deaths).toFixed(2) : (d.totalKills > 0 ? d.totalKills + '.00' : '--');
-      document.getElementById('dashKD').textContent = kd;
-      // Kill stats
-      document.getElementById('dashTotalKills').textContent = (d.totalKills || 0).toLocaleString();
-      document.getElementById('dashPmcKills').textContent = (d.pmcKills || 0).toLocaleString();
-      document.getElementById('dashBossKills').textContent = (d.bossKills || 0).toLocaleString();
-      document.getElementById('dashHeadshots').textContent = (d.totalHeadshots || 0).toLocaleString();
-      // Extra stats
-      document.getElementById('dashFavoriteMap').textContent = d.favoriteMap ? mapDisplayName(d.favoriteMap) : '--';
-      document.getElementById('dashPlaytime').textContent = hasRaids ? formatPlaytime(d.totalPlayTimeSec) : '--';
-      document.getElementById('dashLongestShot').textContent = d.longestShot > 0 ? d.longestShot.toFixed(1) + 'm' : '--';
-      // Raids by map bar chart
-      var entries = Object.entries(d.raidsByMap || {}).sort(function(a,b) { return b[1] - a[1]; });
-      var maxCount = entries.length > 0 ? entries[0][1] : 1;
-      var html = '';
-      entries.forEach(function(e) {
-        var pct = (e[1] / maxCount * 100).toFixed(0);
-        html += '<div class="dash-bar-row">' +
-          '<span class="dash-bar-label">' + escH(mapDisplayName(e[0])) + '</span>' +
-          '<div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + pct + '%"></div></div>' +
-          '<span class="dash-bar-count">' + e[1] + '</span></div>';
-      });
-      document.getElementById('dashRaidsByMap').innerHTML = html || '<div style="color:var(--text-muted);font-size:12px">No raids recorded yet</div>';
+      renderRaidStats(d, 'dash');
     }).catch(function(e) { console.error('Raids error:', e); });
+  }
+
+  function loadMyRaidStats() {
+    if (!sessionId) return;
+    var widget = document.getElementById('widgetMyRaids');
+    api('dashboard/my-raids').then(function(d) {
+      widget.style.display = '';
+      renderRaidStats(d, 'my');
+    }).catch(function(e) {
+      widget.style.display = 'none';
+      console.error('My raids error:', e);
+    });
   }
 
   // ═══════════════════════════════════════════════════════
@@ -6234,6 +6324,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   var _perfHistory = [];
   var _perfHistoryTimer = null;
+  var _perfMode = 'system'; // 'system' or 'eft'
   var _alertsData = [];
   var _lastAlertTimestamp = null;
   var _alertTimer = null;
@@ -6262,9 +6353,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   function drawHistoryChart(canvasId, tooltipId, data, label, unit, color) {
+    drawMultiLineChart(canvasId, tooltipId, [{ data: data, color: color || '#c8aa6e', label: label }], unit);
+  }
+
+  function drawMultiLineChart(canvasId, tooltipId, series, unit) {
     var canvas = document.getElementById(canvasId);
     var tooltip = document.getElementById(tooltipId);
-    if (!canvas || data.length < 2) return;
+    if (!canvas || series.length === 0) return;
+    // Need at least 2 data points in any series
+    var hasData = series.some(function(s) { return s.data.length >= 2; });
+    if (!hasData) return;
 
     var ctx = canvas.getContext('2d');
     var dpr = window.devicePixelRatio || 1;
@@ -6281,10 +6379,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var plotW = w - pad.left - pad.right;
     var plotH = h - pad.top - pad.bottom;
 
-    // Auto-scale Y axis to data range with padding
-    var vals = data.map(function(d) { return d.value; });
-    var minV = Math.min.apply(null, vals);
-    var maxV = Math.max.apply(null, vals);
+    // Auto-scale Y axis across all series
+    var allVals = [];
+    series.forEach(function(s) { s.data.forEach(function(d) { allVals.push(d.value); }); });
+    var minV = Math.min.apply(null, allVals);
+    var maxV = Math.max.apply(null, allVals);
     var range = maxV - minV;
     if (range < 1) { range = 10; minV = Math.max(0, minV - 5); maxV = minV + range; }
     else { minV = Math.max(0, minV - range * 0.15); maxV = maxV + range * 0.15; range = maxV - minV; }
@@ -6311,7 +6410,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     // X-axis labels (time)
     ctx.textAlign = 'center';
     var now = Date.now();
-    var windowMs = 5 * 60 * 1000; // 5 minutes
+    var windowMs = 5 * 60 * 1000;
     var tMin = now - windowMs;
     for (var m = 1; m <= 4; m++) {
       var tx = pad.left + plotW * (1 - m / 5);
@@ -6319,48 +6418,63 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }
     ctx.fillText('now', pad.left + plotW, h - 2);
 
-    if (data.length < 2) return;
+    // Draw each series
+    var allPoints = []; // array of arrays for hover
+    series.forEach(function(s, si) {
+      if (s.data.length < 2) { allPoints.push([]); return; }
+      ctx.beginPath();
+      var points = [];
+      for (var j = 0; j < s.data.length; j++) {
+        var ts = new Date(s.data[j].timestamp).getTime();
+        var x = pad.left + plotW * ((ts - tMin) / windowMs);
+        var y = pad.top + plotH - (plotH * (s.data[j].value - minV) / range);
+        x = Math.max(pad.left, Math.min(pad.left + plotW, x));
+        points.push({ x: x, y: y, val: s.data[j].value, ts: ts, label: s.label });
+        if (j === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
 
-    // Plot line
-    ctx.beginPath();
-    var points = [];
-    for (var j = 0; j < data.length; j++) {
-      var ts = new Date(data[j].timestamp).getTime();
-      var x = pad.left + plotW * ((ts - tMin) / windowMs);
-      var y = pad.top + plotH - (plotH * (data[j].value - minV) / range);
-      x = Math.max(pad.left, Math.min(pad.left + plotW, x));
-      points.push({ x: x, y: y, val: data[j].value, ts: ts });
-      if (j === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.strokeStyle = color || '#c8aa6e';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+      // Gradient fill only for first (or single) series
+      if (si === 0) {
+        var grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+        var baseColor = s.color === '#4a7c59' ? '74,124,89' : '200,170,110';
+        grad.addColorStop(0, 'rgba(' + baseColor + ',0.1)');
+        grad.addColorStop(1, 'rgba(' + baseColor + ',0)');
+        ctx.lineTo(points[points.length - 1].x, pad.top + plotH);
+        ctx.lineTo(points[0].x, pad.top + plotH);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+      allPoints.push(points);
+    });
 
-    // Gradient fill below line
-    var grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
-    grad.addColorStop(0, 'rgba(200,170,110,0.1)');
-    grad.addColorStop(1, 'rgba(200,170,110,0)');
-    ctx.lineTo(points[points.length - 1].x, pad.top + plotH);
-    ctx.lineTo(points[0].x, pad.top + plotH);
-    ctx.closePath();
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // Hover handler
+    // Hover handler — show all series values at hover X
     canvas.onmousemove = function(e) {
       var cr = canvas.getBoundingClientRect();
       var mx = e.clientX - cr.left;
-      var closest = null, minDist = Infinity;
-      for (var k = 0; k < points.length; k++) {
-        var dist = Math.abs(points[k].x - mx);
-        if (dist < minDist) { minDist = dist; closest = points[k]; }
-      }
-      if (closest && minDist < 20) {
+      var lines = [];
+      var bestY = null;
+      allPoints.forEach(function(points) {
+        if (points.length === 0) return;
+        var closest = null, minDist = Infinity;
+        for (var k = 0; k < points.length; k++) {
+          var dist = Math.abs(points[k].x - mx);
+          if (dist < minDist) { minDist = dist; closest = points[k]; }
+        }
+        if (closest && minDist < 20) {
+          lines.push(closest.label + ': ' + closest.val.toFixed(1) + unit);
+          if (bestY === null) bestY = closest.y;
+        }
+      });
+      if (lines.length > 0) {
         tooltip.style.display = 'block';
-        tooltip.textContent = closest.val.toFixed(1) + unit + ' at ' + new Date(closest.ts).toLocaleTimeString();
-        tooltip.style.left = Math.min(closest.x, w - 120) + 'px';
-        tooltip.style.top = (closest.y - 24) + 'px';
+        tooltip.innerHTML = lines.join('<br>');
+        tooltip.style.left = Math.min(mx + 8, w - 140) + 'px';
+        tooltip.style.top = ((bestY || 0) - 14 * lines.length) + 'px';
       } else {
         tooltip.style.display = 'none';
       }
@@ -6368,30 +6482,88 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     canvas.onmouseleave = function() { tooltip.style.display = 'none'; };
   }
 
+  function setPerfMode(mode) {
+    _perfMode = mode;
+    document.getElementById('perfModeSystem').classList.toggle('active', mode === 'system');
+    document.getElementById('perfModeEft').classList.toggle('active', mode === 'eft');
+    document.getElementById('perfSectionLabel').textContent = mode === 'system' ? 'System Performance' : 'EFT + Server Performance';
+    // Toggle legends
+    document.getElementById('cpuChartLegend').style.display = mode === 'eft' ? '' : 'none';
+    document.getElementById('ramChartLegend').style.display = mode === 'eft' ? '' : 'none';
+    renderPerfGauges(_perfHistory);
+  }
+
+  function renderPerfGauges(data) {
+    var panel = document.getElementById('systemGaugesPanel');
+    if (!data || data.length === 0) return;
+    panel.style.display = '';
+    var latest = data[data.length - 1];
+
+    if (_perfMode === 'system') {
+      // ── System Wide mode ──
+      updateGauge('cpuGaugeArc', 'cpuGaugeValue', latest.cpuPercent);
+      updateGauge('ramGaugeArc', 'ramGaugeValue', latest.ramPercent);
+      var cpuSub = document.getElementById('cpuGaugeSub');
+      if (cpuSub) cpuSub.textContent = 'EFT Process: ' + (latest.processCpuPercent || 0).toFixed(1) + '%';
+      var ramSub = document.getElementById('ramGaugeSub');
+      if (latest.ramUsedMb && latest.ramTotalMb) {
+        var usedGB = (latest.ramUsedMb / 1024).toFixed(1);
+        var totalGB = (latest.ramTotalMb / 1024).toFixed(1);
+        var processGB = ((latest.processRamUsedMb || 0) / 1024).toFixed(1);
+        ramSub.innerHTML = usedGB + ' / ' + totalGB + ' GB<br><span style="font-size:10px;color:var(--text-dim)">EFT Process: ' + processGB + ' GB</span>';
+      }
+      // Single-line charts
+      var cpuData = data.map(function(d) { return { timestamp: d.timestamp, value: d.cpuPercent }; });
+      var ramData = data.map(function(d) { return { timestamp: d.timestamp, value: d.ramPercent }; });
+      drawHistoryChart('cpuChart', 'cpuChartTooltip', cpuData, 'CPU', '%', '#c8aa6e');
+      drawHistoryChart('ramChart', 'ramChartTooltip', ramData, 'RAM', '%', '#c8aa6e');
+    } else {
+      // ── EFT mode — combined EFT + Server ──
+      var eftCpu = latest.processCpuPercent || 0;
+      var srvCpu = latest.serverCpuPercent || 0;
+      var combinedCpu = Math.min(eftCpu + srvCpu, 100);
+      updateGauge('cpuGaugeArc', 'cpuGaugeValue', combinedCpu);
+      var cpuSub = document.getElementById('cpuGaugeSub');
+      if (cpuSub) cpuSub.textContent = 'EFT: ' + eftCpu.toFixed(1) + '% | Server: ' + srvCpu.toFixed(1) + '%';
+
+      // RAM — show absolute GB, not %
+      var eftRamMb = latest.processRamUsedMb || 0;
+      var srvRamMb = latest.serverRamUsedMb || 0;
+      var combinedRamGb = ((eftRamMb + srvRamMb) / 1024).toFixed(1);
+      var totalGb = latest.ramTotalMb > 0 ? (latest.ramTotalMb / 1024).toFixed(1) : '?';
+      var combinedRamPct = latest.ramTotalMb > 0 ? (eftRamMb + srvRamMb) / latest.ramTotalMb * 100 : 0;
+      updateGauge('ramGaugeArc', 'ramGaugeValue', combinedRamPct);
+      var ramVal = document.getElementById('ramGaugeValue');
+      if (ramVal) { ramVal.textContent = combinedRamGb + ' GB'; ramVal.style.color = gaugeColor(combinedRamPct); }
+      var ramSub = document.getElementById('ramGaugeSub');
+      if (ramSub) {
+        var eftGb = (eftRamMb / 1024).toFixed(1);
+        var srvGb = (srvRamMb / 1024).toFixed(1);
+        ramSub.innerHTML = 'EFT: ' + eftGb + ' GB | Server: ' + srvGb + ' GB<br><span style="font-size:10px;color:var(--text-dim)">of ' + totalGb + ' GB total</span>';
+      }
+
+      // Multi-line charts: EFT (green) + Server (gold)
+      var eftCpuData = data.map(function(d) { return { timestamp: d.timestamp, value: d.processCpuPercent || 0 }; });
+      var srvCpuData = data.map(function(d) { return { timestamp: d.timestamp, value: d.serverCpuPercent || 0 }; });
+      drawMultiLineChart('cpuChart', 'cpuChartTooltip', [
+        { data: eftCpuData, color: '#4a7c59', label: 'EFT' },
+        { data: srvCpuData, color: '#c8aa6e', label: 'Server' }
+      ], '%');
+
+      var eftRamData = data.map(function(d) { return { timestamp: d.timestamp, value: (d.processRamUsedMb || 0) / 1024 }; });
+      var srvRamData = data.map(function(d) { return { timestamp: d.timestamp, value: (d.serverRamUsedMb || 0) / 1024 }; });
+      drawMultiLineChart('ramChart', 'ramChartTooltip', [
+        { data: eftRamData, color: '#4a7c59', label: 'EFT' },
+        { data: srvRamData, color: '#c8aa6e', label: 'Server' }
+      ], ' GB');
+    }
+  }
+
   function loadPerformanceHistory() {
     api('telemetry/performance-history').then(function(data) {
       if (!Array.isArray(data)) return;
       _perfHistory = data;
-      var panel = document.getElementById('systemGaugesPanel');
-      if (data.length > 0) {
-        panel.style.display = '';
-        // Update gauges with latest values
-        var latest = data[data.length - 1];
-        updateGauge('cpuGaugeArc', 'cpuGaugeValue', latest.cpuPercent);
-        updateGauge('ramGaugeArc', 'ramGaugeValue', latest.ramPercent);
-        // RAM sub-text
-        var ramSub = document.getElementById('ramGaugeSub');
-        if (latest.ramUsedMb && latest.ramTotalMb) {
-          var usedGB = (latest.ramUsedMb / 1024).toFixed(1);
-          var totalGB = (latest.ramTotalMb / 1024).toFixed(0);
-          ramSub.textContent = usedGB + ' / ' + totalGB + ' GB';
-        }
-        // Draw charts
-        var cpuData = data.map(function(d) { return { timestamp: d.timestamp, value: d.cpuPercent }; });
-        var ramData = data.map(function(d) { return { timestamp: d.timestamp, value: d.ramPercent }; });
-        drawHistoryChart('cpuChart', 'cpuChartTooltip', cpuData, 'CPU', '%', '#c8aa6e');
-        drawHistoryChart('ramChart', 'ramChartTooltip', ramData, 'RAM', '%', '#c8aa6e');
-      }
+      renderPerfGauges(data);
     }).catch(function(e) { console.error('Perf history error:', e); });
   }
 
@@ -7304,8 +7476,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     // Sub-tabs
     html += '<div class="player-profile-tabs" onclick="event.stopPropagation()">';
-    var tabs = ['overview','stash','skills','quests','hideout','traders'];
-    var tabLabels = ['Overview','Stash','Skills','Quests','Hideout','Traders'];
+    var tabs = ['overview','stats','stash','skills','quests','hideout','traders'];
+    var tabLabels = ['Overview','Stats','Stash','Skills','Quests','Hideout','Traders'];
     for (var i = 0; i < tabs.length; i++) {
       html += '<button class="ptab' + (activeProfileTab === tabs[i] ? ' active' : '') + '" onclick="event.stopPropagation();switchProfileTab(\'' + tabs[i] + '\',\'' + escA(sid) + '\')">' + tabLabels[i] + '</button>';
     }
@@ -7313,6 +7485,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     // Panels
     html += renderProfileOverview(data);
+    html += renderProfileStats(sid);
     html += renderProfileStash(sid);
     html += renderProfileSkills(data);
     html += renderProfileQuests(data);
@@ -7330,6 +7503,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.querySelectorAll('.profile-panel').forEach(function(p) {
       p.classList.toggle('active', p.dataset.panel === tab);
     });
+    if (tab === 'stats' && sid) loadPlayerStats(sid);
     if (tab === 'stash' && sid) loadPlayerStash(sid, 0);
   };
 
@@ -7365,6 +7539,154 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function statCard(label, value, extra, cls) {
     return '<div class="profile-stat-card"><div class="psc-label">' + label + '</div><div class="psc-value' + (cls ? ' ' + cls : '') + '">' + value + '</div>' + (extra || '') + '</div>';
+  }
+
+  // ── Stats ──
+  function renderProfileStats(sid) {
+    var active = activeProfileTab === 'stats' ? ' active' : '';
+    return '<div class="profile-panel' + active + '" data-panel="stats" id="statsPanel_' + sid + '">' +
+      '<div style="color:var(--text-dim);text-align:center;padding:20px">Click to load full stats</div></div>';
+  }
+
+  function loadPlayerStats(sid) {
+    var panel = document.getElementById('statsPanel_' + sid);
+    if (!panel) return;
+    panel.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px">Loading stats...</div>';
+
+    api('player/' + sid + '/stats').then(function(s) {
+      var html = '';
+
+      function fmtTime(sec) {
+        if (!sec) return '0s';
+        var h = Math.floor(sec / 3600);
+        var m = Math.floor((sec % 3600) / 60);
+        var ss = sec % 60;
+        if (h > 0) return h + 'h ' + m + 'm ' + ss + 's';
+        if (m > 0) return m + 'm ' + ss + 's';
+        return ss + 's';
+      }
+
+      function fmtDate(ts) {
+        if (!ts) return '—';
+        var d = new Date(ts * 1000);
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      }
+
+      function fmtPct(v) { return (v || 0).toFixed(1) + '%'; }
+      function fmtRatio(v) { return (v || 0).toFixed(2); }
+      function fmtDist(v) { return v ? v.toFixed(1) + 'm' : '0m'; }
+      function fmtDays(d) {
+        if (!d) return '0 days';
+        if (d >= 365) return Math.floor(d/365) + 'y ' + (d%365) + 'd';
+        return d + ' days';
+      }
+
+      function statsSection(title, rows, startOpen) {
+        var id = 'statsSection_' + title.replace(/[^a-zA-Z]/g,'');
+        var o = startOpen ? ' open' : '';
+        var h = '<div class="stats-section' + o + '" id="' + id + '">';
+        h += '<div class="stats-section-header" onclick="this.parentElement.classList.toggle(\'open\')">';
+        h += '<span>' + escH(title) + '</span>';
+        h += '<span class="stats-toggle-icon"></span>';
+        h += '</div>';
+        h += '<div class="stats-section-body"><div class="stats-grid">';
+        for (var i = 0; i < rows.length; i++) {
+          h += statCard(rows[i][0], rows[i][1], '', rows[i][2] || '');
+        }
+        h += '</div></div></div>';
+        return h;
+      }
+
+      // Raid Overview
+      html += statsSection('Raid Overview', [
+        ['Raids', s.raids || 0],
+        ['Survived', s.survived || 0],
+        ['KIA', s.kia || 0],
+        ['MIA', s.mia || 0],
+        ['AWOL', s.awol || 0],
+        ['Kills', s.kills || 0, 'accent'],
+        ['Online Time', fmtTime(s.onlineTimeSec)],
+        ['Run-throughs', s.runThroughs || 0],
+        ['Survival Rate', fmtPct(s.survivalRate), 'accent'],
+        ['Avg Life Span', fmtTime(s.avgLifeSpanSec)],
+        ['Win Streak (Current)', s.currentWinStreak || 0],
+        ['Win Streak (Longest)', s.longestWinStreak || 0],
+        ['Leave Rate', fmtPct(s.leaveRate)],
+        ['K/D Ratio', fmtRatio(s.kdRatio), 'accent'],
+        ['Account Lifetime', fmtDays(s.accountLifetimeDays)]
+      ], true);
+
+      // Common Stats
+      html += statsSection('Common Stats', [
+        ['Registration Date', fmtDate(s.registrationDate)],
+        ['Last Session', fmtDate(s.lastSessionDate)],
+        ['Survivor Class', s.survivorClass || '—'],
+        ['Kill XP', (s.killExperience || 0).toLocaleString()],
+        ['Looting XP', (s.lootingExperience || 0).toLocaleString()],
+        ['Healing XP', (s.healingExperience || 0).toLocaleString()],
+        ['Survival XP', (s.survivalExperience || 0).toLocaleString()],
+        ['Stash Value', formatRoubles(Math.round(s.stashValue || 0)), 'accent']
+      ], false);
+
+      // Health & Physical Condition
+      html += statsSection('Health & Physical Condition', [
+        ['Blood Lost', (s.bloodLost || 0).toLocaleString()],
+        ['Limbs Lost', s.limbsLost || 0],
+        ['Least Damaged Area', s.leastDamagedArea || '—'],
+        ['HP Healed', Math.round(s.hpHealed || 0).toLocaleString()],
+        ['Fractures', s.fractures || 0],
+        ['Concussions', s.concussions || 0],
+        ['Dehydrations', s.dehydrations || 0],
+        ['Exhaustions', s.exhaustions || 0],
+        ['Drinks Consumed', s.drinksConsumed || 0],
+        ['Food Consumed', s.foodConsumed || 0],
+        ['Medicine Used', s.medicineUsed || 0]
+      ], false);
+
+      // Loot / Items Found
+      html += statsSection('Loot / Items Found', [
+        ['USD Found', '$' + (s.usdFound || 0).toLocaleString()],
+        ['EUR Found', '\u20ac' + (s.eurFound || 0).toLocaleString()],
+        ['RUB Found', formatRoubles(s.rubFound || 0)],
+        ['Bodies Looted', s.bodiesLooted || 0],
+        ['Places Looted', s.placesLooted || 0],
+        ['Safes Unlocked', s.safesUnlocked || 0],
+        ['Weapons Found', s.weaponsFound || 0],
+        ['Mods Found', s.modsFound || 0],
+        ['Throwables Found', s.throwablesFound || 0],
+        ['Special Items Found', s.specialItemsFound || 0],
+        ['Provisions Found', s.provisionsFound || 0],
+        ['Keys Found', s.keysFound || 0],
+        ['Barter Goods Found', s.barterGoodsFound || 0],
+        ['Equipment Found', s.equipmentFound || 0]
+      ], false);
+
+      // Combat
+      html += statsSection('Combat', [
+        ['Damage Absorbed by Armor', (s.damageAbsorbedByArmor || 0).toLocaleString()],
+        ['Ammo Used', (s.ammoUsed || 0).toLocaleString()],
+        ['Hit Count', (s.hitCount || 0).toLocaleString()],
+        ['Fatal Hits', (s.fatalHits || 0).toLocaleString()],
+        ['Overall Accuracy', fmtPct(s.overallAccuracy)],
+        ['Longest Shot', fmtDist(s.longestShot)],
+        ['Lvl 0-10 Kills', s.killedLevel010 || 0],
+        ['Lvl 11-30 Kills', s.killedLevel1130 || 0],
+        ['Lvl 31-50 Kills', s.killedLevel3150 || 0],
+        ['Lvl 51-70 Kills', s.killedLevel5170 || 0],
+        ['Lvl 71-99 Kills', s.killedLevel7199 || 0],
+        ['Lvl 100 Kills', s.killedLevel100 || 0],
+        ['BEARs Killed', s.bearsKilled || 0],
+        ['USECs Killed', s.usecsKilled || 0],
+        ['Scavs Killed', s.scavsKilled || 0, 'accent'],
+        ['PMCs Killed', s.pmcsKilled || 0, 'accent'],
+        ['Bosses Killed', s.bossesKilled || 0, 'accent'],
+        ['Headshots', s.headshots || 0, 'accent']
+      ], false);
+
+      panel.innerHTML = html;
+    }).catch(function(e) {
+      panel.innerHTML = '<div style="color:var(--error-bright);text-align:center;padding:20px">Error: ' + escH(e.message) + '</div>';
+    });
   }
 
   // ── Stash ──

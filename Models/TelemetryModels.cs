@@ -77,6 +77,12 @@ public record PerformancePayload
     [JsonPropertyName("cpuUsage")]
     public double CpuUsage { get; set; }
 
+    [JsonPropertyName("systemCpuPercent")]
+    public double SystemCpuPercent { get; set; }
+
+    [JsonPropertyName("systemRamUsedMb")]
+    public long SystemRamUsedMb { get; set; }
+
     [JsonPropertyName("systemInfo")]
     public SystemInfoPayload? SystemInfo { get; set; }
 }
@@ -587,6 +593,30 @@ public record RaidHistoryDetail
     public DamageStatsPayload? DamageStats { get; set; }
 }
 
+public record RaidHistoryStore
+{
+    [JsonPropertyName("raids")]
+    public List<RaidHistoryRecord> Raids { get; set; } = [];
+}
+
+public record RaidHistoryRecord
+{
+    [JsonPropertyName("summary")]
+    public RaidHistorySummary Summary { get; set; } = new();
+
+    [JsonPropertyName("players")]
+    public List<RaidSummaryPlayer> Players { get; set; } = [];
+
+    [JsonPropertyName("kills")]
+    public List<KillFeedEntry> Kills { get; set; } = [];
+
+    [JsonPropertyName("extracts")]
+    public List<ExtractPayload> Extracts { get; set; } = [];
+
+    [JsonPropertyName("damageStats")]
+    public DamageStatsPayload? DamageStats { get; set; }
+}
+
 // ══════════════════════════════════════════════════════════════════════
 //  POSITIONS — Live minimap data
 // ══════════════════════════════════════════════════════════════════════
@@ -876,4 +906,21 @@ public record PerformanceHistoryEntry
 
     [JsonPropertyName("fps")]
     public int Fps { get; set; }
+
+    // Process-specific values (EFT.exe)
+    [JsonPropertyName("processCpuPercent")]
+    public double ProcessCpuPercent { get; set; }
+
+    [JsonPropertyName("processRamPercent")]
+    public double ProcessRamPercent { get; set; }
+
+    [JsonPropertyName("processRamUsedMb")]
+    public long ProcessRamUsedMb { get; set; }
+
+    // SPT server process values
+    [JsonPropertyName("serverCpuPercent")]
+    public double ServerCpuPercent { get; set; }
+
+    [JsonPropertyName("serverRamUsedMb")]
+    public long ServerRamUsedMb { get; set; }
 }

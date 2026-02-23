@@ -86,6 +86,99 @@ public class PlayerStatsService(
         };
     }
 
+    public ProfileRaidStatsDto GetServerRaidStats()
+    {
+        var profiles = saveServer.GetProfiles();
+        var headlessId = configService.GetConfig().Headless.ProfileId;
+
+        int totalRaids = 0, survived = 0, deaths = 0;
+        int pmcKills = 0, scavKills = 0, bossKills = 0, headshots = 0;
+
+        foreach (var (sessionId, profile) in profiles)
+        {
+            var pmc = profile.CharacterData?.PmcData;
+            if (pmc?.Info == null) continue;
+
+            var sid = sessionId.ToString();
+            if (!string.IsNullOrEmpty(headlessId) && sid == headlessId) continue;
+
+            var stats = ExtractProfileRaidStats(pmc);
+            totalRaids += stats.TotalRaids;
+            survived += stats.Survived;
+            deaths += stats.Deaths;
+            pmcKills += stats.PmcKills;
+            scavKills += stats.ScavKills;
+            bossKills += stats.BossKills;
+            headshots += stats.Headshots;
+        }
+
+        var totalKills = pmcKills + scavKills + bossKills;
+        return new ProfileRaidStatsDto
+        {
+            TotalRaids = totalRaids,
+            Survived = survived,
+            Deaths = deaths,
+            SurvivalRate = totalRaids > 0 ? Math.Round((double)survived / totalRaids * 100, 1) : 0,
+            TotalKills = totalKills,
+            PmcKills = pmcKills,
+            ScavKills = scavKills,
+            BossKills = bossKills,
+            Headshots = headshots,
+            KdRatio = deaths > 0 ? Math.Round((double)totalKills / deaths, 2) : totalKills
+        };
+    }
+
+    public ProfileRaidStatsDto? GetPlayerRaidStats(string sessionId)
+    {
+        var profiles = saveServer.GetProfiles();
+        if (!profiles.TryGetValue(sessionId, out var profile)) return null;
+
+        var pmc = profile.CharacterData?.PmcData;
+        if (pmc?.Info == null) return null;
+
+        return ExtractProfileRaidStats(pmc);
+    }
+
+    private static ProfileRaidStatsDto ExtractProfileRaidStats(SPTarkov.Server.Core.Models.Eft.Common.PmcData pmc)
+    {
+        int totalRaids = 0, survived = 0, deaths = 0;
+        int pmcKills = 0, scavKills = 0, bossKills = 0, headshots = 0;
+
+        var counters = pmc.Stats?.Eft?.OverallCounters?.Items;
+        if (counters != null)
+        {
+            foreach (var counter in counters)
+            {
+                if (counter.Key == null || counter.Key.Count < 2) continue;
+                var k = counter.Key;
+                var val = (int)counter.Value;
+
+                if (k.Contains("Sessions") && k.Contains("Pmc")) totalRaids = val;
+                else if (k.Contains("ExitStatus") && k.Contains("Survived")) survived = val;
+                else if (k.Contains("ExitStatus") && k.Contains("Killed")) deaths = val;
+                else if (k.Contains("Kills") && k.Contains("Pmc")) pmcKills = val;
+                else if (k.Contains("Kills") && k.Contains("Savage")) scavKills = val;
+                else if (k.Contains("Kills") && (k.Contains("Boss") || k.Contains("KilledBoss"))) bossKills = val;
+                else if (k.Contains("HeadShots")) headshots = val;
+            }
+        }
+
+        var totalKills = pmcKills + scavKills + bossKills;
+        return new ProfileRaidStatsDto
+        {
+            TotalRaids = totalRaids,
+            Survived = survived,
+            Deaths = deaths,
+            SurvivalRate = totalRaids > 0 ? Math.Round((double)survived / totalRaids * 100, 1) : 0,
+            TotalKills = totalKills,
+            PmcKills = pmcKills,
+            ScavKills = scavKills,
+            BossKills = bossKills,
+            Headshots = headshots,
+            KdRatio = deaths > 0 ? Math.Round((double)totalKills / deaths, 2) : totalKills
+        };
+    }
+
     private static long CalculateRoubles(IEnumerable<SPTarkov.Server.Core.Models.Eft.Common.Tables.Item>? items)
     {
         if (items == null) return 0;

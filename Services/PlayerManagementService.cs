@@ -318,6 +318,152 @@ public class PlayerManagementService(
         return dto;
     }
 
+    public PlayerFullStatsDto? GetPlayerFullStats(string sessionId)
+    {
+        var profiles = saveServer.GetProfiles();
+        if (!profiles.TryGetValue(sessionId, out var profile))
+            return null;
+
+        var pmc = profile.CharacterData?.PmcData;
+        if (pmc?.Info == null)
+            return null;
+
+        var dto = new PlayerFullStatsDto();
+
+        try
+        {
+            // Top-level stats fields
+            var eftStats = pmc.Stats?.Eft;
+            dto.OnlineTimeSec = (int)(eftStats?.TotalInGameTime ?? 0);
+            dto.SurvivorClass = eftStats?.SurvivorClass?.ToString() ?? "";
+            dto.LastSessionDate = (long)(eftStats?.LastSessionDate ?? 0);
+            dto.RegistrationDate = (long)pmc.Info.RegistrationDate;
+
+            // Account lifetime
+            if (dto.RegistrationDate > 0)
+            {
+                var regDate = DateTimeOffset.FromUnixTimeSeconds(dto.RegistrationDate);
+                dto.AccountLifetimeDays = (int)(DateTimeOffset.UtcNow - regDate).TotalDays;
+            }
+
+            // Stash value
+            var items = pmc.Inventory?.Items?.ToList() ?? [];
+            dto.StashValue = handbookHelper.GetTemplatePriceForItems(items);
+
+            // Body part damage tracking for least-damaged calculation
+            var bodyPartDamage = new Dictionary<string, double>();
+
+            if (eftStats?.OverallCounters?.Items != null)
+            {
+                foreach (var counter in eftStats.OverallCounters.Items)
+                {
+                    if (counter.Key == null || counter.Key.Count == 0) continue;
+                    var k = counter.Key;
+                    var v = (int)(counter.Value ?? 0);
+                    var vd = counter.Value ?? 0;
+
+                    if (k.Count == 1)
+                    {
+                        // Single-key counters
+                        var key = k.First();
+                        switch (key)
+                        {
+                            case "Kills": dto.Kills = v; break;
+                            case "Deaths": break; // deaths calculated from KIA+MIA
+                            case "KilledPmc": dto.PmcsKilled = v; break;
+                            case "KilledSavage": dto.ScavsKilled = v; break;
+                            case "KilledBoss": dto.BossesKilled = v; break;
+                            case "KilledBear": dto.BearsKilled = v; break;
+                            case "KilledUsec": dto.UsecsKilled = v; break;
+                            case "KilledLevel0010": dto.KilledLevel010 = v; break;
+                            case "KilledLevel1030": dto.KilledLevel1130 = v; break;
+                            case "KilledLevel3050": dto.KilledLevel3150 = v; break;
+                            case "KilledLevel5070": dto.KilledLevel5170 = v; break;
+                            case "KilledLevel7099": dto.KilledLevel7199 = v; break;
+                            case "KilledLevel100": dto.KilledLevel100 = v; break;
+                            case "HeadShots": dto.Headshots = v; break;
+                            case "BloodLoss": dto.BloodLost = v; break;
+                            case "BodyPartsDestroyed": dto.LimbsLost = v; break;
+                            case "Heal": dto.HpHealed = vd; break;
+                            case "Fractures": dto.Fractures = v; break;
+                            case "Contusions": dto.Concussions = v; break;
+                            case "Dehydrations": dto.Dehydrations = v; break;
+                            case "Exhaustions": dto.Exhaustions = v; break;
+                            case "UsedDrinks": dto.DrinksConsumed = v; break;
+                            case "UsedFoods": dto.FoodConsumed = v; break;
+                            case "Medicines": dto.MedicineUsed = v; break;
+                            case "BodiesLooted": dto.BodiesLooted = v; break;
+                            case "SafeLooted": dto.SafesUnlocked = v; break;
+                            case "Weapons": dto.WeaponsFound = v; break;
+                            case "Mods": dto.ModsFound = v; break;
+                            case "ThrowWeapons": dto.ThrowablesFound = v; break;
+                            case "SpecialItems": dto.SpecialItemsFound = v; break;
+                            case "FoodDrinks": dto.ProvisionsFound = v; break;
+                            case "Keys": dto.KeysFound = v; break;
+                            case "BartItems": dto.BarterGoodsFound = v; break;
+                            case "Equipments": dto.EquipmentFound = v; break;
+                            case "AmmoUsed": dto.AmmoUsed = v; break;
+                            case "HitCount": dto.HitCount = v; break;
+                            case "CauseArmorDamage": dto.DamageAbsorbedByArmor = v; break;
+                            case "ExpKill": dto.KillExperience = v; break;
+                            case "ExpLooting": dto.LootingExperience = v; break;
+                            case "LongestShot": dto.LongestShot = vd; break;
+                            case "MobContainers": dto.PlacesLooted = v; break;
+                        }
+                    }
+                    else
+                    {
+                        // Multi-key counters
+                        if (k.Contains("Sessions") && k.Contains("Pmc")) dto.Raids = v;
+                        else if (k.Contains("ExitStatus") && k.Contains("Survived")) dto.Survived = v;
+                        else if (k.Contains("ExitStatus") && k.Contains("Killed")) dto.KIA = v;
+                        else if (k.Contains("ExitStatus") && k.Contains("MissingInAction")) dto.MIA = v;
+                        else if (k.Contains("ExitStatus") && k.Contains("Left")) dto.AWOL = v;
+                        else if (k.Contains("ExitStatus") && k.Contains("Runner")) dto.RunThroughs = v;
+                        else if (k.Contains("LifeTime") && k.Contains("Pmc")) dto.AvgLifeSpanSec = v;
+                        else if (k.Contains("CurrentWinStreak") && k.Contains("Pmc")) dto.CurrentWinStreak = v;
+                        else if (k.Contains("LongestWinStreak") && k.Contains("Pmc")) dto.LongestWinStreak = v;
+                        else if (k.Contains("Exp") && k.Contains("ExpHeal")) dto.HealingExperience = v;
+                        else if (k.Contains("Exp") && k.Contains("ExpExitStatus")) dto.SurvivalExperience = v;
+                        else if (k.Contains("Money") && k.Contains("RUB")) dto.RubFound = v;
+                        else if (k.Contains("Money") && k.Contains("EUR")) dto.EurFound = v;
+                        else if (k.Contains("Money") && k.Contains("USD")) dto.UsdFound = v;
+                        else if (k.Contains("BodyPartDamage") && k.Count >= 2)
+                        {
+                            var part = k.FirstOrDefault(x => x != "BodyPartDamage") ?? "";
+                            if (part != "") bodyPartDamage[part] = vd;
+                        }
+                    }
+                }
+            }
+
+            // Calculated fields
+            var deaths = dto.KIA + dto.MIA;
+            dto.FatalHits = dto.Kills;
+            dto.SurvivalRate = dto.Raids > 0 ? Math.Round((double)dto.Survived / dto.Raids * 100, 1) : 0;
+            dto.LeaveRate = dto.Raids > 0 ? Math.Round((double)(dto.AWOL + dto.RunThroughs) / dto.Raids * 100, 1) : 0;
+            dto.KdRatio = deaths > 0 ? Math.Round((double)dto.Kills / deaths, 2) : dto.Kills;
+            dto.OverallAccuracy = dto.AmmoUsed > 0 ? Math.Round((double)dto.HitCount / dto.AmmoUsed * 100, 1) : 0;
+
+            // AvgLifeSpanSec from LifeTime counter is total — divide by raids for average
+            if (dto.Raids > 0 && dto.AvgLifeSpanSec > 0)
+                dto.AvgLifeSpanSec = dto.AvgLifeSpanSec / dto.Raids;
+
+            // Least damaged area
+            if (bodyPartDamage.Count > 0)
+            {
+                var min = bodyPartDamage.MinBy(kv => kv.Value);
+                dto.LeastDamagedArea = min.Key;
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.Warning($"ZSlayerCommandCenter: Error building full stats for {sessionId}: {ex.Message}");
+        }
+
+        return dto;
+    }
+
     public PlayerStashDto GetStash(string sessionId, string? search, int limit, int offset)
     {
         var profiles = saveServer.GetProfiles();

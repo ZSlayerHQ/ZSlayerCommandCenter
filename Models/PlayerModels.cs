@@ -210,6 +210,103 @@ public record PlayerTraderDto
     public long SalesSum { get; set; }
 }
 
+// ── Full Stats ──
+
+public record PlayerFullStatsDto
+{
+    // ── Raid Overview ──
+    [JsonPropertyName("raids")] public int Raids { get; set; }
+    [JsonPropertyName("survived")] public int Survived { get; set; }
+    [JsonPropertyName("kia")] public int KIA { get; set; }
+    [JsonPropertyName("mia")] public int MIA { get; set; }
+    [JsonPropertyName("awol")] public int AWOL { get; set; }
+    [JsonPropertyName("kills")] public int Kills { get; set; }
+    [JsonPropertyName("onlineTimeSec")] public int OnlineTimeSec { get; set; }
+    [JsonPropertyName("runThroughs")] public int RunThroughs { get; set; }
+    [JsonPropertyName("survivalRate")] public double SurvivalRate { get; set; }
+    [JsonPropertyName("avgLifeSpanSec")] public int AvgLifeSpanSec { get; set; }
+    [JsonPropertyName("currentWinStreak")] public int CurrentWinStreak { get; set; }
+    [JsonPropertyName("longestWinStreak")] public int LongestWinStreak { get; set; }
+    [JsonPropertyName("leaveRate")] public double LeaveRate { get; set; }
+    [JsonPropertyName("kdRatio")] public double KdRatio { get; set; }
+    [JsonPropertyName("accountLifetimeDays")] public int AccountLifetimeDays { get; set; }
+
+    // ── Common Stats ──
+    [JsonPropertyName("registrationDate")] public long RegistrationDate { get; set; }
+    [JsonPropertyName("lastSessionDate")] public long LastSessionDate { get; set; }
+    [JsonPropertyName("survivorClass")] public string SurvivorClass { get; set; } = "";
+    [JsonPropertyName("killExperience")] public int KillExperience { get; set; }
+    [JsonPropertyName("lootingExperience")] public int LootingExperience { get; set; }
+    [JsonPropertyName("healingExperience")] public int HealingExperience { get; set; }
+    [JsonPropertyName("survivalExperience")] public int SurvivalExperience { get; set; }
+    [JsonPropertyName("stashValue")] public double StashValue { get; set; }
+
+    // ── Health & Physical Condition ──
+    [JsonPropertyName("bloodLost")] public int BloodLost { get; set; }
+    [JsonPropertyName("limbsLost")] public int LimbsLost { get; set; }
+    [JsonPropertyName("leastDamagedArea")] public string LeastDamagedArea { get; set; } = "";
+    [JsonPropertyName("hpHealed")] public double HpHealed { get; set; }
+    [JsonPropertyName("fractures")] public int Fractures { get; set; }
+    [JsonPropertyName("concussions")] public int Concussions { get; set; }
+    [JsonPropertyName("dehydrations")] public int Dehydrations { get; set; }
+    [JsonPropertyName("exhaustions")] public int Exhaustions { get; set; }
+    [JsonPropertyName("drinksConsumed")] public int DrinksConsumed { get; set; }
+    [JsonPropertyName("foodConsumed")] public int FoodConsumed { get; set; }
+    [JsonPropertyName("medicineUsed")] public int MedicineUsed { get; set; }
+
+    // ── Loot / Items Found ──
+    [JsonPropertyName("usdFound")] public int UsdFound { get; set; }
+    [JsonPropertyName("eurFound")] public int EurFound { get; set; }
+    [JsonPropertyName("rubFound")] public int RubFound { get; set; }
+    [JsonPropertyName("bodiesLooted")] public int BodiesLooted { get; set; }
+    [JsonPropertyName("placesLooted")] public int PlacesLooted { get; set; }
+    [JsonPropertyName("safesUnlocked")] public int SafesUnlocked { get; set; }
+    [JsonPropertyName("weaponsFound")] public int WeaponsFound { get; set; }
+    [JsonPropertyName("modsFound")] public int ModsFound { get; set; }
+    [JsonPropertyName("throwablesFound")] public int ThrowablesFound { get; set; }
+    [JsonPropertyName("specialItemsFound")] public int SpecialItemsFound { get; set; }
+    [JsonPropertyName("provisionsFound")] public int ProvisionsFound { get; set; }
+    [JsonPropertyName("keysFound")] public int KeysFound { get; set; }
+    [JsonPropertyName("barterGoodsFound")] public int BarterGoodsFound { get; set; }
+    [JsonPropertyName("equipmentFound")] public int EquipmentFound { get; set; }
+
+    // ── Combat ──
+    [JsonPropertyName("damageAbsorbedByArmor")] public int DamageAbsorbedByArmor { get; set; }
+    [JsonPropertyName("ammoUsed")] public int AmmoUsed { get; set; }
+    [JsonPropertyName("hitCount")] public int HitCount { get; set; }
+    [JsonPropertyName("fatalHits")] public int FatalHits { get; set; }
+    [JsonPropertyName("overallAccuracy")] public double OverallAccuracy { get; set; }
+    [JsonPropertyName("killedLevel010")] public int KilledLevel010 { get; set; }
+    [JsonPropertyName("killedLevel1130")] public int KilledLevel1130 { get; set; }
+    [JsonPropertyName("killedLevel3150")] public int KilledLevel3150 { get; set; }
+    [JsonPropertyName("killedLevel5170")] public int KilledLevel5170 { get; set; }
+    [JsonPropertyName("killedLevel7199")] public int KilledLevel7199 { get; set; }
+    [JsonPropertyName("killedLevel100")] public int KilledLevel100 { get; set; }
+    [JsonPropertyName("bearsKilled")] public int BearsKilled { get; set; }
+    [JsonPropertyName("usecsKilled")] public int UsecsKilled { get; set; }
+    [JsonPropertyName("scavsKilled")] public int ScavsKilled { get; set; }
+    [JsonPropertyName("pmcsKilled")] public int PmcsKilled { get; set; }
+    [JsonPropertyName("bossesKilled")] public int BossesKilled { get; set; }
+    [JsonPropertyName("headshots")] public int Headshots { get; set; }
+    [JsonPropertyName("longestShot")] public double LongestShot { get; set; }
+}
+
+// ── Profile Raid Stats ──
+
+public record ProfileRaidStatsDto
+{
+    [JsonPropertyName("totalRaids")] public int TotalRaids { get; set; }
+    [JsonPropertyName("survived")] public int Survived { get; set; }
+    [JsonPropertyName("deaths")] public int Deaths { get; set; }
+    [JsonPropertyName("survivalRate")] public double SurvivalRate { get; set; }
+    [JsonPropertyName("totalKills")] public int TotalKills { get; set; }
+    [JsonPropertyName("pmcKills")] public int PmcKills { get; set; }
+    [JsonPropertyName("scavKills")] public int ScavKills { get; set; }
+    [JsonPropertyName("bossKills")] public int BossKills { get; set; }
+    [JsonPropertyName("headshots")] public int Headshots { get; set; }
+    [JsonPropertyName("kdRatio")] public double KdRatio { get; set; }
+}
+
 // ── Stash ──
 
 public record PlayerStashDto

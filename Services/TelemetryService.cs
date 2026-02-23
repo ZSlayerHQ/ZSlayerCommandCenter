@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Enums;
@@ -9,6 +11,7 @@ namespace ZSlayerCommandCenter.Services;
 
 [Injectable(InjectionType.Singleton)]
 public class TelemetryService(
+    ConfigService configService,
     LocaleService localeService,
     ISptLogger<TelemetryService> logger)
 {
@@ -35,9 +38,8 @@ public class TelemetryService(
     private string _currentRaidId = "";
     private DateTime _currentRaidStart;
 
-    // Raid history — max 50
+    // Raid history — persisted to disk
     private readonly List<RaidHistoryRecord> _raidHistory = new();
-    private const int MaxRaidHistory = 50;
 
     private int _killCounter;
 
@@ -365,8 +367,6 @@ public class TelemetryService(
             };
 
             _raidHistory.Insert(0, record);
-            if (_raidHistory.Count > MaxRaidHistory)
-                _raidHistory.RemoveRange(MaxRaidHistory, _raidHistory.Count - MaxRaidHistory);
 
             // Clear current raid state
             _currentRaidKills.Clear();
@@ -374,6 +374,8 @@ public class TelemetryService(
             _currentDamageStats = null;
             _currentRaidId = "";
         }
+
+        SaveRaidHistory();
 
         logger.Success($"[Telemetry] Raid archived — {payload.Map}, {payload.Players.Count} players, raidHistory now has {_raidHistory.Count} entries");
     }
@@ -529,20 +531,69 @@ public class TelemetryService(
     private readonly List<PerformanceHistoryEntry> _perfHistory = new();
     private const int MaxPerfHistory = 60; // 5 min at 5s intervals
 
+    // Server process CPU tracking (delta-based)
+    private TimeSpan _lastServerCpuTime;
+    private DateTime _lastServerCpuSample;
+    private readonly int _processorCount = Environment.ProcessorCount;
+
+    private (double cpuPercent, long ramUsedMb) GetServerProcessStats()
+    {
+        try
+        {
+            var proc = Process.GetCurrentProcess();
+            var now = DateTime.UtcNow;
+            var cpuTime = proc.TotalProcessorTime;
+            var ramMb = proc.WorkingSet64 / (1024 * 1024);
+
+            double cpuPercent = 0;
+            if (_lastServerCpuSample != default)
+            {
+                var elapsed = (now - _lastServerCpuSample).TotalMilliseconds;
+                if (elapsed > 0)
+                {
+                    var cpuDelta = (cpuTime - _lastServerCpuTime).TotalMilliseconds;
+                    cpuPercent = Math.Round(cpuDelta / elapsed / _processorCount * 100, 1);
+                    cpuPercent = Math.Clamp(cpuPercent, 0, 100);
+                }
+            }
+
+            _lastServerCpuTime = cpuTime;
+            _lastServerCpuSample = now;
+            return (cpuPercent, ramMb);
+        }
+        catch
+        {
+            return (0, 0);
+        }
+    }
+
     public void RecordPerformanceHistory(PerformancePayload payload)
     {
+        var (serverCpu, serverRam) = GetServerProcessStats();
+
         lock (_lock)
         {
             var ramTotalMb = payload.SystemInfo?.TotalRamMb ?? 0;
-            var ramPercent = ramTotalMb > 0 ? Math.Round((double)payload.MemoryMb / ramTotalMb * 100, 1) : 0;
+            var processRamPercent = ramTotalMb > 0 ? Math.Round((double)payload.MemoryMb / ramTotalMb * 100, 1) : 0;
+            var systemRamPercent = ramTotalMb > 0 ? Math.Round((double)payload.SystemRamUsedMb / ramTotalMb * 100, 1) : 0;
+
+            // Use system values as primary, fallback to process if system not available
+            var useSysCpu = payload.SystemCpuPercent > 0;
+            var useSysRam = payload.SystemRamUsedMb > 0;
+
             _perfHistory.Add(new PerformanceHistoryEntry
             {
                 Timestamp = DateTime.UtcNow,
-                CpuPercent = payload.CpuUsage,
-                RamPercent = ramPercent,
-                RamUsedMb = payload.MemoryMb,
+                CpuPercent = useSysCpu ? payload.SystemCpuPercent : payload.CpuUsage,
+                RamPercent = useSysRam ? systemRamPercent : processRamPercent,
+                RamUsedMb = useSysRam ? payload.SystemRamUsedMb : payload.MemoryMb,
                 RamTotalMb = ramTotalMb,
-                Fps = payload.Fps
+                Fps = payload.Fps,
+                ProcessCpuPercent = payload.CpuUsage,
+                ProcessRamPercent = processRamPercent,
+                ProcessRamUsedMb = payload.MemoryMb,
+                ServerCpuPercent = serverCpu,
+                ServerRamUsedMb = serverRam
             });
             if (_perfHistory.Count > MaxPerfHistory)
                 _perfHistory.RemoveRange(0, _perfHistory.Count - MaxPerfHistory);
@@ -709,13 +760,66 @@ public class TelemetryService(
         }
     }
 
-    // Internal storage record for raid history
-    private record RaidHistoryRecord
+    // ══════════════════════════════════════════════════════════════
+    //  Raid history persistence
+    // ══════════════════════════════════════════════════════════════
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
     {
-        public RaidHistorySummary Summary { get; set; } = new();
-        public List<RaidSummaryPlayer> Players { get; set; } = [];
-        public List<KillFeedEntry> Kills { get; set; } = [];
-        public List<ExtractPayload> Extracts { get; set; } = [];
-        public DamageStatsPayload? DamageStats { get; set; }
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    private string GetRaidHistoryPath() =>
+        Path.Combine(configService.ModPath, "data", "raid-history.json");
+
+    /// <summary>Load persisted raid history from disk. Call once from OnLoad.</summary>
+    public void Initialize()
+    {
+        var path = GetRaidHistoryPath();
+        try
+        {
+            if (File.Exists(path))
+            {
+                var json = File.ReadAllText(path);
+                var store = JsonSerializer.Deserialize<RaidHistoryStore>(json, _jsonOptions);
+                if (store?.Raids != null)
+                {
+                    lock (_lock)
+                    {
+                        _raidHistory.Clear();
+                        _raidHistory.AddRange(store.Raids);
+                    }
+                    logger.Success($"[Telemetry] Loaded {store.Raids.Count} raids from disk");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.Warning($"[Telemetry] Failed to load raid history: {ex.Message} — starting with empty history");
+        }
+    }
+
+    private void SaveRaidHistory()
+    {
+        List<RaidHistoryRecord> snapshot;
+        lock (_lock)
+        {
+            snapshot = [.. _raidHistory];
+        }
+
+        try
+        {
+            var dir = Path.GetDirectoryName(GetRaidHistoryPath())!;
+            Directory.CreateDirectory(dir);
+
+            var store = new RaidHistoryStore { Raids = snapshot };
+            var json = JsonSerializer.Serialize(store, _jsonOptions);
+            File.WriteAllText(GetRaidHistoryPath(), json);
+        }
+        catch (Exception ex)
+        {
+            logger.Error($"[Telemetry] Failed to save raid history: {ex.Message}");
+        }
     }
 }
