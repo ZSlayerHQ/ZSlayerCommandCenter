@@ -76,6 +76,16 @@ public class CommandCenterHttpListener(
 
         var rawPath = context.Request.Path.Value ?? "";
 
+        // Redirect /zslayer/cc → /zslayer/cc/ so relative URLs resolve correctly
+        if (rawPath.Equals(BasePath, StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode = 301;
+            context.Response.Headers["Location"] = BasePath + "/";
+            await context.Response.StartAsync();
+            await context.Response.CompleteAsync();
+            return;
+        }
+
         // Legacy redirect: /zslayer/itemgui/* → /zslayer/cc/*
         if (rawPath.Equals(LegacyBasePath, StringComparison.OrdinalIgnoreCase)
             || rawPath.StartsWith(LegacyBasePath + "/", StringComparison.OrdinalIgnoreCase))

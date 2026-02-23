@@ -186,8 +186,52 @@ public class HeadlessProcessService(
         return Start();
     }
 
+    /// <summary>
+    /// Scan running processes to detect a headless instance launched externally (e.g. by the Watchdog).
+    /// Only attaches if we are not already tracking a live process.
+    /// </summary>
+    public void TryAttachExisting()
+    {
+        if (_process != null && !_process.HasExited) return;
+        if (!_available || string.IsNullOrEmpty(_exePath)) return;
+
+        var procName = Path.GetFileNameWithoutExtension(_exePath);
+        try
+        {
+            foreach (var p in Process.GetProcessesByName(procName))
+            {
+                try
+                {
+                    var modulePath = p.MainModule?.FileName;
+                    if (modulePath != null &&
+                        string.Equals(Path.GetFullPath(modulePath), Path.GetFullPath(_exePath),
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        _process = p;
+                        _process.EnableRaisingEvents = true;
+                        _process.Exited += OnProcessExited;
+                        _stopping = false;
+
+                        try { _startedAt = p.StartTime.ToUniversalTime(); }
+                        catch { _startedAt = DateTime.UtcNow; }
+
+                        _lastCrashReason = null;
+                        logger.Info($"HeadlessProcessService: attached to existing process (PID {p.Id})");
+                        return;
+                    }
+                }
+                catch { /* access denied on MainModule — skip */ }
+            }
+        }
+        catch { /* GetProcessesByName can throw */ }
+    }
+
     public HeadlessStatusDto GetStatus(string? error = null)
     {
+        // If we lost our process handle, try to find an externally-launched instance
+        if (_process == null || _process.HasExited)
+            TryAttachExisting();
+
         var config = configService.GetConfig().Headless;
         var running = IsRunning;
         var uptimeSeconds = running && _startedAt.HasValue

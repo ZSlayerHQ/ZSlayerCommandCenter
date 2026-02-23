@@ -3932,6 +3932,23 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   </div>
 
+  <!-- Stop Server Confirmation Modal -->
+  <div class="modal-overlay" id="stopServerModal">
+    <div class="modal-box" style="max-width:420px">
+      <h3 style="color:#8b3a3a">Stop Server</h3>
+      <p style="font-size:13px;color:var(--text-main);margin-bottom:12px;line-height:1.6">
+        Stopping the server will <strong style="color:#c87a3e">shut it down completely</strong>. The dashboard, all game connections, and any active raids will be terminated immediately.
+      </p>
+      <p style="font-size:13px;color:#8b3a3a;margin-bottom:20px;line-height:1.6;padding:10px;background:rgba(139,58,58,0.1);border:1px solid rgba(139,58,58,0.3);border-radius:var(--radius)">
+        The server will <strong>not restart automatically</strong>. Only the server host can bring it back online by starting it manually from the Watchdog or machine console.
+      </p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('stopServerModal').classList.remove('open')">Back</button>
+        <button class="btn" style="background:#8b3a3a;color:#fff" onclick="document.getElementById('stopServerModal').classList.remove('open');confirmStopServer()">Stop Server</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Broadcast Modal -->
   <div class="modal-overlay" id="broadcastModal">
     <div class="modal-box">
@@ -6622,7 +6639,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   };
 
   window.wdStop = function() {
-    if (!confirm('Stop the SPT server? The dashboard will become unavailable.')) return;
+    document.getElementById('stopServerModal').classList.add('open');
+  };
+
+  function confirmStopServer() {
     watchdogAction = 'stopping';
     pollWatchdogStatus();
     api('watchdog/stop', { method: 'POST' }).then(function() {
@@ -6630,7 +6650,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       toast('Server stopped', 'success');
       pollWatchdogStatus();
     }).catch(function() { watchdogAction = null; pollWatchdogStatus(); });
-  };
+  }
 
   window.wdRestart = function() {
     watchdogAction = 'restarting';
