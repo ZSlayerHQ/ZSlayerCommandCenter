@@ -1010,7 +1010,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   margin-bottom: 10px;
   font-family: var(--font-mono);
   font-size: 12px;
-  display: none;
 }
 
 .server-status-row {
@@ -4498,8 +4497,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             '<span class="ss-dim">No active raid</span>';
         }
       })
-      .catch(function() {
-        // silently ignore — bar stays hidden or stale
+      .catch(function(e) {
+        console.error('fetchVitals error:', e);
       });
   }
 
@@ -4510,8 +4509,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function stopVitalsPolling() {
     if (vitalsTimer) { clearInterval(vitalsTimer); vitalsTimer = null; }
-    var el = document.getElementById('serverStatusBar');
-    if (el) el.style.display = 'none';
   }
 
   function loadProfileList() {
@@ -4535,6 +4532,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         }
         var lastUsedSid = localStorage.getItem('zslayer_session') || '';
         profiles = profiles.filter(function(p) { return !(p.nickname || '').toLowerCase().includes('headless'); });
+        profiles.sort(function(a, b) { return (b.level || 0) - (a.level || 0); });
         var html = '';
         window._profileCache = profiles;
         profiles.forEach(function(p) {
