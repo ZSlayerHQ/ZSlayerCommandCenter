@@ -28,9 +28,10 @@ public class ServerStatsService(
 
         var process = Process.GetCurrentProcess();
 
-        // Extract FIKA server version from loaded mods
-        var fikaServerVersion = mods.TryGetValue("Fika", out var fikaMod)
-            ? fikaMod.Version?.ToString() ?? "" : "";
+        // Extract FIKA server version — mod registers as name="server" author="Fika"
+        var fikaMod = mods.Values.FirstOrDefault(m =>
+            string.Equals(m.Author, "Fika", StringComparison.OrdinalIgnoreCase));
+        var fikaServerVersion = fikaMod?.Version?.ToString() ?? "";
         var (hlTelemetryVer, hlFikaVer) = telemetryService.GetHeadlessVersions();
 
         return new ServerStatusDto

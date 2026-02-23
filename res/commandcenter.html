@@ -1003,41 +1003,113 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
    SERVER VITALS WIDGET (login screen)
    ══════════════════════════════════════════════════════════ */
 .server-status-bar {
-  background: #232019;
-  border: 1px solid rgba(200,170,110,0.15);
-  border-radius: var(--radius);
-  padding: 10px 16px;
-  margin-bottom: 10px;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 260px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px 12px;
   font-family: var(--font-mono);
-  font-size: 12px;
+  z-index: 201;
+  box-shadow: var(--shadow-md), 0 0 20px rgba(0,0,0,0.4);
+  animation: loginBoxIn 0.5s ease-out 0.3s both;
 }
 
-.server-status-row {
+.server-status-bar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: linear-gradient(90deg, transparent 5%, var(--accent) 50%, transparent 95%);
+}
+
+.ss-header {
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.ss-services {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ss-service {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.ss-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ss-dot.green {
+  background: var(--success-bright);
+  box-shadow: 0 0 6px rgba(106,173,106,0.5);
+  animation: ssPulse 2.5s ease-in-out infinite;
+}
+
+.ss-dot.red {
+  background: var(--error);
+  box-shadow: 0 0 6px rgba(139,58,58,0.5);
+}
+
+@keyframes ssPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(106,173,106,0.5); }
+  50% { opacity: 0.6; box-shadow: 0 0 3px rgba(106,173,106,0.2); }
+}
+
+.ss-label { color: var(--text); }
+.ss-label.online { color: var(--success-bright); }
+.ss-label.offline { color: var(--error); }
+
+.ss-uptime {
+  color: var(--text-muted);
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+.ss-stats {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.server-status-row + .server-status-row {
-  margin-top: 4px;
+.ss-stat-players {
+  font-size: 11px;
 }
 
-.ss-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 5px;
-  flex-shrink: 0;
+.ss-stat-players .ss-count {
+  color: var(--text-bright);
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.ss-dot.green { background: #4a7c59; }
-.ss-dot.red { background: #8b3a3a; }
+.ss-stat-players .ss-count-label {
+  color: var(--text-dim);
+  margin-left: 3px;
+}
 
-.ss-running { color: #4a7c59; }
-.ss-stopped { color: #8b3a3a; }
-.ss-dim { color: #7a7060; }
-.ss-bright { color: #e8dcc8; }
-.ss-gold { color: #c8aa6e; }
+.ss-stat-raid {
+  font-size: 11px;
+  text-align: right;
+}
+
+.ss-raid-map { color: var(--accent); }
+.ss-raid-time { color: var(--text-dim); font-size: 10px; }
+.ss-raid-none { color: var(--text-muted); font-size: 10px; }
 
 /* ══════════════════════════════════════════════════════════
    MAIN CONTAINER
@@ -3099,6 +3171,29 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 <div class="login-overlay" id="loginScreen">
   <div class="login-bg"></div>
 
+  <div class="server-status-bar" id="serverStatusBar">
+    <div class="ss-header">Server Status</div>
+    <div class="ss-services">
+      <div class="ss-service" id="ssServerInfo">
+        <span class="ss-dot green"></span>
+        <span class="ss-label online">Server</span>
+      </div>
+      <div class="ss-service" id="ssHeadlessInfo">
+        <span class="ss-dot green"></span>
+        <span class="ss-label online">Headless</span>
+      </div>
+      <span class="ss-uptime" id="ssUptime"></span>
+    </div>
+    <div class="ss-stats">
+      <div class="ss-stat-players" id="ssPlayersInfo">
+        <span class="ss-count">0</span><span class="ss-count-label">online</span>
+      </div>
+      <div class="ss-stat-raid" id="ssRaidInfo">
+        <span class="ss-raid-none">No active raid</span>
+      </div>
+    </div>
+  </div>
+
   <div class="login-box">
     <div class="login-logo">
       <div class="login-logo-icon">
@@ -3114,16 +3209,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <!-- Step 1: Profile Select -->
       <div class="login-step active" id="loginStep1">
         <p>Select a profile to connect.</p>
-        <div class="server-status-bar" id="serverStatusBar">
-          <div class="server-status-row">
-            <span id="ssServerInfo"><span class="ss-dot green"></span><span class="ss-running">Server: Running</span></span>
-            <span id="ssHeadlessInfo"><span class="ss-dot green"></span><span class="ss-running">Headless: Running</span></span>
-          </div>
-          <div class="server-status-row">
-            <span id="ssPlayersInfo"><span class="ss-bright">0</span> <span class="ss-dim">players online</span></span>
-            <span id="ssRaidInfo"><span class="ss-dim">No active raid</span></span>
-          </div>
-        </div>
         <div class="profile-grid" id="profileGrid">
           <div class="profile-loading">Loading profiles...</div>
         </div>
@@ -4464,37 +4549,36 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     fetch(BASE + 'server-vitals')
       .then(function(r) { return r.json(); })
       .then(function(d) {
-        var bar = document.getElementById('serverStatusBar');
-        bar.style.display = '';
-
-        // Row 1 left: Server status + uptime
-        var uptime = d.serverUptime ? ' \u00b7 ' + d.serverUptime : '';
+        // Server service
         document.getElementById('ssServerInfo').innerHTML =
-          '<span class="ss-dot green"></span><span class="ss-running">Server: Running</span><span class="ss-dim">' + escH(uptime) + '</span>';
+          '<span class="ss-dot green"></span><span class="ss-label online">Server</span>';
 
-        // Row 1 right: Headless status
+        // Headless service
         if (d.headlessRunning) {
           document.getElementById('ssHeadlessInfo').innerHTML =
-            '<span class="ss-dot green"></span><span class="ss-running">Headless: Running</span>';
+            '<span class="ss-dot green"></span><span class="ss-label online">Headless</span>';
         } else {
           document.getElementById('ssHeadlessInfo').innerHTML =
-            '<span class="ss-dot red"></span><span class="ss-stopped">Headless: Stopped</span>';
+            '<span class="ss-dot red"></span><span class="ss-label offline">Headless</span>';
         }
 
-        // Row 2 left: Players online
-        document.getElementById('ssPlayersInfo').innerHTML =
-          '<span class="ss-bright">' + (d.playersOnline || 0) + '</span> <span class="ss-dim">players online</span>';
+        // Uptime
+        document.getElementById('ssUptime').textContent = d.serverUptime || '';
 
-        // Row 2 right: Active raid
+        // Players online
+        document.getElementById('ssPlayersInfo').innerHTML =
+          '<span class="ss-count">' + (d.playersOnline || 0) + '</span><span class="ss-count-label">online</span>';
+
+        // Active raid
         if (d.activeRaid) {
           var sec = d.activeRaid.timeElapsedSec || 0;
           var mm = String(Math.floor(sec / 60)).padStart(2, '0');
           var ss = String(sec % 60).padStart(2, '0');
           document.getElementById('ssRaidInfo').innerHTML =
-            '<span class="ss-gold">' + escH(d.activeRaid.map) + '</span> <span class="ss-bright">\u00b7 ' + mm + ':' + ss + ' elapsed</span>';
+            '<span class="ss-raid-map">' + escH(d.activeRaid.map) + '</span> <span class="ss-raid-time">' + mm + ':' + ss + '</span>';
         } else {
           document.getElementById('ssRaidInfo').innerHTML =
-            '<span class="ss-dim">No active raid</span>';
+            '<span class="ss-raid-none">No active raid</span>';
         }
       })
       .catch(function(e) {
