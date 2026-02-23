@@ -1,7 +1,3 @@
-<div align="center">
-
-<img src="res/banner.png" alt="ZSlayer Command Center" width="600" />
-
 <br />
 
 # ZSlayer Command Center
