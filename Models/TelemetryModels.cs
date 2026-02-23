@@ -206,6 +206,9 @@ public record BotCountPayload
     [JsonPropertyName("rogues")]
     public AliveDeadCount Rogues { get; set; } = new();
 
+    [JsonPropertyName("aiPmcs")]
+    public AliveDeadCount AiPmcs { get; set; } = new();
+
     [JsonPropertyName("bosses")]
     public List<BossStateEntry> Bosses { get; set; } = [];
 

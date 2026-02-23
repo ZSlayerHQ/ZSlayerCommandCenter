@@ -342,17 +342,22 @@ public class CommandCenterHttpListener(
 
     private async Task HandleServerVitals(HttpContext context)
     {
-        // Player counts (sanitized — no names or session IDs)
         var overview = playerStatsService.GetPlayerOverview();
-        var online = overview.Players.Count(p => p.Online);
-        var total = overview.Players.Count;
+        var headlessId = configService.GetConfig().Headless.ProfileId;
+        var onlinePlayers = overview.Players.Where(p => p.Online && !p.IsHeadless).ToList();
+        var online = onlinePlayers.Count;
+        var total = overview.Players.Count(p => !p.IsHeadless);
 
         // Active raid from telemetry
         var telemetry = telemetryService.GetCurrent();
         object? activeRaid = null;
+        var inRaidIds = new HashSet<string>();
+        string raidMap = "";
+
         if (telemetry.RaidActive && telemetry.RaidState != null)
         {
             var rs = telemetry.RaidState;
+            raidMap = rs.Map ?? "";
             var elapsedSec = rs.RaidTimer - rs.RaidTimeLeft;
             activeRaid = new
             {
@@ -361,7 +366,22 @@ public class CommandCenterHttpListener(
                 timeElapsedSec = Math.Max(0, elapsedSec),
                 status = rs.Status
             };
+
+            // Collect profileIds of players currently in raid
+            foreach (var p in telemetry.Players)
+            {
+                if (!string.IsNullOrEmpty(p.ProfileId))
+                    inRaidIds.Add(p.ProfileId);
+            }
         }
+
+        // Build online player list with status
+        var playerList = onlinePlayers.Select(p => new
+        {
+            nickname = p.Nickname,
+            status = inRaidIds.Contains(p.SessionId) ? "In Raid" : "In Stash",
+            map = inRaidIds.Contains(p.SessionId) ? raidMap : ""
+        }).ToList();
 
         // Server uptime
         var status = serverStatsService.GetStatus();
@@ -371,6 +391,7 @@ public class CommandCenterHttpListener(
             playersOnline = online,
             totalProfiles = total,
             activeRaid,
+            onlinePlayers = playerList,
             serverUptime = status.Uptime
         });
     }

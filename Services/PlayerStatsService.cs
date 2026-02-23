@@ -141,7 +141,7 @@ public class PlayerStatsService(
 
     private static ProfileRaidStatsDto ExtractProfileRaidStats(SPTarkov.Server.Core.Models.Eft.Common.PmcData pmc)
     {
-        int totalRaids = 0, survived = 0, deaths = 0;
+        int totalRaids = 0, survived = 0, deaths = 0, totalKills = 0;
         int pmcKills = 0, scavKills = 0, bossKills = 0, headshots = 0;
 
         var counters = pmc.Stats?.Eft?.OverallCounters?.Items;
@@ -149,21 +149,31 @@ public class PlayerStatsService(
         {
             foreach (var counter in counters)
             {
-                if (counter.Key == null || counter.Key.Count < 2) continue;
+                if (counter.Key == null || counter.Key.Count == 0) continue;
                 var k = counter.Key;
-                var val = (int)counter.Value;
+                var val = (int)(counter.Value ?? 0);
 
-                if (k.Contains("Sessions") && k.Contains("Pmc")) totalRaids = val;
-                else if (k.Contains("ExitStatus") && k.Contains("Survived")) survived = val;
-                else if (k.Contains("ExitStatus") && k.Contains("Killed")) deaths = val;
-                else if (k.Contains("Kills") && k.Contains("Pmc")) pmcKills = val;
-                else if (k.Contains("Kills") && k.Contains("Savage")) scavKills = val;
-                else if (k.Contains("Kills") && (k.Contains("Boss") || k.Contains("KilledBoss"))) bossKills = val;
-                else if (k.Contains("HeadShots")) headshots = val;
+                if (k.Count == 1)
+                {
+                    switch (k.First())
+                    {
+                        case "Kills": totalKills = val; break;
+                        case "KilledPmc": pmcKills = val; break;
+                        case "KilledSavage": scavKills = val; break;
+                        case "KilledBoss": bossKills = val; break;
+                        case "HeadShots": headshots = val; break;
+                    }
+                }
+                else
+                {
+                    if (k.Contains("Sessions") && k.Contains("Pmc")) totalRaids = val;
+                    else if (k.Contains("ExitStatus") && k.Contains("Survived")) survived = val;
+                    else if (k.Contains("ExitStatus") && k.Contains("Killed")) deaths += val;
+                    else if (k.Contains("ExitStatus") && k.Contains("MissingInAction")) deaths += val;
+                }
             }
         }
 
-        var totalKills = pmcKills + scavKills + bossKills;
         return new ProfileRaidStatsDto
         {
             TotalRaids = totalRaids,

@@ -878,6 +878,54 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   font-size: 11px;
 }
 
+.server-vitals-players {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.server-vitals-players-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.sv-player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+  font-size: 11px;
+}
+
+.sv-player-name {
+  color: var(--text-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+.sv-player-status {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.sv-player-status.stash {
+  color: #94a3b8;
+  background: rgba(148,163,184,0.12);
+}
+
+.sv-player-status.raid {
+  color: #22c55e;
+  background: rgba(34,197,94,0.12);
+}
+
 .server-vitals-uptime {
   margin-top: 10px;
   padding-top: 8px;
@@ -1296,8 +1344,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.telem-boss-tag.boss-alive { background: rgba(200,80,80,0.2); color: #c45050; }
-.telem-boss-tag.boss-dead { background: rgba(100,100,100,0.15); color: var(--text-muted); text-decoration: line-through; }
+.telem-boss-tag.boss-alive { background: rgba(74,124,89,0.3); color: #5cb870; }
+.telem-boss-tag.boss-dead { background: rgba(200,80,80,0.2); color: #c45050; text-decoration: line-through; }
 
 /* ── Telemetry: Kill Feed ── */
 .telem-kill-feed {
@@ -2960,6 +3008,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <span class="sv-muted">No active raid</span>
       </div>
     </div>
+    <div class="server-vitals-players" id="svPlayersSection" style="display:none">
+      <div class="server-vitals-players-label">Online Players</div>
+      <div id="svPlayersList"></div>
+    </div>
     <div class="server-vitals-uptime" id="svUptime"></div>
   </div>
 
@@ -3179,7 +3231,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <div class="raidinfo-section-body" id="telemBotsSection">
             <div class="telem-no-data" id="telemBotsEmpty">No bot data</div>
             <div class="telem-bots" id="telemBotsInner" style="display:none">
-              <div class="telem-bot-group"><span class="telem-bot-label">PMCs</span><span class="telem-bot-value" id="telemPmcs">--</span></div>
+              <div class="telem-bot-group"><span class="telem-bot-label">AI PMCs</span><span class="telem-bot-value" id="telemPmcs">--</span></div>
               <div class="telem-bot-group"><span class="telem-bot-label">Scavs</span><span class="telem-bot-value" id="telemScavs">--</span></div>
               <div class="telem-bot-group"><span class="telem-bot-label">Raiders</span><span class="telem-bot-value" id="telemRaiders">--</span></div>
               <div class="telem-bot-group"><span class="telem-bot-label">Rogues</span><span class="telem-bot-value" id="telemRogues">--</span></div>
@@ -4196,6 +4248,24 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           dot.className = 'server-vitals-dot amber';
           raidInfo.innerHTML = '<span class="sv-muted">No active raid</span>';
         }
+
+        // Online players list
+        var psec = document.getElementById('svPlayersSection');
+        var plist = document.getElementById('svPlayersList');
+        if (d.onlinePlayers && d.onlinePlayers.length > 0) {
+          psec.style.display = '';
+          var html = '';
+          d.onlinePlayers.forEach(function(p) {
+            var isRaid = p.status === 'In Raid';
+            var badge = isRaid
+              ? '<span class="sv-player-status raid">' + escH(p.status) + (p.map ? ' \u2014 ' + escH(p.map) : '') + '</span>'
+              : '<span class="sv-player-status stash">' + escH(p.status) + '</span>';
+            html += '<div class="sv-player-row"><span class="sv-player-name">' + escH(p.nickname) + '</span>' + badge + '</div>';
+          });
+          plist.innerHTML = html;
+        } else {
+          psec.style.display = 'none';
+        }
       })
       .catch(function() {
         // silently ignore — widget stays hidden or stale
@@ -4967,7 +5037,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function formatAliveDeadCount(ad) {
     if (!ad) return '--';
-    return '<span class="alive">' + ad.alive + '</span> / <span class="dead-count">' + ad.dead + '</span>';
+    return '<span class="alive">' + ad.alive + '</span>\u{1F7E2} <span class="dead-count">' + ad.dead + '</span>\u{1F480}';
   }
 
   // Cache kill feed data for player kill count derivation
@@ -5165,20 +5235,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         document.getElementById('telemPlayersEmpty').style.display = '';
       }
 
-      // Bots + PMC counts
-      var hasBots = bots.scavs || bots.raiders || bots.rogues || bots.totalAI;
-      var hasPmcs = rs.players && (rs.players.pmcAlive > 0 || rs.players.pmcDead > 0);
-      if (hasBots || hasPmcs) {
+      // Bots + AI PMC counts
+      var hasBots = bots.scavs || bots.raiders || bots.rogues || bots.aiPmcs || bots.totalAI;
+      if (hasBots) {
         document.getElementById('telemBotsInner').style.display = '';
         document.getElementById('telemBotsEmpty').style.display = 'none';
 
-        // PMC counts from raid state
-        if (rs.players) {
-          document.getElementById('telemPmcs').innerHTML = '<span class="alive">' + (rs.players.pmcAlive || 0) + '</span> / <span class="dead-count">' + (rs.players.pmcDead || 0) + '</span>';
-        } else {
-          document.getElementById('telemPmcs').innerHTML = '--';
-        }
-
+        document.getElementById('telemPmcs').innerHTML = formatAliveDeadCount(bots.aiPmcs);
         document.getElementById('telemScavs').innerHTML = formatAliveDeadCount(bots.scavs);
         document.getElementById('telemRaiders').innerHTML = formatAliveDeadCount(bots.raiders);
         document.getElementById('telemRogues').innerHTML = formatAliveDeadCount(bots.rogues);
@@ -5956,9 +6019,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       '    fetch(apiBase + "telemetry/current", { headers: headers }).then(function(r){ return r.json(); }).catch(function(){ return null; })',
       '  ]).then(function(res) {',
       '    var pos = res[0], cur = res[1];',
-      '    document.getElementById("popStatus").textContent = "Connected — " + (_currentMap || "no raid");',
       '    if (pos) _positions = pos;',
-      '    if (cur && cur.raidState === "InRaid" && cur.map) updateMap(cur.map);',
+      '    if (cur && cur.raidActive && cur.raidState && cur.raidState.map) updateMap(cur.raidState.map);',
+      '    document.getElementById("popStatus").textContent = "Connected — " + (_currentMap ? _mapConfig ? _mapConfig.name : _currentMap : "no raid");',
       '    drawMap();',
       '  }).catch(function(e) {',
       '    document.getElementById("popStatus").textContent = "Connection error: " + e.message;',
@@ -6482,6 +6545,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     canvas.onmouseleave = function() { tooltip.style.display = 'none'; };
   }
 
+  window.setPerfMode = setPerfMode;
   function setPerfMode(mode) {
     _perfMode = mode;
     document.getElementById('perfModeSystem').classList.toggle('active', mode === 'system');
