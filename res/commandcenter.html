@@ -4738,7 +4738,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           var mm = String(Math.floor(sec / 60)).padStart(2, '0');
           var ss = String(sec % 60).padStart(2, '0');
           document.getElementById('ssRaidInfo').innerHTML =
-            '<span class="ss-raid-map">' + escH(d.activeRaid.map) + '</span> <span class="ss-raid-time">' + mm + ':' + ss + '</span>';
+            '<span class="ss-raid-map">' + escH(mapDisplayName(d.activeRaid.map)) + '</span> <span class="ss-raid-time">' + mm + ':' + ss + '</span>';
         } else {
           document.getElementById('ssRaidInfo').innerHTML =
             '<span class="ss-raid-none">No active raid</span>';
@@ -6124,7 +6124,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         });
         if (!bossHtml) bossHtml = '<span style="color:var(--text-muted)">--</span>';
         html += '<tr onclick="toggleRaidDetail(\'' + escH(r.id) + '\', this)" data-raid-id="' + escH(r.id) + '">' +
-          '<td style="color:var(--accent)">' + escH(r.mapName || mapDisplayName(r.map)) + '</td>' +
+          '<td style="color:var(--accent)">' + escH(mapDisplayName(r.mapName || r.map)) + '</td>' +
           '<td style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim)">' + dateStr + '</td>' +
           '<td>' + formatSeconds(r.duration) + '</td>' +
           '<td>' + r.playerCount + '</td>' +
@@ -6143,14 +6143,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   window.toggleRaidDetail = function(raidId, rowEl) {
     var detailRow = rowEl.nextElementSibling;
     if (!detailRow) return;
+    var detail = document.getElementById('raidDetail-' + raidId);
     var isOpen = detailRow.style.display !== 'none';
     if (isOpen) {
       detailRow.style.display = 'none';
+      if (detail) detail.classList.remove('open');
       return;
     }
     detailRow.style.display = '';
-    var detail = document.getElementById('raidDetail-' + raidId);
-    if (detail.dataset.loaded) return;
+    if (detail) detail.classList.add('open');
+    if (!detail || detail.dataset.loaded) return;
     api('telemetry/raid-history/' + raidId).then(function(d) {
       detail.dataset.loaded = '1';
       var html = '';

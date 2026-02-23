@@ -22,6 +22,7 @@ public class PlayerManagementService(
     AccessControlService accessControlService,
     ActivityLogService activityLogService,
     MailSendService mailSendService,
+    ConfigService configService,
     ISptLogger<PlayerManagementService> logger)
 {
     private const string RoublesTpl = "5449016a4bdc2d6f028b456f";
@@ -33,6 +34,7 @@ public class PlayerManagementService(
         var profiles = saveServer.GetProfiles();
         var activeIds = profileActivityService.GetActiveProfileIdsWithinMinutes(5);
         var activeSet = new HashSet<string>(activeIds.Select(id => id.ToString()));
+        var headlessId = configService.GetConfig().Headless.ProfileId;
 
         var players = new List<PlayerRosterEntry>();
 
@@ -42,6 +44,9 @@ public class PlayerManagementService(
             if (pmc?.Info == null) continue;
 
             var sid = sessionId.ToString();
+
+            // Skip headless profile
+            if (!string.IsNullOrEmpty(headlessId) && sid == headlessId) continue;
             var nickname = pmc.Info.Nickname ?? "Unknown";
             var side = pmc.Info.Side ?? "";
 

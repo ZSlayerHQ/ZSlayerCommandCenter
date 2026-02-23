@@ -76,9 +76,24 @@ public class TelemetryService(
         return templateId;
     }
 
+    private static readonly Dictionary<string, string> MapNameOverrides = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["factory4_day"] = "Factory (Day)",
+        ["factory4_night"] = "Factory (Night)",
+        ["bigmap"] = "Customs",
+        ["laboratory"] = "The Lab",
+        ["RezervBase"] = "Reserve",
+        ["TarkovStreets"] = "Streets",
+        ["Sandbox"] = "Ground Zero",
+        ["Sandbox_high"] = "Ground Zero (High)",
+        ["city"] = "Streets"
+    };
+
     private string ResolveMapName(string locationId)
     {
         if (string.IsNullOrEmpty(locationId)) return "";
+        if (MapNameOverrides.TryGetValue(locationId, out var overrideName))
+            return overrideName;
         var locales = GetLocales();
         if (locales.TryGetValue($"{locationId} Name", out var name) && !string.IsNullOrEmpty(name))
             return name;
