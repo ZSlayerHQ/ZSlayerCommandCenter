@@ -135,6 +135,13 @@ public class CommandCenterHttpListener(
                 return;
             }
 
+            // Handle watchdog routes (proxy to watchdog exe)
+            if (path.StartsWith("watchdog/"))
+            {
+                await HandleWatchdogRoute(context, headerSessionId, path, method);
+                return;
+            }
+
             // Handle headless routes with prefix matching
             if (path.StartsWith("headless/"))
             {
@@ -1095,6 +1102,66 @@ public class CommandCenterHttpListener(
         }
 
         await WriteJson(context, 405, new { error = "Method not allowed" });
+    }
+
+    // ── Watchdog Proxy Handlers ──
+
+    private static readonly HttpClient WatchdogClient = new() { Timeout = TimeSpan.FromSeconds(5) };
+
+    private async Task HandleWatchdogRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        var watchdogPort = configService.GetConfig().Watchdog.Port;
+        var endpoint = path["watchdog/".Length..];
+
+        // Only allow specific endpoints
+        if (endpoint is not ("status" or "start" or "stop" or "restart"))
+        {
+            await WriteJson(context, 404, new { error = "Not found" });
+            return;
+        }
+
+        // Status = GET, others = POST
+        if (endpoint == "status" && method != "GET")
+        {
+            await WriteJson(context, 405, new { error = "Method not allowed" });
+            return;
+        }
+        if (endpoint != "status" && method != "POST")
+        {
+            await WriteJson(context, 405, new { error = "Method not allowed" });
+            return;
+        }
+
+        try
+        {
+            var url = $"http://127.0.0.1:{watchdogPort}/{endpoint}";
+            HttpResponseMessage response;
+            if (method == "POST")
+            {
+                if (endpoint != "status")
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Watchdog: {endpoint}");
+                response = await WatchdogClient.PostAsync(url, null);
+            }
+            else
+            {
+                response = await WatchdogClient.GetAsync(url);
+            }
+
+            var body = await response.Content.ReadAsStringAsync();
+            context.Response.StatusCode = (int)response.StatusCode;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(body);
+        }
+        catch (HttpRequestException)
+        {
+            await WriteJson(context, 503, new { available = false, error = "Watchdog not running" });
+        }
+        catch (TaskCanceledException)
+        {
+            await WriteJson(context, 503, new { available = false, error = "Watchdog request timed out" });
+        }
     }
 
     // ── Headless Process Handlers ──

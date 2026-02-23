@@ -21,6 +21,9 @@ public record CommandCenterConfig
 
     [JsonPropertyName("headless")]
     public HeadlessConfig Headless { get; set; } = new();
+
+    [JsonPropertyName("watchdog")]
+    public WatchdogConfig Watchdog { get; set; } = new();
 }
 
 public record HeadlessConfig
@@ -39,6 +42,12 @@ public record HeadlessConfig
 
     [JsonPropertyName("exePath")]
     public string ExePath { get; set; } = "";
+}
+
+public record WatchdogConfig
+{
+    [JsonPropertyName("port")]
+    public int Port { get; set; } = 6971;
 }
 
 public record AccessControlConfig
