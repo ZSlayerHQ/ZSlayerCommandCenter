@@ -3537,142 +3537,186 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <div class="console-jump" id="consoleJump"><button onclick="scrollConsoleBottom()">Jump to bottom</button></div>
     </div>
 
-    <!-- Headless Process Manager -->
-    <div class="card" id="headlessManagerCard" style="margin-top:16px;display:none">
-      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-        <span style="display:flex;align-items:center;gap:10px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--accent-dim)"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          <span style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-dim)">Headless Client</span>
-        </span>
-        <span id="headlessStatusBadge" class="hl-status-pill"></span>
-      </div>
-      <div id="headlessManagerBody" style="padding:16px">
-        <div id="headlessUnavailable" style="display:none;text-align:center;color:var(--text-muted);padding:12px">
-          EscapeFromTarkov.exe not found — headless management unavailable
+    <!-- Status Cards — top row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+      <!-- SPT Server (top-left) -->
+      <div class="dash-widget" id="watchdogCard" style="display:none">
+        <div class="dash-widget-header">
+          <span class="dash-widget-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            SPT Server
+          </span>
+          <span id="watchdogStatusBadge" class="hl-status-pill"></span>
         </div>
-        <div id="headlessControls" style="display:none">
-          <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap">
-            <div id="headlessUptimeInfo" style="font-size:12px;font-family:var(--font-mono);color:var(--text-dim)"></div>
-            <div style="display:flex;gap:6px;margin-left:auto">
-              <button class="btn btn-sm" id="btnHeadlessStart" onclick="startHeadless()">Start</button>
-              <button class="btn btn-sm" id="btnHeadlessStop" onclick="stopHeadless()" disabled>Stop</button>
-              <button class="btn btn-sm" id="btnHeadlessRestart" onclick="restartHeadless()" disabled>Restart</button>
+        <div class="dash-widget-body">
+          <div class="dash-stat-row">
+            <div class="dash-stat"><div class="dash-stat-label">Uptime</div><div class="dash-stat-value sm" id="wdUptimeVal">--</div></div>
+            <div class="dash-stat"><div class="dash-stat-label">PID</div><div class="dash-stat-value sm" id="wdPidVal">--</div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Auto-Restart</div><div class="dash-stat-value sm" id="wdAutoRestart">--</div></div>
+            <div class="dash-stat"><div class="dash-stat-label">Delay</div><div class="dash-stat-value sm" id="wdRestartDelay">--</div></div>
+          </div>
+          <div id="wdSessionTimeoutSection" style="display:none;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+              <span style="color:var(--text-dim);white-space:nowrap">Session Timeout:</span>
+              <input type="range" id="fikaSessionTimeout" min="1" max="60" value="5" oninput="document.getElementById('fikaSessionTimeoutVal').textContent=this.value+' min'" onchange="saveFikaConfig()" style="flex:1;accent-color:var(--accent)">
+              <span id="fikaSessionTimeoutVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:45px">5 min</span>
             </div>
           </div>
-          <div id="headlessCrashInfo" style="display:none;font-size:11px;color:var(--error-bright);margin-bottom:10px;font-family:var(--font-mono)"></div>
-          <div style="border-top:1px solid var(--border-subtle);padding-top:12px;margin-top:4px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">Settings</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                <input type="checkbox" id="hlAutoStart" onchange="saveHeadlessConfig()"> Auto-start with server
-              </label>
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                <input type="checkbox" id="hlAutoRestart" onchange="saveHeadlessConfig()"> Auto-restart on crash
-              </label>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="color:var(--text-dim);white-space:nowrap">Auto-start delay:</span>
-                <input type="range" id="hlDelay" min="1" max="300" value="30" oninput="document.getElementById('hlDelayVal').textContent=this.value+'s'" onchange="saveHeadlessConfig()" style="flex:1;accent-color:var(--accent)">
-                <span id="hlDelayVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:35px">30s</span>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:4px">
-                <div id="hlProfileDisplay" style="display:none;font-size:12px">
-                  <span id="hlProfileName" style="color:var(--text-bright);font-weight:600"></span>
-                  <span id="hlProfileIdSmall" style="color:var(--text-muted);font-size:10px;font-family:var(--font-mono);margin-left:6px"></span>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px">
-                  <span style="color:var(--text-dim);white-space:nowrap">Profile ID:</span>
-                  <input type="text" id="hlProfileId" placeholder="Enter profile ID" style="flex:1;padding:3px 8px;font-size:11px;font-family:var(--font-mono);background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:var(--radius);color:var(--text)">
-                  <button class="btn btn-sm" onclick="saveHeadlessConfig()" style="padding:3px 10px">Save</button>
-                </div>
-              </div>
-            </div>
-            <div id="hlProfileWarning" style="display:none;font-size:11px;color:var(--warning);margin-top:8px">Profile ID required — enter the session ID of the headless profile to enable start.</div>
+          <div class="dash-stat-row">
+            <div class="dash-stat"><div class="dash-stat-label">Crashes Today</div><div class="dash-stat-value sm" id="wdCrashCount" style="color:var(--text-dim)">0</div></div>
           </div>
-          <!-- FIKA Headless subsection -->
-          <div id="fikaHeadlessSection" style="display:none;border-top:1px solid var(--border-subtle);padding-top:12px;margin-top:12px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">FIKA Headless</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                <label class="cc-toggle"><input type="checkbox" id="fikaHlSyncLevel"><span class="cc-toggle-slider"></span></label>
-                <span style="color:var(--text-dim)">Sync Level to Lobby Average</span>
-              </label>
-              <div style="display:flex;align-items:center;gap:8px">
+          <div id="watchdogCrashInfo" style="display:none;font-size:11px;color:var(--error-bright);margin-top:4px;font-family:var(--font-mono)"></div>
+          <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
+            <button class="btn btn-sm" id="btnWdStart" onclick="wdStart()">Start</button>
+            <button class="btn btn-sm" id="btnWdStop" onclick="wdStop()" disabled>Stop</button>
+            <button class="btn btn-sm" id="btnWdRestart" onclick="wdRestart()" disabled>Restart</button>
+          </div>
+        </div>
+      </div>
+      <!-- Headless Client (top-right) -->
+      <div class="dash-widget" id="headlessManagerCard" style="display:none">
+        <div class="dash-widget-header">
+          <span class="dash-widget-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Headless Client
+          </span>
+          <span id="headlessStatusBadge" class="hl-status-pill"></span>
+        </div>
+        <div class="dash-widget-body">
+          <div id="headlessUnavailable" style="display:none;text-align:center;color:var(--text-muted);padding:16px">
+            EscapeFromTarkov.exe not found — headless management unavailable
+          </div>
+          <div id="headlessControls" style="display:none">
+            <div class="dash-stat-row">
+              <div class="dash-stat"><div class="dash-stat-label">Uptime</div><div class="dash-stat-value sm" id="hlUptimeVal">--</div></div>
+              <div class="dash-stat"><div class="dash-stat-label">PID</div><div class="dash-stat-value sm" id="hlPidVal">--</div></div>
+              <div class="dash-stat"><div class="dash-stat-label">Auto-Restart</div><div class="dash-stat-value sm" id="hlAutoRestartVal">--</div></div>
+            </div>
+            <div class="dash-stat-row">
+              <div class="dash-stat"><div class="dash-stat-label">Auto-Start</div><div class="dash-stat-value sm" id="hlAutoStartVal">--</div></div>
+              <div class="dash-stat"><div class="dash-stat-label">Start Delay</div><div class="dash-stat-value sm" id="hlStartDelayVal">--</div></div>
+              <div class="dash-stat"><div class="dash-stat-label">Profile</div><div class="dash-stat-value sm" id="hlProfileVal">--</div></div>
+            </div>
+            <div id="hlRestartAfterRaidsSection" style="display:none;margin-bottom:12px">
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px">
                 <span style="color:var(--text-dim);white-space:nowrap">Restart After Raids:</span>
-                <input type="range" id="fikaHlRestartRaids" min="0" max="50" value="0" oninput="document.getElementById('fikaHlRestartRaidsVal').textContent=this.value==0?'Off':this.value" style="flex:1;accent-color:var(--accent)">
+                <input type="range" id="fikaHlRestartRaids" min="0" max="50" value="0" oninput="document.getElementById('fikaHlRestartRaidsVal').textContent=this.value==0?'Off':this.value" onchange="saveFikaConfig()" style="flex:1;accent-color:var(--accent)">
                 <span id="fikaHlRestartRaidsVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:28px">Off</span>
               </div>
             </div>
-            <div style="display:flex;justify-content:flex-end;margin-top:10px">
-              <button class="btn btn-sm" onclick="saveFikaConfig()" style="padding:4px 14px">Save FIKA Headless</button>
+            <div class="dash-stat-row">
+              <div class="dash-stat"><div class="dash-stat-label">Crashes Today</div><div class="dash-stat-value sm" id="hlCrashCount" style="color:var(--text-dim)">0</div></div>
+            </div>
+            <div id="headlessCrashInfo" style="display:none;font-size:11px;color:var(--error-bright);margin-top:4px;font-family:var(--font-mono)"></div>
+            <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
+              <button class="btn btn-sm" id="btnHeadlessStart" onclick="startHeadless()">Start</button>
+              <button class="btn btn-sm" id="btnHeadlessStop" onclick="stopHeadless()" disabled>Stop</button>
+              <button class="btn btn-sm" id="btnHeadlessRestart" onclick="restartHeadless()" disabled>Restart</button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- FIKA Settings Card -->
-    <div class="card" id="fikaSettingsCard" style="margin-top:16px;display:none">
-      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-        <span style="display:flex;align-items:center;gap:10px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--accent-dim)"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          <span style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-dim)">FIKA Settings</span>
-        </span>
-      </div>
-      <div style="padding:16px">
-        <!-- Gameplay -->
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">Gameplay</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <label class="cc-toggle"><input type="checkbox" id="fikaFriendlyFire"><span class="cc-toggle-slider"></span></label>
-            <span style="color:var(--text-dim)">Friendly Fire</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <label class="cc-toggle"><input type="checkbox" id="fikaInertia"><span class="cc-toggle-slider"></span></label>
-            <span style="color:var(--text-dim)">Inertia</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <label class="cc-toggle"><input type="checkbox" id="fikaSharedQuests"><span class="cc-toggle-slider"></span></label>
-            <span style="color:var(--text-dim)">Shared Quests</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <label class="cc-toggle"><input type="checkbox" id="fikaDynVExfil"><span class="cc-toggle-slider"></span></label>
-            <span style="color:var(--text-dim)">Dynamic V-Exfils</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <label class="cc-toggle"><input type="checkbox" id="fikaTransits"><span class="cc-toggle-slider"></span></label>
-            <span style="color:var(--text-dim)">Map Transits</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <label class="cc-toggle"><input type="checkbox" id="fikaAnyoneStart"><span class="cc-toggle-slider"></span></label>
-            <span style="color:var(--text-dim)">Anyone Can Start Raid</span>
-          </label>
+    <!-- Settings Cards — bottom row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+      <!-- Headless Settings (bottom-left) -->
+      <div class="dash-widget" id="headlessSettingsCard" style="display:none">
+        <div class="dash-widget-header">
+          <span class="dash-widget-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            Headless Settings
+          </span>
         </div>
-        <!-- Server -->
-        <div style="border-top:1px solid var(--border-subtle);margin-top:14px;padding-top:12px">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">Server</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
+        <div class="dash-widget-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px;margin-bottom:12px">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <label class="cc-toggle"><input type="checkbox" id="fikaAllowSending"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">Allow Item Sending</span>
+              <label class="cc-toggle"><input type="checkbox" id="hlAutoStart" onchange="saveHeadlessConfig()"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">Auto-start with server</span>
             </label>
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <label class="cc-toggle"><input type="checkbox" id="fikaLoseFIR"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">Sent Items Lose FIR</span>
+              <label class="cc-toggle"><input type="checkbox" id="hlAutoRestart" onchange="saveHeadlessConfig()"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">Auto-restart on crash</span>
             </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;grid-column:span 2">
-              <label class="cc-toggle"><input type="checkbox" id="fikaAllProfiles"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">All Profiles in Launcher</span>
-            </label>
-            <div style="display:flex;align-items:center;gap:8px;grid-column:span 2">
-              <span style="color:var(--text-dim);white-space:nowrap">Session Timeout:</span>
-              <input type="range" id="fikaSessionTimeout" min="1" max="60" value="5" oninput="document.getElementById('fikaSessionTimeoutVal').textContent=this.value+' min'" style="flex:1;accent-color:var(--accent)">
-              <span id="fikaSessionTimeoutVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:45px">5 min</span>
-            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:12px">
+            <span style="color:var(--text-dim);white-space:nowrap">Auto-start delay:</span>
+            <input type="range" id="hlDelay" min="1" max="300" value="30" oninput="document.getElementById('hlDelayVal').textContent=this.value+'s'" onchange="saveHeadlessConfig()" style="flex:1;accent-color:var(--accent)">
+            <span id="hlDelayVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:35px">30s</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px">
+            <span style="color:var(--text-dim);white-space:nowrap">Profile ID:</span>
+            <input type="text" id="hlProfileId" placeholder="Enter profile ID" style="flex:1;padding:3px 8px;font-size:11px;font-family:var(--font-mono);background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:var(--radius);color:var(--text)">
+            <button class="btn btn-sm" onclick="saveHeadlessConfig()" style="padding:3px 10px">Save</button>
+          </div>
+          <div id="hlProfileWarning" style="display:none;font-size:11px;color:var(--warning);margin-bottom:8px">Profile ID required — enter the session ID of the headless profile to enable start.</div>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px">
+            <button class="btn btn-sm" onclick="saveHeadlessConfig()" style="padding:5px 14px;font-size:12px">Save Headless Settings</button>
           </div>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;border-top:1px solid var(--border-subtle);padding-top:12px">
-          <span style="font-size:11px;color:var(--warning)">Server restart required for changes to take effect</span>
-          <button class="btn btn-sm" onclick="saveFikaConfig()" style="padding:4px 14px">Save FIKA Settings</button>
+      </div>
+
+      <!-- FIKA Settings (bottom-right) -->
+      <div class="dash-widget" id="fikaSettingsCard" style="display:none">
+        <div class="dash-widget-header">
+          <span class="dash-widget-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            FIKA Settings
+          </span>
+        </div>
+        <div class="dash-widget-body">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600;border-left:2px solid var(--accent-dim);padding-left:8px">Gameplay</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <label class="cc-toggle"><input type="checkbox" id="fikaFriendlyFire"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">Friendly Fire</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <label class="cc-toggle"><input type="checkbox" id="fikaInertia"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">Inertia</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <label class="cc-toggle"><input type="checkbox" id="fikaSharedQuests"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">Shared Quests</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <label class="cc-toggle"><input type="checkbox" id="fikaDynVExfil"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">Dynamic V-Exfils</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <label class="cc-toggle"><input type="checkbox" id="fikaTransits"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">Map Transits</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <label class="cc-toggle"><input type="checkbox" id="fikaAnyoneStart"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">Anyone Can Start Raid</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <label class="cc-toggle"><input type="checkbox" id="fikaHlSyncLevel"><span class="cc-toggle-slider"></span></label>
+              <span style="color:var(--text-dim)">Sync Level to Lobby Average</span>
+            </label>
+          </div>
+          <div style="border-top:1px solid var(--border-subtle);margin-top:14px;padding-top:12px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600;border-left:2px solid var(--accent-dim);padding-left:8px">Server</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="fikaAllowSending"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Allow Item Sending</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="fikaLoseFIR"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Sent Items Lose FIR</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;grid-column:span 2">
+                <label class="cc-toggle"><input type="checkbox" id="fikaAllProfiles"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">All Profiles in Launcher</span>
+              </label>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;border-top:1px solid var(--border-subtle);padding-top:12px">
+            <span style="font-size:11px;color:var(--warning)">Server restart required for changes to take effect</span>
+            <button class="btn btn-sm" onclick="saveFikaConfig()" style="padding:5px 14px;font-size:12px">Save FIKA Settings</button>
+          </div>
         </div>
       </div>
     </div>
@@ -4281,7 +4325,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var h = { 'X-Session-Id': sessionId, 'X-Password': ccPassword };
     if (opts.body) h['Content-Type'] = 'application/json';
     return fetch(BASE + endpoint, Object.assign({}, opts, { headers: Object.assign(h, opts.headers || {}) }))
-      .then(function(r) { return r.json().then(function(d) { if (!r.ok) throw new Error(d.error || 'Request failed'); return d; }); });
+      .then(function(r) { return r.json().then(function(d) {
+        if (!r.ok) throw new Error(d.error || 'Request failed');
+        return d;
+      }); });
   }
 
   // ═══════════════════════════════════════════════════════
@@ -4931,6 +4978,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     pollConsole();
     pollHeadless();
     pollHeadlessStatus();
+    detectWatchdog();
     loadFikaConfig();
     // Live clock handles time display
   };
@@ -6161,15 +6209,124 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }, 1000);
   };
 
+  // ═══════════════════════════════════════════════════════
+  // WATCHDOG — SPT Server Control (auto-detected via CC mod proxy)
+  // ═══════════════════════════════════════════════════════
+  var watchdogDetected = false;
+  var watchdogAction = null;
+  var watchdogPollTimer = null;
+
+  function detectWatchdog() {
+    api('watchdog/status').then(function(d) {
+      if (d.available === false) return; // watchdog not running
+      watchdogDetected = true;
+      document.getElementById('watchdogCard').style.display = 'block';
+      updateWatchdogStatus(d);
+      watchdogPollTimer = setInterval(pollWatchdogStatus, 3000);
+    }).catch(function() {});
+  }
+
+  function pollWatchdogStatus() {
+    api('watchdog/status').then(function(d) {
+      updateWatchdogStatus(d);
+    }).catch(function() {});
+  }
+
+  function updateWatchdogStatus(d) {
+    var badge = document.getElementById('watchdogStatusBadge');
+    badge.className = 'hl-status-pill';
+
+    if (watchdogAction) {
+      badge.classList.add('pill-transition');
+      badge.innerHTML = '<span class="hl-spinner"></span> ' + watchdogAction.charAt(0).toUpperCase() + watchdogAction.slice(1) + '\u2026';
+    } else if (d.running) {
+      badge.classList.add('pill-running');
+      badge.textContent = '\u25CF Running';
+    } else {
+      badge.classList.add('pill-stopped');
+      badge.textContent = '\u25CF Stopped';
+    }
+
+    // Stats grid
+    document.getElementById('wdUptimeVal').textContent = d.uptime || '--';
+    document.getElementById('wdPidVal').textContent = d.pid || '--';
+    document.getElementById('wdAutoRestart').textContent = d.autoRestartOnCrash ? 'Yes' : 'No';
+    document.getElementById('wdRestartDelay').textContent = d.restartDelaySec + 's';
+
+    // Crash count with color coding
+    var crashCount = d.restartCount || 0;
+    var ccEl = document.getElementById('wdCrashCount');
+    ccEl.textContent = crashCount;
+    ccEl.style.color = crashCount >= 3 ? '#8b3a3a' : crashCount >= 1 ? '#c87a3e' : 'var(--text-dim)';
+
+    // Button states
+    var btnStart = document.getElementById('btnWdStart');
+    var btnStop = document.getElementById('btnWdStop');
+    var btnRestart = document.getElementById('btnWdRestart');
+    if (watchdogAction) {
+      btnStart.disabled = true; btnStart.classList.add('btn-disabled');
+      btnStop.disabled = true; btnStop.classList.add('btn-disabled');
+      btnRestart.disabled = true; btnRestart.classList.add('btn-disabled');
+    } else if (d.running) {
+      btnStart.disabled = true; btnStart.classList.add('btn-disabled');
+      btnStop.disabled = false; btnStop.classList.remove('btn-disabled');
+      btnRestart.disabled = false; btnRestart.classList.remove('btn-disabled');
+    } else {
+      btnStart.disabled = false; btnStart.classList.remove('btn-disabled');
+      btnStop.disabled = true; btnStop.classList.add('btn-disabled');
+      btnRestart.disabled = true; btnRestart.classList.add('btn-disabled');
+    }
+
+    // Crash info
+    var crash = document.getElementById('watchdogCrashInfo');
+    if (d.lastCrashReason && !d.running) {
+      crash.style.display = 'block';
+      crash.textContent = d.lastCrashReason;
+    } else {
+      crash.style.display = 'none';
+    }
+  }
+
+  window.wdStart = function() {
+    watchdogAction = 'starting';
+    pollWatchdogStatus();
+    api('watchdog/start', { method: 'POST' }).then(function(d) {
+      watchdogAction = null;
+      if (d.running) toast('Server started (PID ' + d.pid + ')', 'success');
+      else toast(d.lastCrashReason || 'Failed to start', 'error');
+      pollWatchdogStatus();
+    }).catch(function() { watchdogAction = null; toast('Failed to start server', 'error'); pollWatchdogStatus(); });
+  };
+
+  window.wdStop = function() {
+    if (!confirm('Stop the SPT server? The dashboard will become unavailable.')) return;
+    watchdogAction = 'stopping';
+    pollWatchdogStatus();
+    api('watchdog/stop', { method: 'POST' }).then(function() {
+      watchdogAction = null;
+      toast('Server stopped', 'success');
+      pollWatchdogStatus();
+    }).catch(function() { watchdogAction = null; pollWatchdogStatus(); });
+  };
+
+  window.wdRestart = function() {
+    watchdogAction = 'restarting';
+    pollWatchdogStatus();
+    api('watchdog/restart', { method: 'POST' }).then(function() {
+      watchdogAction = null;
+      toast('Server restarting...', 'success');
+    }).catch(function() { watchdogAction = null; });
+  };
+
   // Headless Process Manager
   var headlessAction = null; // null | 'starting' | 'stopping' | 'restarting'
 
-  function setHeadlessBadge(state, pid) {
+  function setHeadlessBadge(state) {
     var badge = document.getElementById('headlessStatusBadge');
     badge.className = 'hl-status-pill';
     if (state === 'running') {
       badge.classList.add('pill-running');
-      badge.innerHTML = '● Running' + (pid ? ' <span style="color:rgba(255,255,255,0.5);font-size:10px;margin-left:4px">PID ' + pid + '</span>' : '');
+      badge.textContent = '● Running';
     } else if (state === 'stopped') {
       badge.classList.add('pill-stopped');
       badge.textContent = '● Stopped';
@@ -6211,40 +6368,45 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     api('headless/status').then(function(d) {
       var card = document.getElementById('headlessManagerCard');
       card.style.display = 'block';
+      var settingsCard = document.getElementById('headlessSettingsCard');
       var unavail = document.getElementById('headlessUnavailable');
       var controls = document.getElementById('headlessControls');
       if (!d.available) {
         unavail.style.display = 'block';
         controls.style.display = 'none';
+        if (settingsCard) settingsCard.style.display = 'none';
         setHeadlessBadge('unavailable');
         return;
       }
       unavail.style.display = 'none';
       controls.style.display = 'block';
+      if (settingsCard) settingsCard.style.display = 'block';
 
-      // Badge — show transition state if action in progress, otherwise actual state
+      // Badge
       if (headlessAction) {
         setHeadlessBadge(headlessAction);
       } else {
-        setHeadlessBadge(d.running ? 'running' : 'stopped', d.pid);
+        setHeadlessBadge(d.running ? 'running' : 'stopped');
       }
 
-      // Profile name display
-      var profDisplay = document.getElementById('hlProfileDisplay');
-      var profName = document.getElementById('hlProfileName');
-      var profIdSmall = document.getElementById('hlProfileIdSmall');
+      // Stats grid
+      document.getElementById('hlUptimeVal').textContent = d.uptime || '--';
+      document.getElementById('hlPidVal').textContent = d.pid || '--';
+      document.getElementById('hlAutoRestartVal').textContent = d.autoRestart ? 'Yes' : 'No';
+      document.getElementById('hlAutoStartVal').textContent = d.autoStart ? 'Yes' : 'No';
+      document.getElementById('hlStartDelayVal').textContent = d.autoStartDelaySec + 's';
+      var profEl = document.getElementById('hlProfileVal');
       if (d.profileName) {
-        profDisplay.style.display = 'block';
-        profName.textContent = d.profileName;
-        profIdSmall.textContent = d.profileId;
+        profEl.innerHTML = '\uD83E\uDD16 ' + d.profileName;
       } else {
-        profDisplay.style.display = 'none';
+        profEl.innerHTML = '<span style="color:var(--text-muted)">Not set</span>';
       }
 
-      var info = '';
-      if (d.running && d.uptime) info += 'Uptime: ' + d.uptime;
-      if (d.restartCount > 0) info += (info ? '  |  ' : '') + 'Restarts: ' + d.restartCount;
-      document.getElementById('headlessUptimeInfo').textContent = info;
+      // Crash count with color coding
+      var crashCount = d.restartCount || 0;
+      var ccEl = document.getElementById('hlCrashCount');
+      ccEl.textContent = crashCount;
+      ccEl.style.color = crashCount >= 3 ? '#8b3a3a' : crashCount >= 1 ? '#c87a3e' : 'var(--text-dim)';
 
       // Button states
       if (headlessAction) {
@@ -6260,6 +6422,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       } else {
         crash.style.display = 'none';
       }
+
+      // Settings card fields
       document.getElementById('hlAutoStart').checked = d.autoStart;
       document.getElementById('hlAutoRestart').checked = d.autoRestart;
       document.getElementById('hlDelay').value = d.autoStartDelaySec;
@@ -6316,20 +6480,27 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }).catch(function() { showToast('Failed to save config', 'error'); });
   };
 
+  window.saveHeadlessAll = function() {
+    saveHeadlessConfig();
+  };
+
   // FIKA Config
   window.loadFikaConfig = function() {
     api('fika/config').then(function(d) {
-      var hlSection = document.getElementById('fikaHeadlessSection');
       var fikaCard = document.getElementById('fikaSettingsCard');
+      var wdTimeoutSection = document.getElementById('wdSessionTimeoutSection');
+      var hlRaidsSection = document.getElementById('hlRestartAfterRaidsSection');
       if (!d.available) {
-        if (hlSection) hlSection.style.display = 'none';
         if (fikaCard) fikaCard.style.display = 'none';
+        if (wdTimeoutSection) wdTimeoutSection.style.display = 'none';
+        if (hlRaidsSection) hlRaidsSection.style.display = 'none';
         return;
       }
-      // Show sections
-      if (hlSection) hlSection.style.display = 'block';
+      // Show FIKA-dependent sections
       if (fikaCard) fikaCard.style.display = 'block';
-      // Headless card fields
+      if (wdTimeoutSection) wdTimeoutSection.style.display = 'block';
+      if (hlRaidsSection) hlRaidsSection.style.display = 'block';
+      // Relocated fields
       document.getElementById('fikaHlSyncLevel').checked = d.setLevelToAverageOfLobby;
       document.getElementById('fikaHlRestartRaids').value = d.restartAfterAmountOfRaids;
       document.getElementById('fikaHlRestartRaidsVal').textContent = d.restartAfterAmountOfRaids == 0 ? 'Off' : d.restartAfterAmountOfRaids;
