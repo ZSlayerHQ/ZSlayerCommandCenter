@@ -24,6 +24,9 @@ public record CommandCenterConfig
 
     [JsonPropertyName("watchdog")]
     public WatchdogConfig Watchdog { get; set; } = new();
+
+    [JsonPropertyName("profileAvatars")]
+    public Dictionary<string, string> ProfileAvatars { get; set; } = new();
 }
 
 public record HeadlessConfig

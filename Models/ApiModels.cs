@@ -129,6 +129,9 @@ public record ProfileListResponse
 
     [JsonPropertyName("hasPassword")]
     public bool HasPassword { get; set; }
+
+    [JsonPropertyName("modVersion")]
+    public string ModVersion { get; set; } = "";
 }
 
 public record ProfileEntry
@@ -144,6 +147,27 @@ public record ProfileEntry
 
     [JsonPropertyName("level")]
     public int Level { get; set; }
+
+    [JsonPropertyName("avatarIcon")]
+    public string? AvatarIcon { get; set; }
+
+    [JsonPropertyName("totalRaids")]
+    public int TotalRaids { get; set; }
+
+    [JsonPropertyName("survivalRate")]
+    public int SurvivalRate { get; set; }
+
+    [JsonPropertyName("isOnline")]
+    public bool IsOnline { get; set; }
+}
+
+public record ProfileIconSetRequest
+{
+    [JsonPropertyName("sessionId")]
+    public string SessionId { get; set; } = "";
+
+    [JsonPropertyName("icon")]
+    public string Icon { get; set; } = "";
 }
 
 public record PresetGiveResponse

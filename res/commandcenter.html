@@ -680,20 +680,143 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 /* Profile Avatars */
 .profile-avatar {
-  width: 38px;
-  height: 38px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 24px;
   font-family: var(--font-display);
   flex-shrink: 0;
 }
 .profile-avatar.usec { background: rgba(59,130,246,0.2); color: #60a5fa; }
 .profile-avatar.bear { background: rgba(239,68,68,0.2); color: #f87171; }
 .profile-avatar.savage { background: rgba(168,162,158,0.2); color: #a8a29e; }
+
+.profile-avatar-img {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.header-profile-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--accent-dim);
+  display: none;
+}
+
+/* Icon Picker Modal */
+.icon-picker-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+.icon-picker-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  max-width: 560px; width: 90%;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(200,170,110,0.15), 0 8px 32px rgba(0,0,0,0.5);
+}
+.icon-picker-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.icon-picker-grid {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.icon-picker-item {
+  width: 96px; height: 96px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  overflow: hidden;
+  padding: 0;
+  background: rgba(255,255,255,0.03);
+}
+.icon-picker-item img {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+.icon-picker-item:hover {
+  border-color: var(--accent);
+  transform: scale(1.08);
+}
+.icon-picker-item.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(200,170,110,0.4);
+}
+.icon-picker-actions {
+  display: flex; gap: 12px; justify-content: center; align-items: center;
+}
+.icon-picker-confirm {
+  padding: 8px 28px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.icon-picker-confirm:hover { opacity: 0.85; }
+.icon-picker-confirm:disabled { opacity: 0.4; cursor: default; }
+.icon-picker-skip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  border: none; background: none;
+  transition: color 0.15s;
+}
+.icon-picker-skip:hover { color: var(--text-secondary); }
+
+/* Edit icon overlay on profile card */
+.profile-card-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-edit-icon {
+  position: absolute; bottom: -2px; right: -2px;
+  width: 16px; height: 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+  z-index: 1;
+}
+.profile-edit-icon svg { width: 9px; height: 9px; fill: var(--text-dim); }
+.profile-card:hover .profile-edit-icon { opacity: 1; }
 
 /* Last-Used Highlight */
 .profile-card.last-used {
@@ -737,9 +860,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .profile-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  background: var(--bg-surface);
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
@@ -752,11 +875,28 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   background: rgba(200,170,110,0.04);
 }
 
+.profile-card-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .profile-card .profile-card-name {
   font-size: 15px;
   font-weight: 600;
   color: var(--text-bright);
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .profile-card .profile-card-level {
@@ -765,6 +905,42 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   color: var(--text-dim);
   white-space: nowrap;
 }
+
+.profile-card-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.profile-card-stats {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #7a7060;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.profile-card-online {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.profile-card-online .status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.profile-card-online.online { color: #4a7c59; }
+.profile-card-online.online .status-dot { background: #4a7c59; }
+.profile-card-online.offline { color: #7a7060; }
+.profile-card-online.offline .status-dot { background: #7a7060; }
 
 .faction-badge {
   font-family: var(--font-mono);
@@ -801,7 +977,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   gap: 10px;
   margin-bottom: 20px;
   padding: 10px 14px;
-  background: var(--bg-surface);
+  background: var(--bg-panel);
   border: 1px solid var(--accent-dim);
   border-radius: var(--radius);
   font-size: 14px;
@@ -826,182 +1002,43 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 /* ══════════════════════════════════════════════════════════
    SERVER VITALS WIDGET (login screen)
    ══════════════════════════════════════════════════════════ */
-.server-vitals {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  width: 220px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 16px 18px;
-  z-index: 201;
-  box-shadow: var(--shadow-lg);
-  animation: loginBoxIn 0.5s ease-out 0.2s both;
+.server-status-bar {
+  background: #232019;
+  border: 1px solid rgba(200,170,110,0.15);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  margin-bottom: 10px;
   font-family: var(--font-mono);
+  font-size: 12px;
+  display: none;
 }
 
-.server-vitals::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  background: linear-gradient(90deg, transparent 5%, var(--accent) 50%, transparent 95%);
-}
-
-.server-vitals-header {
+.server-status-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  align-items: center;
 }
 
-.server-vitals-title {
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  font-weight: 600;
+.server-status-row + .server-status-row {
+  margin-top: 4px;
 }
 
-.server-vitals-dot {
-  width: 8px;
-  height: 8px;
+.ss-dot {
+  width: 6px; height: 6px;
   border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 6px rgba(34,197,94,0.5);
-  animation: vitalsPulse 2s ease-in-out infinite;
+  display: inline-block;
+  margin-right: 5px;
+  flex-shrink: 0;
 }
 
-.server-vitals-dot.amber {
-  background: #f59e0b;
-  box-shadow: 0 0 6px rgba(245,158,11,0.5);
-}
+.ss-dot.green { background: #4a7c59; }
+.ss-dot.red { background: #8b3a3a; }
 
-@keyframes vitalsPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.server-vitals-divider {
-  height: 1px;
-  background: var(--border);
-  margin-bottom: 10px;
-}
-
-.server-vitals-stats {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.server-vitals-stat {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: var(--text-bright);
-}
-
-.server-vitals-stat .sv-diamond {
-  color: var(--accent);
-  font-size: 8px;
-}
-
-.server-vitals-stat .sv-label {
-  color: var(--text-dim);
-  font-size: 10px;
-}
-
-.server-vitals-raid {
-  font-size: 11px;
-}
-
-.server-vitals-raid-label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--accent);
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.server-vitals-raid-label svg {
-  width: 10px;
-  height: 10px;
-}
-
-.server-vitals-raid-info {
-  color: var(--text-bright);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.server-vitals-raid-info .sv-muted {
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-.server-vitals-players {
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
-
-.server-vitals-players-label {
-  font-size: 10px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.sv-player-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 3px 0;
-  font-size: 11px;
-}
-
-.sv-player-name {
-  color: var(--text-bright);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 110px;
-}
-
-.sv-player-status {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 3px;
-  white-space: nowrap;
-}
-
-.sv-player-status.stash {
-  color: #94a3b8;
-  background: rgba(148,163,184,0.12);
-}
-
-.sv-player-status.raid {
-  color: #22c55e;
-  background: rgba(34,197,94,0.12);
-}
-
-.server-vitals-uptime {
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-  font-size: 10px;
-  color: var(--text-muted);
-  letter-spacing: 0.5px;
-}
+.ss-running { color: #4a7c59; }
+.ss-stopped { color: #8b3a3a; }
+.ss-dim { color: #7a7060; }
+.ss-bright { color: #e8dcc8; }
+.ss-gold { color: #c8aa6e; }
 
 /* ══════════════════════════════════════════════════════════
    MAIN CONTAINER
@@ -3031,6 +3068,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <span class="status-dot"></span>
       <span class="profile-label">Connected</span>
     </div>
+    <img id="headerProfileAvatar" class="header-profile-avatar" alt="" />
     <span style="color:var(--text-dim);font-size:13px">Profile:</span>
     <span class="profile-name-display" id="profileNameDisplay"></span>
     <button class="btn btn-ghost btn-sm" onclick="logout()">Disconnect</button>
@@ -3062,33 +3100,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 <div class="login-overlay" id="loginScreen">
   <div class="login-bg"></div>
 
-  <!-- Server Vitals Widget -->
-  <div class="server-vitals" id="serverVitals" style="display:none">
-    <div class="server-vitals-header">
-      <span class="server-vitals-title">Server Status</span>
-      <span class="server-vitals-dot" id="svDot"></span>
-    </div>
-    <div class="server-vitals-divider"></div>
-    <div class="server-vitals-stats">
-      <div class="server-vitals-stat"><span class="sv-diamond">&#9670;</span> <span id="svOnline">0</span> <span class="sv-label">Online</span></div>
-      <div class="server-vitals-stat"><span class="sv-diamond">&#9670;</span> <span id="svTotal">0</span> <span class="sv-label">Total</span></div>
-    </div>
-    <div class="server-vitals-raid" id="svRaidSection">
-      <div class="server-vitals-raid-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        <span>Active Raid</span>
-      </div>
-      <div class="server-vitals-raid-info" id="svRaidInfo">
-        <span class="sv-muted">No active raid</span>
-      </div>
-    </div>
-    <div class="server-vitals-players" id="svPlayersSection" style="display:none">
-      <div class="server-vitals-players-label">Online Players</div>
-      <div id="svPlayersList"></div>
-    </div>
-    <div class="server-vitals-uptime" id="svUptime"></div>
-  </div>
-
   <div class="login-box">
     <div class="login-logo">
       <div class="login-logo-icon">
@@ -3104,6 +3115,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <!-- Step 1: Profile Select -->
       <div class="login-step active" id="loginStep1">
         <p>Select a profile to connect.</p>
+        <div class="server-status-bar" id="serverStatusBar">
+          <div class="server-status-row">
+            <span id="ssServerInfo"><span class="ss-dot green"></span><span class="ss-running">Server: Running</span></span>
+            <span id="ssHeadlessInfo"><span class="ss-dot green"></span><span class="ss-running">Headless: Running</span></span>
+          </div>
+          <div class="server-status-row">
+            <span id="ssPlayersInfo"><span class="ss-bright">0</span> <span class="ss-dim">players online</span></span>
+            <span id="ssRaidInfo"><span class="ss-dim">No active raid</span></span>
+          </div>
+        </div>
         <div class="profile-grid" id="profileGrid">
           <div class="profile-loading">Loading profiles...</div>
         </div>
@@ -4444,46 +4465,41 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     fetch(BASE + 'server-vitals')
       .then(function(r) { return r.json(); })
       .then(function(d) {
-        var el = document.getElementById('serverVitals');
-        el.style.display = '';
-        document.getElementById('svOnline').textContent = d.playersOnline;
-        document.getElementById('svTotal').textContent = d.totalProfiles;
-        document.getElementById('svUptime').textContent = 'Uptime: ' + d.serverUptime;
+        var bar = document.getElementById('serverStatusBar');
+        bar.style.display = '';
 
-        var dot = document.getElementById('svDot');
-        var raidInfo = document.getElementById('svRaidInfo');
+        // Row 1 left: Server status + uptime
+        var uptime = d.serverUptime ? ' \u00b7 ' + d.serverUptime : '';
+        document.getElementById('ssServerInfo').innerHTML =
+          '<span class="ss-dot green"></span><span class="ss-running">Server: Running</span><span class="ss-dim">' + escH(uptime) + '</span>';
+
+        // Row 1 right: Headless status
+        if (d.headlessRunning) {
+          document.getElementById('ssHeadlessInfo').innerHTML =
+            '<span class="ss-dot green"></span><span class="ss-running">Headless: Running</span>';
+        } else {
+          document.getElementById('ssHeadlessInfo').innerHTML =
+            '<span class="ss-dot red"></span><span class="ss-stopped">Headless: Stopped</span>';
+        }
+
+        // Row 2 left: Players online
+        document.getElementById('ssPlayersInfo').innerHTML =
+          '<span class="ss-bright">' + (d.playersOnline || 0) + '</span> <span class="ss-dim">players online</span>';
+
+        // Row 2 right: Active raid
         if (d.activeRaid) {
-          dot.className = 'server-vitals-dot';
           var sec = d.activeRaid.timeElapsedSec || 0;
           var mm = String(Math.floor(sec / 60)).padStart(2, '0');
           var ss = String(sec % 60).padStart(2, '0');
-          raidInfo.innerHTML = escH(d.activeRaid.map) + ' &middot; ' + d.activeRaid.playersInRaid + ' PMCs'
-            + '<br><span class="sv-muted">\u23F1 ' + mm + ':' + ss + ' elapsed</span>';
+          document.getElementById('ssRaidInfo').innerHTML =
+            '<span class="ss-gold">' + escH(d.activeRaid.map) + '</span> <span class="ss-bright">\u00b7 ' + mm + ':' + ss + ' elapsed</span>';
         } else {
-          dot.className = 'server-vitals-dot amber';
-          raidInfo.innerHTML = '<span class="sv-muted">No active raid</span>';
-        }
-
-        // Online players list
-        var psec = document.getElementById('svPlayersSection');
-        var plist = document.getElementById('svPlayersList');
-        if (d.onlinePlayers && d.onlinePlayers.length > 0) {
-          psec.style.display = '';
-          var html = '';
-          d.onlinePlayers.forEach(function(p) {
-            var isRaid = p.status === 'In Raid';
-            var badge = isRaid
-              ? '<span class="sv-player-status raid">' + escH(p.status) + (p.map ? ' \u2014 ' + escH(p.map) : '') + '</span>'
-              : '<span class="sv-player-status stash">' + escH(p.status) + '</span>';
-            html += '<div class="sv-player-row"><span class="sv-player-name">' + escH(p.nickname) + '</span>' + badge + '</div>';
-          });
-          plist.innerHTML = html;
-        } else {
-          psec.style.display = 'none';
+          document.getElementById('ssRaidInfo').innerHTML =
+            '<span class="ss-dim">No active raid</span>';
         }
       })
       .catch(function() {
-        // silently ignore — widget stays hidden or stale
+        // silently ignore — bar stays hidden or stale
       });
   }
 
@@ -4494,7 +4510,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function stopVitalsPolling() {
     if (vitalsTimer) { clearInterval(vitalsTimer); vitalsTimer = null; }
-    var el = document.getElementById('serverVitals');
+    var el = document.getElementById('serverStatusBar');
     if (el) el.style.display = 'none';
   }
 
@@ -4507,6 +4523,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       .then(function(r) { return r.json(); })
       .then(function(data) {
         serverHasPassword = data.hasPassword;
+        // Update version footer from server
+        if (data.modVersion) {
+          var footer = document.getElementById('loginFooter');
+          if (footer) footer.textContent = 'Command Center v' + data.modVersion;
+        }
         var profiles = data.profiles || [];
         if (profiles.length === 0) {
           grid.innerHTML = '<div class="profile-empty">No profiles found on this server.</div>';
@@ -4515,6 +4536,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         var lastUsedSid = localStorage.getItem('zslayer_session') || '';
         profiles = profiles.filter(function(p) { return !(p.nickname || '').toLowerCase().includes('headless'); });
         var html = '';
+        window._profileCache = profiles;
         profiles.forEach(function(p) {
           var factionClass = (p.side || '').toLowerCase();
           if (factionClass !== 'usec' && factionClass !== 'bear') factionClass = 'savage';
@@ -4522,12 +4544,34 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           var firstLetter = (p.nickname || '?').charAt(0).toUpperCase();
           var isLastUsed = p.sessionId === lastUsedSid;
           var cardClass = 'profile-card' + (isLastUsed ? ' last-used' : '');
+          var avatarHtml;
+          if (p.avatarIcon) {
+            avatarHtml = '<div class="profile-card-avatar-wrap" onclick="openIconPickerForProfile(\'' + escH(p.sessionId) + '\',\'' + escH(p.nickname) + '\',event)">'
+              + '<img class="profile-avatar-img" src="Profile%20Icons/' + encodeURIComponent(p.avatarIcon) + '" alt="" />'
+              + '<span class="profile-edit-icon"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></span>'
+              + '</div>';
+          } else {
+            avatarHtml = '<div class="profile-card-avatar-wrap">'
+              + '<div class="profile-avatar ' + factionClass + '">' + escH(firstLetter) + '</div>'
+              + '</div>';
+          }
+          var statsText = (p.totalRaids || 0) + ' raids \u00b7 ' + (p.survivalRate || 0) + '% SR';
+          var onlineClass = p.isOnline ? 'online' : 'offline';
+          var onlineLabel = p.isOnline ? 'Online' : 'Offline';
           html += '<div class="' + cardClass + '" onclick="selectProfile(\'' + escH(p.sessionId) + '\',\'' + escH(p.nickname) + '\')">'
-            + '<div class="profile-avatar ' + factionClass + '">' + escH(firstLetter) + '</div>'
+            + avatarHtml
+            + '<div class="profile-card-content">'
+            + '<div class="profile-card-row">'
             + '<span class="profile-card-name">' + escH(p.nickname) + '</span>'
             + '<span class="faction-badge ' + factionClass + '">' + escH(factionLabel) + '</span>'
             + '<span class="profile-card-level">Lv ' + p.level + '</span>'
             + (isLastUsed ? '<span class="profile-card-last-tag">LAST USED</span>' : '')
+            + '</div>'
+            + '<div class="profile-card-subtitle">'
+            + '<span class="profile-card-stats">' + statsText + '</span>'
+            + '<span class="profile-card-online ' + onlineClass + '"><span class="status-dot"></span>' + onlineLabel + '</span>'
+            + '</div>'
+            + '</div>'
             + '</div>';
         });
         grid.innerHTML = html;
@@ -4543,8 +4587,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   window.selectProfile = function(sid, name) {
     selectedLoginId = sid;
     selectedLoginName = name;
+    // Check if profile has avatar
+    var profile = (window._profileCache || []).find(function(p) { return p.sessionId === sid; });
+    if (!profile || !profile.avatarIcon) {
+      // Show icon picker before proceeding
+      showIconPicker(sid, name);
+      return;
+    }
+    proceedWithLogin(sid, name);
+  };
+
+  function proceedWithLogin(sid, name) {
     if (serverHasPassword) {
-      // Show password step
       document.getElementById('loginStep1').classList.remove('active');
       document.getElementById('loginStep2').classList.add('active');
       document.getElementById('selectedProfileDisplay').textContent = name;
@@ -4553,7 +4607,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       pwInput.value = '';
       setTimeout(function() { pwInput.focus(); }, 60);
     } else {
-      // No password — connect directly
       sessionId = sid;
       ccPassword = '';
       api('auth').then(function(data) {
@@ -4575,6 +4628,102 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         sessionId = ''; ccPassword = '';
       });
     }
+  }
+
+  function showIconPicker(sid, name) {
+    // Remove existing picker if any
+    var existing = document.getElementById('iconPickerOverlay');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'iconPickerOverlay';
+    overlay.className = 'icon-picker-overlay';
+    overlay.innerHTML = '<div class="icon-picker-card">'
+      + '<div class="icon-picker-title">CHOOSE YOUR AVATAR</div>'
+      + '<div class="icon-picker-grid" id="iconPickerGrid"><div style="color:var(--text-dim);font-size:12px;">Loading icons...</div></div>'
+      + '<div class="icon-picker-actions">'
+      + '<button class="icon-picker-confirm" id="iconPickerConfirm" disabled>CONFIRM</button>'
+      + '<button class="icon-picker-skip" id="iconPickerSkip">Skip</button>'
+      + '</div></div>';
+    document.body.appendChild(overlay);
+
+    var selectedIcon = '';
+
+    // Load available icons
+    fetch(BASE + 'profile-icons')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var icons = data.icons || [];
+        var grid = document.getElementById('iconPickerGrid');
+        if (icons.length === 0) {
+          grid.innerHTML = '<div style="color:var(--text-dim);font-size:12px;">No icons available</div>';
+          return;
+        }
+        var html = '';
+        icons.forEach(function(icon) {
+          html += '<div class="icon-picker-item" data-icon="' + escH(icon) + '">'
+            + '<img src="Profile%20Icons/' + encodeURIComponent(icon) + '" alt="' + escH(icon.replace('.png','')) + '" />'
+            + '</div>';
+        });
+        grid.innerHTML = html;
+
+        // Click handlers for icons
+        grid.querySelectorAll('.icon-picker-item').forEach(function(el) {
+          el.addEventListener('click', function() {
+            grid.querySelectorAll('.icon-picker-item').forEach(function(e) { e.classList.remove('selected'); });
+            el.classList.add('selected');
+            selectedIcon = el.getAttribute('data-icon');
+            document.getElementById('iconPickerConfirm').disabled = false;
+          });
+        });
+      })
+      .catch(function() {
+        document.getElementById('iconPickerGrid').innerHTML = '<div style="color:var(--text-dim);font-size:12px;">Failed to load icons</div>';
+      });
+
+    // Confirm button
+    document.getElementById('iconPickerConfirm').addEventListener('click', function() {
+      if (!selectedIcon) return;
+      var btn = this;
+      btn.disabled = true; btn.textContent = 'SAVING...';
+      fetch(BASE + 'profile-icon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: sid, icon: selectedIcon })
+      }).then(function(r) { return r.json(); })
+        .then(function() {
+          // Update cached profile
+          var p = (window._profileCache || []).find(function(pr) { return pr.sessionId === sid; });
+          if (p) p.avatarIcon = selectedIcon;
+          overlay.remove();
+          loadProfileList();
+          proceedWithLogin(sid, name);
+        })
+        .catch(function() {
+          overlay.remove();
+          proceedWithLogin(sid, name);
+        });
+    });
+
+    // Skip button
+    document.getElementById('iconPickerSkip').addEventListener('click', function() {
+      overlay.remove();
+      proceedWithLogin(sid, name);
+    });
+
+    // Click outside to skip
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) {
+        overlay.remove();
+        proceedWithLogin(sid, name);
+      }
+    });
+  }
+
+  // Allow changing avatar from profile cards that already have one
+  window.openIconPickerForProfile = function(sid, name, evt) {
+    evt.stopPropagation();
+    showIconPicker(sid, name);
   };
 
   window.connect = function() {
@@ -4613,6 +4762,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('heroBanner').style.display = 'none';
     document.getElementById('headerProfile').style.display = 'none';
     document.getElementById('navBar').style.display = 'none';
+    document.getElementById('headerProfileAvatar').style.display = 'none';
     // Reset to step 1
     document.getElementById('loginStep1').classList.add('active');
     document.getElementById('loginStep2').classList.remove('active');
@@ -4629,6 +4779,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('headerProfile').style.display = 'flex';
     document.getElementById('navBar').style.display = 'block';
     document.getElementById('profileNameDisplay').textContent = profileName;
+    var myProfile = (window._profileCache || []).find(function(p) { return p.sessionId === sessionId; });
+    var headerAvatar = document.getElementById('headerProfileAvatar');
+    if (myProfile && myProfile.avatarIcon) {
+      headerAvatar.src = 'Profile%20Icons/' + encodeURIComponent(myProfile.avatarIcon);
+      headerAvatar.style.display = 'block';
+    } else {
+      headerAvatar.style.display = 'none';
+    }
     // Set initial category trigger icon
     document.getElementById('ctIcon').innerHTML = ICONS.all;
 

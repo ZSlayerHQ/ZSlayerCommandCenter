@@ -37,6 +37,7 @@ public class CommandCenterHttpListener(
     DatabaseService databaseService,
     ConfigServer configServer,
     SaveServer saveServer,
+    ProfileActivityService profileActivityService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -180,6 +181,18 @@ public class CommandCenterHttpListener(
             if (path == "profiles" && method == "GET")
             {
                 await HandleProfiles(context);
+                return;
+            }
+
+            if (path == "profile-icons" && method == "GET")
+            {
+                await HandleProfileIcons(context);
+                return;
+            }
+
+            if (path == "profile-icon" && method == "POST")
+            {
+                await HandleProfileIconSet(context);
                 return;
             }
 
@@ -332,6 +345,8 @@ public class CommandCenterHttpListener(
         var hasPassword = !string.IsNullOrEmpty(config.Access.Password);
 
         var profiles = saveServer.GetProfiles();
+        var activeIds = profileActivityService.GetActiveProfileIdsWithinMinutes(5);
+        var activeSet = new HashSet<string>(activeIds.Select(id => id.ToString()));
         var entries = new List<ProfileEntry>();
 
         foreach (var (sid, profile) in profiles)
@@ -339,20 +354,83 @@ public class CommandCenterHttpListener(
             var pmc = profile.CharacterData?.PmcData;
             if (pmc?.Info == null) continue;
 
+            var sidStr = sid.ToString();
+
+            // Extract raid stats from OverallCounters
+            int totalRaids = 0, survived = 0;
+            var counters = pmc.Stats?.Eft?.OverallCounters?.Items;
+            if (counters != null)
+            {
+                foreach (var counter in counters)
+                {
+                    if (counter.Key == null || counter.Key.Count == 0) continue;
+                    var k = counter.Key;
+                    var val = (int)(counter.Value ?? 0);
+
+                    if (k.Count > 1)
+                    {
+                        if (k.Contains("Sessions") && k.Contains("Pmc")) totalRaids = val;
+                        else if (k.Contains("ExitStatus") && k.Contains("Survived")) survived = val;
+                    }
+                }
+            }
+
+            var survivalRate = totalRaids > 0 ? (int)Math.Round(100.0 * survived / totalRaids) : 0;
+
             entries.Add(new ProfileEntry
             {
-                SessionId = sid.ToString(),
+                SessionId = sidStr,
                 Nickname = pmc.Info.Nickname ?? "Unknown",
                 Side = pmc.Info.Side ?? "",
-                Level = pmc.Info.Level ?? 0
+                Level = pmc.Info.Level ?? 0,
+                AvatarIcon = config.ProfileAvatars.GetValueOrDefault(sidStr),
+                TotalRaids = totalRaids,
+                SurvivalRate = survivalRate,
+                IsOnline = activeSet.Contains(sidStr)
             });
         }
 
         await WriteJson(context, 200, new ProfileListResponse
         {
             Profiles = entries,
-            HasPassword = hasPassword
+            HasPassword = hasPassword,
+            ModVersion = ModMetadata.StaticVersion
         });
+    }
+
+    private async Task HandleProfileIcons(HttpContext context)
+    {
+        var modPath = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
+        var dir = Path.Combine(modPath, "res", "Profile Icons");
+        var icons = Directory.Exists(dir)
+            ? Directory.GetFiles(dir, "*.png").Select(Path.GetFileName).ToList()
+            : new List<string?>();
+        await WriteJson(context, 200, new { icons });
+    }
+
+    private async Task HandleProfileIconSet(HttpContext context)
+    {
+        var body = await ReadBody<ProfileIconSetRequest>(context);
+        if (body == null || string.IsNullOrWhiteSpace(body.SessionId) || string.IsNullOrWhiteSpace(body.Icon))
+        {
+            await WriteJson(context, 400, new { error = "sessionId and icon required" });
+            return;
+        }
+
+        // Validate the icon file exists
+        var modPath = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
+        var iconPath = Path.Combine(modPath, "res", "Profile Icons", body.Icon);
+        if (!File.Exists(iconPath))
+        {
+            await WriteJson(context, 400, new { error = "Icon not found" });
+            return;
+        }
+
+        var config = configService.GetConfig();
+        config.ProfileAvatars[body.SessionId] = body.Icon;
+        configService.SaveConfig();
+
+        await WriteJson(context, 200, new { success = true, icon = body.Icon });
     }
 
     private async Task HandleServerVitals(HttpContext context)
@@ -401,13 +479,18 @@ public class CommandCenterHttpListener(
         // Server uptime
         var status = serverStatsService.GetStatus();
 
+        // Headless status
+        var headlessStatus = headlessProcessService.GetStatus();
+
         await WriteJson(context, 200, new
         {
             playersOnline = online,
             totalProfiles = total,
             activeRaid,
             onlinePlayers = playerList,
-            serverUptime = status.Uptime
+            serverUptime = status.Uptime,
+            headlessRunning = headlessStatus.Running,
+            headlessUptime = headlessStatus.Uptime
         });
     }
 
