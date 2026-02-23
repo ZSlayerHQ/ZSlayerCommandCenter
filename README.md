@@ -1,48 +1,38 @@
+<div align="center">
+
 # ZSlayer Command Center
 
-### The ultimate browser-based admin toolkit for SPT 4.0 / FIKA
+**The ultimate browser-based admin toolkit for SPT 4.0 / FIKA**
 
-<br />
-
-[![Version](https://img.shields.io/badge/v2.3.0-c8aa6e?style=for-the-badge&label=Version&labelColor=1a1a2e)](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
-[![SPT](https://img.shields.io/badge/4.0.x-c8aa6e?style=for-the-badge&label=SPT&labelColor=1a1a2e)]()
-[![FIKA](https://img.shields.io/badge/Compatible-4a7c59?style=for-the-badge&label=FIKA&labelColor=1a1a2e)]()
-[![.NET](https://img.shields.io/badge/9.0-512bd4?style=for-the-badge&label=.NET&labelColor=1a1a2e)]()
-[![License](https://img.shields.io/badge/MIT-888?style=for-the-badge&label=License&labelColor=1a1a2e)](LICENSE)
-
-<br />
-
-**Manage players. Monitor raids in real time. Control the flea market. Run headless clients.**
-**All from a single browser tab. No restarts. No config hunting.**
-
-<br />
-
-[Discord](https://discord.gg/ZSlayerHQ) &nbsp;&bull;&nbsp; [YouTube](https://www.youtube.com/@ZSlayerHQ-ImBenCole) &nbsp;&bull;&nbsp; [Releases](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-c8aa6e.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/v2.3.0-c8aa6e.svg)](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
+[![SPT](https://img.shields.io/badge/SPT-4.0.x-c8aa6e.svg)]()
+[![FIKA](https://img.shields.io/badge/FIKA-Compatible-4a7c59.svg)]()
+[![.NET](https://img.shields.io/badge/.NET-9.0-512bd4.svg)]()
 
 ---
+
+Manage players, monitor raids in real time, control the flea market, and run headless clients — all from a single browser tab. No restarts. No config hunting. A server-side mod for [SPT](https://www.sp-tarkov.com/) that serves a full web admin panel at `https://<your-server>:6969/zslayer/cc/`.
+
+[Discord](https://discord.gg/ZSlayerHQ) | [YouTube](https://www.youtube.com/@ZSlayerHQ-ImBenCole) | [Releases](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
 
 </div>
 
-<br />
+---
 
-## Overview
-
-ZSlayer Command Center is a **server-side mod** for [SPT (Single Player Tarkov)](https://www.sp-tarkov.com/) that adds a full web-based admin panel served at `https://<your-server>:6969/zslayer/cc/`.
+## What Is This?
 
 Designed for **FIKA server admins** who want real-time visibility and control without touching JSON files or restarting their server. Every feature works through the browser — give items, watch live raid telemetry, fine-tune the flea market economy, manage headless clients, and more.
 
-**Two components:**
+**Three components:**
 
-| Component | Required | Purpose |
-|:----------|:--------:|:--------|
-| **Server Mod** | Yes | C# mod running inside the SPT server — powers the admin panel |
-| **Headless Telemetry Plugin** | No | BepInEx plugin for FIKA headless clients — streams live raid data |
-
-<br />
+| Component | Repo | Required | Purpose |
+|:----------|:-----|:--------:|:--------|
+| **Server Mod** | This repo | Yes | C# mod running inside the SPT server — powers the admin panel |
+| **Headless Telemetry Plugin** | [ZSlayerHeadlessTelemetry](https://github.com/ZSlayerHQ/ZSlayerHeadlessTelemetry) | No | BepInEx plugin for FIKA headless clients — streams live raid data |
+| **Watchdog** | [ZSlayerWatchdog](https://github.com/ZSlayerHQ/ZSlayerWatchdog) | No | WPF desktop app — auto-starts and monitors server + headless processes |
 
 ---
-
-<br />
 
 ## Features
 
