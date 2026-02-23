@@ -69,6 +69,9 @@ public record PlayerOverviewDto
     [JsonPropertyName("onlineCount")]
     public int OnlineCount { get; set; }
 
+    [JsonPropertyName("inRaidCount")]
+    public int InRaidCount { get; set; }
+
     [JsonPropertyName("players")]
     public List<PlayerSummaryDto> Players { get; set; } = [];
 }
@@ -95,6 +98,42 @@ public record PlayerSummaryDto
 
     [JsonPropertyName("isHeadless")]
     public bool IsHeadless { get; set; }
+
+    // Detailed view fields
+    [JsonPropertyName("avatarIcon")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? AvatarIcon { get; set; }
+
+    [JsonPropertyName("inRaid")]
+    public bool InRaid { get; set; }
+
+    [JsonPropertyName("totalRaids")]
+    public int TotalRaids { get; set; }
+
+    [JsonPropertyName("survivalRate")]
+    public double SurvivalRate { get; set; }
+
+    [JsonPropertyName("kdRatio")]
+    public double KdRatio { get; set; }
+
+    [JsonPropertyName("totalKills")]
+    public int TotalKills { get; set; }
+
+    [JsonPropertyName("pmcKills")]
+    public int PmcKills { get; set; }
+
+    [JsonPropertyName("longestShot")]
+    public double LongestShot { get; set; }
+
+    [JsonPropertyName("stashValue")]
+    public long StashValue { get; set; }
+
+    [JsonPropertyName("lastSessionDate")]
+    public long LastSessionDate { get; set; }
+
+    [JsonPropertyName("lastMapPlayed")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LastMapPlayed { get; set; }
 }
 
 // ── Economy ──

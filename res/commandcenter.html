@@ -1291,7 +1291,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .dash-stat-value.sm { font-size: 14px; color: var(--text); }
 
 .dash-player-list {
-  max-height: 260px;
+  max-height: 360px;
   overflow-y: auto;
 }
 .dash-player {
@@ -1312,6 +1312,155 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .dash-player .online-dot.off { background: var(--text-muted); }
 .dash-player .p-name { flex: 1; color: var(--text); font-weight: 600; }
 .dash-player .p-detail { color: var(--text-dim); font-family: var(--font-mono); font-size: 11px; }
+
+/* Player view toggle */
+.player-view-toggle {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.2s, border-color 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.player-view-toggle:hover { color: var(--accent-bright); border-color: var(--accent-dim); }
+.player-view-toggle svg { width: 16px; height: 16px; }
+
+/* Crossfade container */
+.dash-player-list { transition: opacity 0.2s ease; }
+
+/* Simple row */
+.player-simple-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.15s;
+  animation: rowEntry 0.25s ease both;
+  animation-delay: calc(var(--row-index, 0) * 30ms);
+}
+.player-simple-row:last-child { border-bottom: none; }
+.player-simple-row:hover { background: rgba(200,170,110,0.06); }
+
+/* Detailed row */
+.player-detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s;
+  animation: rowEntry 0.3s ease both;
+  animation-delay: calc(var(--row-index, 0) * 40ms);
+}
+.player-detail-row:last-child { border-bottom: none; }
+.player-detail-row:hover { background: rgba(200,170,110,0.06); }
+
+.player-detail-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--border-subtle);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+.player-detail-avatar.online { border-color: #4a7c59; box-shadow: 0 0 8px rgba(74,124,89,0.5); }
+.player-detail-avatar.in-raid { border-color: #c87a3e; box-shadow: 0 0 8px rgba(200,122,62,0.5); }
+
+.player-detail-info { flex: 1; min-width: 0; }
+.player-detail-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.player-detail-name.online { color: #7ac98a; }
+.player-detail-name.in-raid { color: #e8a654; }
+
+.player-detail-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+.player-detail-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* Faction pill */
+.faction-pill {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.faction-pill.bear { background: rgba(139,58,58,0.4); color: #d08080; }
+.faction-pill.usec { background: rgba(58,90,139,0.4); color: #80a0d0; }
+
+/* Status dot (enhanced) */
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.status-dot.online { background: #4a7c59; box-shadow: 0 0 6px #4a7c59; animation: statusPulse 2s infinite; }
+.status-dot.in-raid { background: #c87a3e; box-shadow: 0 0 6px #c87a3e; animation: statusPulse 1.5s infinite; }
+.status-dot.offline { background: #8b3a3a; box-shadow: none; animation: none; }
+
+/* Hover expand stats */
+.player-expand-stats {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+  margin-top: 0;
+}
+.player-detail-row:hover .player-expand-stats,
+.player-detail-row.touch-expanded .player-expand-stats {
+  max-height: 80px;
+  margin-top: 6px;
+}
+.player-expand-inner {
+  display: flex;
+  gap: 16px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  padding-top: 4px;
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+.player-expand-inner span { white-space: nowrap; }
+.player-expand-inner .stat-label { color: var(--text-muted); }
+.player-expand-inner .stat-value { color: var(--accent-bright); font-weight: 600; }
+
+/* Animations */
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+@keyframes rowEntry {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .dash-bar-chart { display: flex; flex-direction: column; gap: 6px; }
 .dash-bar-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
@@ -3597,12 +3746,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <div class="dash-widget" id="widgetPlayers">
         <div class="dash-widget-header">
           <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Players</span>
-          <span style="display:flex;align-items:center;gap:12px"><span id="dashHeadlessBadge" style="font-size:12px;font-family:var(--font-mono);font-weight:700;color:var(--text-muted);display:none"></span><span id="dashOnlineBadge" style="font-size:11px;font-family:var(--font-mono);color:var(--success-bright)"></span></span>
+          <span style="display:flex;align-items:center;gap:12px"><button id="playerViewToggle" class="player-view-toggle" title="Switch to Detailed View" onclick="togglePlayerView()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><span id="dashHeadlessBadge" style="font-size:12px;font-family:var(--font-mono);font-weight:700;color:var(--text-muted);display:none"></span><span id="dashOnlineBadge" style="font-size:11px;font-family:var(--font-mono);color:var(--success-bright)"></span></span>
         </div>
         <div class="dash-widget-body">
           <div class="dash-stat-row">
             <div class="dash-stat"><span class="dash-stat-label">Total Profiles</span><span class="dash-stat-value" id="dashTotalProfiles">--</span></div>
             <div class="dash-stat"><span class="dash-stat-label">Online</span><span class="dash-stat-value" id="dashOnlineCount" style="color:var(--success-bright)">--</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">In Raid</span><span class="dash-stat-value" id="dashInRaidCount" style="color:var(--text-muted)">0</span></div>
           </div>
           <div class="dash-player-list" id="dashPlayerList"></div>
         </div>
@@ -5346,49 +5496,192 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }).catch(function(e) { console.error('Status error:', e); });
   }
 
+  var _lastPlayersJson = '';
+  var _playersAnimated = false;
+
+  function getPlayerViewMode() {
+    return localStorage.getItem('zcc-players-view-mode') || 'simple';
+  }
+
+  function updateToggleIcon() {
+    var btn = document.getElementById('playerViewToggle');
+    if (!btn) return;
+    var mode = getPlayerViewMode();
+    if (mode === 'simple') {
+      btn.title = 'Switch to Detailed View';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+    } else {
+      btn.title = 'Switch to Simple View';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
+    }
+  }
+
+  window.togglePlayerView = function() {
+    var mode = getPlayerViewMode() === 'simple' ? 'detailed' : 'simple';
+    localStorage.setItem('zcc-players-view-mode', mode);
+    updateToggleIcon();
+    _playersAnimated = false; // force re-animation on switch
+    _lastPlayersJson = ''; // force re-render
+    loadPlayers();
+  };
+
+  function formatTimeAgo(unixSeconds) {
+    if (!unixSeconds || unixSeconds <= 0) return '';
+    var diff = Math.floor(Date.now() / 1000) - unixSeconds;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  }
+
+  function formatStashValue(val) {
+    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+    if (val >= 1000) return (val / 1000).toFixed(0) + 'K';
+    return val.toString();
+  }
+
+  function renderSimpleRow(p, idx) {
+    var statusClass = p.inRaid ? 'in-raid' : (p.online ? 'online' : 'offline');
+    return '<div class="player-simple-row" style="--row-index:' + idx + '" onclick="navigateToPlayerFromDash(\'' + escH(p.sessionId) + '\')">' +
+      '<span class="status-dot ' + statusClass + '"></span>' +
+      '<span class="p-name">' + escH(p.nickname) + '</span>' +
+      '<span class="p-detail">Lv ' + p.level + '</span>' +
+      (p.side ? ' <span class="faction-pill ' + (p.side.toLowerCase() === 'bear' ? 'bear' : 'usec') + '">' + escH(p.side) + '</span>' : '') + '</div>';
+  }
+
+  function renderDetailedRow(p, idx) {
+    var statusClass = p.inRaid ? 'in-raid' : (p.online ? 'online' : 'offline');
+    var nameClass = p.inRaid ? ' in-raid' : (p.online ? ' online' : '');
+    var avatarClass = p.inRaid ? ' in-raid' : (p.online ? ' online' : '');
+    var avatarSrc = p.avatarIcon ? 'Profile Icons/' + encodeURIComponent(p.avatarIcon) : '';
+    var avatarHtml = avatarSrc
+      ? '<img class="player-detail-avatar' + avatarClass + '" src="' + avatarSrc + '" alt="">'
+      : '<div class="player-detail-avatar' + avatarClass + '" style="display:flex;align-items:center;justify-content:center;background:var(--bg-dark);color:var(--text-muted);font-size:16px;font-weight:700">' + escH(p.nickname.charAt(0).toUpperCase()) + '</div>';
+
+    var statusText = '';
+    if (p.inRaid) {
+      statusText = '<span style="color:#c87a3e">In Raid</span>';
+    } else if (p.online) {
+      statusText = '<span style="color:#4a7c59">Online</span>';
+    } else {
+      var ago = formatTimeAgo(p.lastSessionDate);
+      var rawMap = p.lastMapPlayed || '';
+      var mapName = (rawMap && rawMap !== 'Unknown') ? mapDisplayName(rawMap) : '';
+      if (mapName && mapName.toLowerCase().indexOf('unavailable') !== -1) mapName = '';
+      if (ago && mapName) statusText = '<span style="color:#7a7060">Last seen: ' + ago + ' on ' + escH(mapName) + '</span>';
+      else if (ago) statusText = '<span style="color:#7a7060">Last seen: ' + ago + '</span>';
+      else statusText = '<span style="color:#7a7060">Offline</span>';
+    }
+
+    var sub = 'Lv ' + p.level + ' · ' + (p.totalRaids || 0) + ' raids · ' + (p.survivalRate || 0) + '% SR';
+
+    var expandHtml = '<div class="player-expand-stats"><div class="player-expand-inner">' +
+      '<span><span class="stat-label">Kills </span><span class="stat-value">' + (p.totalKills || 0) + '</span></span>' +
+      '<span><span class="stat-label">PMC </span><span class="stat-value">' + (p.pmcKills || 0) + '</span></span>' +
+      '<span><span class="stat-label">K/D </span><span class="stat-value">' + (p.kdRatio || 0) + '</span></span>' +
+      '<span><span class="stat-label">Longest </span><span class="stat-value">' + (p.longestShot || 0) + 'm</span></span>' +
+      '<span><span class="stat-label">Stash </span><span class="stat-value">' + formatStashValue(p.stashValue || 0) + '₽</span></span>' +
+      '</div></div>';
+
+    var factionPill = p.side ? '<span class="faction-pill ' + (p.side.toLowerCase() === 'bear' ? 'bear' : 'usec') + '">' + escH(p.side) + '</span>' : '';
+
+    return '<div class="player-detail-row" style="--row-index:' + idx + '" onclick="navigateToPlayerFromDash(\'' + escH(p.sessionId) + '\')">' +
+      avatarHtml +
+      '<div class="player-detail-info">' +
+        '<div class="player-detail-name' + nameClass + '"><span class="status-dot ' + statusClass + '"></span>' + escH(p.nickname) + '</div>' +
+        '<div class="player-detail-sub">' + sub + '</div>' +
+        expandHtml +
+      '</div>' +
+      '<div class="player-detail-right">' +
+        factionPill +
+        '<div style="font-size:10px;margin-top:2px">' + statusText + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  window.navigateToPlayerFromDash = function(sid) {
+    // Switch to Players tab and expand the player
+    expandedPlayerId = sid;
+    switchMainTab('players');
+    if (!playersLoaded) loadPlayerRoster();
+    else renderPlayerRoster();
+  };
+
   function loadPlayers() {
     api('dashboard/players').then(function(d) {
+      // Stats bar
       document.getElementById('dashTotalProfiles').textContent = d.totalProfiles;
       document.getElementById('dashOnlineCount').textContent = d.onlineCount;
       var onlineEl = document.getElementById('dashOnlineCount');
       onlineEl.style.color = d.onlineCount > 0 ? 'var(--success-bright)' : '#8b3a3a';
+
+      var inRaidEl = document.getElementById('dashInRaidCount');
+      inRaidEl.textContent = d.inRaidCount || 0;
+      inRaidEl.style.color = d.inRaidCount > 0 ? '#c87a3e' : 'var(--text-muted)';
+
       document.getElementById('dashOnlineBadge').textContent = d.onlineCount > 0 ? d.onlineCount + ' online' : '';
       document.getElementById('dashOnlineBadge').style.color = d.onlineCount > 0 ? 'var(--success-bright)' : '#8b3a3a';
+
       // Headless badge in header
       var headless = (d.players || []).find(function(p) { return p.isHeadless; });
       var hlBadge = document.getElementById('dashHeadlessBadge');
       if (headless) {
         hlBadge.style.display = '';
         hlBadge.innerHTML = '\uD83E\uDD16 Headless Client <span id="dashHlStatusPill" class="hl-status-pill pill-stopped" style="font-size:10px;padding:1px 8px;margin-left:4px;vertical-align:middle">Stopped</span>';
-        // Fetch actual headless process state
         api('headless/status').then(function(hs) {
           var pill = document.getElementById('dashHlStatusPill');
           if (!pill) return;
-          if (!hs.available) {
-            pill.className = 'hl-status-pill pill-unavailable';
-            pill.textContent = 'N/A';
-          } else if (hs.running) {
-            pill.className = 'hl-status-pill pill-running';
-            pill.textContent = 'Running';
-          } else {
-            pill.className = 'hl-status-pill pill-stopped';
-            pill.textContent = 'Stopped';
-          }
-          pill.style.fontSize = '10px';
-          pill.style.padding = '1px 8px';
+          if (!hs.available) { pill.className = 'hl-status-pill pill-unavailable'; pill.textContent = 'N/A'; }
+          else if (hs.running) { pill.className = 'hl-status-pill pill-running'; pill.textContent = 'Running'; }
+          else { pill.className = 'hl-status-pill pill-stopped'; pill.textContent = 'Stopped'; }
+          pill.style.fontSize = '10px'; pill.style.padding = '1px 8px';
         }).catch(function(){});
       } else {
         hlBadge.style.display = 'none';
       }
+
+      // Determine if data changed (skip re-animation on telemetry refreshes)
+      var newJson = JSON.stringify(d.players);
+      var shouldAnimate = !_playersAnimated || newJson !== _lastPlayersJson;
+      _lastPlayersJson = newJson;
+      _playersAnimated = true;
+
+      // Render players
+      var mode = getPlayerViewMode();
+      updateToggleIcon();
+      var listEl = document.getElementById('dashPlayerList');
+      var realPlayers = (d.players || []).filter(function(p) { return !p.isHeadless; });
+
+      if (realPlayers.length === 0) {
+        listEl.innerHTML = '<div style="padding:12px;color:var(--text-muted);text-align:center">No profiles found</div>';
+        return;
+      }
+
       var html = '';
-      (d.players || []).forEach(function(p) {
-        if (p.isHeadless) return;
-        html += '<div class="dash-player">' +
-          '<span class="online-dot ' + (p.online ? 'on' : 'off') + '"></span>' +
-          '<span class="p-name">' + escH(p.nickname) + '</span>' +
-          '<span class="p-detail">Lvl ' + p.level + ' · ' + escH(p.side).toUpperCase() + '</span></div>';
+      var idx = 0;
+      realPlayers.forEach(function(p) {
+        if (mode === 'detailed') {
+          html += renderDetailedRow(p, idx);
+        } else {
+          html += renderSimpleRow(p, idx);
+        }
+        idx++;
       });
-      document.getElementById('dashPlayerList').innerHTML = html || '<div style="padding:12px;color:var(--text-muted);text-align:center">No profiles found</div>';
+
+      if (shouldAnimate) {
+        // Crossfade: fade out, swap, fade in
+        listEl.style.opacity = '0';
+        setTimeout(function() {
+          listEl.innerHTML = html;
+          listEl.style.opacity = '1';
+        }, 200);
+      } else {
+        // Silently update without animation (remove animations from rows)
+        listEl.innerHTML = html;
+        listEl.querySelectorAll('.player-simple-row, .player-detail-row').forEach(function(row) {
+          row.style.animation = 'none';
+        });
+      }
     }).catch(function(e) { console.error('Players error:', e); });
   }
 

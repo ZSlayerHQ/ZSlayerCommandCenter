@@ -599,7 +599,20 @@ public class CommandCenterHttpListener(
     private async Task HandleDashboardPlayers(HttpContext context, string headerSessionId)
     {
         if (!await ValidateAccess(context, headerSessionId)) return;
-        var result = playerStatsService.GetPlayerOverview();
+
+        // Compute in-raid player IDs from telemetry (same pattern as HandleServerVitals)
+        var inRaidIds = new HashSet<string>();
+        var telemetry = telemetryService.GetCurrent();
+        if (telemetry.RaidActive && telemetry.RaidState != null)
+        {
+            foreach (var p in telemetry.Players)
+            {
+                if (!string.IsNullOrEmpty(p.ProfileId))
+                    inRaidIds.Add(p.ProfileId);
+            }
+        }
+
+        var result = playerStatsService.GetPlayerOverview(inRaidIds);
         await WriteJson(context, 200, result);
     }
 

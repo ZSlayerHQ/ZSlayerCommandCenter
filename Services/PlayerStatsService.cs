@@ -1,4 +1,5 @@
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Services;
 using ZSlayerCommandCenter.Models;
@@ -9,7 +10,9 @@ namespace ZSlayerCommandCenter.Services;
 public class PlayerStatsService(
     SaveServer saveServer,
     ProfileActivityService profileActivityService,
-    ConfigService configService)
+    ConfigService configService,
+    HandbookHelper handbookHelper,
+    RaidTrackingService raidTrackingService)
 {
     private const string RoublesTpl = "5449016a4bdc2d6f028b456f";
     private const string DollarsTpl = "5696686a4bdc2da3298b456a";
@@ -19,12 +22,23 @@ public class PlayerStatsService(
     private const int DollarsToRoubles = 143;
     private const int EurosToRoubles = 157;
 
-    public PlayerOverviewDto GetPlayerOverview()
+    public PlayerOverviewDto GetPlayerOverview(HashSet<string>? inRaidPlayerIds = null)
     {
         var profiles = saveServer.GetProfiles();
         var activeIds = profileActivityService.GetActiveProfileIdsWithinMinutes(5);
         var activeSet = new HashSet<string>(activeIds.Select(id => id.ToString()));
-        var headlessId = configService.GetConfig().Headless.ProfileId;
+        var config = configService.GetConfig();
+        var headlessId = config.Headless.ProfileId;
+        inRaidPlayerIds ??= [];
+
+        // Build a lookup of last map played per sessionId from raid history
+        var recentRaids = raidTrackingService.GetRecentRaids(200);
+        var lastMapByPlayer = new Dictionary<string, string>();
+        foreach (var raid in recentRaids)
+        {
+            if (!lastMapByPlayer.ContainsKey(raid.SessionId))
+                lastMapByPlayer[raid.SessionId] = raid.Map;
+        }
 
         var players = new List<PlayerSummaryDto>();
 
@@ -36,6 +50,39 @@ public class PlayerStatsService(
             var sid = sessionId.ToString();
             var isHeadless = !string.IsNullOrEmpty(headlessId) && sid == headlessId;
             var roubles = CalculateRoubles(pmc.Inventory?.Items);
+            var isOnline = activeSet.Contains(sid);
+            var isInRaid = inRaidPlayerIds.Contains(sid);
+
+            // Extract raid stats (kills, raids, KD)
+            var raidStats = ExtractProfileRaidStats(pmc);
+
+            // Longest shot from OverallCounters (single-key "LongestShot")
+            double longestShot = 0;
+            var counters = pmc.Stats?.Eft?.OverallCounters?.Items;
+            if (counters != null)
+            {
+                foreach (var counter in counters)
+                {
+                    if (counter.Key is { Count: 1 } && counter.Key.First() == "LongestShot")
+                    {
+                        longestShot = counter.Value ?? 0;
+                        break;
+                    }
+                }
+            }
+
+            // Stash value
+            var stashItems = pmc.Inventory?.Items?.ToList() ?? [];
+            var stashValue = (long)handbookHelper.GetTemplatePriceForItems(stashItems);
+
+            // Last session date
+            var lastSessionDate = (long)(pmc.Stats?.Eft?.LastSessionDate ?? 0);
+
+            // Avatar
+            var avatar = config.ProfileAvatars.GetValueOrDefault(sid);
+
+            // Last map played
+            lastMapByPlayer.TryGetValue(sid, out var lastMap);
 
             players.Add(new PlayerSummaryDto
             {
@@ -43,15 +90,27 @@ public class PlayerStatsService(
                 Nickname = pmc.Info.Nickname ?? "Unknown",
                 Level = pmc.Info.Level ?? 0,
                 Side = pmc.Info.Side ?? "",
-                Online = activeSet.Contains(sid),
+                Online = isOnline,
                 Roubles = roubles,
-                IsHeadless = isHeadless
+                IsHeadless = isHeadless,
+                AvatarIcon = avatar,
+                InRaid = isInRaid,
+                TotalRaids = raidStats.TotalRaids,
+                SurvivalRate = raidStats.SurvivalRate,
+                KdRatio = raidStats.KdRatio,
+                TotalKills = raidStats.TotalKills,
+                PmcKills = raidStats.PmcKills,
+                LongestShot = Math.Round(longestShot, 1),
+                StashValue = stashValue,
+                LastSessionDate = lastSessionDate,
+                LastMapPlayed = lastMap
             });
         }
 
-        // Sort: online first, then by level descending
+        // Sort: inRaid first, then online, then offline — within each group by level desc
         players.Sort((a, b) =>
         {
+            if (a.InRaid != b.InRaid) return b.InRaid.CompareTo(a.InRaid);
             if (a.Online != b.Online) return b.Online.CompareTo(a.Online);
             return b.Level.CompareTo(a.Level);
         });
@@ -62,6 +121,7 @@ public class PlayerStatsService(
         {
             TotalProfiles = realPlayers.Count,
             OnlineCount = realPlayers.Count(p => p.Online),
+            InRaidCount = realPlayers.Count(p => p.InRaid),
             Players = players
         };
     }
