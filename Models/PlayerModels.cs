@@ -232,6 +232,18 @@ public record PlayerTraderDto
 
     [JsonPropertyName("salesSum")]
     public long SalesSum { get; set; }
+
+    [JsonPropertyName("maxLoyaltyLevel")]
+    public int MaxLoyaltyLevel { get; set; } = 4;
+}
+
+public record SetTraderLoyaltyRequest
+{
+    [JsonPropertyName("traderId")]
+    public string TraderId { get; set; } = "";
+
+    [JsonPropertyName("level")]
+    public int Level { get; set; }
 }
 
 // ── Full Stats ──

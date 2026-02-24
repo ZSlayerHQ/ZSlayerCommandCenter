@@ -4686,6 +4686,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">STOCK</div>
             <div style="color:var(--accent);font-weight:600">1.00&times;</div>
           </div>
+          <div id="traderDetailLoyaltyBadge" style="text-align:center;padding:6px 10px;border-radius:4px;background:rgba(200,170,110,0.1);border:1px solid rgba(200,170,110,0.2)">
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">YOUR LL</div>
+            <select id="traderDetailMyLL" onchange="traderSetMyLoyalty(this.value)" style="background:var(--bg-dark);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-family:var(--font-mono);font-size:13px;font-weight:600;cursor:pointer;width:50px;text-align:center">
+              <option value="1">I</option><option value="2">II</option><option value="3">III</option><option value="4">IV</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -9263,8 +9269,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '<table class="profile-mini-table"><thead><tr><th>Trader</th><th>Loyalty</th><th>Standing</th><th>Sales</th></tr></thead><tbody>';
       for (var i = 0; i < traders.length; i++) {
         var t = traders[i];
+        var maxLl = t.maxLoyaltyLevel || 4;
         html += '<tr><td>' + escH(t.traderName) + '</td>';
-        html += '<td style="color:var(--accent);font-family:var(--font-mono)">' + (romans[t.loyaltyLevel] || t.loyaltyLevel) + '</td>';
+        html += '<td><select onchange="setProfileTraderLL(\'' + escA(d.sessionId) + '\',\'' + escA(t.traderId) + '\',this.value)" style="background:var(--bg-dark);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-family:var(--font-mono);font-size:12px;cursor:pointer">';
+        for (var ll = 1; ll <= maxLl; ll++) {
+          html += '<option value="' + ll + '"' + (t.loyaltyLevel === ll ? ' selected' : '') + '>' + (romans[ll] || ll) + '</option>';
+        }
+        html += '</select></td>';
         html += '<td style="font-family:var(--font-mono)">' + (t.standing || 0).toFixed(2) + '</td>';
         html += '<td style="font-family:var(--font-mono);font-size:12px">' + formatRoubles(t.salesSum || 0) + '</td></tr>';
       }
@@ -9273,6 +9284,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     html += '</div>';
     return html;
   }
+
+  window.setProfileTraderLL = function(sid, traderId, level) {
+    api('player/' + encodeURIComponent(sid) + '/set-trader-loyalty', 'POST', { traderId: traderId, level: parseInt(level) }).then(function(r) {
+      if (r.success) {
+        // Refresh profile data
+        api('player/' + encodeURIComponent(sid)).then(function(data) {
+          playerProfileCache[sid] = data;
+          renderPlayerProfile(data);
+        });
+      }
+    }).catch(function(e) { console.error('Failed to set trader loyalty:', e); });
+  };
 
   // ── Modals ──
   window.closeModal = function(id) {
@@ -10543,6 +10566,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('traderDetailSellBadge').querySelector('div:last-child').textContent = t.currentSellMultiplier.toFixed(2) + '\u00d7';
     document.getElementById('traderDetailStockBadge').querySelector('div:last-child').textContent = t.currentStockMultiplier.toFixed(2) + '\u00d7';
 
+    // Populate YOUR LL dropdown with correct max levels
+    var llSelect = document.getElementById('traderDetailMyLL');
+    var romans = ['0','I','II','III','IV','V','VI'];
+    var maxLl = t.loyaltyLevelCount || 4;
+    llSelect.innerHTML = '';
+    for (var ll = 1; ll <= maxLl; ll++) {
+      llSelect.innerHTML += '<option value="' + ll + '">' + (romans[ll] || ll) + '</option>';
+    }
+    // Fetch current user's LL with this trader
+    if (sessionId) {
+      api('player/' + encodeURIComponent(sessionId)).then(function(profile) {
+        var myTrader = (profile.traders || []).find(function(tr) { return tr.traderId === traderId; });
+        if (myTrader) llSelect.value = myTrader.loyaltyLevel;
+      }).catch(function() {});
+    }
+
     // Populate per-trader overrides
     var ov = (traderConfig && traderConfig.traderOverrides) ? traderConfig.traderOverrides[traderId] : null;
     document.getElementById('traderDetailEnabled').checked = ov ? ov.enabled : true;
@@ -10568,6 +10607,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('traderMainView').style.display = 'block';
     traderRefreshAll();
   }
+
+  window.traderSetMyLoyalty = function(level) {
+    if (!traderCurrentId || !sessionId) return;
+    api('player/' + encodeURIComponent(sessionId) + '/set-trader-loyalty', 'POST', {
+      traderId: traderCurrentId, level: parseInt(level)
+    }).then(function(r) {
+      if (r.success) traderShowToast(r.message);
+      else traderShowToast('Failed: ' + (r.error || 'Unknown'), true);
+    }).catch(function(e) { traderShowToast('Failed: ' + e, true); });
+  };
 
   window.traderDetailMarkDirty = function() {
     // Visual indicator could be added here

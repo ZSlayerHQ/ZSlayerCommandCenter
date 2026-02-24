@@ -116,11 +116,12 @@ public class TraderPriceService(
             for (var i = 0; i < trader.Base.LoyaltyLevels.Count && i < snapshot.BuyPriceCoefs.Count; i++)
             {
                 var originalCoef = snapshot.BuyPriceCoefs[i];
-                // BuyPriceCoefficient is a reduction factor: sell price = basePrice * (1 - coef/100)
-                // e.g. coef=52 → player gets 48% of base. To increase sell value, DIVIDE the coef.
-                // coef=52 / 2.0 = 26 → player gets 74% of base (higher sell mult = more money)
-                var newCoef = originalCoef / effectiveSellMult;
-                trader.Base.LoyaltyLevels[i].BuyPriceCoefficient = Math.Max(0.01, Math.Round(newCoef, 2));
+                // BuyPriceCoefficient is a reduction factor: sell price = basePrice * (100 - coef) / 100
+                // e.g. coef=37 → player gets 63% of base. To get a true linear multiplier:
+                // newCoef = 100 - (100 - originalCoef) * multiplier
+                // At 5x with coef=37: 100 - 63*5 = -215 → (100-(-215))/100 = 315% of base
+                var newCoef = 100.0 - (100.0 - originalCoef) * effectiveSellMult;
+                trader.Base.LoyaltyLevels[i].BuyPriceCoefficient = Math.Round(newCoef, 2);
             }
         }
     }

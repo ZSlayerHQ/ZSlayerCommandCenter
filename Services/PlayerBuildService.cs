@@ -156,21 +156,72 @@ public class PlayerBuildService(
 
             if (sourceItems == null || sourceItems.Count == 0) continue;
 
-            // Deep-copy items, skipping the InventoryEquipment root container
-            // for gear builds (it's non-lootable/non-transferable)
+            logger.Info($"ZSlayerCommandCenter: Giving build '{buildName}' ({sourceItems.Count} items) to {sessionId}");
+
+            // Deep-copy items, skipping the InventoryEquipment root container,
+            // secure containers + their contents, and armband slot items
             var copiedItems = new List<Item>(sourceItems.Count);
+
+            // For gear builds, find IDs to exclude (root container, secure container + contents, armband, dogtag)
+            var excludedIds = new HashSet<string>();
+            if (gearRootId != null)
+            {
+                excludedIds.Add(gearRootId);
+
+                // Find secure container, armband, and dogtag items (direct children of root)
+                var slotsToExclude = new List<string>();
+                foreach (var item in sourceItems)
+                {
+                    if (item == null) continue;
+                    string pid;
+                    try { pid = item.ParentId.ToString(); }
+                    catch { continue; }
+                    if (pid == gearRootId &&
+                        item.SlotId is "SecuredContainer" or "ArmBand" or "Dogtag" or "Scabbard")
+                    {
+                        var id = item.Id.ToString();
+                        excludedIds.Add(id);
+                        slotsToExclude.Add(id);
+                    }
+                }
+
+                // BFS to find all descendants of excluded slot items (NOT root container)
+                var queue = new Queue<string>(slotsToExclude);
+                while (queue.Count > 0)
+                {
+                    var parentToMatch = queue.Dequeue();
+                    foreach (var item in sourceItems)
+                    {
+                        if (item == null) continue;
+                        var id = item.Id.ToString();
+                        if (excludedIds.Contains(id)) continue;
+                        string itemPid;
+                        try { itemPid = item.ParentId.ToString(); }
+                        catch { continue; }
+                        if (itemPid == parentToMatch)
+                        {
+                            excludedIds.Add(id);
+                            queue.Enqueue(id);
+                        }
+                    }
+                }
+
+                logger.Info($"ZSlayerCommandCenter: Gear build excluded {excludedIds.Count} items (root+secure+armband+dogtag+descendants)");
+            }
+
             foreach (var src in sourceItems)
             {
+                if (src == null) continue;
                 var srcId = src.Id.ToString();
-
-                // Skip the root equipment container itself
-                if (gearRootId != null && srcId == gearRootId)
-                    continue;
+                if (excludedIds.Contains(srcId)) continue;
 
                 var parentId = src.ParentId;
 
                 // Direct children of root become independent top-level items
-                if (gearRootId != null && parentId.ToString() == gearRootId)
+                string parentIdStr;
+                try { parentIdStr = parentId.ToString(); }
+                catch { continue; } // skip items with unresolvable ParentId
+                if (gearRootId != null && parentIdStr == gearRootId)
                     parentId = default;
 
                 copiedItems.Add(new Item
@@ -181,6 +232,15 @@ public class PlayerBuildService(
                     SlotId = src.SlotId,
                     Upd = src.Upd
                 });
+            }
+
+            if (copiedItems.Count == 0)
+            {
+                return new PresetGiveResponse
+                {
+                    Success = false,
+                    Error = "No items after filtering (all items were in excluded slots)"
+                };
             }
 
             itemHelper.SetFoundInRaid(copiedItems);
@@ -194,7 +254,7 @@ public class PlayerBuildService(
                 sessionId,
                 $"Player build: {buildName}");
 
-            logger.Info($"ZSlayerCommandCenter: Sent player build '{buildName}' ({copiedItems.Count} items) to {sessionId}");
+            logger.Info($"ZSlayerCommandCenter: Sent build '{buildName}' ({copiedItems.Count} items) to {sessionId}");
 
             return new PresetGiveResponse
             {

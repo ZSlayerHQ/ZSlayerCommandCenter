@@ -316,7 +316,7 @@ public class CommandCenterHttpListener(
         }
         catch (Exception ex)
         {
-            logger.Error($"ZSlayerCommandCenter: Error handling {method} {path}: {ex.Message}");
+            logger.Error($"ZSlayerCommandCenter: Error handling {method} {path}: {ex.Message}\n{ex.StackTrace}");
             await WriteJson(context, 500, new { error = "Internal server error" });
         }
     }
@@ -948,6 +948,17 @@ public class CommandCenterHttpListener(
                 }
                 var modResult = playerManagementService.ModifyPlayer(headerSessionId, targetSid, modBody);
                 await WriteJson(context, 200, modResult);
+                break;
+
+            case "set-trader-loyalty" when method == "POST":
+                var loyaltyBody = await ReadBody<SetTraderLoyaltyRequest>(context);
+                if (loyaltyBody == null || string.IsNullOrEmpty(loyaltyBody.TraderId))
+                {
+                    await WriteJson(context, 400, new PlayerActionResponse { Success = false, Error = "Invalid request body" });
+                    return;
+                }
+                var loyaltyResult = playerManagementService.SetTraderLoyalty(headerSessionId, targetSid, loyaltyBody.TraderId, loyaltyBody.Level);
+                await WriteJson(context, 200, loyaltyResult);
                 break;
 
             default:

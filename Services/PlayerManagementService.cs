@@ -338,13 +338,18 @@ public class PlayerManagementService(
                     if (traders.TryGetValue(kv.Key, out var trader))
                         traderName = trader.Base?.Nickname ?? kv.Key;
 
+                    var maxLl = 4;
+                    if (traders.TryGetValue(kv.Key, out var traderForLl))
+                        maxLl = traderForLl.Base?.LoyaltyLevels?.Count ?? 4;
+
                     return new PlayerTraderDto
                     {
                         TraderId = kv.Key,
                         TraderName = traderName,
                         LoyaltyLevel = kv.Value.LoyaltyLevel ?? 0,
                         Standing = kv.Value.Standing ?? 0,
-                        SalesSum = (long)(kv.Value.SalesSum ?? 0)
+                        SalesSum = (long)(kv.Value.SalesSum ?? 0),
+                        MaxLoyaltyLevel = maxLl
                     };
                 }).ToList();
             }
@@ -748,6 +753,61 @@ public class PlayerManagementService(
         catch (Exception ex)
         {
             logger.Error($"ZSlayerCommandCenter: Error resetting player {targetSessionId}: {ex.Message}");
+            return new PlayerActionResponse { Success = false, Error = ex.Message };
+        }
+    }
+
+    public PlayerActionResponse SetTraderLoyalty(string adminSessionId, string targetSessionId, string traderId, int level)
+    {
+        try
+        {
+            var profiles = saveServer.GetProfiles();
+            if (!profiles.TryGetValue(targetSessionId, out var profile))
+                return new PlayerActionResponse { Success = false, Error = "Player not found" };
+
+            var pmc = profile.CharacterData?.PmcData;
+            if (pmc?.TradersInfo == null)
+                return new PlayerActionResponse { Success = false, Error = "Invalid player profile" };
+
+            if (!pmc.TradersInfo.TryGetValue(traderId, out var traderInfo))
+                return new PlayerActionResponse { Success = false, Error = "Trader not found on profile" };
+
+            // Get trader data for LL requirements
+            var traders = databaseService.GetTables().Traders;
+            if (!traders.TryGetValue(traderId, out var trader) || trader.Base?.LoyaltyLevels == null)
+                return new PlayerActionResponse { Success = false, Error = "Trader not found in database" };
+
+            var maxLl = trader.Base.LoyaltyLevels.Count;
+            level = Math.Clamp(level, 1, maxLl);
+            var llIndex = level - 1;
+
+            // Set loyalty level
+            traderInfo.LoyaltyLevel = level;
+            traderInfo.Unlocked = true;
+
+            // Set standing and salesSum to meet the target LL requirements so SPT won't reset it
+            var targetLl = trader.Base.LoyaltyLevels[llIndex];
+            if (targetLl.MinStanding != null && (traderInfo.Standing ?? 0) < targetLl.MinStanding)
+                traderInfo.Standing = targetLl.MinStanding.Value;
+            if (targetLl.MinSalesSum != null && (traderInfo.SalesSum ?? 0) < targetLl.MinSalesSum)
+                traderInfo.SalesSum = targetLl.MinSalesSum.Value;
+
+            _ = saveServer.SaveProfileAsync(targetSessionId);
+
+            var traderName = trader.Base.Nickname ?? traderId;
+            var targetName = pmc.Info?.Nickname ?? targetSessionId;
+            activityLogService.LogAction(ActionType.ConfigChange, adminSessionId,
+                $"Set {targetName}'s {traderName} loyalty to LL{level}");
+
+            return new PlayerActionResponse
+            {
+                Success = true,
+                Message = $"Set {traderName} to LL{level} for {targetName}"
+            };
+        }
+        catch (Exception ex)
+        {
+            logger.Error($"ZSlayerCommandCenter: Error setting trader loyalty: {ex.Message}");
             return new PlayerActionResponse { Success = false, Error = ex.Message };
         }
     }
