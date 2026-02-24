@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
@@ -470,6 +471,175 @@ public class TraderApplyService(
             ConfigApplied = _lastApplyTimeMs.HasValue,
             LastApplyTimeMs = _lastApplyTimeMs,
         };
+    }
+
+    // ── Presets ──
+
+    private static readonly JsonSerializerOptions PresetJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    private string GetPresetsDir()
+    {
+        var dir = System.IO.Path.Combine(configService.ModPath, "config", "trader-presets");
+        if (!Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = System.IO.Path.GetInvalidFileNameChars();
+        var clean = new string(name.Where(c => !invalid.Contains(c)).ToArray()).Trim();
+        if (clean.Length > 50) clean = clean[..50];
+        return string.IsNullOrEmpty(clean) ? "preset" : clean;
+    }
+
+    /// <summary>Snapshot current gameplay config (excludes display overrides).</summary>
+    private TraderGameplayConfig SnapshotGameplayConfig()
+    {
+        var config = configService.GetConfig().Traders;
+        return new TraderGameplayConfig
+        {
+            GlobalBuyMultiplier = config.GlobalBuyMultiplier,
+            GlobalSellMultiplier = config.GlobalSellMultiplier,
+            MinPriceRoubles = config.MinPriceRoubles,
+            MaxPriceRoubles = config.MaxPriceRoubles,
+            GlobalStockMultiplier = config.GlobalStockMultiplier,
+            GlobalStockCap = config.GlobalStockCap,
+            GlobalRestockMinSeconds = config.GlobalRestockMinSeconds,
+            GlobalRestockMaxSeconds = config.GlobalRestockMaxSeconds,
+            GlobalLoyaltyLevelShift = config.GlobalLoyaltyLevelShift,
+            ForceCurrency = config.ForceCurrency,
+            TraderOverrides = config.TraderOverrides.ToDictionary(
+                kv => kv.Key,
+                kv => kv.Value with { ItemOverrides = new Dictionary<string, TraderItemOverride>(kv.Value.ItemOverrides), DisabledItems = [.. kv.Value.DisabledItems] })
+        };
+    }
+
+    /// <summary>Apply gameplay config from a preset onto the live config (preserves display overrides).</summary>
+    private void ApplyGameplayConfig(TraderGameplayConfig src)
+    {
+        var config = configService.GetConfig().Traders;
+        config.GlobalBuyMultiplier = src.GlobalBuyMultiplier;
+        config.GlobalSellMultiplier = src.GlobalSellMultiplier;
+        config.MinPriceRoubles = src.MinPriceRoubles;
+        config.MaxPriceRoubles = src.MaxPriceRoubles;
+        config.GlobalStockMultiplier = src.GlobalStockMultiplier;
+        config.GlobalStockCap = src.GlobalStockCap;
+        config.GlobalRestockMinSeconds = src.GlobalRestockMinSeconds;
+        config.GlobalRestockMaxSeconds = src.GlobalRestockMaxSeconds;
+        config.GlobalLoyaltyLevelShift = src.GlobalLoyaltyLevelShift;
+        config.ForceCurrency = src.ForceCurrency;
+        config.TraderOverrides = src.TraderOverrides.ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value with { ItemOverrides = new Dictionary<string, TraderItemOverride>(kv.Value.ItemOverrides), DisabledItems = [.. kv.Value.DisabledItems] });
+        // TraderDisplayOverrides left untouched
+    }
+
+    public TraderPresetListResponse ListTraderPresets()
+    {
+        var dir = GetPresetsDir();
+        var presets = new List<TraderPresetSummary>();
+        foreach (var file in Directory.GetFiles(dir, "*.json"))
+        {
+            try
+            {
+                var json = File.ReadAllText(file);
+                var preset = JsonSerializer.Deserialize<TraderPreset>(json, PresetJsonOptions);
+                if (preset != null)
+                {
+                    presets.Add(new TraderPresetSummary
+                    {
+                        Name = preset.Name,
+                        Description = preset.Description,
+                        CreatedUtc = preset.CreatedUtc
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Debug($"ZSlayerCC Traders: Skipping invalid preset file '{System.IO.Path.GetFileName(file)}': {ex.Message}");
+            }
+        }
+        presets.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        return new TraderPresetListResponse { Presets = presets };
+    }
+
+    public TraderPreset SaveTraderPreset(string name, string description)
+    {
+        var preset = new TraderPreset
+        {
+            Name = name,
+            Description = description,
+            CreatedUtc = DateTime.UtcNow,
+            Config = SnapshotGameplayConfig()
+        };
+        var dir = GetPresetsDir();
+        var filePath = System.IO.Path.Combine(dir, SanitizeFileName(name) + ".json");
+        var json = JsonSerializer.Serialize(preset, PresetJsonOptions);
+        File.WriteAllText(filePath, json);
+        logger.Info($"ZSlayerCC Traders: Saved preset '{name}' to {System.IO.Path.GetFileName(filePath)}");
+        return preset;
+    }
+
+    public TraderPreset? LoadTraderPreset(string name)
+    {
+        var dir = GetPresetsDir();
+        var filePath = System.IO.Path.Combine(dir, SanitizeFileName(name) + ".json");
+        if (!File.Exists(filePath))
+            return null;
+        var json = File.ReadAllText(filePath);
+        return JsonSerializer.Deserialize<TraderPreset>(json, PresetJsonOptions);
+    }
+
+    public TraderApplyResult LoadAndApplyTraderPreset(string name)
+    {
+        lock (_lock)
+        {
+            var preset = LoadTraderPreset(name);
+            if (preset == null)
+                return new TraderApplyResult { Success = false, Error = "Preset not found" };
+
+            ApplyGameplayConfig(preset.Config);
+            configService.SaveConfig();
+            return ApplyConfig();
+        }
+    }
+
+    public bool DeleteTraderPreset(string name)
+    {
+        var dir = GetPresetsDir();
+        var filePath = System.IO.Path.Combine(dir, SanitizeFileName(name) + ".json");
+        if (!File.Exists(filePath))
+            return false;
+        File.Delete(filePath);
+        logger.Info($"ZSlayerCC Traders: Deleted preset '{name}'");
+        return true;
+    }
+
+    public TraderPreset UploadTraderPreset(string name, string presetJson)
+    {
+        var preset = JsonSerializer.Deserialize<TraderPreset>(presetJson, PresetJsonOptions)
+                     ?? throw new InvalidOperationException("Invalid preset JSON");
+        if (!string.IsNullOrWhiteSpace(name))
+            preset.Name = name;
+        preset.CreatedUtc = DateTime.UtcNow;
+        var dir = GetPresetsDir();
+        var filePath = System.IO.Path.Combine(dir, SanitizeFileName(preset.Name) + ".json");
+        var json = JsonSerializer.Serialize(preset, PresetJsonOptions);
+        File.WriteAllText(filePath, json);
+        logger.Info($"ZSlayerCC Traders: Imported preset '{preset.Name}'");
+        return preset;
+    }
+
+    public string? DownloadTraderPreset(string name)
+    {
+        var dir = GetPresetsDir();
+        var filePath = System.IO.Path.Combine(dir, SanitizeFileName(name) + ".json");
+        return File.Exists(filePath) ? File.ReadAllText(filePath) : null;
     }
 
     // ── Private helpers ──

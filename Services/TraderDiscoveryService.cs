@@ -7,6 +7,7 @@ using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Routers;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Services;
+using SPTarkov.Server.Core.Services.Image;
 using ZSlayerCommandCenter.Models;
 
 namespace ZSlayerCommandCenter.Services;
@@ -17,6 +18,7 @@ public class TraderDiscoveryService(
     LocaleService localeService,
     ConfigServer configServer,
     ImageRouter imageRouter,
+    ImageRouterService imageRouterService,
     ConfigService configService,
     ISptLogger<TraderDiscoveryService> logger)
 {
@@ -43,6 +45,8 @@ public class TraderDiscoveryService(
     private readonly Dictionary<string, TraderSnapshot> _snapshots = new();
     private readonly Dictionary<string, (string Nickname, string? AvatarUrl, string? Description)> _originalDisplayInfo = new();
     private readonly Dictionary<string, (string? Nickname, string? Description)> _originalLocaleValues = new();
+    /// <summary>Tracks original image router file paths for routes we've overridden (route key → original file path).</summary>
+    private readonly Dictionary<string, string> _originalAvatarRoutes = new();
     private List<TraderSummary>? _discoveredTraders;
     private bool _initialized;
 
@@ -341,6 +345,9 @@ public class TraderDiscoveryService(
 
     private void ApplyAvatarRoutes(TraderControlConfig config)
     {
+        // Build set of routes that should currently have custom avatars
+        var activeCustomRoutes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         foreach (var (traderId, displayOv) in config.TraderDisplayOverrides)
         {
             if (string.IsNullOrWhiteSpace(displayOv.CustomAvatar)) continue;
@@ -351,9 +358,27 @@ public class TraderDiscoveryService(
             if (extIdx <= 0) continue;
 
             var route = avatar[..extIdx];
+            var routeKey = route.ToLowerInvariant();
+            activeCustomRoutes.Add(routeKey);
+
+            // Save original file path before first override
+            if (!_originalAvatarRoutes.ContainsKey(routeKey))
+            {
+                var original = imageRouterService.GetByKey(routeKey);
+                if (!string.IsNullOrEmpty(original))
+                    _originalAvatarRoutes[routeKey] = original;
+            }
+
             var filePath = System.IO.Path.Combine(configService.ModPath, "res", "Trader Icons", displayOv.CustomAvatar);
             if (File.Exists(filePath))
                 imageRouter.AddRoute(route, filePath);
+        }
+
+        // Restore original routes for any previously overridden traders that no longer have custom avatars
+        foreach (var (routeKey, originalPath) in _originalAvatarRoutes)
+        {
+            if (!activeCustomRoutes.Contains(routeKey))
+                imageRouter.AddRoute(routeKey, originalPath);
         }
     }
 

@@ -1875,9 +1875,102 @@ public class CommandCenterHttpListener(
                 break;
             }
 
+            // ── Preset endpoints ──
+            case "traders/presets" when method == "GET":
+            {
+                var result = traderApplyService.ListTraderPresets();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "traders/presets/save" when method == "POST":
+            {
+                var body = await ReadBody<TraderPresetSaveRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Missing preset name" });
+                    return;
+                }
+                var result = traderApplyService.SaveTraderPreset(body.Name.Trim(), body.Description?.Trim() ?? "");
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Traders: saved preset '{body.Name}'");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "traders/presets/load" when method == "POST":
+            {
+                var body = await ReadBody<TraderPresetLoadRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Missing preset name" });
+                    return;
+                }
+                var result = traderApplyService.LoadAndApplyTraderPreset(body.Name.Trim());
+                if (result.Success)
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Traders: loaded preset '{body.Name}'");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "traders/presets/upload" when method == "POST":
+            {
+                var body = await ReadBody<TraderPresetUploadRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.PresetJson))
+                {
+                    await WriteJson(context, 400, new { error = "Missing preset JSON" });
+                    return;
+                }
+                try
+                {
+                    var result = traderApplyService.UploadTraderPreset(body.Name?.Trim() ?? "", body.PresetJson);
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Traders: imported preset '{result.Name}'");
+                    await WriteJson(context, 200, result);
+                }
+                catch (Exception ex)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid preset JSON: " + ex.Message });
+                }
+                break;
+            }
+
             default:
             {
                 // ── Parameterized routes ──
+
+                // DELETE traders/presets/{name}
+                if (method == "DELETE" && path.StartsWith("traders/presets/"))
+                {
+                    var presetName = Uri.UnescapeDataString(path["traders/presets/".Length..]);
+                    if (string.IsNullOrEmpty(presetName))
+                    {
+                        await WriteJson(context, 400, new { error = "Missing preset name" });
+                        return;
+                    }
+                    var deleted = traderApplyService.DeleteTraderPreset(presetName);
+                    if (deleted)
+                        activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Traders: deleted preset '{presetName}'");
+                    await WriteJson(context, 200, new { success = deleted });
+                    break;
+                }
+
+                // GET traders/presets/{name}/download
+                if (method == "GET" && path.StartsWith("traders/presets/") && path.EndsWith("/download"))
+                {
+                    var segment = path["traders/presets/".Length..^"/download".Length];
+                    var presetName = Uri.UnescapeDataString(segment);
+                    if (string.IsNullOrEmpty(presetName))
+                    {
+                        await WriteJson(context, 400, new { error = "Missing preset name" });
+                        return;
+                    }
+                    var json = traderApplyService.DownloadTraderPreset(presetName);
+                    if (json == null)
+                    {
+                        await WriteJson(context, 404, new { error = "Preset not found" });
+                        return;
+                    }
+                    context.Response.ContentType = "application/json";
+                    context.Response.Headers["Content-Disposition"] = $"attachment; filename=\"{presetName}.json\"";
+                    await context.Response.WriteAsync(json);
+                    break;
+                }
 
                 // DELETE traders/display/avatar/{traderId}
                 if (method == "DELETE" && path.StartsWith("traders/display/avatar/"))

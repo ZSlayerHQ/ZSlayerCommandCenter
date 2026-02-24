@@ -403,3 +403,99 @@ public record TraderAvatarUploadRequest
     [JsonPropertyName("imageBase64")]
     public string ImageBase64 { get; set; } = "";
 }
+
+// ── Preset DTOs ──
+
+/// <summary>Gameplay-only config snapshot (excludes display overrides).</summary>
+public record TraderGameplayConfig
+{
+    [JsonPropertyName("globalBuyMultiplier")]
+    public double GlobalBuyMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("globalSellMultiplier")]
+    public double GlobalSellMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("minPriceRoubles")]
+    public int MinPriceRoubles { get; set; } = 1;
+
+    [JsonPropertyName("maxPriceRoubles")]
+    public int MaxPriceRoubles { get; set; } = 50_000_000;
+
+    [JsonPropertyName("globalStockMultiplier")]
+    public double GlobalStockMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("globalStockCap")]
+    public int? GlobalStockCap { get; set; }
+
+    [JsonPropertyName("globalRestockMinSeconds")]
+    public int? GlobalRestockMinSeconds { get; set; }
+
+    [JsonPropertyName("globalRestockMaxSeconds")]
+    public int? GlobalRestockMaxSeconds { get; set; }
+
+    [JsonPropertyName("globalLoyaltyLevelShift")]
+    public int GlobalLoyaltyLevelShift { get; set; } = 0;
+
+    [JsonPropertyName("forceCurrency")]
+    public string? ForceCurrency { get; set; }
+
+    [JsonPropertyName("traderOverrides")]
+    public Dictionary<string, TraderOverride> TraderOverrides { get; set; } = new();
+}
+
+public record TraderPreset
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = "";
+
+    [JsonPropertyName("createdUtc")]
+    public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
+
+    [JsonPropertyName("config")]
+    public TraderGameplayConfig Config { get; set; } = new();
+}
+
+public record TraderPresetSummary
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = "";
+
+    [JsonPropertyName("createdUtc")]
+    public DateTime CreatedUtc { get; set; }
+}
+
+public record TraderPresetListResponse
+{
+    [JsonPropertyName("presets")]
+    public List<TraderPresetSummary> Presets { get; set; } = [];
+}
+
+public record TraderPresetSaveRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = "";
+}
+
+public record TraderPresetLoadRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+}
+
+public record TraderPresetUploadRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("presetJson")]
+    public string PresetJson { get; set; } = "";
+}

@@ -4614,6 +4614,36 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     <!-- Main view: grid + detail panel -->
     <div id="traderMainView">
+      <!-- PRESETS -->
+      <div class="cc-panel" style="border-left:3px solid #7ab3e0;padding:14px 20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:14px;font-weight:600;color:#7ab3e0;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Presets</div>
+          <div style="display:flex;gap:6px">
+            <button onclick="traderExportPreset()" style="padding:4px 10px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px" title="Download selected preset as JSON file">Export</button>
+            <button onclick="traderShowImport()" style="padding:4px 10px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px" title="Import preset from JSON">Import</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="traderPresetSelect" style="flex:1;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-family:var(--font-mono);font-size:12px">
+            <option value="">— Select a preset —</option>
+          </select>
+          <button onclick="traderLoadPreset()" style="padding:6px 12px;background:var(--bg-dark);color:#7ab3e0;border:1px solid rgba(100,160,220,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:12px">Load</button>
+          <button onclick="traderDeletePreset()" style="padding:6px 12px;background:var(--bg-dark);color:var(--error-bright);border:1px solid rgba(139,58,58,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:12px">Delete</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+          <input type="text" id="traderPresetName" placeholder="Preset name..." style="flex:1;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-family:var(--font-mono);font-size:12px">
+          <button onclick="traderSavePreset()" style="padding:6px 12px;background:rgba(100,160,220,0.15);color:#7ab3e0;border:1px solid rgba(100,160,220,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:12px;font-weight:600">Save Current</button>
+        </div>
+        <!-- Import text area (hidden by default) -->
+        <div id="traderImportArea" style="display:none;margin-top:10px">
+          <textarea id="traderImportJson" style="width:100%;height:100px;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:8px;font-family:var(--font-mono);font-size:11px;resize:vertical" placeholder="Paste preset JSON here..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:6px;justify-content:flex-end">
+            <button onclick="document.getElementById('traderImportArea').style.display='none'" style="padding:4px 10px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px">Cancel</button>
+            <button onclick="traderImportPreset()" style="padding:4px 10px;background:rgba(100,160,220,0.15);color:#7ab3e0;border:1px solid rgba(100,160,220,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:12px">Import &amp; Save</button>
+          </div>
+        </div>
+      </div>
+
       <!-- A) GLOBAL CONTROLS -->
       <div class="cc-panel" style="border-left:3px solid var(--accent);padding:16px 20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px">
         <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:14px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Global Trader Controls</div>
@@ -10412,6 +10442,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       traderPopulateGlobals();
       traderRenderCards();
       traderRenderStatus(results[2]);
+      traderRefreshPresets();
     }).catch(function(e) {
       console.error('Traders init failed:', e);
     });
@@ -10570,6 +10601,113 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     });
   }
 
+  // ── Trader Presets ──
+  function traderRefreshPresets() {
+    api('traders/presets').then(function(data) {
+      var sel = document.getElementById('traderPresetSelect');
+      var prev = sel.value;
+      sel.innerHTML = '<option value="">— Select a preset —</option>';
+      (data.presets || []).forEach(function(p) {
+        var opt = document.createElement('option');
+        opt.value = p.name;
+        opt.textContent = p.name + (p.description ? ' — ' + p.description : '');
+        sel.appendChild(opt);
+      });
+      if (prev) sel.value = prev;
+    }).catch(function() {});
+  }
+
+  window.traderSavePreset = function() {
+    var name = document.getElementById('traderPresetName').value.trim();
+    if (!name) { traderShowToast('Enter a preset name', true); return; }
+    api('traders/presets/save', 'POST', { name: name, description: '' }).then(function() {
+      traderShowToast('Preset "' + name + '" saved');
+      document.getElementById('traderPresetName').value = '';
+      traderRefreshPresets();
+    }).catch(function(e) { traderShowToast('Save failed: ' + e, true); });
+  };
+
+  window.traderLoadPreset = function() {
+    var name = document.getElementById('traderPresetSelect').value;
+    if (!name) { traderShowToast('Select a preset first', true); return; }
+    if (!confirm('Load preset "' + name + '"? This will replace your current trader config and apply immediately.')) return;
+    api('traders/presets/load', 'POST', { name: name }).then(function(result) {
+      if (result.success) {
+        traderShowToast('Loaded preset "' + name + '" — ' + result.itemsModified + ' items modified across ' + result.tradersAffected + ' traders');
+        traderRefreshAll();
+      } else {
+        traderShowToast('Load failed: ' + (result.error || 'Unknown'), true);
+      }
+    }).catch(function(e) { traderShowToast('Load failed: ' + e, true); });
+  };
+
+  window.traderDeletePreset = function() {
+    var name = document.getElementById('traderPresetSelect').value;
+    if (!name) { traderShowToast('Select a preset first', true); return; }
+    if (!confirm('Delete preset "' + name + '"?')) return;
+    api('traders/presets/' + encodeURIComponent(name), 'DELETE').then(function() {
+      traderShowToast('Deleted preset "' + name + '"');
+      traderRefreshPresets();
+    }).catch(function(e) { traderShowToast('Delete failed: ' + e, true); });
+  };
+
+  window.traderExportPreset = function() {
+    var name = document.getElementById('traderPresetSelect').value;
+    if (!name) {
+      // No preset selected — export current config as a preset
+      var cfg = traderConfig;
+      if (!cfg) { traderShowToast('No config loaded', true); return; }
+      var preset = { name: 'exported', description: 'Exported from Command Center', config: {
+        globalBuyMultiplier: cfg.globalBuyMultiplier, globalSellMultiplier: cfg.globalSellMultiplier,
+        minPriceRoubles: cfg.minPriceRoubles, maxPriceRoubles: cfg.maxPriceRoubles,
+        globalStockMultiplier: cfg.globalStockMultiplier, globalStockCap: cfg.globalStockCap,
+        globalRestockMinSeconds: cfg.globalRestockMinSeconds, globalRestockMaxSeconds: cfg.globalRestockMaxSeconds,
+        globalLoyaltyLevelShift: cfg.globalLoyaltyLevelShift, forceCurrency: cfg.forceCurrency,
+        traderOverrides: cfg.traderOverrides || {}
+      }};
+      var json = JSON.stringify(preset, null, 2);
+      var blob = new Blob([json], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'trader-preset-export.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      traderShowToast('Current config exported as JSON file');
+      return;
+    }
+    // Download selected preset from server
+    var url = apiBase + 'traders/presets/' + encodeURIComponent(name) + '/download';
+    fetch(url, { headers: { 'Cookie': 'PHPSESSID=' + sessionId } })
+      .then(function(r) { return r.blob(); })
+      .then(function(blob) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name + '.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        traderShowToast('Downloaded preset "' + name + '"');
+      }).catch(function(e) { traderShowToast('Export failed: ' + e, true); });
+  };
+
+  window.traderShowImport = function() {
+    var area = document.getElementById('traderImportArea');
+    area.style.display = area.style.display === 'none' ? 'block' : 'none';
+    document.getElementById('traderImportJson').value = '';
+  };
+
+  window.traderImportPreset = function() {
+    var json = document.getElementById('traderImportJson').value.trim();
+    if (!json) { traderShowToast('Paste preset JSON first', true); return; }
+    try { JSON.parse(json); } catch(e) { traderShowToast('Invalid JSON: ' + e.message, true); return; }
+    var parsed = JSON.parse(json);
+    var name = parsed.name || 'Imported Preset';
+    api('traders/presets/upload', 'POST', { name: name, presetJson: json }).then(function() {
+      traderShowToast('Imported preset "' + name + '"');
+      document.getElementById('traderImportArea').style.display = 'none';
+      traderRefreshPresets();
+    }).catch(function(e) { traderShowToast('Import failed: ' + e, true); });
+  };
+
   function traderRefreshAll() {
     Promise.all([
       api('traders/config'),
@@ -10581,6 +10719,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       traderPopulateGlobals();
       traderRenderCards();
       traderRenderStatus(results[2]);
+      traderRefreshPresets();
     });
   }
 
