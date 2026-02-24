@@ -268,7 +268,7 @@ All settings are managed through the web UI. The config file at `config/config.j
 │   Dashboard │ Raid Info │ Items │ Players │ Flea │ Access    │
 └──────────────────────┬───────────────────────────────────────┘
                        │  HTTPS (GET/POST JSON)
-                       │  Auth: X-Session-Id + X-CC-Password
+                       │  Auth: X-Session-Id + X-Password
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
 │                      SPT SERVER                              │
@@ -336,7 +336,7 @@ All settings are managed through the web UI. The config file at `config/config.j
 
 ## API Reference
 
-All endpoints are prefixed with `/zslayer/cc/`. Authentication via `X-Session-Id` header (and `X-CC-Password` if password is set).
+All endpoints are prefixed with `/zslayer/cc/`. Authentication via `X-Session-Id` header (and `X-Password` if password is set).
 
 > Endpoints marked *(plugin)* are POST-only telemetry ingestion routes used by the headless plugin.
 
