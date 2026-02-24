@@ -4602,8 +4602,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             </div>
           </div>
         </div>
-        <!-- Row 2: Restock / Currency -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <!-- Row 2: Stock Cap / Restock / Currency -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px">
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Stock Cap<i class="cc-info-icon">i<span class="cc-tip">Cap any item's stock to this maximum BEFORE the stock multiplier is applied. Prevents unlimited buy limits. Leave blank for no cap (default).</span></i></label>
+            <input type="number" id="traderGlobalStockCap" min="1" max="999999" step="1" value="" placeholder="No cap" class="cc-num-input cc-wide-input">
+          </div>
           <div>
             <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Min (min)<i class="cc-info-icon">i<span class="cc-tip">Minimum time in minutes before a trader restocks their inventory. Leave blank for the server default. Lower values = more frequent restocks.</span></i></label>
             <input type="number" id="traderGlobalRestockMin" min="1" max="1440" step="1" value="" placeholder="Default" class="cc-num-input cc-wide-input">
@@ -10374,6 +10378,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('traderGlobalSellVal').value = c.globalSellMultiplier;
     document.getElementById('traderGlobalStock').value = c.globalStockMultiplier;
     document.getElementById('traderGlobalStockVal').value = c.globalStockMultiplier;
+    document.getElementById('traderGlobalStockCap').value = c.globalStockCap || '';
     document.getElementById('traderGlobalRestockMin').value = c.globalRestockMinSeconds ? Math.round(c.globalRestockMinSeconds / 60) : '';
     document.getElementById('traderGlobalRestockMax').value = c.globalRestockMaxSeconds ? Math.round(c.globalRestockMaxSeconds / 60) : '';
     document.getElementById('traderGlobalCurrency').value = c.forceCurrency || '';
@@ -10485,6 +10490,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       globalBuyMultiplier: parseFloat(document.getElementById('traderGlobalBuyVal').value) || 1,
       globalSellMultiplier: parseFloat(document.getElementById('traderGlobalSellVal').value) || 1,
       globalStockMultiplier: parseFloat(document.getElementById('traderGlobalStockVal').value) || 1,
+      globalStockCap: parseInt(document.getElementById('traderGlobalStockCap').value) || null,
       globalRestockMinSeconds: parseInt(document.getElementById('traderGlobalRestockMin').value) ? parseInt(document.getElementById('traderGlobalRestockMin').value) * 60 : null,
       globalRestockMaxSeconds: parseInt(document.getElementById('traderGlobalRestockMax').value) ? parseInt(document.getElementById('traderGlobalRestockMax').value) * 60 : null,
       forceCurrency: document.getElementById('traderGlobalCurrency').value || null

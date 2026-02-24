@@ -16,13 +16,16 @@ public class TraderStockService(
     ISptLogger<TraderStockService> logger)
 {
     /// <summary>
-    /// Apply stock multipliers to all traders' root item StackObjectsCount.
+    /// Apply stock cap + stock multipliers to all traders' root item StackObjectsCount.
+    /// Stock cap is applied first (clamps original stock down to cap), then multiplier is applied.
     /// Assumes items have been restored from snapshot.
     /// </summary>
     public void ApplyStockMultipliers(TraderControlConfig config)
     {
         var traders = databaseService.GetTables().Traders;
         if (traders == null) return;
+
+        var stockCap = config.GlobalStockCap;
 
         foreach (var (traderId, trader) in traders)
         {
@@ -34,7 +37,10 @@ public class TraderStockService(
             var effectiveMult = config.GlobalStockMultiplier;
             if (config.TraderOverrides.TryGetValue(id, out var ov) && ov.Enabled)
                 effectiveMult = ov.StockMultiplier; // Override replaces global
-            if (Math.Abs(effectiveMult - 1.0) < 0.001) continue;
+
+            var hasCap = stockCap is > 0;
+            var hasMultiplier = Math.Abs(effectiveMult - 1.0) >= 0.001;
+            if (!hasCap && !hasMultiplier) continue;
 
             foreach (var item in trader.Assort.Items)
             {
@@ -43,7 +49,11 @@ public class TraderStockService(
 
                 if (snapshot.StockCounts.TryGetValue(itemIdStr, out var originalStock) && item.Upd != null)
                 {
-                    item.Upd.StackObjectsCount = Math.Max(1.0, Math.Round(originalStock * effectiveMult));
+                    // Cap first, then multiply
+                    var stock = originalStock;
+                    if (hasCap && stock > stockCap!.Value)
+                        stock = stockCap.Value;
+                    item.Upd.StackObjectsCount = Math.Max(1.0, Math.Round(stock * effectiveMult));
                 }
             }
         }

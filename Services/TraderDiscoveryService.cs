@@ -118,6 +118,9 @@ public class TraderDiscoveryService(
     {
         if (_discoveredTraders == null) return [];
 
+        // Re-read current restock timers from TraderConfig (may have been modified by ApplyRestockTimers)
+        var traderConfig = configServer.GetConfig<TraderConfig>();
+
         foreach (var info in _discoveredTraders)
         {
             var hasOverride = config.TraderOverrides.ContainsKey(info.Id);
@@ -138,6 +141,14 @@ public class TraderDiscoveryService(
                 info.CurrentBuyMultiplier = globalBuy;
                 info.CurrentSellMultiplier = globalSell;
                 info.CurrentStockMultiplier = globalStock;
+            }
+
+            // Refresh restock timers from live TraderConfig
+            var updateEntry = traderConfig.UpdateTime.FirstOrDefault(u => u.TraderId.ToString() == info.Id);
+            if (updateEntry != null)
+            {
+                info.RestockMinSeconds = updateEntry.Seconds.Min;
+                info.RestockMaxSeconds = updateEntry.Seconds.Max;
             }
         }
 

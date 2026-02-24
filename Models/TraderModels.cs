@@ -21,6 +21,9 @@ public record TraderControlConfig
     [JsonPropertyName("globalStockMultiplier")]
     public double GlobalStockMultiplier { get; set; } = 1.0;
 
+    [JsonPropertyName("globalStockCap")]
+    public int? GlobalStockCap { get; set; }
+
     [JsonPropertyName("globalRestockMinSeconds")]
     public int? GlobalRestockMinSeconds { get; set; }
 
@@ -279,6 +282,9 @@ public record TraderGlobalUpdateRequest
 
     [JsonPropertyName("globalStockMultiplier")]
     public double GlobalStockMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("globalStockCap")]
+    public int? GlobalStockCap { get; set; }
 
     [JsonPropertyName("globalRestockMinSeconds")]
     public int? GlobalRestockMinSeconds { get; set; }

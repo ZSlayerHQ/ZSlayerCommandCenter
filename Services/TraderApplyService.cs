@@ -165,6 +165,7 @@ public class TraderApplyService(
             config.GlobalBuyMultiplier = Math.Clamp(req.GlobalBuyMultiplier, 0.01, 100.0);
             config.GlobalSellMultiplier = Math.Clamp(req.GlobalSellMultiplier, 0.01, 100.0);
             config.GlobalStockMultiplier = Math.Clamp(req.GlobalStockMultiplier, 0.1, 100.0);
+            config.GlobalStockCap = req.GlobalStockCap is > 0 ? req.GlobalStockCap : null;
             config.GlobalRestockMinSeconds = req.GlobalRestockMinSeconds;
             config.GlobalRestockMaxSeconds = req.GlobalRestockMaxSeconds;
             config.GlobalLoyaltyLevelShift = Math.Clamp(req.GlobalLoyaltyLevelShift, -3, 0);
@@ -265,6 +266,7 @@ public class TraderApplyService(
             config.GlobalBuyMultiplier = 1.0;
             config.GlobalSellMultiplier = 1.0;
             config.GlobalStockMultiplier = 1.0;
+            config.GlobalStockCap = null;
             config.MinPriceRoubles = 1;
             config.MaxPriceRoubles = 50_000_000;
             config.GlobalRestockMinSeconds = null;
