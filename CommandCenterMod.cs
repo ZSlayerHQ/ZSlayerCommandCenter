@@ -419,7 +419,10 @@ public class CommandCenterMod(
         try
         {
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
-            return client.GetStringAsync("https://api.ipify.org").Result.Trim();
+            using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.ipify.org");
+            using var response = client.Send(request);
+            using var reader = new StreamReader(response.Content.ReadAsStream());
+            return reader.ReadToEnd().Trim();
         }
         catch { return null; }
     }

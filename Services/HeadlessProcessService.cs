@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Servers;
 using ZSlayerCommandCenter.Models;
@@ -10,6 +11,7 @@ namespace ZSlayerCommandCenter.Services;
 [Injectable(InjectionType.Singleton)]
 public class HeadlessProcessService(
     ConfigService configService,
+    ConfigServer configServer,
     SaveServer saveServer,
     HeadlessLogService headlessLogService,
     ISptLogger<HeadlessProcessService> logger)
@@ -115,8 +117,11 @@ public class HeadlessProcessService(
 
         _stopping = false;
 
+        var httpCfg = configServer.GetConfig<HttpConfig>();
+        var backendUrl = $"https://127.0.0.1:{httpCfg.Port}";
+
         var args = $"-token={config.ProfileId} " +
-                   $"-config={{'BackendUrl':'https://127.0.0.1:6969','Version':'live'}} " +
+                   $"-config={{'BackendUrl':'{backendUrl}','Version':'live'}} " +
                    "-nographics -batchmode --enable-console true";
 
         try
