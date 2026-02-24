@@ -15,10 +15,12 @@ public class ActivityLogService(
     ConfigService configService,
     ISptLogger<ActivityLogService> logger)
 {
+    private readonly object _logLock = new();
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true
+        WriteIndented = false
     };
 
     public void LogAction(string actionType, string sessionId, string details)
@@ -39,15 +41,11 @@ public class ActivityLogService(
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
-            List<ActivityEntry> entries = [];
-            if (File.Exists(path))
+            var line = JsonSerializer.Serialize(entry, JsonOptions) + Environment.NewLine;
+            lock (_logLock)
             {
-                var existing = File.ReadAllText(path);
-                entries = JsonSerializer.Deserialize<List<ActivityEntry>>(existing, JsonOptions) ?? [];
+                File.AppendAllText(path, line);
             }
-
-            entries.Add(entry);
-            File.WriteAllText(path, JsonSerializer.Serialize(entries, JsonOptions));
         }
         catch (Exception ex)
         {
@@ -87,7 +85,10 @@ public class ActivityLogService(
 
         if (!Directory.Exists(logsDir)) return;
 
-        foreach (var file in Directory.GetFiles(logsDir, "activity-*.json"))
+        var files = Directory.GetFiles(logsDir, "activity-*.json")
+            .Concat(Directory.GetFiles(logsDir, "activity-*.jsonl"));
+
+        foreach (var file in files)
         {
             var fileName = Path.GetFileNameWithoutExtension(file);
             var datePart = fileName.Replace("activity-", "");
@@ -98,7 +99,10 @@ public class ActivityLogService(
                     File.Delete(file);
                     logger.Info($"ZSlayerCommandCenter: Cleaned up old activity log: {fileName}");
                 }
-                catch { /* ignore cleanup failures */ }
+                catch (Exception ex)
+                {
+                    logger.Debug($"ZSlayerCommandCenter: Failed to delete activity log '{fileName}': {ex.Message}");
+                }
             }
         }
     }
@@ -109,11 +113,36 @@ public class ActivityLogService(
         if (!Directory.Exists(logsDir)) return [];
 
         var allEntries = new List<ActivityEntry>();
-        var files = Directory.GetFiles(logsDir, "activity-*.json")
+        var jsonlFiles = Directory.GetFiles(logsDir, "activity-*.jsonl")
             .OrderByDescending(f => f)
-            .Take(7); // Last 7 days max for performance
+            .Take(7)
+            .ToList();
 
-        foreach (var file in files)
+        // Back-compat: legacy JSON array files
+        var jsonFiles = Directory.GetFiles(logsDir, "activity-*.json")
+            .OrderByDescending(f => f)
+            .Take(7)
+            .ToList();
+
+        foreach (var file in jsonlFiles)
+        {
+            try
+            {
+                foreach (var line in File.ReadLines(file))
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    var entry = JsonSerializer.Deserialize<ActivityEntry>(line, JsonOptions);
+                    if (entry != null)
+                        allEntries.Add(entry);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Debug($"ZSlayerCommandCenter: Skipping invalid activity log file '{Path.GetFileName(file)}': {ex.Message}");
+            }
+        }
+
+        foreach (var file in jsonFiles)
         {
             try
             {
@@ -122,7 +151,10 @@ public class ActivityLogService(
                 if (entries != null)
                     allEntries.AddRange(entries);
             }
-            catch { /* skip corrupt files */ }
+            catch (Exception ex)
+            {
+                logger.Debug($"ZSlayerCommandCenter: Skipping invalid legacy activity log file '{Path.GetFileName(file)}': {ex.Message}");
+            }
         }
 
         return allEntries;
@@ -136,13 +168,16 @@ public class ActivityLogService(
             if (profiles.TryGetValue(sessionId, out var profile))
                 return profile.CharacterData?.PmcData?.Info?.Nickname ?? "Unknown";
         }
-        catch { /* ignore */ }
+        catch (Exception ex)
+        {
+            logger.Debug($"ZSlayerCommandCenter: Failed to resolve profile name for session '{sessionId}': {ex.Message}");
+        }
         return "Unknown";
     }
 
     private string GetLogFilePath(DateTime date)
     {
-        return Path.Combine(GetLogsDir(), $"activity-{date:yyyy-MM-dd}.json");
+        return Path.Combine(GetLogsDir(), $"activity-{date:yyyy-MM-dd}.jsonl");
     }
 
     private string GetLogsDir()

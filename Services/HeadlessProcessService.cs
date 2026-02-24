@@ -76,7 +76,10 @@ public class HeadlessProcessService(
                         }
                     }
                 }
-                catch { /* ignore parse errors */ }
+                catch (Exception ex)
+                {
+                    logger.Debug($"HeadlessProcessService: failed to parse HeadlessConfig.json: {ex.Message}");
+                }
             }
         }
     }
@@ -218,17 +221,27 @@ public class HeadlessProcessService(
                         _stopping = false;
 
                         try { _startedAt = p.StartTime.ToUniversalTime(); }
-                        catch { _startedAt = DateTime.UtcNow; }
+                        catch (Exception ex)
+                        {
+                            logger.Debug($"HeadlessProcessService: unable to read process start time for PID {p.Id}: {ex.Message}");
+                            _startedAt = DateTime.UtcNow;
+                        }
 
                         _lastCrashReason = null;
                         logger.Info($"HeadlessProcessService: attached to existing process (PID {p.Id})");
                         return;
                     }
                 }
-                catch { /* access denied on MainModule — skip */ }
+                catch (Exception ex)
+                {
+                    logger.Debug($"HeadlessProcessService: unable to inspect process module for PID {p.Id}: {ex.Message}");
+                }
             }
         }
-        catch { /* GetProcessesByName can throw */ }
+        catch (Exception ex)
+        {
+            logger.Debug($"HeadlessProcessService: process scan failed: {ex.Message}");
+        }
     }
 
     public HeadlessStatusDto GetStatus(string? error = null)
@@ -295,7 +308,10 @@ public class HeadlessProcessService(
             if (profiles.TryGetValue(profileId, out var profile))
                 return profile.CharacterData?.PmcData?.Info?.Nickname ?? "";
         }
-        catch { /* ignore */ }
+        catch (Exception ex)
+        {
+            logger.Debug($"HeadlessProcessService: failed to resolve profile name '{profileId}': {ex.Message}");
+        }
         return "";
     }
 

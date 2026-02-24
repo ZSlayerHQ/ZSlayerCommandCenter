@@ -285,12 +285,18 @@ public class PlayerManagementService(
                                             Completed = completedSet.Contains(condId)
                                         });
                                     }
-                                    catch { /* skip malformed conditions */ }
+                                    catch (Exception ex)
+                                    {
+                                        logger.Debug($"ZSlayerCommandCenter: Malformed quest condition skipped for quest {q.QId}: {ex.Message}");
+                                    }
                                 }
                             }
                         }
                     }
-                    catch { /* quest template lookup failed, keep defaults */ }
+                    catch (Exception ex)
+                    {
+                        logger.Debug($"ZSlayerCommandCenter: Quest template lookup failed for quest {q.QId}: {ex.Message}");
+                    }
 
                     return questDto;
                 }).ToList();
@@ -533,7 +539,10 @@ public class PlayerManagementService(
                     Count = (int)(i.Upd?.StackObjectsCount ?? 1)
                 });
             }
-            catch { /* skip items that can't be read */ }
+            catch (Exception ex)
+            {
+                logger.Debug($"ZSlayerCommandCenter: Failed to process stash item for value calc: {ex.Message}");
+            }
         }
 
         // Search filter
@@ -702,7 +711,10 @@ public class PlayerManagementService(
                         {
                             traderHelper.ResetTrader(targetSessionId, traderId);
                         }
-                        catch { /* skip traders that can't be reset */ }
+                        catch (Exception ex)
+                        {
+                            logger.Debug($"ZSlayerCommandCenter: Failed to reset trader for session {targetSessionId}: {ex.Message}");
+                        }
                     }
                 }
                 resetActions.Add("traders");
