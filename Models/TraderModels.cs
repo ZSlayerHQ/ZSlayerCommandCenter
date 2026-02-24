@@ -89,6 +89,33 @@ public record TraderOverride
 
     [JsonPropertyName("itemOverrides")]
     public Dictionary<string, TraderItemOverride> ItemOverrides { get; set; } = new();
+
+    [JsonPropertyName("addedItems")]
+    public List<TraderAddedItem> AddedItems { get; set; } = [];
+}
+
+public record TraderAddedItem
+{
+    [JsonPropertyName("templateId")]
+    public string TemplateId { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("price")]
+    public int Price { get; set; } = 1;
+
+    [JsonPropertyName("currency")]
+    public string Currency { get; set; } = "RUB";
+
+    [JsonPropertyName("loyaltyLevel")]
+    public int LoyaltyLevel { get; set; } = 1;
+
+    [JsonPropertyName("stock")]
+    public int Stock { get; set; } = 100;
+
+    [JsonPropertyName("unlimitedStock")]
+    public bool UnlimitedStock { get; set; } = false;
 }
 
 public record TraderItemOverride
@@ -238,6 +265,9 @@ public record TraderItemInfo
 
     [JsonPropertyName("effectiveMultiplier")]
     public double EffectiveMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("isAdded")]
+    public bool IsAdded { get; set; }
 }
 
 public record TraderApplyResult
@@ -381,6 +411,33 @@ public record TraderItemOverrideRequest
 
     [JsonPropertyName("sellMultiplier")]
     public double SellMultiplier { get; set; } = 1.0;
+}
+
+public record TraderAddItemRequest
+{
+    [JsonPropertyName("traderId")]
+    public string TraderId { get; set; } = "";
+
+    [JsonPropertyName("templateId")]
+    public string TemplateId { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("price")]
+    public int Price { get; set; } = 1;
+
+    [JsonPropertyName("currency")]
+    public string Currency { get; set; } = "RUB";
+
+    [JsonPropertyName("loyaltyLevel")]
+    public int LoyaltyLevel { get; set; } = 1;
+
+    [JsonPropertyName("stock")]
+    public int Stock { get; set; } = 100;
+
+    [JsonPropertyName("unlimitedStock")]
+    public bool UnlimitedStock { get; set; } = false;
 }
 
 public record TraderDisplayUpdateRequest

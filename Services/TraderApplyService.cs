@@ -88,6 +88,9 @@ public class TraderApplyService(
                 if (traders == null)
                     return new TraderApplyResult { Success = false, Error = "No traders found" };
 
+                // Step 0: Remove any previously injected items before restore
+                stockService.RemoveInjectedItems();
+
                 // Step 1: Restore ALL traders from snapshots
                 var tradersAffected = RestoreAllTraders();
 
@@ -112,6 +115,9 @@ public class TraderApplyService(
                 // Step 8: Apply disabled items
                 var disabledCount = stockService.ApplyDisabledItems(config);
 
+                // Step 9: Inject added items (exact prices, not affected by multipliers)
+                var addedCount = stockService.ApplyAddedItems(config);
+
                 sw.Stop();
                 _lastApplyTimeMs = sw.ElapsedMilliseconds;
 
@@ -119,7 +125,7 @@ public class TraderApplyService(
                 {
                     Success = true,
                     TradersAffected = tradersAffected,
-                    ItemsModified = itemsModified + disabledCount,
+                    ItemsModified = itemsModified + disabledCount + addedCount,
                     ApplyTimeMs = sw.ElapsedMilliseconds
                 };
             }
@@ -257,6 +263,62 @@ public class TraderApplyService(
     }
 
     /// <summary>
+    /// Add an item to a trader's assortment.
+    /// </summary>
+    public TraderApplyResult AddItemToTrader(TraderAddItemRequest req)
+    {
+        lock (_lock)
+        {
+            // Validate
+            if (req.Price < 1) req.Price = 1;
+            if (req.LoyaltyLevel < 1 || req.LoyaltyLevel > 4) req.LoyaltyLevel = Math.Clamp(req.LoyaltyLevel, 1, 4);
+            if (req.Stock < 1) req.Stock = 1;
+            if (req.Currency is not ("RUB" or "USD" or "EUR")) req.Currency = "RUB";
+
+            var config = configService.GetConfig().Traders;
+            if (!config.TraderOverrides.TryGetValue(req.TraderId, out var ov))
+            {
+                ov = new TraderOverride();
+                config.TraderOverrides[req.TraderId] = ov;
+            }
+
+            ov.AddedItems.Add(new TraderAddedItem
+            {
+                TemplateId = req.TemplateId,
+                Name = req.Name,
+                Price = req.Price,
+                Currency = req.Currency,
+                LoyaltyLevel = req.LoyaltyLevel,
+                Stock = req.Stock,
+                UnlimitedStock = req.UnlimitedStock,
+            });
+
+            configService.SaveConfig();
+            return ApplyConfig();
+        }
+    }
+
+    /// <summary>
+    /// Remove an added item from a trader by index.
+    /// </summary>
+    public TraderApplyResult RemoveAddedItem(string traderId, int index)
+    {
+        lock (_lock)
+        {
+            var config = configService.GetConfig().Traders;
+            if (!config.TraderOverrides.TryGetValue(traderId, out var ov))
+                return new TraderApplyResult { Success = false, Error = "Trader override not found" };
+
+            if (index < 0 || index >= ov.AddedItems.Count)
+                return new TraderApplyResult { Success = false, Error = "Invalid item index" };
+
+            ov.AddedItems.RemoveAt(index);
+            configService.SaveConfig();
+            return ApplyConfig();
+        }
+    }
+
+    /// <summary>
     /// Reset ALL traders to original values and clear config.
     /// </summary>
     public TraderApplyResult ResetAll()
@@ -277,6 +339,7 @@ public class TraderApplyService(
             config.TraderOverrides.Clear();
             configService.SaveConfig();
 
+            stockService.RemoveInjectedItems();
             RestoreAllTraders();
             RestoreAllRestockTimers();
             RestoreAllLoyaltyCoefs();
@@ -315,6 +378,7 @@ public class TraderApplyService(
         var snapshot = discoveryService.GetSnapshot(traderId);
         var locales = localeService.GetLocaleDb("en");
         var searchLower = search?.ToLowerInvariant();
+        var injectedIds = stockService.GetInjectedItemIds(traderId);
 
         var allItems = new List<TraderItemInfo>();
 
@@ -416,6 +480,7 @@ public class TraderApplyService(
                 IsDisabled = disabledTemplates.Contains(templateId),
                 HasOverride = hasItemOverride,
                 EffectiveMultiplier = effectiveMult,
+                IsAdded = injectedIds != null && injectedIds.Contains(itemId),
             });
         }
 
@@ -515,7 +580,7 @@ public class TraderApplyService(
             ForceCurrency = config.ForceCurrency,
             TraderOverrides = config.TraderOverrides.ToDictionary(
                 kv => kv.Key,
-                kv => kv.Value with { ItemOverrides = new Dictionary<string, TraderItemOverride>(kv.Value.ItemOverrides), DisabledItems = [.. kv.Value.DisabledItems] })
+                kv => kv.Value with { ItemOverrides = new Dictionary<string, TraderItemOverride>(kv.Value.ItemOverrides), DisabledItems = [.. kv.Value.DisabledItems], AddedItems = [.. kv.Value.AddedItems] })
         };
     }
 
@@ -535,7 +600,7 @@ public class TraderApplyService(
         config.ForceCurrency = src.ForceCurrency;
         config.TraderOverrides = src.TraderOverrides.ToDictionary(
             kv => kv.Key,
-            kv => kv.Value with { ItemOverrides = new Dictionary<string, TraderItemOverride>(kv.Value.ItemOverrides), DisabledItems = [.. kv.Value.DisabledItems] });
+            kv => kv.Value with { ItemOverrides = new Dictionary<string, TraderItemOverride>(kv.Value.ItemOverrides), DisabledItems = [.. kv.Value.DisabledItems], AddedItems = [.. kv.Value.AddedItems] });
         // TraderDisplayOverrides left untouched
     }
 

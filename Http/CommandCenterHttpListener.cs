@@ -1719,6 +1719,20 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, 200, result);
                 break;
             }
+            case "traders/config/trader/add-item" when method == "POST":
+            {
+                var body = await ReadBody<TraderAddItemRequest>(context);
+                if (body == null || string.IsNullOrEmpty(body.TraderId) || string.IsNullOrEmpty(body.TemplateId))
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body or missing traderId/templateId" });
+                    return;
+                }
+                var result = traderApplyService.AddItemToTrader(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Traders: added item '{body.Name}' to {body.TraderId}");
+                await WriteJson(context, 200, result);
+                break;
+            }
 
             // ── Discovery & info endpoints ──
             case "traders/list" when method == "GET":
@@ -2023,6 +2037,30 @@ public class CommandCenterHttpListener(
                     var result = traderApplyService.RemoveItemOverride(traderId, templateId);
                     activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                         $"Traders: removed item override {templateId} from {traderId}");
+                    await WriteJson(context, 200, result);
+                    break;
+                }
+
+                // DELETE traders/config/trader/added-item/{traderId}/{index}
+                if (method == "DELETE" && path.StartsWith("traders/config/trader/added-item/"))
+                {
+                    var remainder = path.Substring("traders/config/trader/added-item/".Length);
+                    var slashIdx = remainder.IndexOf('/');
+                    if (slashIdx <= 0)
+                    {
+                        await WriteJson(context, 400, new { error = "Missing traderId/index" });
+                        return;
+                    }
+                    var traderId = remainder[..slashIdx];
+                    var indexStr = remainder[(slashIdx + 1)..];
+                    if (string.IsNullOrEmpty(traderId) || !int.TryParse(indexStr, out var index))
+                    {
+                        await WriteJson(context, 400, new { error = "Missing traderId or invalid index" });
+                        return;
+                    }
+                    var result = traderApplyService.RemoveAddedItem(traderId, index);
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Traders: removed added item index {index} from {traderId}");
                     await WriteJson(context, 200, result);
                     break;
                 }
