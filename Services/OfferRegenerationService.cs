@@ -13,7 +13,7 @@ namespace ZSlayerCommandCenter.Services;
 [Injectable(InjectionType.Singleton)]
 public class OfferRegenerationService(
     DatabaseService databaseService,
-    RagfairConfig ragfairConfig,
+    ConfigServer configServer,
     RagfairOfferService ragfairOfferService,
     RagfairOfferGenerator ragfairOfferGenerator,
     FleaPriceService fleaPriceService,
@@ -66,6 +66,7 @@ public class OfferRegenerationService(
         lock (_lock)
         {
             var globals = databaseService.GetGlobals();
+            var ragfairConfig = configServer.GetConfig<RagfairConfig>();
             var flea = fleaPriceService.GetConfig();
 
             // Snapshot on first call

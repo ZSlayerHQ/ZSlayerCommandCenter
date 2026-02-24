@@ -36,7 +36,7 @@ public class CommandCenterHttpListener(
     TelemetryService telemetryService,
     PlayerBuildService playerBuildService,
     DatabaseService databaseService,
-    RagfairConfig ragfairConfig,
+    ConfigServer configServer,
     SaveServer saveServer,
     ProfileActivityService profileActivityService,
     ModHelper modHelper,
@@ -1508,7 +1508,7 @@ public class CommandCenterHttpListener(
                     configTaxMultiplier = fleaCfg.FleaTaxMultiplier,
                     globalsCommunityItemTax = globals.Configuration.RagFair.CommunityItemTax,
                     globalsCommunityRequirementTax = globals.Configuration.RagFair.CommunityRequirementTax,
-                    ragfairConfigOfferListingTaxMultiplier = ragfairConfig.OfferListingTaxMultiplier
+                    ragfairConfigOfferListingTaxMultiplier = configServer.GetConfig<RagfairConfig>().OfferListingTaxMultiplier
                 });
                 break;
             }

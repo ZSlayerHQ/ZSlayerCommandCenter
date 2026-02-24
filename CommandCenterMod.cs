@@ -21,7 +21,7 @@ public class CommandCenterMod(
     OfferRegenerationService offerRegenerationService,
     TelemetryService telemetryService,
     SeasonalEventService seasonalEventService,
-    HttpConfig httpConfig,
+    ConfigServer configServer,
     ISptLogger<CommandCenterMod> logger) : IOnLoad
 {
     /// <summary>Detected server URLs, available for mail/API use.</summary>
@@ -80,8 +80,9 @@ public class CommandCenterMod(
         activityLogService.LogAction(ActionType.ServerStart, "", "Server started");
 
         // Detect bound IP and build URLs based on bind mode
-        var boundIp = httpConfig.Ip;
-        var port = httpConfig.Port;
+        var httpCfg = configServer.GetConfig<HttpConfig>();
+        var boundIp = httpCfg.Ip;
+        var port = httpCfg.Port;
         string MakeUrl(string ip) => $"https://{ip}:{port}/zslayer/cc/";
 
         var urlLines = new List<string>();
