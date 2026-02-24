@@ -34,6 +34,8 @@ public class CommandCenterHttpListener(
     HeadlessProcessService headlessProcessService,
     FikaConfigService fikaConfigService,
     TelemetryService telemetryService,
+    TraderApplyService traderApplyService,
+    TraderDiscoveryService traderDiscoveryService,
     PlayerBuildService playerBuildService,
     DatabaseService databaseService,
     ConfigServer configServer,
@@ -172,6 +174,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("flea/"))
             {
                 await HandleFleaRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle trader routes with prefix matching
+            if (path.StartsWith("traders/") || path == "traders")
+            {
+                await HandleTraderRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -1631,6 +1640,201 @@ public class CommandCenterHttpListener(
         }
     }
 
+    private async Task HandleTraderRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        switch (path)
+        {
+            // ── Config endpoints ──
+            case "traders/config" when method == "GET":
+            {
+                var config = traderApplyService.GetConfig();
+                await WriteJson(context, 200, config);
+                break;
+            }
+            case "traders/config" when method == "POST":
+            {
+                var body = await ReadBody<TraderControlConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    return;
+                }
+                var result = traderApplyService.UpdateFullConfig(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Traders: full config updated");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "traders/config/global" when method == "POST":
+            {
+                var body = await ReadBody<TraderGlobalUpdateRequest>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    return;
+                }
+                var result = traderApplyService.UpdateGlobalConfig(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Traders: global buy={body.GlobalBuyMultiplier:F2} sell={body.GlobalSellMultiplier:F2} stock={body.GlobalStockMultiplier:F2}");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "traders/config/trader" when method == "POST":
+            {
+                var body = await ReadBody<TraderOverrideUpdateRequest>(context);
+                if (body == null || string.IsNullOrEmpty(body.TraderId))
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body or missing traderId" });
+                    return;
+                }
+                var result = traderApplyService.UpdateTraderOverride(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Traders: updated override for {body.TraderId}");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "traders/config/trader/item" when method == "POST":
+            {
+                var body = await ReadBody<TraderItemOverrideRequest>(context);
+                if (body == null || string.IsNullOrEmpty(body.TraderId) || string.IsNullOrEmpty(body.TemplateId))
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body or missing traderId/templateId" });
+                    return;
+                }
+                var result = traderApplyService.SetItemOverride(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Traders: item override '{body.Name}' on {body.TraderId}");
+                await WriteJson(context, 200, result);
+                break;
+            }
+
+            // ── Discovery & info endpoints ──
+            case "traders/list" when method == "GET":
+            {
+                var config = traderApplyService.GetConfig();
+                var traders = traderDiscoveryService.GetDiscoveredTraders(config);
+                await WriteJson(context, 200, new { traders });
+                break;
+            }
+            case "traders/status" when method == "GET":
+            {
+                var status = traderApplyService.GetStatus();
+                await WriteJson(context, 200, status);
+                break;
+            }
+
+            // ── Action endpoints ──
+            case "traders/apply" when method == "POST":
+            {
+                var result = traderApplyService.ApplyConfig();
+                if (result.Success)
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Traders: applied — {result.ItemsModified} items across {result.TradersAffected} traders in {result.ApplyTimeMs}ms");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "traders/reset" when method == "POST":
+            {
+                var result = traderApplyService.ResetAll();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Traders: reset all to defaults");
+                await WriteJson(context, 200, result);
+                break;
+            }
+
+            default:
+            {
+                // ── Parameterized routes ──
+
+                // DELETE traders/config/trader/item/{traderId}/{templateId}
+                if (method == "DELETE" && path.StartsWith("traders/config/trader/item/"))
+                {
+                    var remainder = path.Substring("traders/config/trader/item/".Length);
+                    var slashIdx = remainder.IndexOf('/');
+                    if (slashIdx <= 0)
+                    {
+                        await WriteJson(context, 400, new { error = "Missing traderId/templateId" });
+                        return;
+                    }
+                    var traderId = remainder[..slashIdx];
+                    var templateId = remainder[(slashIdx + 1)..];
+                    if (string.IsNullOrEmpty(traderId) || string.IsNullOrEmpty(templateId))
+                    {
+                        await WriteJson(context, 400, new { error = "Missing traderId or templateId" });
+                        return;
+                    }
+                    var result = traderApplyService.RemoveItemOverride(traderId, templateId);
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Traders: removed item override {templateId} from {traderId}");
+                    await WriteJson(context, 200, result);
+                    break;
+                }
+
+                // POST traders/reset/{traderId}
+                if (method == "POST" && path.StartsWith("traders/reset/"))
+                {
+                    var traderId = path.Substring("traders/reset/".Length);
+                    if (string.IsNullOrEmpty(traderId))
+                    {
+                        await WriteJson(context, 400, new { error = "Missing traderId" });
+                        return;
+                    }
+                    var result = traderApplyService.ResetTrader(traderId);
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Traders: reset {traderId}");
+                    await WriteJson(context, 200, result);
+                    break;
+                }
+
+                // GET traders/{traderId}/items?search=&loyaltyLevel=&limit=&offset=
+                if (method == "GET" && path.StartsWith("traders/") && path.Contains("/items"))
+                {
+                    var afterTraders = path.Substring("traders/".Length);
+                    var itemsIdx = afterTraders.IndexOf("/items");
+                    if (itemsIdx <= 0)
+                    {
+                        await WriteJson(context, 404, new { error = "Not found" });
+                        return;
+                    }
+                    var traderId = afterTraders[..itemsIdx];
+                    var subPath = afterTraders[(itemsIdx + "/items".Length)..];
+
+                    // GET traders/{traderId}/items/{templateId} — single item detail
+                    if (subPath.StartsWith("/") && subPath.Length > 1 && !subPath.Contains('?'))
+                    {
+                        var templateId = subPath[1..];
+                        var itemList = traderApplyService.GetTraderItems(traderId, null, null, 1000, 0);
+                        var item = itemList.Items.FirstOrDefault(i => i.TemplateId == templateId);
+                        if (item == null)
+                        {
+                            await WriteJson(context, 404, new { error = "Item not found" });
+                            return;
+                        }
+                        await WriteJson(context, 200, item);
+                        break;
+                    }
+
+                    // GET traders/{traderId}/items?search=&loyaltyLevel=&limit=&offset=
+                    var search = context.Request.Query["search"].FirstOrDefault();
+                    var llStr = context.Request.Query["loyaltyLevel"].FirstOrDefault();
+                    var limitStr = context.Request.Query["limit"].FirstOrDefault();
+                    var offsetStr = context.Request.Query["offset"].FirstOrDefault();
+
+                    int? ll = int.TryParse(llStr, out var llVal) ? llVal : null;
+                    var limit = int.TryParse(limitStr, out var limVal) ? Math.Clamp(limVal, 1, 200) : 50;
+                    var offset = int.TryParse(offsetStr, out var offVal) ? Math.Max(0, offVal) : 0;
+
+                    var result = traderApplyService.GetTraderItems(traderId, search, ll, limit, offset);
+                    await WriteJson(context, 200, result);
+                    break;
+                }
+
+                await WriteJson(context, 404, new { error = "Not found" });
+                break;
+            }
+        }
+    }
+
     private async Task ServeHtml(HttpContext context)
     {
         if (_cachedHtml is null)
@@ -1699,7 +1903,10 @@ public class CommandCenterHttpListener(
 
         context.Response.StatusCode = 200;
         context.Response.ContentType = contentType;
-        context.Response.Headers["Cache-Control"] = "public, max-age=3600";
+        // Cache images/fonts for 1hr, HTML/JS/CSS should revalidate each time for live deploys
+        context.Response.Headers["Cache-Control"] = ext is ".html" or ".js" or ".css"
+            ? "no-cache"
+            : "public, max-age=3600";
         var bytes = await File.ReadAllBytesAsync(filePath);
         await context.Response.Body.WriteAsync(bytes);
         await context.Response.StartAsync();

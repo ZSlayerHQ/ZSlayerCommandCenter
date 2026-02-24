@@ -40,6 +40,18 @@
       }
     ]
   },
+  "traders": {
+    "globalBuyMultiplier": 1.0,
+    "globalSellMultiplier": 1.0,
+    "minPriceRoubles": 1,
+    "maxPriceRoubles": 50000000,
+    "globalStockMultiplier": 1.0,
+    "globalRestockMinSeconds": null,
+    "globalRestockMaxSeconds": null,
+    "globalLoyaltyLevelShift": 0,
+    "forceCurrency": null,
+    "traderOverrides": {}
+  },
   "flea": {
     "globalBuyMultiplier": 1.0,
     "categoryMultipliers": {},

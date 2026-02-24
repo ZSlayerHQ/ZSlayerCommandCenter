@@ -3349,7 +3349,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <button class="nav-btn" data-nav="items" onclick="switchMainTab('items')">Items</button>
     <button class="nav-btn" data-nav="players" onclick="switchMainTab('players')">Players</button>
     <button class="nav-btn" data-nav="flea" onclick="switchMainTab('flea')">Flea Market</button>
-    <button class="nav-btn disabled" data-nav="traders" onclick="switchMainTab('traders')">Traders <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
+    <button class="nav-btn" data-nav="traders" onclick="switchMainTab('traders')">Traders</button>
     <button class="nav-btn" data-nav="quests" onclick="switchMainTab('quests')">Quests</button>
     <button class="nav-btn disabled" data-nav="progression" onclick="switchMainTab('progression')">Progression <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="backups" onclick="switchMainTab('backups')">Backups <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
@@ -4545,11 +4545,268 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   </div>
 
   <div class="main-tab-panel" id="main-traders">
-    <div class="coming-soon">
-      <div class="coming-soon-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
-      <h2>Trader Control</h2>
-      <p>Adjust trader prices, restock timers, loyalty levels, and currency settings.</p>
-      <span class="phase-badge">Phase 4</span>
+    <!-- Warning banner -->
+    <div style="background:rgba(200,122,62,0.1);border:1px solid rgba(200,122,62,0.3);border-radius:6px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--warning)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Changes apply to <strong>all players</strong> on the server. Prices update immediately; sell coefficient changes require client restart.
+    </div>
+
+    <!-- Toast notification -->
+    <div id="traderToast" style="display:none;background:rgba(74,124,89,0.15);border:1px solid rgba(74,124,89,0.4);border-radius:6px;padding:10px 16px;margin-bottom:14px;font-size:13px;color:#6abf7b;font-family:var(--font-mono)"></div>
+
+    <!-- Main view: grid + detail panel -->
+    <div id="traderMainView">
+      <!-- A) GLOBAL CONTROLS -->
+      <div class="cc-panel" style="border-left:3px solid var(--accent);padding:16px 20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:14px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Global Trader Controls</div>
+        <!-- Row 1: Buy / Sell / Stock sliders -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Buy Price Multiplier</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="traderGlobalBuy" min="0.01" max="10" step="0.01" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="traderSliderSync('traderGlobalBuy','traderGlobalBuyVal')">
+              <input type="number" id="traderGlobalBuyVal" min="0.01" max="100" step="0.01" value="1.0" class="cc-num-input" oninput="traderNumSync('traderGlobalBuyVal','traderGlobalBuy')">
+              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Sell Price Multiplier</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="traderGlobalSell" min="0.01" max="10" step="0.01" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="traderSliderSync('traderGlobalSell','traderGlobalSellVal')">
+              <input type="number" id="traderGlobalSellVal" min="0.01" max="100" step="0.01" value="1.0" class="cc-num-input" oninput="traderNumSync('traderGlobalSellVal','traderGlobalSell')">
+              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Stock Multiplier</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="traderGlobalStock" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="traderSliderSync('traderGlobalStock','traderGlobalStockVal')">
+              <input type="number" id="traderGlobalStockVal" min="0.1" max="100" step="0.1" value="1.0" class="cc-num-input" oninput="traderNumSync('traderGlobalStockVal','traderGlobalStock')">
+              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+            </div>
+          </div>
+        </div>
+        <!-- Row 2: Restock / Currency -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Min (sec)</label>
+            <input type="number" id="traderGlobalRestockMin" min="60" max="86400" step="60" value="" placeholder="Default" class="cc-num-input cc-wide-input">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Max (sec)</label>
+            <input type="number" id="traderGlobalRestockMax" min="60" max="86400" step="60" value="" placeholder="Default" class="cc-num-input cc-wide-input">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Force Currency</label>
+            <select id="traderGlobalCurrency" class="cc-num-input cc-wide-input" style="padding:6px 8px">
+              <option value="">Default</option>
+              <option value="RUB">Roubles (&#8381;)</option>
+              <option value="USD">Dollars ($)</option>
+              <option value="EUR">Euros (&euro;)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- B) APPLY & RESET BAR -->
+      <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+        <button onclick="traderApplyAll()" class="cc-apply-btn" style="flex:1;padding:12px;font-size:14px" id="traderApplyBtn">
+          <span id="traderApplyText">&#9733; Apply Changes to All Traders &#9733;</span>
+          <span id="traderApplySpinner" style="display:none">Applying...</span>
+        </button>
+        <button onclick="traderResetAll()" style="padding:12px 20px;background:var(--bg-dark);color:var(--error-bright);border:1px solid rgba(139,58,58,0.3);border-radius:6px;cursor:pointer;font-family:var(--font-mono);font-size:13px;white-space:nowrap">&#8634; Reset All</button>
+      </div>
+
+      <!-- C) TRADER CARD GRID -->
+      <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Traders</div>
+      <div id="traderCardGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+        <div style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:40px;font-style:italic">Loading traders...</div>
+      </div>
+
+      <!-- G) STATUS BAR -->
+      <div id="traderStatusBar" style="text-align:center;font-size:12px;color:var(--text-dim);font-family:var(--font-mono);padding:8px 0;border-top:1px solid var(--border)"></div>
+    </div>
+
+    <!-- D) TRADER DETAIL PANEL (hidden by default) -->
+    <div id="traderDetailPanel" style="display:none">
+      <!-- Back button -->
+      <div style="margin-bottom:12px">
+        <button onclick="traderBackToGrid()" style="background:none;border:1px solid var(--border);color:var(--accent);padding:6px 14px;border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:12px">&#9664; Back to All Traders</button>
+      </div>
+
+      <!-- Trader Info Header -->
+      <div class="cc-panel" style="padding:20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px;display:flex;gap:20px;align-items:flex-start">
+        <!-- Avatar -->
+        <div id="traderDetailAvatar" style="width:80px;height:80px;border-radius:50%;border:2px solid var(--border);background:var(--bg-dark);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          <span style="font-size:28px;color:var(--text-dim);font-family:var(--font-mono)">?</span>
+        </div>
+        <!-- Info -->
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <span id="traderDetailName" style="font-size:18px;font-weight:700;color:var(--text-bright);font-family:var(--font-mono)"></span>
+            <span id="traderDetailBadge" style="display:none;background:#6a5acd;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px">Modded</span>
+          </div>
+          <div id="traderDetailFullName" style="font-size:13px;color:var(--text-dim);margin-bottom:6px;font-family:var(--font-mono)"></div>
+          <div id="traderDetailDescription" style="font-size:12px;color:var(--text-dim);margin-bottom:10px;line-height:1.5;max-height:40px;overflow:hidden;text-overflow:ellipsis"></div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;font-family:var(--font-mono)">
+            <span id="traderDetailCurrencyInfo" style="color:var(--text-dim)"></span>
+            <span id="traderDetailLLInfo" style="color:var(--text-dim)"></span>
+            <span id="traderDetailItemCountInfo" style="color:var(--text-dim)"></span>
+            <span id="traderDetailLocationInfo" style="color:var(--text-dim)"></span>
+            <span id="traderDetailRestockInfo" style="color:var(--text-dim)"></span>
+          </div>
+        </div>
+        <!-- Quick stats -->
+        <div style="display:flex;gap:10px;flex-shrink:0;font-size:12px;font-family:var(--font-mono)">
+          <div id="traderDetailBuyBadge" style="text-align:center;padding:6px 10px;border-radius:4px;background:rgba(106,191,123,0.1);border:1px solid rgba(106,191,123,0.2)">
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">BUY</div>
+            <div style="color:#6abf7b;font-weight:600">1.00&times;</div>
+          </div>
+          <div id="traderDetailSellBadge" style="text-align:center;padding:6px 10px;border-radius:4px;background:rgba(122,179,224,0.1);border:1px solid rgba(122,179,224,0.2)">
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">SELL</div>
+            <div style="color:#7ab3e0;font-weight:600">1.00&times;</div>
+          </div>
+          <div id="traderDetailStockBadge" style="text-align:center;padding:6px 10px;border-radius:4px;background:rgba(200,170,110,0.1);border:1px solid rgba(200,170,110,0.2)">
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">STOCK</div>
+            <div style="color:var(--accent);font-weight:600">1.00&times;</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Per-trader overrides -->
+      <div class="cc-panel" style="border-left:3px solid var(--accent);padding:16px 20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="font-size:14px;font-weight:600;color:var(--accent);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Trader Overrides</div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text)">
+            <input type="checkbox" id="traderDetailEnabled" checked onchange="traderDetailMarkDirty()" style="accent-color:var(--accent)"> Enable overrides
+          </label>
+        </div>
+        <!-- Pricing -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Buy Multiplier</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="traderDetailBuy" min="0.01" max="10" step="0.01" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="traderSliderSync('traderDetailBuy','traderDetailBuyVal')">
+              <input type="number" id="traderDetailBuyVal" min="0.01" max="100" step="0.01" value="1.0" class="cc-num-input" oninput="traderNumSync('traderDetailBuyVal','traderDetailBuy')">
+              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Sell Multiplier</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="traderDetailSell" min="0.01" max="10" step="0.01" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="traderSliderSync('traderDetailSell','traderDetailSellVal')">
+              <input type="number" id="traderDetailSellVal" min="0.01" max="100" step="0.01" value="1.0" class="cc-num-input" oninput="traderNumSync('traderDetailSellVal','traderDetailSell')">
+              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Stock Multiplier</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="traderDetailStock" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="traderSliderSync('traderDetailStock','traderDetailStockVal')">
+              <input type="number" id="traderDetailStockVal" min="0.1" max="100" step="0.1" value="1.0" class="cc-num-input" oninput="traderNumSync('traderDetailStockVal','traderDetailStock')">
+              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+            </div>
+          </div>
+        </div>
+        <!-- Restock / Loyalty / Currency -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Min (sec)</label>
+            <input type="number" id="traderDetailRestockMin" min="60" max="86400" step="60" value="" placeholder="Default" class="cc-num-input cc-wide-input" onchange="traderDetailMarkDirty()">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Max (sec)</label>
+            <input type="number" id="traderDetailRestockMax" min="60" max="86400" step="60" value="" placeholder="Default" class="cc-num-input cc-wide-input" onchange="traderDetailMarkDirty()">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Loyalty Shift</label>
+            <select id="traderDetailLoyaltyShift" class="cc-num-input cc-wide-input" style="padding:6px 8px" onchange="traderDetailMarkDirty()">
+              <option value="0">0 (No change)</option>
+              <option value="-1">-1 (Easier)</option>
+              <option value="-2">-2</option>
+              <option value="-3">-3 (All LL1)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Force Currency</label>
+            <select id="traderDetailCurrency" class="cc-num-input cc-wide-input" style="padding:6px 8px" onchange="traderDetailMarkDirty()">
+              <option value="">Default</option>
+              <option value="RUB">Roubles (&#8381;)</option>
+              <option value="USD">Dollars ($)</option>
+              <option value="EUR">Euros (&euro;)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button onclick="traderSaveDetail()" class="cc-apply-btn" style="flex:1;padding:10px;font-size:13px" id="traderDetailApplyBtn">Save &amp; Apply</button>
+          <button onclick="traderResetSingle()" style="padding:10px 20px;background:var(--bg-dark);color:var(--error-bright);border:1px solid rgba(139,58,58,0.3);border-radius:6px;cursor:pointer;font-family:var(--font-mono);font-size:12px;white-space:nowrap">Reset This Trader</button>
+        </div>
+      </div>
+
+      <!-- E) ITEM TABLE -->
+      <div class="cc-panel" style="padding:16px 20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <input type="text" id="traderItemSearch" placeholder="Search items..." style="flex:1;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:7px 12px;font-family:var(--font-mono);font-size:12px" oninput="traderDebounceItemSearch()">
+          <select id="traderItemLLFilter" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-family:var(--font-mono);font-size:12px" onchange="traderLoadItems()">
+            <option value="">All LL</option>
+            <option value="1">LL1</option>
+            <option value="2">LL2</option>
+            <option value="3">LL3</option>
+            <option value="4">LL4</option>
+          </select>
+          <span id="traderItemCount" style="font-size:12px;color:var(--text-dim);font-family:var(--font-mono);white-space:nowrap">0 items</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" style="width:100%">
+            <thead>
+              <tr>
+                <th style="text-align:left">Item Name</th>
+                <th style="text-align:right">Base Price</th>
+                <th style="text-align:right">Modified Price</th>
+                <th style="text-align:center">LL</th>
+                <th style="text-align:right">Stock</th>
+                <th style="text-align:center;width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="traderItemTableBody">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px;font-style:italic">Select a trader to view items</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Pagination -->
+        <div id="traderItemPagination" style="display:flex;justify-content:center;align-items:center;gap:12px;margin-top:12px;font-size:12px;color:var(--text-dim);font-family:var(--font-mono)">
+        </div>
+      </div>
+
+      <!-- F) PER-ITEM OVERRIDES -->
+      <div class="cc-panel" style="padding:16px 20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:600;color:var(--accent);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Per-Item Overrides</div>
+          <button onclick="traderShowItemOverrideSearch()" style="padding:4px 12px;background:var(--bg-dark);color:var(--accent);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px">+ Add Override</button>
+        </div>
+        <!-- Override search (hidden by default) -->
+        <div id="traderItemOverrideSearch" style="display:none;margin-bottom:12px">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <input type="text" id="traderOverrideSearchInput" placeholder="Search item to override..." style="flex:1;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-family:var(--font-mono);font-size:12px" oninput="traderDebounceOverrideSearch()">
+            <button onclick="document.getElementById('traderItemOverrideSearch').style.display='none'" style="padding:4px 10px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px">Cancel</button>
+          </div>
+          <div id="traderOverrideSearchResults" style="max-height:200px;overflow-y:auto"></div>
+        </div>
+        <table class="data-table" style="width:100%">
+          <thead>
+            <tr>
+              <th style="text-align:left">Item Name</th>
+              <th style="text-align:left;font-size:11px">Template ID</th>
+              <th style="text-align:right">Buy &times;</th>
+              <th style="text-align:right">Sell &times;</th>
+              <th style="text-align:center;width:40px"></th>
+            </tr>
+          </thead>
+          <tbody id="traderItemOverrideTableBody">
+            <tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:16px;font-style:italic">No item overrides.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -4738,8 +4995,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   // API
   // ═══════════════════════════════════════════════════════
   var BASE = '/zslayer/cc/';
-  function api(endpoint, opts) {
-    opts = opts || {};
+  function api(endpoint, methodOrOpts, bodyData) {
+    var opts;
+    if (typeof methodOrOpts === 'string') {
+      opts = { method: methodOrOpts };
+      if (bodyData) opts.body = JSON.stringify(bodyData);
+    } else {
+      opts = methodOrOpts || {};
+    }
     var h = { 'X-Session-Id': sessionId, 'X-Password': ccPassword };
     if (opts.body) h['Content-Type'] = 'application/json';
     return fetch(BASE + endpoint, Object.assign({}, opts, { headers: Object.assign(h, opts.headers || {}) }))
@@ -5141,6 +5404,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'players' && !playersLoaded) loadPlayerRoster();
     if (tab === 'quests' && !questsLoaded) loadQuestBrowser();
     if (tab === 'flea' && !fleaLoaded) fleaInit();
+    if (tab === 'traders' && !tradersLoaded) tradersInit();
     if (tab === 'raidinfo' && !raidInfoLoaded) raidInfoInit();
 
     // Manage raid info polling — start when on tab, stop when leaving
@@ -7059,7 +7323,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('stopServerModal').classList.add('open');
   };
 
-  function confirmStopServer() {
+  window.confirmStopServer = function() {
     watchdogAction = 'stopping';
     pollWatchdogStatus();
     api('watchdog/stop', { method: 'POST' }).then(function() {
@@ -9269,7 +9533,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var questSearchTimer = null;
   var questPlayersCache = null;
 
-  function debounceQuestSearch() {
+  window.debounceQuestSearch = function() {
     clearTimeout(questSearchTimer);
     questSearchTimer = setTimeout(function() { loadQuestBrowser(); }, 300);
   }
@@ -9597,7 +9861,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     });
   };
 
-  function fleaMarkDirty() {
+  window.fleaMarkDirty = function() {
     fleaDirty = true;
     fleaUpdateApplyBtn();
   }
@@ -9853,7 +10117,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     fleaMarkDirty();
   };
 
-  function fleaItemSearchDebounce() {
+  window.fleaItemSearchDebounce = function() {
     clearTimeout(fleaItemSearchTimer);
     fleaItemSearchTimer = setTimeout(fleaItemSearch, 300);
   }
@@ -10030,6 +10294,482 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '</div>';
     });
     el.innerHTML = html;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // TRADER CONTROL TAB
+  // ═══════════════════════════════════════════════════════
+  var tradersLoaded = false;
+  var traderConfig = null;
+  var traderList = [];
+  var traderCurrentId = null;
+  var traderItemSearchTimer = null;
+  var traderOverrideSearchTimer = null;
+  var traderItemPage = 0;
+  var traderItemTotal = 0;
+  var traderItemLimit = 50;
+
+  function tradersInit() {
+    tradersLoaded = true;
+    Promise.all([
+      api('traders/config'),
+      api('traders/list'),
+      api('traders/status')
+    ]).then(function(results) {
+      traderConfig = results[0];
+      traderList = results[1].traders || [];
+      traderPopulateGlobals();
+      traderRenderCards();
+      traderRenderStatus(results[2]);
+    }).catch(function(e) {
+      console.error('Traders init failed:', e);
+    });
+  }
+
+  function traderPopulateGlobals() {
+    if (!traderConfig) return;
+    var c = traderConfig;
+    document.getElementById('traderGlobalBuy').value = c.globalBuyMultiplier;
+    document.getElementById('traderGlobalBuyVal').value = c.globalBuyMultiplier;
+    document.getElementById('traderGlobalSell').value = c.globalSellMultiplier;
+    document.getElementById('traderGlobalSellVal').value = c.globalSellMultiplier;
+    document.getElementById('traderGlobalStock').value = c.globalStockMultiplier;
+    document.getElementById('traderGlobalStockVal').value = c.globalStockMultiplier;
+    document.getElementById('traderGlobalRestockMin').value = c.globalRestockMinSeconds || '';
+    document.getElementById('traderGlobalRestockMax').value = c.globalRestockMaxSeconds || '';
+    document.getElementById('traderGlobalCurrency').value = c.forceCurrency || '';
+  }
+
+  window.traderSliderSync = function(sliderId, numId) {
+    document.getElementById(numId).value = document.getElementById(sliderId).value;
+  }
+  window.traderNumSync = function(numId, sliderId) {
+    var v = parseFloat(document.getElementById(numId).value);
+    if (!isNaN(v)) {
+      var slider = document.getElementById(sliderId);
+      slider.value = Math.min(parseFloat(slider.max), Math.max(parseFloat(slider.min), v));
+    }
+  }
+
+  function traderLetterAvatar(nickname, size) {
+    var letter = nickname ? escH(nickname.charAt(0).toUpperCase()) : '?';
+    var fs = Math.round(size * 0.4);
+    return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:var(--bg-dark);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:' + fs + 'px;color:var(--accent);font-weight:700;font-family:var(--font-mono);flex-shrink:0">' + letter + '</div>';
+  }
+
+  function traderAvatarHtml(t, size) {
+    size = size || 48;
+    if (!t.avatarUrl) return traderLetterAvatar(t.nickname, size);
+    var src = window.location.protocol + "//" + window.location.hostname + ":6969" + t.avatarUrl;
+    var imgId = "tav_" + t.id.substr(0, 8);
+    var img = '<img id="' + imgId + '" src="' + src + '" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:cover;border:2px solid var(--border);background:var(--bg-dark)">';
+    var fallback = '<div id="' + imgId + '_fb" style="display:none;width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:var(--bg-dark);border:2px solid var(--border);align-items:center;justify-content:center;font-size:' + Math.round(size * 0.4) + 'px;color:var(--accent);font-weight:700;font-family:var(--font-mono);flex-shrink:0">' + escH(t.nickname.charAt(0).toUpperCase()) + '</div>';
+    // Attach error handler after render via setTimeout
+    setTimeout(function() {
+      var el = document.getElementById(imgId);
+      if (el) el.onerror = function() {
+        el.style.display = "none";
+        var fb = document.getElementById(imgId + "_fb");
+        if (fb) fb.style.display = "flex";
+      };
+    }, 0);
+    return img + fallback;
+  }
+
+  function traderRenderCards() {
+    var grid = document.getElementById('traderCardGrid');
+    if (!traderList || traderList.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:40px;font-style:italic">No traders found</div>';
+      return;
+    }
+    // Sort: vanilla first (alphabetical), then modded (alphabetical)
+    var sorted = traderList.slice().sort(function(a, b) {
+      if (a.isModded !== b.isModded) return a.isModded ? 1 : -1;
+      return a.nickname.localeCompare(b.nickname);
+    });
+    var html = '';
+    sorted.forEach(function(t) {
+      var hasOv = traderConfig && traderConfig.traderOverrides && traderConfig.traderOverrides[t.id];
+      var borderColor = hasOv ? 'var(--accent)' : 'var(--border)';
+      var moddedBadge = t.isModded ? '<span style="background:#6a5acd;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;margin-left:6px">Modded</span>' : '';
+      html += '<div style="background:var(--bg-panel);border:1px solid ' + borderColor + ';border-radius:6px;padding:14px 16px;cursor:pointer;transition:border-color 0.2s" onclick="traderOpenDetail(\'' + t.id + '\')" onmouseenter="this.style.borderColor=\'var(--accent)\'" onmouseleave="this.style.borderColor=\'' + borderColor + '\'">';
+      html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">';
+      html += traderAvatarHtml(t, 42);
+      html += '<div style="flex:1;min-width:0">';
+      html += '<div style="font-weight:600;color:var(--text-bright);font-family:var(--font-mono);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(t.nickname) + moddedBadge + '</div>';
+      html += '<div style="display:flex;gap:10px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono);margin-top:2px">';
+      html += '<span>' + t.itemCount + ' items</span>';
+      html += '<span>' + (t.currency || 'RUB') + '</span>';
+      html += '<span>LL' + t.loyaltyLevelCount + '</span>';
+      html += '</div>';
+      html += '</div>';
+      html += '</div>';
+      html += '<div style="display:flex;gap:8px;font-size:11px;font-family:var(--font-mono)">';
+      html += '<span style="color:' + (t.currentBuyMultiplier !== 1 ? '#6abf7b' : 'var(--text-dim)') + '">Buy ' + t.currentBuyMultiplier.toFixed(2) + '&times;</span>';
+      html += '<span style="color:' + (t.currentSellMultiplier !== 1 ? '#7ab3e0' : 'var(--text-dim)') + '">Sell ' + t.currentSellMultiplier.toFixed(2) + '&times;</span>';
+      html += '<span style="color:' + (t.currentStockMultiplier !== 1 ? '#c8aa6e' : 'var(--text-dim)') + '">Stock ' + t.currentStockMultiplier.toFixed(2) + '&times;</span>';
+      html += '</div>';
+      html += '</div>';
+    });
+    grid.innerHTML = html;
+  }
+
+  function traderRenderStatus(status) {
+    var bar = document.getElementById('traderStatusBar');
+    if (!status) { bar.textContent = ''; return; }
+    var parts = [];
+    parts.push(status.traderCount + ' traders (' + status.vanillaTraders + ' vanilla, ' + status.moddedTraders + ' modded)');
+    parts.push(status.totalItems + ' items');
+    parts.push('v' + status.modVersion);
+    if (status.lastApplyTimeMs != null) parts.push('Last apply: ' + status.lastApplyTimeMs + 'ms');
+    bar.textContent = parts.join(' | ');
+  }
+
+  function traderShowToast(msg, isError) {
+    var el = document.getElementById('traderToast');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.background = isError ? 'rgba(139,58,58,0.15)' : 'rgba(74,124,89,0.15)';
+    el.style.borderColor = isError ? 'rgba(139,58,58,0.4)' : 'rgba(74,124,89,0.4)';
+    el.style.color = isError ? '#c45050' : '#6abf7b';
+    setTimeout(function() { el.style.display = 'none'; }, 6000);
+  }
+
+  window.traderApplyAll = function() {
+    var btnText = document.getElementById('traderApplyText');
+    var spinner = document.getElementById('traderApplySpinner');
+    btnText.style.display = 'none';
+    spinner.style.display = 'inline';
+
+    // Gather global config from UI
+    var body = {
+      globalBuyMultiplier: parseFloat(document.getElementById('traderGlobalBuyVal').value) || 1,
+      globalSellMultiplier: parseFloat(document.getElementById('traderGlobalSellVal').value) || 1,
+      globalStockMultiplier: parseFloat(document.getElementById('traderGlobalStockVal').value) || 1,
+      globalRestockMinSeconds: parseInt(document.getElementById('traderGlobalRestockMin').value) || null,
+      globalRestockMaxSeconds: parseInt(document.getElementById('traderGlobalRestockMax').value) || null,
+      forceCurrency: document.getElementById('traderGlobalCurrency').value || null
+    };
+
+    api('traders/config/global', 'POST', body).then(function(result) {
+      btnText.style.display = 'inline';
+      spinner.style.display = 'none';
+      if (result.success) {
+        traderShowToast('Applied: ' + result.itemsModified + ' items modified across ' + result.tradersAffected + ' traders in ' + result.applyTimeMs + 'ms');
+        traderRefreshAll();
+      } else {
+        traderShowToast('Apply failed: ' + (result.error || 'Unknown error'), true);
+      }
+    }).catch(function(e) {
+      btnText.style.display = 'inline';
+      spinner.style.display = 'none';
+      traderShowToast('Apply failed: ' + e, true);
+    });
+  }
+
+  window.traderResetAll = function() {
+    if (!confirm('Reset ALL trader settings to defaults? This cannot be undone.')) return;
+    api('traders/reset', 'POST').then(function(result) {
+      traderShowToast('All traders reset to defaults');
+      traderRefreshAll();
+    }).catch(function(e) {
+      traderShowToast('Reset failed: ' + e, true);
+    });
+  }
+
+  function traderRefreshAll() {
+    Promise.all([
+      api('traders/config'),
+      api('traders/list'),
+      api('traders/status')
+    ]).then(function(results) {
+      traderConfig = results[0];
+      traderList = results[1].traders || [];
+      traderPopulateGlobals();
+      traderRenderCards();
+      traderRenderStatus(results[2]);
+    });
+  }
+
+  // ── DETAIL PANEL ──
+
+  window.traderOpenDetail = function(traderId) {
+    traderCurrentId = traderId;
+    var t = traderList.find(function(x) { return x.id === traderId; });
+    if (!t) return;
+
+    document.getElementById('traderMainView').style.display = 'none';
+    document.getElementById('traderDetailPanel').style.display = 'block';
+
+    // Populate info header
+    document.getElementById('traderDetailName').textContent = t.nickname;
+    document.getElementById('traderDetailBadge').style.display = t.isModded ? 'inline' : 'none';
+    document.getElementById('traderDetailFullName').textContent = t.fullName !== t.nickname ? t.fullName : '';
+    document.getElementById('traderDetailDescription').textContent = t.description || '';
+    document.getElementById('traderDetailDescription').style.display = t.description ? 'block' : 'none';
+    document.getElementById('traderDetailCurrencyInfo').textContent = 'Currency: ' + (t.currency || 'RUB');
+    document.getElementById('traderDetailLLInfo').textContent = 'Loyalty Levels: ' + t.loyaltyLevelCount;
+    document.getElementById('traderDetailItemCountInfo').textContent = 'Items: ' + t.itemCount;
+    document.getElementById('traderDetailLocationInfo').textContent = t.location ? 'Location: ' + t.location : '';
+    document.getElementById('traderDetailLocationInfo').style.display = t.location ? 'inline' : 'none';
+    var restockStr = '';
+    if (t.restockMinSeconds && t.restockMaxSeconds) restockStr = 'Restock: ' + Math.round(t.restockMinSeconds / 60) + '–' + Math.round(t.restockMaxSeconds / 60) + ' min';
+    else if (t.restockMinSeconds) restockStr = 'Restock: ' + Math.round(t.restockMinSeconds / 60) + ' min';
+    document.getElementById('traderDetailRestockInfo').textContent = restockStr;
+    document.getElementById('traderDetailRestockInfo').style.display = restockStr ? 'inline' : 'none';
+
+    // Avatar
+    var avatarEl = document.getElementById('traderDetailAvatar');
+    avatarEl.innerHTML = traderAvatarHtml(t, 80);
+
+    // Quick stat badges
+    document.getElementById('traderDetailBuyBadge').querySelector('div:last-child').textContent = t.currentBuyMultiplier.toFixed(2) + '\u00d7';
+    document.getElementById('traderDetailSellBadge').querySelector('div:last-child').textContent = t.currentSellMultiplier.toFixed(2) + '\u00d7';
+    document.getElementById('traderDetailStockBadge').querySelector('div:last-child').textContent = t.currentStockMultiplier.toFixed(2) + '\u00d7';
+
+    // Populate per-trader overrides
+    var ov = (traderConfig && traderConfig.traderOverrides) ? traderConfig.traderOverrides[traderId] : null;
+    document.getElementById('traderDetailEnabled').checked = ov ? ov.enabled : true;
+    document.getElementById('traderDetailBuy').value = ov ? ov.buyMultiplier : 1;
+    document.getElementById('traderDetailBuyVal').value = ov ? ov.buyMultiplier : 1;
+    document.getElementById('traderDetailSell').value = ov ? ov.sellMultiplier : 1;
+    document.getElementById('traderDetailSellVal').value = ov ? ov.sellMultiplier : 1;
+    document.getElementById('traderDetailStock').value = ov ? ov.stockMultiplier : 1;
+    document.getElementById('traderDetailStockVal').value = ov ? ov.stockMultiplier : 1;
+    document.getElementById('traderDetailRestockMin').value = ov && ov.restockMinSeconds ? ov.restockMinSeconds : '';
+    document.getElementById('traderDetailRestockMax').value = ov && ov.restockMaxSeconds ? ov.restockMaxSeconds : '';
+    document.getElementById('traderDetailLoyaltyShift').value = ov ? (ov.loyaltyLevelShift || 0) : 0;
+    document.getElementById('traderDetailCurrency').value = ov ? (ov.forceCurrency || '') : '';
+
+    traderRenderItemOverrides();
+    traderItemPage = 0;
+    traderLoadItems();
+  }
+
+  window.traderBackToGrid = function() {
+    traderCurrentId = null;
+    document.getElementById('traderDetailPanel').style.display = 'none';
+    document.getElementById('traderMainView').style.display = 'block';
+    traderRefreshAll();
+  }
+
+  window.traderDetailMarkDirty = function() {
+    // Visual indicator could be added here
+  }
+
+  window.traderSaveDetail = function() {
+    if (!traderCurrentId) return;
+    var body = {
+      traderId: traderCurrentId,
+      enabled: document.getElementById('traderDetailEnabled').checked,
+      buyMultiplier: parseFloat(document.getElementById('traderDetailBuyVal').value) || 1,
+      sellMultiplier: parseFloat(document.getElementById('traderDetailSellVal').value) || 1,
+      stockMultiplier: parseFloat(document.getElementById('traderDetailStockVal').value) || 1,
+      restockMinSeconds: parseInt(document.getElementById('traderDetailRestockMin').value) || null,
+      restockMaxSeconds: parseInt(document.getElementById('traderDetailRestockMax').value) || null,
+      loyaltyLevelShift: parseInt(document.getElementById('traderDetailLoyaltyShift').value) || 0,
+      forceCurrency: document.getElementById('traderDetailCurrency').value || null
+    };
+
+    api('traders/config/trader', 'POST', body).then(function(result) {
+      if (result.success) {
+        traderShowToast('Saved & applied — ' + result.itemsModified + ' items modified in ' + result.applyTimeMs + 'ms');
+        // Refresh config
+        api('traders/config').then(function(c) { traderConfig = c; traderRenderItemOverrides(); });
+        traderLoadItems();
+      } else {
+        traderShowToast('Save failed: ' + (result.error || 'Unknown'), true);
+      }
+    }).catch(function(e) { traderShowToast('Save failed: ' + e, true); });
+  }
+
+  window.traderResetSingle = function() {
+    if (!traderCurrentId) return;
+    if (!confirm('Reset this trader to defaults?')) return;
+    api('traders/reset/' + traderCurrentId, 'POST').then(function(result) {
+      traderShowToast('Trader reset to defaults');
+      api('traders/config').then(function(c) {
+        traderConfig = c;
+        traderOpenDetail(traderCurrentId);
+      });
+    }).catch(function(e) { traderShowToast('Reset failed: ' + e, true); });
+  }
+
+  // ── ITEM TABLE ──
+
+  window.traderLoadItems = function() {
+    if (!traderCurrentId) return;
+    var search = document.getElementById('traderItemSearch').value;
+    var ll = document.getElementById('traderItemLLFilter').value;
+    var offset = traderItemPage * traderItemLimit;
+    var url = 'traders/' + traderCurrentId + '/items?limit=' + traderItemLimit + '&offset=' + offset;
+    if (search) url += '&search=' + encodeURIComponent(search);
+    if (ll) url += '&loyaltyLevel=' + ll;
+
+    api(url).then(function(data) {
+      traderItemTotal = data.total || 0;
+      document.getElementById('traderItemCount').textContent = data.total + ' items';
+      var tbody = document.getElementById('traderItemTableBody');
+      if (!data.items || data.items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px;font-style:italic">No items found</td></tr>';
+        document.getElementById('traderItemPagination').innerHTML = '';
+        return;
+      }
+      var html = '';
+      data.items.forEach(function(item) {
+        var rowStyle = item.isDisabled ? 'opacity:0.4' : '';
+        var priceColor = 'var(--text)';
+        if (!item.isBarter && item.basePrice > 0) {
+          if (item.modifiedPrice < item.basePrice) priceColor = '#4a7c59';
+          else if (item.modifiedPrice > item.basePrice) priceColor = '#8b3a3a';
+        }
+        var priceStr = item.isBarter ? '<span style="color:var(--text-dim);font-style:italic">Barter</span>' : formatNum(item.modifiedPrice);
+        var baseStr = item.isBarter ? '' : formatNum(item.basePrice);
+        var llChanged = item.loyaltyLevel !== item.originalLoyaltyLevel;
+        var llColor = llChanged ? '#c8aa6e' : 'var(--text-dim)';
+        var stockChanged = item.stock !== item.originalStock;
+        var stockColor = stockChanged ? '#7ab3e0' : 'var(--text-dim)';
+        var overrideIcon = item.hasOverride ? '<span title="Has per-item override" style="color:var(--accent)">&#9733;</span>' : '';
+
+        html += '<tr style="' + rowStyle + '">';
+        html += '<td style="text-align:left;font-size:12px">' + escH(item.shortName) + ' ' + overrideIcon + '</td>';
+        html += '<td style="text-align:right;font-size:12px;color:var(--text-dim)">' + baseStr + '</td>';
+        html += '<td style="text-align:right;font-size:12px;color:' + priceColor + '">' + priceStr + '</td>';
+        html += '<td style="text-align:center;font-size:11px;color:' + llColor + '">LL' + item.loyaltyLevel + '</td>';
+        html += '<td style="text-align:right;font-size:12px;color:' + stockColor + '">' + formatNum(item.stock) + '</td>';
+        html += '<td style="text-align:center"><button onclick="traderAddItemOverride(\'' + escA(item.templateId) + '\',\'' + escA(item.shortName) + '\')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px" title="Add per-item override">&#9881;</button></td>';
+        html += '</tr>';
+      });
+      tbody.innerHTML = html;
+
+      // Pagination
+      var totalPages = Math.ceil(traderItemTotal / traderItemLimit);
+      var pagHtml = '';
+      if (totalPages > 1) {
+        pagHtml += '<button onclick="traderItemPageNav(-1)" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:4px 10px;border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px"' + (traderItemPage === 0 ? ' disabled' : '') + '>&laquo; Prev</button>';
+        pagHtml += '<span>Page ' + (traderItemPage + 1) + ' of ' + totalPages + '</span>';
+        pagHtml += '<button onclick="traderItemPageNav(1)" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:4px 10px;border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px"' + (traderItemPage >= totalPages - 1 ? ' disabled' : '') + '>Next &raquo;</button>';
+        pagHtml += '<span style="color:var(--text-muted)">Showing ' + data.items.length + '/' + traderItemTotal + '</span>';
+      }
+      document.getElementById('traderItemPagination').innerHTML = pagHtml;
+    });
+  }
+
+  window.traderItemPageNav = function(dir) {
+    var totalPages = Math.ceil(traderItemTotal / traderItemLimit);
+    traderItemPage = Math.max(0, Math.min(totalPages - 1, traderItemPage + dir));
+    traderLoadItems();
+  }
+
+  window.traderDebounceItemSearch = function() {
+    clearTimeout(traderItemSearchTimer);
+    traderItemSearchTimer = setTimeout(function() {
+      traderItemPage = 0;
+      traderLoadItems();
+    }, 300);
+  }
+
+  function formatNum(n) {
+    if (n == null || isNaN(n)) return '0';
+    return Math.round(n).toLocaleString();
+  }
+
+  // ── PER-ITEM OVERRIDES ──
+
+  function traderRenderItemOverrides() {
+    var tbody = document.getElementById('traderItemOverrideTableBody');
+    if (!traderCurrentId || !traderConfig || !traderConfig.traderOverrides) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:16px;font-style:italic">No item overrides.</td></tr>';
+      return;
+    }
+    var ov = traderConfig.traderOverrides[traderCurrentId];
+    if (!ov || !ov.itemOverrides || Object.keys(ov.itemOverrides).length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:16px;font-style:italic">No item overrides.</td></tr>';
+      return;
+    }
+    var html = '';
+    Object.keys(ov.itemOverrides).forEach(function(tplId) {
+      var io = ov.itemOverrides[tplId];
+      html += '<tr>';
+      html += '<td style="font-size:12px">' + escH(io.name || tplId) + '</td>';
+      html += '<td style="font-size:11px;color:var(--text-dim)">' + escH(tplId) + '</td>';
+      html += '<td style="text-align:right;font-size:12px">' + io.buyMultiplier.toFixed(2) + '&times;</td>';
+      html += '<td style="text-align:right;font-size:12px">' + io.sellMultiplier.toFixed(2) + '&times;</td>';
+      html += '<td style="text-align:center"><button onclick="traderRemoveItemOverride(\'' + escA(tplId) + '\')" style="background:none;border:none;color:var(--error-bright);cursor:pointer;font-size:14px" title="Remove override">&times;</button></td>';
+      html += '</tr>';
+    });
+    tbody.innerHTML = html;
+  }
+
+  window.traderShowItemOverrideSearch = function() {
+    document.getElementById('traderItemOverrideSearch').style.display = 'block';
+    document.getElementById('traderOverrideSearchInput').value = '';
+    document.getElementById('traderOverrideSearchResults').innerHTML = '';
+    document.getElementById('traderOverrideSearchInput').focus();
+  }
+
+  window.traderDebounceOverrideSearch = function() {
+    clearTimeout(traderOverrideSearchTimer);
+    traderOverrideSearchTimer = setTimeout(traderDoOverrideSearch, 300);
+  }
+
+  function traderDoOverrideSearch() {
+    var q = document.getElementById('traderOverrideSearchInput').value;
+    if (!q || q.length < 2) { document.getElementById('traderOverrideSearchResults').innerHTML = ''; return; }
+
+    // Search from trader's own items
+    var url = 'traders/' + traderCurrentId + '/items?limit=20&offset=0&search=' + encodeURIComponent(q);
+    api(url).then(function(data) {
+      var el = document.getElementById('traderOverrideSearchResults');
+      if (!data.items || data.items.length === 0) {
+        el.innerHTML = '<div style="padding:8px;color:var(--text-dim);font-size:12px;font-style:italic">No items found</div>';
+        return;
+      }
+      var html = '';
+      data.items.forEach(function(item) {
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px;font-family:var(--font-mono)">';
+        html += '<span style="color:var(--text)">' + escH(item.shortName) + ' <span style="color:var(--text-dim);font-size:10px">' + escH(item.templateId) + '</span></span>';
+        html += '<button onclick="traderAddItemOverride(\'' + escA(item.templateId) + '\',\'' + escA(item.shortName) + '\')" style="background:var(--accent);color:#000;border:none;padding:2px 10px;border-radius:3px;cursor:pointer;font-size:11px;font-family:var(--font-mono)">Add</button>';
+        html += '</div>';
+      });
+      el.innerHTML = html;
+    });
+  }
+
+  window.traderAddItemOverride = function(templateId, name) {
+    if (!traderCurrentId) return;
+    var buyMult = prompt('Buy multiplier for ' + name + ':', '1.0');
+    if (buyMult === null) return;
+    var sellMult = prompt('Sell multiplier for ' + name + ':', '1.0');
+    if (sellMult === null) return;
+
+    api('traders/config/trader/item', 'POST', {
+      traderId: traderCurrentId,
+      templateId: templateId,
+      name: name,
+      buyMultiplier: parseFloat(buyMult) || 1,
+      sellMultiplier: parseFloat(sellMult) || 1
+    }).then(function(result) {
+      if (result.success) {
+        traderShowToast('Item override added for ' + name);
+        api('traders/config').then(function(c) { traderConfig = c; traderRenderItemOverrides(); });
+        traderLoadItems();
+        document.getElementById('traderItemOverrideSearch').style.display = 'none';
+      } else {
+        traderShowToast('Failed: ' + (result.error || 'Unknown'), true);
+      }
+    }).catch(function(e) { traderShowToast('Failed: ' + e, true); });
+  }
+
+  window.traderRemoveItemOverride = function(templateId) {
+    if (!traderCurrentId) return;
+    api('traders/config/trader/item/' + traderCurrentId + '/' + templateId, 'DELETE').then(function(result) {
+      if (result.success) {
+        traderShowToast('Item override removed');
+        api('traders/config').then(function(c) { traderConfig = c; traderRenderItemOverrides(); });
+        traderLoadItems();
+      }
+    }).catch(function(e) { traderShowToast('Failed: ' + e, true); });
   }
 
   // ═══════════════════════════════════════════════════════

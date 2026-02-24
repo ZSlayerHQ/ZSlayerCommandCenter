@@ -19,6 +19,9 @@ public record CommandCenterConfig
     [JsonPropertyName("flea")]
     public FleaConfig Flea { get; set; } = new();
 
+    [JsonPropertyName("traders")]
+    public TraderControlConfig Traders { get; set; } = new();
+
     [JsonPropertyName("headless")]
     public HeadlessConfig Headless { get; set; } = new();
 

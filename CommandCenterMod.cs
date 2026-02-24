@@ -19,6 +19,7 @@ public class CommandCenterMod(
     HeadlessProcessService headlessProcessService,
     ActivityLogService activityLogService,
     OfferRegenerationService offerRegenerationService,
+    TraderApplyService traderApplyService,
     TelemetryService telemetryService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
@@ -74,6 +75,9 @@ public class CommandCenterMod(
 
         // Apply flea market settings (globals, prices, tax) on startup
         offerRegenerationService.ApplyGlobalsAndConfig();
+
+        // Initialize trader control (discover traders, snapshot, apply config)
+        traderApplyService.Initialize();
 
         // Clean up old activity logs
         activityLogService.CleanupOldLogs();
