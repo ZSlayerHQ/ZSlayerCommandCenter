@@ -138,27 +138,27 @@ public record TraderSummary
     public string? Description { get; set; }
 }
 
-/// <summary>Deep-copy snapshot of trader data for restore-from-snapshot pattern.</summary>
+/// <summary>In-place snapshot of trader data for restore-from-snapshot pattern.</summary>
 public class TraderSnapshot
 {
-    /// <summary>Serialized JSON of the original BarterScheme dict.</summary>
-    public string BarterSchemeJson { get; set; } = "";
-
-    /// <summary>Serialized JSON of the original LoyalLevelItems dict.</summary>
-    public string LoyalLevelItemsJson { get; set; } = "";
-
     /// <summary>Original stock counts: item ID → StackObjectsCount.</summary>
     public Dictionary<string, double> StockCounts { get; set; } = new();
 
     /// <summary>Original buy_price_coef per loyalty level index.</summary>
     public List<double> BuyPriceCoefs { get; set; } = [];
 
-    /// <summary>Serialized JSON of the original Items list (for disabled item restore).</summary>
-    public string ItemsJson { get; set; } = "";
-
     /// <summary>Original currency type.</summary>
     public string OriginalCurrency { get; set; } = "RUB";
+
+    /// <summary>Original barter costs: itemId → list of payment options → list of (templateId, count).</summary>
+    public Dictionary<string, List<List<BarterCostSnapshot>>> BarterCosts { get; set; } = new();
+
+    /// <summary>Original loyalty level items: itemId → loyalty level.</summary>
+    public Dictionary<string, int> LoyaltyLevels { get; set; } = new();
 }
+
+/// <summary>Snapshot of a single barter cost entry (template + count).</summary>
+public record BarterCostSnapshot(string Template, double? Count);
 
 // ── API request/response DTOs ──
 

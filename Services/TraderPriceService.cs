@@ -31,23 +31,24 @@ public class TraderPriceService(
             if (trader.Assort?.BarterScheme == null) continue;
             var id = traderId.ToString();
 
-            var traderBuyMult = 1.0;
+            var hasTraderOverride = false;
+            var traderBuyMult = config.GlobalBuyMultiplier;
             TraderOverride? traderOverride = null;
             if (config.TraderOverrides.TryGetValue(id, out var ov) && ov.Enabled)
             {
                 traderOverride = ov;
-                traderBuyMult = ov.BuyMultiplier;
+                hasTraderOverride = true;
+                traderBuyMult = ov.BuyMultiplier; // Override replaces global
             }
 
             foreach (var (itemId, paymentOptions) in trader.Assort.BarterScheme)
             {
                 var itemIdStr = itemId.ToString();
 
-                // Check per-item override
-                var itemBuyMult = 1.0;
+                // Check per-item override (replaces trader-level multiplier)
+                var effectiveMult = traderBuyMult;
                 if (traderOverride?.ItemOverrides.TryGetValue(itemIdStr, out var itemOv) == true)
-                    itemBuyMult = itemOv.BuyMultiplier;
-                // Also check if the template of the root item has an override
+                    effectiveMult = itemOv.BuyMultiplier;
                 else
                 {
                     var rootItem = trader.Assort.Items?.FirstOrDefault(i => i.Id.ToString() == itemIdStr);
@@ -55,11 +56,9 @@ public class TraderPriceService(
                     {
                         var tplStr = rootItem.Template.ToString();
                         if (traderOverride?.ItemOverrides.TryGetValue(tplStr, out var tplOv) == true)
-                            itemBuyMult = tplOv.BuyMultiplier;
+                            effectiveMult = tplOv.BuyMultiplier;
                     }
                 }
-
-                var effectiveMult = config.GlobalBuyMultiplier * traderBuyMult * itemBuyMult;
                 if (Math.Abs(effectiveMult - 1.0) < 0.001) continue;
 
                 foreach (var paymentOption in paymentOptions)
@@ -109,19 +108,19 @@ public class TraderPriceService(
             var snapshot = discoveryService.GetSnapshot(id);
             if (snapshot == null) continue;
 
-            var traderSellMult = 1.0;
+            var effectiveSellMult = config.GlobalSellMultiplier;
             if (config.TraderOverrides.TryGetValue(id, out var ov) && ov.Enabled)
-                traderSellMult = ov.SellMultiplier;
-
-            var effectiveSellMult = config.GlobalSellMultiplier * traderSellMult;
+                effectiveSellMult = ov.SellMultiplier; // Override replaces global
             if (Math.Abs(effectiveSellMult - 1.0) < 0.001) continue;
 
             for (var i = 0; i < trader.Base.LoyaltyLevels.Count && i < snapshot.BuyPriceCoefs.Count; i++)
             {
                 var originalCoef = snapshot.BuyPriceCoefs[i];
-                // BuyPriceCoefficient is a percentage (e.g., 52 means 52% of base price)
-                // Multiplying by sell mult increases what the player gets
-                trader.Base.LoyaltyLevels[i].BuyPriceCoefficient = originalCoef * effectiveSellMult;
+                // BuyPriceCoefficient is a reduction factor: sell price = basePrice * (1 - coef/100)
+                // e.g. coef=52 → player gets 48% of base. To increase sell value, DIVIDE the coef.
+                // coef=52 / 2.0 = 26 → player gets 74% of base (higher sell mult = more money)
+                var newCoef = originalCoef / effectiveSellMult;
+                trader.Base.LoyaltyLevels[i].BuyPriceCoefficient = Math.Max(0.01, Math.Round(newCoef, 2));
             }
         }
     }

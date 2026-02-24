@@ -31,11 +31,9 @@ public class TraderStockService(
             var snapshot = discoveryService.GetSnapshot(id);
             if (snapshot == null) continue;
 
-            var traderStockMult = 1.0;
+            var effectiveMult = config.GlobalStockMultiplier;
             if (config.TraderOverrides.TryGetValue(id, out var ov) && ov.Enabled)
-                traderStockMult = ov.StockMultiplier;
-
-            var effectiveMult = config.GlobalStockMultiplier * traderStockMult;
+                effectiveMult = ov.StockMultiplier; // Override replaces global
             if (Math.Abs(effectiveMult - 1.0) < 0.001) continue;
 
             foreach (var item in trader.Assort.Items)
@@ -104,11 +102,9 @@ public class TraderStockService(
             if (trader.Assort?.LoyalLevelItems == null) continue;
             var id = traderId.ToString();
 
-            var traderShift = 0;
+            var totalShift = config.GlobalLoyaltyLevelShift;
             if (config.TraderOverrides.TryGetValue(id, out var ov) && ov.Enabled)
-                traderShift = ov.LoyaltyLevelShift;
-
-            var totalShift = config.GlobalLoyaltyLevelShift + traderShift;
+                totalShift = ov.LoyaltyLevelShift; // Override replaces global
             if (totalShift == 0) continue;
 
             var keys = trader.Assort.LoyalLevelItems.Keys.ToList();

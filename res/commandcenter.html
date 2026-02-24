@@ -3111,6 +3111,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 }
 .cc-num-input:focus { border-color: var(--accent); outline: none; }
 .cc-wide-input { width: 100%; }
+.cc-info-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--text-dim);
+  font-size: 9px; font-weight: 700; color: var(--text-dim); cursor: help;
+  margin-left: 5px; vertical-align: middle; position: relative; font-style: normal;
+}
+.cc-info-icon:hover { border-color: var(--accent); color: var(--accent); }
+.cc-info-icon .cc-tip {
+  display: none; position: absolute; bottom: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%); background: #1a1a16; border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 12px; font-size: 11px; font-weight: 400;
+  color: var(--text-bright); white-space: normal; width: 240px; z-index: 999;
+  line-height: 1.5; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  text-transform: none; letter-spacing: normal; font-family: var(--font-mono);
+}
+.cc-info-icon:hover .cc-tip { display: block; }
 .cc-apply-btn {
   width: 100%;
   padding: 14px;
@@ -4562,7 +4578,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <!-- Row 1: Buy / Sell / Stock sliders -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
           <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Buy Price Multiplier</label>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Buy Price Multiplier<i class="cc-info-icon">i<span class="cc-tip">Multiplies the price players pay when buying items from traders. 2&times; = items cost twice as much. Applies to all traders unless a per-trader override is set.</span></i></label>
             <div style="display:flex;align-items:center;gap:10px">
               <input type="range" id="traderGlobalBuy" min="0.01" max="10" step="0.01" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="traderSliderSync('traderGlobalBuy','traderGlobalBuyVal')">
               <input type="number" id="traderGlobalBuyVal" min="0.01" max="100" step="0.01" value="1.0" class="cc-num-input" oninput="traderNumSync('traderGlobalBuyVal','traderGlobalBuy')">
@@ -4570,7 +4586,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             </div>
           </div>
           <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Sell Price Multiplier</label>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Sell Price Multiplier<i class="cc-info-icon">i<span class="cc-tip">Multiplies the price players receive when selling items to traders. 2&times; = traders pay twice as much. Changes require a client restart to take effect.</span></i></label>
             <div style="display:flex;align-items:center;gap:10px">
               <input type="range" id="traderGlobalSell" min="0.01" max="10" step="0.01" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="traderSliderSync('traderGlobalSell','traderGlobalSellVal')">
               <input type="number" id="traderGlobalSellVal" min="0.01" max="100" step="0.01" value="1.0" class="cc-num-input" oninput="traderNumSync('traderGlobalSellVal','traderGlobalSell')">
@@ -4578,7 +4594,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             </div>
           </div>
           <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Stock Multiplier</label>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Stock Multiplier<i class="cc-info-icon">i<span class="cc-tip">Multiplies the available stock count for all trader items. 2&times; = double the quantity available to buy. Stock refreshes on each trader restock cycle.</span></i></label>
             <div style="display:flex;align-items:center;gap:10px">
               <input type="range" id="traderGlobalStock" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="traderSliderSync('traderGlobalStock','traderGlobalStockVal')">
               <input type="number" id="traderGlobalStockVal" min="0.1" max="100" step="0.1" value="1.0" class="cc-num-input" oninput="traderNumSync('traderGlobalStockVal','traderGlobalStock')">
@@ -4589,15 +4605,15 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <!-- Row 2: Restock / Currency -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
           <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Min (sec)</label>
-            <input type="number" id="traderGlobalRestockMin" min="60" max="86400" step="60" value="" placeholder="Default" class="cc-num-input cc-wide-input">
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Min (min)<i class="cc-info-icon">i<span class="cc-tip">Minimum time in minutes before a trader restocks their inventory. Leave blank for the server default. Lower values = more frequent restocks.</span></i></label>
+            <input type="number" id="traderGlobalRestockMin" min="1" max="1440" step="1" value="" placeholder="Default" class="cc-num-input cc-wide-input">
           </div>
           <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Max (sec)</label>
-            <input type="number" id="traderGlobalRestockMax" min="60" max="86400" step="60" value="" placeholder="Default" class="cc-num-input cc-wide-input">
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Max (min)<i class="cc-info-icon">i<span class="cc-tip">Maximum time in minutes before a trader restocks. Actual restock time is randomized between min and max. Leave blank for the server default.</span></i></label>
+            <input type="number" id="traderGlobalRestockMax" min="1" max="1440" step="1" value="" placeholder="Default" class="cc-num-input cc-wide-input">
           </div>
           <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Force Currency</label>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Force Currency<i class="cc-info-icon">i<span class="cc-tip">Override the payment currency for all traders. Default uses each trader's native currency. Useful for making all traders accept Roubles only.</span></i></label>
             <select id="traderGlobalCurrency" class="cc-num-input cc-wide-input" style="padding:6px 8px">
               <option value="">Default</option>
               <option value="RUB">Roubles (&#8381;)</option>
@@ -4637,7 +4653,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <!-- Trader Info Header -->
       <div class="cc-panel" style="padding:20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px;display:flex;gap:20px;align-items:flex-start">
         <!-- Avatar -->
-        <div id="traderDetailAvatar" style="width:80px;height:80px;border-radius:50%;border:2px solid var(--border);background:var(--bg-dark);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+        <div id="traderDetailAvatar" style="width:80px;height:80px;border-radius:8px;border:2px solid var(--border);background:var(--bg-dark);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
           <span style="font-size:28px;color:var(--text-dim);font-family:var(--font-mono)">?</span>
         </div>
         <!-- Info -->
@@ -4711,12 +4727,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <!-- Restock / Loyalty / Currency -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:16px">
           <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Min (sec)</label>
-            <input type="number" id="traderDetailRestockMin" min="60" max="86400" step="60" value="" placeholder="Default" class="cc-num-input cc-wide-input" onchange="traderDetailMarkDirty()">
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Min (min)</label>
+            <input type="number" id="traderDetailRestockMin" min="1" max="1440" step="1" value="" placeholder="Default" class="cc-num-input cc-wide-input" onchange="traderDetailMarkDirty()">
           </div>
           <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Max (sec)</label>
-            <input type="number" id="traderDetailRestockMax" min="60" max="86400" step="60" value="" placeholder="Default" class="cc-num-input cc-wide-input" onchange="traderDetailMarkDirty()">
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Max (min)</label>
+            <input type="number" id="traderDetailRestockMax" min="1" max="1440" step="1" value="" placeholder="Default" class="cc-num-input cc-wide-input" onchange="traderDetailMarkDirty()">
           </div>
           <div>
             <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Loyalty Shift</label>
@@ -10335,8 +10351,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('traderGlobalSellVal').value = c.globalSellMultiplier;
     document.getElementById('traderGlobalStock').value = c.globalStockMultiplier;
     document.getElementById('traderGlobalStockVal').value = c.globalStockMultiplier;
-    document.getElementById('traderGlobalRestockMin').value = c.globalRestockMinSeconds || '';
-    document.getElementById('traderGlobalRestockMax').value = c.globalRestockMaxSeconds || '';
+    document.getElementById('traderGlobalRestockMin').value = c.globalRestockMinSeconds ? Math.round(c.globalRestockMinSeconds / 60) : '';
+    document.getElementById('traderGlobalRestockMax').value = c.globalRestockMaxSeconds ? Math.round(c.globalRestockMaxSeconds / 60) : '';
     document.getElementById('traderGlobalCurrency').value = c.forceCurrency || '';
   }
 
@@ -10354,7 +10370,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   function traderLetterAvatar(nickname, size) {
     var letter = nickname ? escH(nickname.charAt(0).toUpperCase()) : '?';
     var fs = Math.round(size * 0.4);
-    return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:var(--bg-dark);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:' + fs + 'px;color:var(--accent);font-weight:700;font-family:var(--font-mono);flex-shrink:0">' + letter + '</div>';
+    return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:8px;background:var(--bg-dark);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:' + fs + 'px;color:var(--accent);font-weight:700;font-family:var(--font-mono);flex-shrink:0">' + letter + '</div>';
   }
 
   function traderAvatarHtml(t, size) {
@@ -10362,8 +10378,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (!t.avatarUrl) return traderLetterAvatar(t.nickname, size);
     var src = window.location.protocol + "//" + window.location.hostname + ":6969" + t.avatarUrl;
     var imgId = "tav_" + t.id.substr(0, 8);
-    var img = '<img id="' + imgId + '" src="' + src + '" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:cover;border:2px solid var(--border);background:var(--bg-dark)">';
-    var fallback = '<div id="' + imgId + '_fb" style="display:none;width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:var(--bg-dark);border:2px solid var(--border);align-items:center;justify-content:center;font-size:' + Math.round(size * 0.4) + 'px;color:var(--accent);font-weight:700;font-family:var(--font-mono);flex-shrink:0">' + escH(t.nickname.charAt(0).toUpperCase()) + '</div>';
+    var img = '<img id="' + imgId + '" src="' + src + '" style="width:' + size + 'px;height:' + size + 'px;border-radius:8px;object-fit:cover;border:2px solid var(--border);background:var(--bg-dark)">';
+    var fallback = '<div id="' + imgId + '_fb" style="display:none;width:' + size + 'px;height:' + size + 'px;border-radius:8px;background:var(--bg-dark);border:2px solid var(--border);align-items:center;justify-content:center;font-size:' + Math.round(size * 0.4) + 'px;color:var(--accent);font-weight:700;font-family:var(--font-mono);flex-shrink:0">' + escH(t.nickname.charAt(0).toUpperCase()) + '</div>';
     // Attach error handler after render via setTimeout
     setTimeout(function() {
       var el = document.getElementById(imgId);
@@ -10394,7 +10410,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var moddedBadge = t.isModded ? '<span style="background:#6a5acd;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;margin-left:6px">Modded</span>' : '';
       html += '<div style="background:var(--bg-panel);border:1px solid ' + borderColor + ';border-radius:6px;padding:14px 16px;cursor:pointer;transition:border-color 0.2s" onclick="traderOpenDetail(\'' + t.id + '\')" onmouseenter="this.style.borderColor=\'var(--accent)\'" onmouseleave="this.style.borderColor=\'' + borderColor + '\'">';
       html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">';
-      html += traderAvatarHtml(t, 42);
+      html += traderAvatarHtml(t, 64);
       html += '<div style="flex:1;min-width:0">';
       html += '<div style="font-weight:600;color:var(--text-bright);font-family:var(--font-mono);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(t.nickname) + moddedBadge + '</div>';
       html += '<div style="display:flex;gap:10px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono);margin-top:2px">';
@@ -10446,8 +10462,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       globalBuyMultiplier: parseFloat(document.getElementById('traderGlobalBuyVal').value) || 1,
       globalSellMultiplier: parseFloat(document.getElementById('traderGlobalSellVal').value) || 1,
       globalStockMultiplier: parseFloat(document.getElementById('traderGlobalStockVal').value) || 1,
-      globalRestockMinSeconds: parseInt(document.getElementById('traderGlobalRestockMin').value) || null,
-      globalRestockMaxSeconds: parseInt(document.getElementById('traderGlobalRestockMax').value) || null,
+      globalRestockMinSeconds: parseInt(document.getElementById('traderGlobalRestockMin').value) ? parseInt(document.getElementById('traderGlobalRestockMin').value) * 60 : null,
+      globalRestockMaxSeconds: parseInt(document.getElementById('traderGlobalRestockMax').value) ? parseInt(document.getElementById('traderGlobalRestockMax').value) * 60 : null,
       forceCurrency: document.getElementById('traderGlobalCurrency').value || null
     };
 
@@ -10536,8 +10552,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('traderDetailSellVal').value = ov ? ov.sellMultiplier : 1;
     document.getElementById('traderDetailStock').value = ov ? ov.stockMultiplier : 1;
     document.getElementById('traderDetailStockVal').value = ov ? ov.stockMultiplier : 1;
-    document.getElementById('traderDetailRestockMin').value = ov && ov.restockMinSeconds ? ov.restockMinSeconds : '';
-    document.getElementById('traderDetailRestockMax').value = ov && ov.restockMaxSeconds ? ov.restockMaxSeconds : '';
+    document.getElementById('traderDetailRestockMin').value = ov && ov.restockMinSeconds ? Math.round(ov.restockMinSeconds / 60) : '';
+    document.getElementById('traderDetailRestockMax').value = ov && ov.restockMaxSeconds ? Math.round(ov.restockMaxSeconds / 60) : '';
     document.getElementById('traderDetailLoyaltyShift').value = ov ? (ov.loyaltyLevelShift || 0) : 0;
     document.getElementById('traderDetailCurrency').value = ov ? (ov.forceCurrency || '') : '';
 
@@ -10565,8 +10581,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       buyMultiplier: parseFloat(document.getElementById('traderDetailBuyVal').value) || 1,
       sellMultiplier: parseFloat(document.getElementById('traderDetailSellVal').value) || 1,
       stockMultiplier: parseFloat(document.getElementById('traderDetailStockVal').value) || 1,
-      restockMinSeconds: parseInt(document.getElementById('traderDetailRestockMin').value) || null,
-      restockMaxSeconds: parseInt(document.getElementById('traderDetailRestockMax').value) || null,
+      restockMinSeconds: parseInt(document.getElementById('traderDetailRestockMin').value) ? parseInt(document.getElementById('traderDetailRestockMin').value) * 60 : null,
+      restockMaxSeconds: parseInt(document.getElementById('traderDetailRestockMax').value) ? parseInt(document.getElementById('traderDetailRestockMax').value) * 60 : null,
       loyaltyLevelShift: parseInt(document.getElementById('traderDetailLoyaltyShift').value) || 0,
       forceCurrency: document.getElementById('traderDetailCurrency').value || null
     };

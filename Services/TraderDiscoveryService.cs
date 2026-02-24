@@ -1,4 +1,3 @@
-using System.Text.Json;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
@@ -37,12 +36,6 @@ public class TraderDiscoveryService(
     public const string RoublesTpl = "5449016a4bdc2d6f028b456f";
     public const string DollarsTpl = "5696686a4bdc2da3298b456a";
     public const string EurosTpl = "569668774bdc2da2298b4568";
-
-    private static readonly JsonSerializerOptions SnapshotJsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
-    };
 
     private readonly Dictionary<string, TraderSnapshot> _snapshots = new();
     private List<TraderSummary>? _discoveredTraders;
@@ -136,9 +129,9 @@ public class TraderDiscoveryService(
 
             if (hasOverride && config.TraderOverrides.TryGetValue(info.Id, out var ov) && ov.Enabled)
             {
-                info.CurrentBuyMultiplier = globalBuy * ov.BuyMultiplier;
-                info.CurrentSellMultiplier = globalSell * ov.SellMultiplier;
-                info.CurrentStockMultiplier = globalStock * ov.StockMultiplier;
+                info.CurrentBuyMultiplier = ov.BuyMultiplier;
+                info.CurrentSellMultiplier = ov.SellMultiplier;
+                info.CurrentStockMultiplier = ov.StockMultiplier;
             }
             else
             {
@@ -160,34 +153,6 @@ public class TraderDiscoveryService(
 
     /// <summary>Get all trader snapshots.</summary>
     public Dictionary<string, TraderSnapshot> GetAllSnapshots() => _snapshots;
-
-    /// <summary>
-    /// Restore a single trader's assort data from snapshot.
-    /// Returns the deserialized items, barter scheme, and loyal level items.
-    /// </summary>
-    public (List<Item> items, Dictionary<MongoId, List<List<BarterScheme>>> barterScheme, Dictionary<MongoId, int> loyalLevelItems)?
-        RestoreFromSnapshot(string traderId)
-    {
-        if (!_snapshots.TryGetValue(traderId, out var snapshot)) return null;
-
-        var items = JsonSerializer.Deserialize<List<Item>>(snapshot.ItemsJson, SnapshotJsonOptions);
-
-        // Deserialize with string keys, then convert back to MongoId keys
-        var strBarter = JsonSerializer.Deserialize<Dictionary<string, List<List<BarterScheme>>>>(
-            snapshot.BarterSchemeJson, SnapshotJsonOptions);
-        var barterScheme = strBarter?.ToDictionary(
-            kvp => (MongoId)kvp.Key,
-            kvp => kvp.Value);
-
-        var strLl = JsonSerializer.Deserialize<Dictionary<string, int>>(
-            snapshot.LoyalLevelItemsJson, SnapshotJsonOptions);
-        var loyalLevelItems = strLl?.ToDictionary(
-            kvp => (MongoId)kvp.Key,
-            kvp => kvp.Value);
-
-        if (items == null || barterScheme == null || loyalLevelItems == null) return null;
-        return (items, barterScheme, loyalLevelItems);
-    }
 
     /// <summary>Map a currency string to its template ID.</summary>
     public static string CurrencyToTemplateId(string currency) => currency.ToUpperInvariant() switch
@@ -253,27 +218,6 @@ public class TraderDiscoveryService(
             OriginalCurrency = trader.Base.Currency?.ToString() ?? "RUB"
         };
 
-        // Deep-copy assort data via JSON round-trip
-        // MongoId can't be used as dictionary key with System.Text.Json — convert to string keys
-        if (trader.Assort.Items != null)
-            snapshot.ItemsJson = JsonSerializer.Serialize(trader.Assort.Items, SnapshotJsonOptions);
-
-        if (trader.Assort.BarterScheme != null)
-        {
-            var strKeyBarter = trader.Assort.BarterScheme.ToDictionary(
-                kvp => kvp.Key.ToString(),
-                kvp => kvp.Value);
-            snapshot.BarterSchemeJson = JsonSerializer.Serialize(strKeyBarter, SnapshotJsonOptions);
-        }
-
-        if (trader.Assort.LoyalLevelItems != null)
-        {
-            var strKeyLl = trader.Assort.LoyalLevelItems.ToDictionary(
-                kvp => kvp.Key.ToString(),
-                kvp => kvp.Value);
-            snapshot.LoyalLevelItemsJson = JsonSerializer.Serialize(strKeyLl, SnapshotJsonOptions);
-        }
-
         // Snapshot stock counts for root items
         if (trader.Assort.Items != null)
         {
@@ -282,6 +226,30 @@ public class TraderDiscoveryService(
                 if (item.ParentId == "hideout" && item.Upd?.StackObjectsCount != null)
                     snapshot.StockCounts[item.Id.ToString()] = item.Upd.StackObjectsCount.Value;
             }
+        }
+
+        // Snapshot barter costs in-place (template + count for each cost entry)
+        if (trader.Assort.BarterScheme != null)
+        {
+            foreach (var (itemId, paymentOptions) in trader.Assort.BarterScheme)
+            {
+                var optionSnapshots = new List<List<BarterCostSnapshot>>();
+                foreach (var option in paymentOptions)
+                {
+                    var costSnapshots = new List<BarterCostSnapshot>();
+                    foreach (var cost in option)
+                        costSnapshots.Add(new BarterCostSnapshot(cost.Template.ToString(), cost.Count));
+                    optionSnapshots.Add(costSnapshots);
+                }
+                snapshot.BarterCosts[itemId.ToString()] = optionSnapshots;
+            }
+        }
+
+        // Snapshot loyalty level items
+        if (trader.Assort.LoyalLevelItems != null)
+        {
+            foreach (var (itemId, level) in trader.Assort.LoyalLevelItems)
+                snapshot.LoyaltyLevels[itemId.ToString()] = level;
         }
 
         // Snapshot buy_price_coef for each loyalty level

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text.Json;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
@@ -345,17 +344,9 @@ public class TraderApplyService(
 
             // Get loyalty level
             var ll = trader.Assort.LoyalLevelItems?.TryGetValue(itemId, out var level) == true ? level : 1;
-            var originalLl = ll; // After restore, this is the snapshot value
-            if (snapshot != null)
-            {
-                var snapLlJson = snapshot.LoyalLevelItemsJson;
-                if (!string.IsNullOrEmpty(snapLlJson))
-                {
-                    var snapLl = JsonSerializer.Deserialize<Dictionary<string, int>>(snapLlJson);
-                    if (snapLl?.TryGetValue(itemId, out var snapLevel) == true)
-                        originalLl = snapLevel;
-                }
-            }
+            var originalLl = ll;
+            if (snapshot?.LoyaltyLevels.TryGetValue(itemId, out var snapLevel) == true)
+                originalLl = snapLevel;
 
             // Loyalty level filter
             if (loyaltyLevel.HasValue && ll != loyaltyLevel.Value)
@@ -376,18 +367,10 @@ public class TraderApplyService(
                     currency = TraderDiscoveryService.TemplateIdToCurrency(firstOption[0].Template.ToString());
 
                     // Get original price from snapshot
-                    if (snapshot != null && !string.IsNullOrEmpty(snapshot.BarterSchemeJson))
+                    if (snapshot?.BarterCosts.TryGetValue(itemId, out var snapOptions) == true &&
+                        snapOptions.Count > 0 && snapOptions[0].Count > 0)
                     {
-                        var snapBarter = JsonSerializer.Deserialize<Dictionary<string, List<List<JsonElement>>>>(snapshot.BarterSchemeJson);
-                        if (snapBarter?.TryGetValue(itemId, out var snapOptions) == true &&
-                            snapOptions.Count > 0 && snapOptions[0].Count > 0)
-                        {
-                            var snapCost = snapOptions[0][0];
-                            if (snapCost.TryGetProperty("count", out var countProp))
-                                basePrice = countProp.GetDouble();
-                            else if (snapCost.TryGetProperty("Count", out var countProp2))
-                                basePrice = countProp2.GetDouble();
-                        }
+                        basePrice = snapOptions[0][0].Count ?? 0;
                     }
                     if (basePrice == 0) basePrice = modifiedPrice;
                 }
@@ -406,12 +389,12 @@ public class TraderApplyService(
             if (config.TraderOverrides.TryGetValue(traderId, out var traderOv))
                 hasItemOverride = traderOv.ItemOverrides.ContainsKey(templateId);
 
-            // Effective multiplier
+            // Effective multiplier (override replaces, not multiplies)
             var effectiveMult = config.GlobalBuyMultiplier;
             if (traderOv is { Enabled: true })
-                effectiveMult *= traderOv.BuyMultiplier;
+                effectiveMult = traderOv.BuyMultiplier;
             if (hasItemOverride && traderOv?.ItemOverrides.TryGetValue(templateId, out var itemOv) == true)
-                effectiveMult *= itemOv.BuyMultiplier;
+                effectiveMult = itemOv.BuyMultiplier;
 
             allItems.Add(new TraderItemInfo
             {
@@ -489,7 +472,7 @@ public class TraderApplyService(
 
     // ── Private helpers ──
 
-    /// <summary>Restore all traders' assort data from snapshots.</summary>
+    /// <summary>Restore all traders' values in-place from snapshots (no collection replacement).</summary>
     private int RestoreAllTraders()
     {
         var traders = databaseService.GetTables().Traders;
@@ -499,24 +482,58 @@ public class TraderApplyService(
         foreach (var (traderId, trader) in traders)
         {
             var id = traderId.ToString();
-            var restored = discoveryService.RestoreFromSnapshot(id);
-            if (restored == null) continue;
-
-            var (items, barterScheme, loyalLevelItems) = restored.Value;
-            trader.Assort.Items = items;
-            trader.Assort.BarterScheme = barterScheme;
-            trader.Assort.LoyalLevelItems = loyalLevelItems;
-
-            // Restore loyalty level coefs from snapshot
             var snapshot = discoveryService.GetSnapshot(id);
-            if (snapshot != null && trader.Base?.LoyaltyLevels != null)
+            if (snapshot == null) continue;
+
+            // Restore stock counts in-place
+            if (trader.Assort?.Items != null)
+            {
+                foreach (var item in trader.Assort.Items)
+                {
+                    if (item.ParentId != "hideout" || item.Upd == null) continue;
+                    if (snapshot.StockCounts.TryGetValue(item.Id.ToString(), out var origStock))
+                        item.Upd.StackObjectsCount = origStock;
+                }
+            }
+
+            // Restore barter scheme costs in-place (count + template)
+            if (trader.Assort?.BarterScheme != null)
+            {
+                foreach (var (itemId, paymentOptions) in trader.Assort.BarterScheme)
+                {
+                    if (!snapshot.BarterCosts.TryGetValue(itemId.ToString(), out var origOptions)) continue;
+                    for (var oi = 0; oi < paymentOptions.Count && oi < origOptions.Count; oi++)
+                    {
+                        var option = paymentOptions[oi];
+                        var origOption = origOptions[oi];
+                        for (var ci = 0; ci < option.Count && ci < origOption.Count; ci++)
+                        {
+                            option[ci].Count = origOption[ci].Count;
+                            option[ci].Template = origOption[ci].Template;
+                        }
+                    }
+                }
+            }
+
+            // Restore loyalty level items in-place
+            if (trader.Assort?.LoyalLevelItems != null)
+            {
+                foreach (var (itemId, _) in trader.Assort.LoyalLevelItems)
+                {
+                    if (snapshot.LoyaltyLevels.TryGetValue(itemId.ToString(), out var origLevel))
+                        trader.Assort.LoyalLevelItems[itemId] = origLevel;
+                }
+            }
+
+            // Restore loyalty level coefs
+            if (trader.Base?.LoyaltyLevels != null)
             {
                 for (var i = 0; i < trader.Base.LoyaltyLevels.Count && i < snapshot.BuyPriceCoefs.Count; i++)
                     trader.Base.LoyaltyLevels[i].BuyPriceCoefficient = snapshot.BuyPriceCoefs[i];
             }
 
             // Restore original currency
-            if (snapshot != null && Enum.TryParse<CurrencyType>(snapshot.OriginalCurrency, out var origCurrency))
+            if (Enum.TryParse<CurrencyType>(snapshot.OriginalCurrency, out var origCurrency))
                 trader.Base!.Currency = origCurrency;
 
             count++;
