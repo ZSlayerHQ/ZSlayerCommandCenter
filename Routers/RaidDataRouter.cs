@@ -61,7 +61,10 @@ public class RaidDataRouter : StaticRouter
             if (profiles.TryGetValue(sessionId, out var profile))
                 nickname = profile.CharacterData?.PmcData?.Info?.Nickname ?? "Unknown";
         }
-        catch { /* ignore profile lookup failures */ }
+        catch (Exception ex)
+        {
+            _logger?.Debug($"ZSlayerCommandCenter: Failed profile lookup for raid record ({sessionId}): {ex.Message}");
+        }
 
         // Serialize the request data to JSON so we can extract fields regardless of property naming
         var map = "Unknown";

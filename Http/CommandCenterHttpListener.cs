@@ -36,7 +36,7 @@ public class CommandCenterHttpListener(
     TelemetryService telemetryService,
     PlayerBuildService playerBuildService,
     DatabaseService databaseService,
-    ConfigServer configServer,
+    RagfairConfig ragfairConfig,
     SaveServer saveServer,
     ProfileActivityService profileActivityService,
     ModHelper modHelper,
@@ -754,7 +754,10 @@ public class CommandCenterHttpListener(
                 mailSendService.SendSystemMessageToPlayer(sid.ToString(), urls, null);
                 sent++;
             }
-            catch { /* skip failed sends */ }
+            catch (Exception ex)
+            {
+                logger.Debug($"ZSlayerCommandCenter: Failed URL mail send to session {sid}: {ex.Message}");
+            }
         }
 
         activityLogService.LogAction(ActionType.Broadcast, headerSessionId, "Sent Command Center URLs to all players");
@@ -834,7 +837,10 @@ public class CommandCenterHttpListener(
                 mailSendService.SendSystemMessageToPlayer(sid.ToString(), $"[Broadcast] {body.Message}", null);
                 sent++;
             }
-            catch { /* skip failed sends */ }
+            catch (Exception ex)
+            {
+                logger.Debug($"ZSlayerCommandCenter: Failed broadcast send to session {sid}: {ex.Message}");
+            }
         }
 
         activityLogService.LogAction(ActionType.Broadcast, headerSessionId, body.Message);
@@ -1496,7 +1502,6 @@ public class CommandCenterHttpListener(
             case "flea/debug/tax" when method == "GET":
             {
                 var globals = databaseService.GetGlobals();
-                var ragfairConfig = configServer.GetConfig<RagfairConfig>();
                 var fleaCfg = fleaPriceService.GetConfig();
                 await WriteJson(context, 200, new
                 {

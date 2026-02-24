@@ -84,7 +84,10 @@ public class PlayerMailService(
                         itemsToSend.Count > 0 ? itemsToSend : null);
                     sent++;
                 }
-                catch { /* skip failed sends */ }
+                catch (Exception ex)
+                {
+                    logger.Debug($"ZSlayerCommandCenter: Failed broadcast send to session {sid}: {ex.Message}");
+                }
             }
 
             activityLogService.LogAction(ActionType.BroadcastMail, adminSessionId,
@@ -148,7 +151,10 @@ public class PlayerMailService(
                     var result = itemGiveService.GiveItems(sid.ToString(), items);
                     if (result.Success) sent++;
                 }
-                catch { /* skip failed sends */ }
+                catch (Exception ex)
+                {
+                    logger.Debug($"ZSlayerCommandCenter: Failed give-all send to session {sid}: {ex.Message}");
+                }
             }
 
             activityLogService.LogAction(ActionType.PlayerGiveAll, adminSessionId,

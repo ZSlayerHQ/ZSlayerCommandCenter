@@ -452,7 +452,10 @@ public class TelemetryService(
                 };
             }
         }
-        catch { /* ignore */ }
+        catch (Exception ex)
+        {
+            logger.Debug($"[Telemetry] Failed to resolve active season: {ex.Message}");
+        }
 
         lock (_lock)
         {

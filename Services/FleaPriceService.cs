@@ -429,7 +429,10 @@ public class FleaPriceService(
                     });
                 }
             }
-            catch { /* skip corrupt files */ }
+            catch (Exception ex)
+            {
+                logger.Debug($"ZSlayerCommandCenter: Skipping invalid flea preset file '{Path.GetFileName(file)}': {ex.Message}");
+            }
         }
         presets.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
         return new FleaPresetListResponse { Presets = presets };

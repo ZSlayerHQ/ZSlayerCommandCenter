@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Servers;
 using ZSlayerCommandCenter.Models;
@@ -10,6 +11,7 @@ namespace ZSlayerCommandCenter.Services;
 [Injectable(InjectionType.Singleton)]
 public class HeadlessProcessService(
     ConfigService configService,
+    HttpConfig httpConfig,
     SaveServer saveServer,
     HeadlessLogService headlessLogService,
     ISptLogger<HeadlessProcessService> logger)
@@ -74,7 +76,10 @@ public class HeadlessProcessService(
                         }
                     }
                 }
-                catch { /* ignore parse errors */ }
+                catch (Exception ex)
+                {
+                    logger.Debug($"HeadlessProcessService: failed to parse HeadlessConfig.json: {ex.Message}");
+                }
             }
         }
     }
@@ -115,8 +120,10 @@ public class HeadlessProcessService(
 
         _stopping = false;
 
+        var backendUrl = $"https://127.0.0.1:{httpConfig.Port}";
+
         var args = $"-token={config.ProfileId} " +
-                   $"-config={{'BackendUrl':'https://127.0.0.1:6969','Version':'live'}} " +
+                   $"-config={{'BackendUrl':'{backendUrl}','Version':'live'}} " +
                    "-nographics -batchmode --enable-console true";
 
         try
@@ -213,17 +220,27 @@ public class HeadlessProcessService(
                         _stopping = false;
 
                         try { _startedAt = p.StartTime.ToUniversalTime(); }
-                        catch { _startedAt = DateTime.UtcNow; }
+                        catch (Exception ex)
+                        {
+                            logger.Debug($"HeadlessProcessService: unable to read process start time for PID {p.Id}: {ex.Message}");
+                            _startedAt = DateTime.UtcNow;
+                        }
 
                         _lastCrashReason = null;
                         logger.Info($"HeadlessProcessService: attached to existing process (PID {p.Id})");
                         return;
                     }
                 }
-                catch { /* access denied on MainModule — skip */ }
+                catch (Exception ex)
+                {
+                    logger.Debug($"HeadlessProcessService: unable to inspect process module for PID {p.Id}: {ex.Message}");
+                }
             }
         }
-        catch { /* GetProcessesByName can throw */ }
+        catch (Exception ex)
+        {
+            logger.Debug($"HeadlessProcessService: process scan failed: {ex.Message}");
+        }
     }
 
     public HeadlessStatusDto GetStatus(string? error = null)
@@ -290,7 +307,10 @@ public class HeadlessProcessService(
             if (profiles.TryGetValue(profileId, out var profile))
                 return profile.CharacterData?.PmcData?.Info?.Nickname ?? "";
         }
-        catch { /* ignore */ }
+        catch (Exception ex)
+        {
+            logger.Debug($"HeadlessProcessService: failed to resolve profile name '{profileId}': {ex.Message}");
+        }
         return "";
     }
 
