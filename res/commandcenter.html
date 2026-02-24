@@ -6977,7 +6977,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       watchdogDetected = true;
       document.getElementById('watchdogCard').style.display = 'block';
       updateWatchdogStatus(d);
-      watchdogPollTimer = setInterval(pollWatchdogStatus, 3000);
+      if (!watchdogPollTimer) {
+        watchdogPollTimer = setInterval(pollWatchdogStatus, 3000);
+      }
     }).catch(function() {});
   }
 
