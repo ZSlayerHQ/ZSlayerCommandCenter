@@ -1753,9 +1753,162 @@ public class CommandCenterHttpListener(
                 break;
             }
 
+            // ── Display override endpoints ──
+            case "traders/display" when method == "POST":
+            {
+                var body = await ReadBody<TraderDisplayUpdateRequest>(context);
+                if (body == null || string.IsNullOrEmpty(body.TraderId))
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body or missing traderId" });
+                    return;
+                }
+                var config = configService.GetConfig().Traders;
+                if (!config.TraderDisplayOverrides.TryGetValue(body.TraderId, out var displayOv))
+                {
+                    displayOv = new TraderDisplayOverride();
+                    config.TraderDisplayOverrides[body.TraderId] = displayOv;
+                }
+                displayOv = displayOv with
+                {
+                    DisplayName = string.IsNullOrWhiteSpace(body.DisplayName) ? null : body.DisplayName.Trim(),
+                    CustomDescription = string.IsNullOrWhiteSpace(body.Description) ? null : body.Description.Trim()
+                };
+                config.TraderDisplayOverrides[body.TraderId] = displayOv;
+                // Clean up empty overrides
+                if (displayOv.DisplayName == null && displayOv.CustomDescription == null && displayOv.CustomAvatar == null)
+                    config.TraderDisplayOverrides.Remove(body.TraderId);
+                configService.SaveConfig();
+                traderDiscoveryService.ApplyInGameDisplayOverrides(config);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Traders: display name for {body.TraderId} set to '{body.DisplayName ?? "(default)"}'");
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+            case "traders/display/avatar" when method == "POST":
+            {
+                var body = await ReadBody<TraderAvatarUploadRequest>(context);
+                if (body == null || string.IsNullOrEmpty(body.TraderId) || string.IsNullOrEmpty(body.ImageBase64))
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    return;
+                }
+
+                // Parse data URL or raw base64
+                var base64 = body.ImageBase64;
+                string ext;
+                if (base64.StartsWith("data:"))
+                {
+                    var commaIdx = base64.IndexOf(',');
+                    if (commaIdx < 0)
+                    {
+                        await WriteJson(context, 400, new { error = "Invalid data URL format" });
+                        return;
+                    }
+                    var mime = base64[5..base64.IndexOf(';')].ToLowerInvariant();
+                    ext = mime switch
+                    {
+                        "image/png" => ".png",
+                        "image/jpeg" => ".jpg",
+                        "image/webp" => ".webp",
+                        _ => ""
+                    };
+                    if (ext == "")
+                    {
+                        await WriteJson(context, 400, new { error = "Unsupported image type. Use PNG, JPG, or WebP." });
+                        return;
+                    }
+                    base64 = base64[(commaIdx + 1)..];
+                }
+                else
+                {
+                    // Default to PNG for raw base64
+                    ext = ".png";
+                }
+
+                byte[] imageBytes;
+                try { imageBytes = Convert.FromBase64String(base64); }
+                catch
+                {
+                    await WriteJson(context, 400, new { error = "Invalid base64 data" });
+                    return;
+                }
+
+                if (imageBytes.Length > 2 * 1024 * 1024)
+                {
+                    await WriteJson(context, 400, new { error = "Image too large (max 2MB)" });
+                    return;
+                }
+
+                // Generate safe filename
+                var idPrefix = body.TraderId.Length >= 8 ? body.TraderId[..8] : body.TraderId;
+                var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var filename = $"{idPrefix}_{timestamp}{ext}";
+
+                var modPath = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
+                var iconDir = Path.Combine(modPath, "res", "Trader Icons");
+                Directory.CreateDirectory(iconDir);
+
+                // Delete old custom avatar file if exists
+                var config = configService.GetConfig().Traders;
+                if (config.TraderDisplayOverrides.TryGetValue(body.TraderId, out var existingOv) &&
+                    !string.IsNullOrWhiteSpace(existingOv.CustomAvatar))
+                {
+                    var oldPath = Path.Combine(iconDir, existingOv.CustomAvatar);
+                    if (File.Exists(oldPath)) File.Delete(oldPath);
+                }
+
+                // Write new file
+                await File.WriteAllBytesAsync(Path.Combine(iconDir, filename), imageBytes);
+
+                // Update config
+                if (!config.TraderDisplayOverrides.TryGetValue(body.TraderId, out var displayOvAvatar))
+                {
+                    displayOvAvatar = new TraderDisplayOverride();
+                }
+                config.TraderDisplayOverrides[body.TraderId] = displayOvAvatar with { CustomAvatar = filename };
+                configService.SaveConfig();
+                traderDiscoveryService.ApplyInGameDisplayOverrides(config);
+
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Traders: custom avatar uploaded for {body.TraderId}");
+                await WriteJson(context, 200, new { success = true, filename });
+                break;
+            }
+
             default:
             {
                 // ── Parameterized routes ──
+
+                // DELETE traders/display/avatar/{traderId}
+                if (method == "DELETE" && path.StartsWith("traders/display/avatar/"))
+                {
+                    var traderId = path["traders/display/avatar/".Length..];
+                    if (string.IsNullOrEmpty(traderId))
+                    {
+                        await WriteJson(context, 400, new { error = "Missing traderId" });
+                        return;
+                    }
+                    var config = configService.GetConfig().Traders;
+                    if (config.TraderDisplayOverrides.TryGetValue(traderId, out var displayOv) &&
+                        !string.IsNullOrWhiteSpace(displayOv.CustomAvatar))
+                    {
+                        var modPath = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
+                        var filePath = Path.Combine(modPath, "res", "Trader Icons", displayOv.CustomAvatar);
+                        if (File.Exists(filePath)) File.Delete(filePath);
+
+                        config.TraderDisplayOverrides[traderId] = displayOv with { CustomAvatar = null };
+                        // Clean up empty overrides
+                        var updated = config.TraderDisplayOverrides[traderId];
+                        if (updated.DisplayName == null && updated.CustomDescription == null && updated.CustomAvatar == null)
+                            config.TraderDisplayOverrides.Remove(traderId);
+                        configService.SaveConfig();
+                    }
+                    traderDiscoveryService.ApplyInGameDisplayOverrides(configService.GetConfig().Traders);
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Traders: custom avatar removed for {traderId}");
+                    await WriteJson(context, 200, new { success = true });
+                    break;
+                }
 
                 // DELETE traders/config/trader/item/{traderId}/{templateId}
                 if (method == "DELETE" && path.StartsWith("traders/config/trader/item/"))
@@ -1877,6 +2030,7 @@ public class CommandCenterHttpListener(
         [".jpeg"] = "image/jpeg",
         [".gif"] = "image/gif",
         [".svg"] = "image/svg+xml",
+        [".webp"] = "image/webp",
         [".ico"] = "image/x-icon",
         [".css"] = "text/css",
         [".js"] = "application/javascript",

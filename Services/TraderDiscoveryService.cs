@@ -4,6 +4,7 @@ using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Utils;
+using SPTarkov.Server.Core.Routers;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Services;
 using ZSlayerCommandCenter.Models;
@@ -15,6 +16,8 @@ public class TraderDiscoveryService(
     DatabaseService databaseService,
     LocaleService localeService,
     ConfigServer configServer,
+    ImageRouter imageRouter,
+    ConfigService configService,
     ISptLogger<TraderDiscoveryService> logger)
 {
     // Vanilla trader IDs
@@ -38,6 +41,8 @@ public class TraderDiscoveryService(
     public const string EurosTpl = "569668774bdc2da2298b4568";
 
     private readonly Dictionary<string, TraderSnapshot> _snapshots = new();
+    private readonly Dictionary<string, (string Nickname, string? AvatarUrl, string? Description)> _originalDisplayInfo = new();
+    private readonly Dictionary<string, (string? Nickname, string? Description)> _originalLocaleValues = new();
     private List<TraderSummary>? _discoveredTraders;
     private bool _initialized;
 
@@ -84,6 +89,9 @@ public class TraderDiscoveryService(
             var description = ResolveLocaleField(id, "Description");
             var location = ResolveLocaleField(id, "Location");
 
+            // Store original display info for restore
+            _originalDisplayInfo[id] = (nickname, trader.Base.Avatar, description);
+
             discovered.Add(new TraderSummary
             {
                 Id = id,
@@ -96,6 +104,8 @@ public class TraderDiscoveryService(
                 RestockMinSeconds = restockMin,
                 RestockMaxSeconds = restockMax,
                 AvatarUrl = trader.Base.Avatar,
+                OriginalNickname = nickname,
+                OriginalAvatarUrl = trader.Base.Avatar,
                 Location = location,
                 Description = description,
             });
@@ -106,6 +116,20 @@ public class TraderDiscoveryService(
 
         _discoveredTraders = discovered;
         _initialized = true;
+
+        // Snapshot original locale values before any modifications
+        SnapshotLocaleValues(discovered);
+
+        // Register locale transformers for all languages (handles lazy-loaded locales)
+        RegisterDisplayTransformers();
+
+        // Apply in-game overrides for already-loaded locale + avatar routes
+        var ccConfig = configService.GetConfig().Traders;
+        if (ccConfig.TraderDisplayOverrides.Count > 0)
+        {
+            ApplyInGameDisplayOverrides(ccConfig);
+            logger.Info($"ZSlayerCC Traders: Applied {ccConfig.TraderDisplayOverrides.Count} display override(s) to locale/image routes");
+        }
 
         var vanillaCount = discovered.Count(t => !t.IsModded);
         var moddedCount = discovered.Count(t => t.IsModded);
@@ -123,6 +147,38 @@ public class TraderDiscoveryService(
 
         foreach (var info in _discoveredTraders)
         {
+            // Restore original display info first (prevents mutation drift)
+            if (_originalDisplayInfo.TryGetValue(info.Id, out var orig))
+            {
+                info.Nickname = orig.Nickname;
+                info.AvatarUrl = orig.AvatarUrl;
+                info.Description = orig.Description;
+                info.OriginalNickname = orig.Nickname;
+                info.OriginalAvatarUrl = orig.AvatarUrl;
+                info.OriginalDescription = orig.Description;
+            }
+
+            // Apply display overrides from config
+            info.HasDisplayOverride = false;
+            if (config.TraderDisplayOverrides.TryGetValue(info.Id, out var displayOv))
+            {
+                if (!string.IsNullOrWhiteSpace(displayOv.DisplayName))
+                {
+                    info.Nickname = displayOv.DisplayName;
+                    info.HasDisplayOverride = true;
+                }
+                if (!string.IsNullOrWhiteSpace(displayOv.CustomDescription))
+                {
+                    info.Description = displayOv.CustomDescription;
+                    info.HasDisplayOverride = true;
+                }
+                if (!string.IsNullOrWhiteSpace(displayOv.CustomAvatar))
+                {
+                    info.AvatarUrl = "/zslayer/cc/Trader%20Icons/" + Uri.EscapeDataString(displayOv.CustomAvatar);
+                    info.HasDisplayOverride = true;
+                }
+            }
+
             var hasOverride = config.TraderOverrides.ContainsKey(info.Id);
             info.HasOverride = hasOverride;
 
@@ -195,6 +251,111 @@ public class TraderDiscoveryService(
         RoublesTpl => 1.0,
         _ => 1.0
     };
+
+    // ── In-game display override application ──
+
+    /// <summary>
+    /// Apply display overrides to SPT locale DB and image routes so changes appear in-game.
+    /// Called at startup and after any display override API change.
+    /// </summary>
+    public void ApplyInGameDisplayOverrides(TraderControlConfig config)
+    {
+        // Modify the default locale directly (handles already-loaded locale)
+        try
+        {
+            var locale = localeService.GetLocaleDb();
+            ApplyOverridesToLocale(locale, config);
+        }
+        catch (Exception ex)
+        {
+            logger.Warning($"ZSlayerCC Traders: Failed to apply display overrides to locale: {ex.Message}");
+        }
+
+        // Apply avatar routes via ImageRouter
+        ApplyAvatarRoutes(config);
+    }
+
+    private void SnapshotLocaleValues(List<TraderSummary> traders)
+    {
+        try
+        {
+            var locale = localeService.GetLocaleDb();
+            foreach (var t in traders)
+            {
+                locale.TryGetValue($"{t.Id} Nickname", out var nick);
+                locale.TryGetValue($"{t.Id} Description", out var desc);
+                _originalLocaleValues[t.Id] = (nick, desc);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.Warning($"ZSlayerCC Traders: Failed to snapshot locale values: {ex.Message}");
+        }
+    }
+
+    private void RegisterDisplayTransformers()
+    {
+        try
+        {
+            // Register transformer on all locale databases — reads latest config when locale loads
+            foreach (var lazyLoc in databaseService.GetLocales().Global.Values)
+            {
+                lazyLoc.AddTransformer(loc =>
+                {
+                    var overrides = configService.GetConfig().Traders.TraderDisplayOverrides;
+                    foreach (var (traderId, displayOv) in overrides)
+                    {
+                        if (!string.IsNullOrWhiteSpace(displayOv.DisplayName))
+                            loc[$"{traderId} Nickname"] = displayOv.DisplayName;
+                        if (!string.IsNullOrWhiteSpace(displayOv.CustomDescription))
+                            loc[$"{traderId} Description"] = displayOv.CustomDescription;
+                    }
+                    return loc;
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.Warning($"ZSlayerCC Traders: Failed to register locale transformers: {ex.Message}");
+        }
+    }
+
+    private void ApplyOverridesToLocale(Dictionary<string, string> locale, TraderControlConfig config)
+    {
+        // Restore originals first
+        foreach (var (traderId, orig) in _originalLocaleValues)
+        {
+            if (orig.Nickname != null) locale[$"{traderId} Nickname"] = orig.Nickname;
+            if (orig.Description != null) locale[$"{traderId} Description"] = orig.Description;
+        }
+
+        // Apply current overrides
+        foreach (var (traderId, displayOv) in config.TraderDisplayOverrides)
+        {
+            if (!string.IsNullOrWhiteSpace(displayOv.DisplayName))
+                locale[$"{traderId} Nickname"] = displayOv.DisplayName;
+            if (!string.IsNullOrWhiteSpace(displayOv.CustomDescription))
+                locale[$"{traderId} Description"] = displayOv.CustomDescription;
+        }
+    }
+
+    private void ApplyAvatarRoutes(TraderControlConfig config)
+    {
+        foreach (var (traderId, displayOv) in config.TraderDisplayOverrides)
+        {
+            if (string.IsNullOrWhiteSpace(displayOv.CustomAvatar)) continue;
+            if (!_originalDisplayInfo.TryGetValue(traderId, out var origInfo) || origInfo.AvatarUrl == null) continue;
+
+            var avatar = origInfo.AvatarUrl;
+            var extIdx = avatar.LastIndexOf('.');
+            if (extIdx <= 0) continue;
+
+            var route = avatar[..extIdx];
+            var filePath = System.IO.Path.Combine(configService.ModPath, "res", "Trader Icons", displayOv.CustomAvatar);
+            if (File.Exists(filePath))
+                imageRouter.AddRoute(route, filePath);
+        }
+    }
 
     // ── Private helpers ──
 

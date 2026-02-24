@@ -3149,6 +3149,48 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .cc-apply-btn:hover:not(:disabled) { background: #d4b878; }
 .cc-apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .cc-apply-btn.dirty { opacity: 1; }
+/* Trader display edit modal */
+.trader-edit-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7); z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+}
+.trader-edit-card {
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 28px 32px; width: 380px; max-width: 90vw; position: relative;
+}
+.trader-edit-card h3 {
+  margin: 0 0 18px; font-family: var(--font-mono); color: var(--accent);
+  font-size: 15px; text-transform: uppercase; letter-spacing: 1px;
+}
+.trader-edit-avatar-wrap {
+  width: 120px; height: 120px; border-radius: 10px; border: 2px solid var(--border);
+  background: var(--bg-dark); margin: 0 auto 16px; position: relative;
+  overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.trader-edit-avatar-wrap img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.trader-edit-avatar-wrap .change-label {
+  position: absolute; bottom: 0; left: 0; right: 0; text-align: center;
+  background: rgba(0,0,0,0.7); color: var(--accent); font-size: 11px;
+  font-family: var(--font-mono); padding: 4px 0; opacity: 0; transition: opacity 0.2s;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.trader-edit-avatar-wrap:hover .change-label { opacity: 1; }
+.trader-edit-input {
+  width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--bg-dark); color: var(--text-bright);
+  font-family: var(--font-mono); font-size: 13px; margin-bottom: 12px;
+}
+.trader-edit-input:focus { border-color: var(--accent); outline: none; }
+.trader-edit-btn-row {
+  display: flex; gap: 8px; margin-top: 16px;
+}
+.trader-edit-btn-row button {
+  flex: 1; padding: 8px; border-radius: 6px; cursor: pointer;
+  font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--border);
+}
 .cc-spinner {
   width: 18px; height: 18px;
   border: 2px solid rgba(0,0,0,0.2);
@@ -4656,16 +4698,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
       <!-- Trader Info Header -->
       <div class="cc-panel" style="padding:20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px;display:flex;gap:20px;align-items:flex-start">
-        <!-- Avatar -->
-        <div id="traderDetailAvatar" style="width:80px;height:80px;border-radius:8px;border:2px solid var(--border);background:var(--bg-dark);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          <span style="font-size:28px;color:var(--text-dim);font-family:var(--font-mono)">?</span>
+        <!-- Avatar + Name (clickable for display editing) -->
+        <div onclick="traderEditDisplay()" style="display:flex;gap:16px;align-items:center;cursor:pointer;position:relative" title="Click to edit display name / avatar">
+          <div id="traderDetailAvatar" style="width:80px;height:80px;border-radius:8px;border:2px solid var(--border);background:var(--bg-dark);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+            <span style="font-size:28px;color:var(--text-dim);font-family:var(--font-mono)">?</span>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px">
+              <span id="traderDetailName" style="font-size:18px;font-weight:700;color:var(--text-bright);font-family:var(--font-mono)"></span>
+              <span style="font-size:13px;color:var(--text-dim);opacity:0.5" title="Edit display">&#9998;</span>
+            </div>
+            <span id="traderDetailBadge" style="display:none;background:#6a5acd;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px">Modded</span>
+          </div>
         </div>
         <!-- Info -->
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-            <span id="traderDetailName" style="font-size:18px;font-weight:700;color:var(--text-bright);font-family:var(--font-mono)"></span>
-            <span id="traderDetailBadge" style="display:none;background:#6a5acd;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px">Modded</span>
-          </div>
+          <div style="margin-bottom:6px"></div>
           <div id="traderDetailFullName" style="font-size:13px;color:var(--text-dim);margin-bottom:6px;font-family:var(--font-mono)"></div>
           <div id="traderDetailDescription" style="font-size:12px;color:var(--text-dim);margin-bottom:10px;line-height:1.5;max-height:40px;overflow:hidden;text-overflow:ellipsis"></div>
           <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;font-family:var(--font-mono)">
@@ -10665,6 +10713,177 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       });
     }).catch(function(e) { traderShowToast('Reset failed: ' + e, true); });
   }
+
+  // ── DISPLAY EDIT MODAL ──
+
+  window.traderEditDisplay = function() {
+    if (!traderCurrentId) return;
+    var t = traderList.find(function(x) { return x.id === traderCurrentId; });
+    if (!t) return;
+
+    // Build avatar preview src
+    var avatarSrc = '';
+    if (t.avatarUrl) {
+      if (t.avatarUrl.indexOf('/zslayer/cc/') === 0) {
+        avatarSrc = window.location.protocol + '//' + window.location.hostname + ':6969' + t.avatarUrl;
+      } else {
+        avatarSrc = window.location.protocol + '//' + window.location.hostname + ':6969' + t.avatarUrl;
+      }
+    }
+    var hasCustomAvatar = t.hasDisplayOverride && t.avatarUrl && t.avatarUrl !== t.originalAvatarUrl;
+    var letter = t.originalNickname ? escH(t.originalNickname.charAt(0).toUpperCase()) : '?';
+
+    var overlay = document.createElement('div');
+    overlay.className = 'trader-edit-overlay';
+    overlay.id = 'traderEditOverlay';
+    overlay.innerHTML =
+      '<div class="trader-edit-card">' +
+        '<h3>Edit Trader Display</h3>' +
+        '<div class="trader-edit-avatar-wrap" id="traderEditAvatarWrap" onclick="document.getElementById(\'traderEditFileInput\').click()">' +
+          (avatarSrc
+            ? '<img id="traderEditAvatarImg" src="' + escH(avatarSrc) + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+              '<div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:48px;color:var(--accent);font-weight:700;font-family:var(--font-mono)">' + letter + '</div>'
+            : '<div style="font-size:48px;color:var(--accent);font-weight:700;font-family:var(--font-mono)">' + letter + '</div>') +
+          '<div class="change-label">CHANGE</div>' +
+        '</div>' +
+        '<input type="file" id="traderEditFileInput" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="traderEditAvatarSelected(this)">' +
+        '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px">' +
+          '<button onclick="document.getElementById(\'traderEditFileInput\').click()" style="background:var(--bg-dark);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:6px 14px;cursor:pointer;font-family:var(--font-mono);font-size:11px">Upload Image</button>' +
+          '<button onclick="traderEditRemoveAvatar()" id="traderEditRemoveBtn" style="background:var(--bg-dark);color:var(--error-bright);border:1px solid rgba(139,58,58,0.3);border-radius:4px;padding:6px 14px;cursor:pointer;font-family:var(--font-mono);font-size:11px;display:' + (hasCustomAvatar ? 'inline' : 'none') + '">Remove Image</button>' +
+        '</div>' +
+        '<label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:4px;font-family:var(--font-mono)">Original: ' + escH(t.originalNickname || t.id) + '</label>' +
+        '<input type="text" id="traderEditNameInput" class="trader-edit-input" placeholder="Custom display name..." value="' + escH(t.hasDisplayOverride && t.nickname !== t.originalNickname ? t.nickname : '') + '">' +
+        '<label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:4px;font-family:var(--font-mono)">Description</label>' +
+        '<textarea id="traderEditDescInput" class="trader-edit-input" placeholder="Custom description..." rows="3" style="resize:vertical;min-height:60px">' + escH(t.hasDisplayOverride && t.description !== t.originalDescription ? (t.description || '') : '') + '</textarea>' +
+        '<div class="trader-edit-btn-row">' +
+          '<button onclick="traderEditSave()" style="background:var(--accent);color:#000;font-weight:600">Save</button>' +
+          '<button onclick="traderEditCancel()" style="background:var(--bg-dark);color:var(--text)">Cancel</button>' +
+          '<button onclick="traderEditReset()" style="background:var(--bg-dark);color:var(--error-bright);border-color:rgba(139,58,58,0.3)">Reset</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+
+    // Close on overlay background click
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) traderEditCancel();
+    });
+  };
+
+  window.traderEditAvatarSelected = function(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    if (file.size > 2 * 1024 * 1024) {
+      traderShowToast('Image too large (max 2MB)', true);
+      return;
+    }
+    var validTypes = ['image/png', 'image/jpeg', 'image/webp'];
+    if (validTypes.indexOf(file.type) === -1) {
+      traderShowToast('Unsupported image type. Use PNG, JPG, or WebP.', true);
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var dataUrl = e.target.result;
+      // Show preview immediately
+      var wrap = document.getElementById('traderEditAvatarWrap');
+      if (wrap) {
+        wrap.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover">' +
+          '<div class="change-label">CHANGE</div>';
+      }
+      // Upload to server
+      api('traders/display/avatar', 'POST', {
+        traderId: traderCurrentId,
+        imageBase64: dataUrl
+      }).then(function(r) {
+        if (r.success) {
+          traderShowToast('Avatar uploaded');
+          var removeBtn = document.getElementById('traderEditRemoveBtn');
+          if (removeBtn) removeBtn.style.display = 'inline';
+        } else {
+          traderShowToast('Upload failed: ' + (r.error || 'Unknown'), true);
+        }
+      }).catch(function(err) {
+        traderShowToast('Upload failed: ' + err, true);
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.traderEditRemoveAvatar = function() {
+    if (!traderCurrentId) return;
+    api('traders/display/avatar/' + traderCurrentId, 'DELETE').then(function(r) {
+      if (r.success) {
+        traderShowToast('Custom avatar removed');
+        // Update preview to letter fallback
+        var t = traderList.find(function(x) { return x.id === traderCurrentId; });
+        var letter = t && t.originalNickname ? escH(t.originalNickname.charAt(0).toUpperCase()) : '?';
+        var origSrc = t && t.originalAvatarUrl
+          ? window.location.protocol + '//' + window.location.hostname + ':6969' + t.originalAvatarUrl
+          : '';
+        var wrap = document.getElementById('traderEditAvatarWrap');
+        if (wrap) {
+          wrap.innerHTML = (origSrc
+            ? '<img src="' + escH(origSrc) + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+              '<div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:48px;color:var(--accent);font-weight:700;font-family:var(--font-mono)">' + letter + '</div>'
+            : '<div style="font-size:48px;color:var(--accent);font-weight:700;font-family:var(--font-mono)">' + letter + '</div>') +
+            '<div class="change-label">CHANGE</div>';
+        }
+        var removeBtn = document.getElementById('traderEditRemoveBtn');
+        if (removeBtn) removeBtn.style.display = 'none';
+      }
+    }).catch(function(err) { traderShowToast('Remove failed: ' + err, true); });
+  };
+
+  window.traderEditSave = function() {
+    if (!traderCurrentId) return;
+    var nameVal = document.getElementById('traderEditNameInput').value.trim();
+    var descVal = document.getElementById('traderEditDescInput').value.trim();
+    api('traders/display', 'POST', {
+      traderId: traderCurrentId,
+      displayName: nameVal || null,
+      description: descVal || null
+    }).then(function(r) {
+      if (r.success) {
+        traderShowToast('Display settings saved');
+        traderRefreshAndReopenDetail();
+      } else {
+        traderShowToast('Save failed: ' + (r.error || 'Unknown'), true);
+      }
+    }).catch(function(err) { traderShowToast('Save failed: ' + err, true); });
+    traderEditCancel();
+  };
+
+  window.traderEditCancel = function() {
+    var overlay = document.getElementById('traderEditOverlay');
+    if (overlay) overlay.remove();
+  };
+
+  window.traderEditReset = function() {
+    if (!traderCurrentId) return;
+    if (!confirm('Reset this trader\'s display name, description, and avatar to defaults?')) return;
+    // Clear name + description
+    var namePromise = api('traders/display', 'POST', { traderId: traderCurrentId, displayName: null, description: null });
+    // Remove custom avatar
+    var avatarPromise = api('traders/display/avatar/' + traderCurrentId, 'DELETE');
+    Promise.all([namePromise, avatarPromise]).then(function() {
+      traderShowToast('Display reset to defaults');
+      traderEditCancel();
+      traderRefreshAndReopenDetail();
+    }).catch(function(err) { traderShowToast('Reset failed: ' + err, true); });
+  };
+
+  window.traderRefreshAndReopenDetail = function() {
+    var id = traderCurrentId;
+    Promise.all([
+      api('traders/config'),
+      api('traders/list')
+    ]).then(function(results) {
+      traderConfig = results[0];
+      traderList = results[1].traders || [];
+      traderRenderCards();
+      if (id) traderOpenDetail(id);
+    });
+  };
 
   // ── ITEM TABLE ──
 

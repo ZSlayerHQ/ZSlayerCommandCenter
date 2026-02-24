@@ -38,6 +38,21 @@ public record TraderControlConfig
 
     [JsonPropertyName("traderOverrides")]
     public Dictionary<string, TraderOverride> TraderOverrides { get; set; } = new();
+
+    [JsonPropertyName("traderDisplayOverrides")]
+    public Dictionary<string, TraderDisplayOverride> TraderDisplayOverrides { get; set; } = new();
+}
+
+public record TraderDisplayOverride
+{
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("customDescription")]
+    public string? CustomDescription { get; set; }
+
+    [JsonPropertyName("customAvatar")]
+    public string? CustomAvatar { get; set; }  // filename in res/Trader Icons/
 }
 
 public record TraderOverride
@@ -134,11 +149,23 @@ public record TraderSummary
     [JsonPropertyName("avatarUrl")]
     public string? AvatarUrl { get; set; }
 
+    [JsonPropertyName("originalNickname")]
+    public string? OriginalNickname { get; set; }
+
+    [JsonPropertyName("originalAvatarUrl")]
+    public string? OriginalAvatarUrl { get; set; }
+
+    [JsonPropertyName("hasDisplayOverride")]
+    public bool HasDisplayOverride { get; set; }
+
     [JsonPropertyName("location")]
     public string? Location { get; set; }
 
     [JsonPropertyName("description")]
     public string? Description { get; set; }
+
+    [JsonPropertyName("originalDescription")]
+    public string? OriginalDescription { get; set; }
 }
 
 /// <summary>In-place snapshot of trader data for restore-from-snapshot pattern.</summary>
@@ -354,4 +381,25 @@ public record TraderItemOverrideRequest
 
     [JsonPropertyName("sellMultiplier")]
     public double SellMultiplier { get; set; } = 1.0;
+}
+
+public record TraderDisplayUpdateRequest
+{
+    [JsonPropertyName("traderId")]
+    public string TraderId { get; set; } = "";
+
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+}
+
+public record TraderAvatarUploadRequest
+{
+    [JsonPropertyName("traderId")]
+    public string TraderId { get; set; } = "";
+
+    [JsonPropertyName("imageBase64")]
+    public string ImageBase64 { get; set; } = "";
 }
