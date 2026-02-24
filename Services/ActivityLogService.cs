@@ -15,6 +15,8 @@ public class ActivityLogService(
     ConfigService configService,
     ISptLogger<ActivityLogService> logger)
 {
+    private readonly object _logLock = new();
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -40,7 +42,10 @@ public class ActivityLogService(
                 Directory.CreateDirectory(dir);
 
             var line = JsonSerializer.Serialize(entry, JsonOptions) + Environment.NewLine;
-            File.AppendAllText(path, line);
+            lock (_logLock)
+            {
+                File.AppendAllText(path, line);
+            }
         }
         catch (Exception ex)
         {
