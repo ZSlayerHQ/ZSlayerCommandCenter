@@ -184,3 +184,62 @@ public record PresetGiveResponse
     [JsonPropertyName("error")]
     public string? Error { get; set; }
 }
+
+// ── Player Build DTOs ──
+
+public record PlayerBuildListResponse
+{
+    [JsonPropertyName("weaponBuilds")]
+    public List<PlayerBuildDto> WeaponBuilds { get; set; } = [];
+
+    [JsonPropertyName("gearBuilds")]
+    public List<PlayerBuildDto> GearBuilds { get; set; } = [];
+}
+
+public record PlayerBuildDto
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("ownerName")]
+    public string OwnerName { get; set; } = "";
+
+    [JsonPropertyName("ownerId")]
+    public string OwnerId { get; set; } = "";
+
+    [JsonPropertyName("rootTpl")]
+    public string RootTpl { get; set; } = "";
+
+    [JsonPropertyName("rootName")]
+    public string RootName { get; set; } = "";
+
+    [JsonPropertyName("itemCount")]
+    public int ItemCount { get; set; }
+
+    [JsonPropertyName("parts")]
+    public List<BuildPartDto> Parts { get; set; } = [];
+}
+
+public record BuildPartDto
+{
+    [JsonPropertyName("tpl")]
+    public string Tpl { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("slotId")]
+    public string SlotId { get; set; } = "";
+}
+
+public record PlayerBuildGiveRequest
+{
+    [JsonPropertyName("buildId")]
+    public string BuildId { get; set; } = "";
+
+    [JsonPropertyName("buildType")]
+    public string BuildType { get; set; } = "";
+}

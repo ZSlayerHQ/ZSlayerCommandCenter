@@ -34,6 +34,7 @@ public class CommandCenterHttpListener(
     HeadlessProcessService headlessProcessService,
     FikaConfigService fikaConfigService,
     TelemetryService telemetryService,
+    PlayerBuildService playerBuildService,
     DatabaseService databaseService,
     ConfigServer configServer,
     SaveServer saveServer,
@@ -234,6 +235,12 @@ public class CommandCenterHttpListener(
                     break;
                 case "preset" when method == "POST":
                     await HandlePresetGive(context, headerSessionId);
+                    break;
+                case "player-builds" when method == "GET":
+                    await HandlePlayerBuilds(context, headerSessionId);
+                    break;
+                case "player-build/give" when method == "POST":
+                    await HandlePlayerBuildGive(context, headerSessionId);
                     break;
                 // Dashboard routes
                 case "dashboard/status" when method == "GET":
@@ -584,6 +591,34 @@ public class CommandCenterHttpListener(
         }
 
         var result = itemGiveService.GivePreset(headerSessionId, body.PresetId);
+        await WriteJson(context, 200, result);
+    }
+
+    // ── Player Build Handlers ──
+
+    private async Task HandlePlayerBuilds(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var result = playerBuildService.GetAllBuilds();
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandlePlayerBuildGive(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        var body = await ReadBody<PlayerBuildGiveRequest>(context);
+        if (body is null || string.IsNullOrEmpty(body.BuildId) || string.IsNullOrEmpty(body.BuildType))
+        {
+            await WriteJson(context, 400, new PresetGiveResponse
+            {
+                Success = false,
+                Error = "buildId and buildType required"
+            });
+            return;
+        }
+
+        var result = playerBuildService.GivePlayerBuild(headerSessionId, body.BuildId, body.BuildType);
         await WriteJson(context, 200, result);
     }
 
