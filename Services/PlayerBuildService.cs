@@ -126,6 +126,7 @@ public class PlayerBuildService(
 
             List<Item>? sourceItems = null;
             string? buildName = null;
+            string? gearRootId = null; // EquipmentBuild root container to skip
 
             if (buildType == "weapon" && builds.WeaponBuilds != null)
             {
@@ -147,6 +148,7 @@ public class PlayerBuildService(
                     {
                         sourceItems = eb.Items;
                         buildName = eb.Name;
+                        gearRootId = eb.Root.ToString();
                         break;
                     }
                 }
@@ -154,15 +156,28 @@ public class PlayerBuildService(
 
             if (sourceItems == null || sourceItems.Count == 0) continue;
 
-            // Deep-copy items to avoid mutating source profile
+            // Deep-copy items, skipping the InventoryEquipment root container
+            // for gear builds (it's non-lootable/non-transferable)
             var copiedItems = new List<Item>(sourceItems.Count);
             foreach (var src in sourceItems)
             {
+                var srcId = src.Id.ToString();
+
+                // Skip the root equipment container itself
+                if (gearRootId != null && srcId == gearRootId)
+                    continue;
+
+                var parentId = src.ParentId;
+
+                // Direct children of root become independent top-level items
+                if (gearRootId != null && parentId.ToString() == gearRootId)
+                    parentId = default;
+
                 copiedItems.Add(new Item
                 {
                     Id = src.Id,
                     Template = src.Template,
-                    ParentId = src.ParentId,
+                    ParentId = parentId,
                     SlotId = src.SlotId,
                     Upd = src.Upd
                 });
