@@ -3353,6 +3353,309 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   margin-left: 4px;
 }
 .flea-unsaved-dot.visible { display: inline-block; }
+
+/* ══════════════════════════════════════════════════════════
+   TRADER TAB — Glass-morphism Visual Overhaul
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Trader Card ── */
+.trader-card {
+  position: relative;
+  background: rgba(24, 24, 20, 0.6);
+  border-radius: 10px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(200, 170, 110, 0.15);
+  animation: traderCardIn 0.35s ease-out both;
+  overflow: hidden;
+}
+.trader-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(200,170,110,0.25), rgba(200,170,110,0.05) 50%, rgba(200,170,110,0.15));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.trader-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(200, 170, 110, 0.12), 0 0 20px rgba(200, 170, 110, 0.06);
+  border-color: rgba(200, 170, 110, 0.3);
+}
+
+/* ── Card Header ── */
+.trader-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.trader-card-info {
+  flex: 1;
+  min-width: 0;
+}
+.trader-card-name {
+  font-weight: 600;
+  color: var(--text-bright);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trader-card-pills {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Card Avatar ── */
+.trader-card-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--bg-dark);
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+}
+.trader-card-avatar-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+}
+.trader-card-avatar-wrap img {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--bg-dark);
+}
+.trader-card-avatar-wrap .trader-card-avatar-fallback {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  background: var(--bg-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--accent);
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+/* ── Pill Tags ── */
+.trader-pill {
+  display: inline-block;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.trader-pill-modded { background: rgba(106, 90, 205, 0.25); color: #a99bef; }
+.trader-pill-custom { background: rgba(200, 170, 110, 0.2); color: var(--accent); }
+.trader-pill-currency { background: rgba(200, 200, 200, 0.08); color: var(--text-dim); }
+
+/* ── Card Stats Bar ── */
+.trader-card-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  padding-top: 10px;
+  border-top: 1px solid rgba(200, 170, 110, 0.08);
+}
+.trader-stat { color: var(--text-dim); }
+.trader-stat-buy { color: #6abf7b; }
+.trader-stat-sell { color: #7ab3e0; }
+.trader-stat-stock { color: var(--accent); }
+
+/* ── Section Divider (vanilla/modded) ── */
+.trader-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+}
+.trader-section-divider::before,
+.trader-section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+.trader-section-divider span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+/* ── Glass Panel (Global Controls) ── */
+.trader-glass-panel {
+  position: relative;
+  background: rgba(24, 24, 20, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(200, 170, 110, 0.1);
+  border-top: 2px solid var(--accent);
+  border-radius: 8px;
+  padding: 18px 22px;
+  margin-bottom: 14px;
+}
+.trader-glass-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+/* ── Presets Row ── */
+.trader-presets-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: rgba(24, 24, 20, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(122, 179, 224, 0.15);
+  border-left: 3px solid #7ab3e0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+}
+.trader-presets-row .trader-preset-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  margin: 0 4px;
+}
+.trader-presets-row select,
+.trader-presets-row input[type="text"] {
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.trader-presets-row select { min-width: 160px; }
+.trader-presets-row input[type="text"] { min-width: 120px; flex: 1; }
+.trader-presets-row button {
+  padding: 6px 12px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s;
+}
+.trader-presets-row .preset-btn-load { color: #7ab3e0; border-color: rgba(100,160,220,0.3); }
+.trader-presets-row .preset-btn-delete { color: var(--error-bright); border-color: rgba(139,58,58,0.3); }
+.trader-presets-row .preset-btn-save { background: rgba(100,160,220,0.15); color: #7ab3e0; border-color: rgba(100,160,220,0.3); font-weight: 600; }
+.trader-presets-row .preset-btn-export { color: var(--text-dim); }
+.trader-presets-row .preset-btn-import { color: var(--text-dim); }
+
+/* ── Apply Button (Gold Gradient + Shimmer) ── */
+.trader-apply-btn {
+  position: relative;
+  flex: 1;
+  padding: 12px;
+  background: linear-gradient(135deg, #c8aa6e, #a08a50);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  transition: box-shadow 0.3s, transform 0.15s;
+}
+.trader-apply-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+.trader-apply-btn:hover:not(:disabled)::after {
+  left: 120%;
+}
+.trader-apply-btn:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(200, 170, 110, 0.3);
+  transform: translateY(-1px);
+}
+.trader-apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.trader-apply-btn:active:not(:disabled) { transform: translateY(0); }
+
+/* ── Reset Button (Ghost Red) ── */
+.trader-reset-btn {
+  padding: 12px 20px;
+  background: transparent;
+  color: var(--error-bright);
+  border: 1px solid rgba(139, 58, 58, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.trader-reset-btn:hover {
+  background: rgba(196, 80, 80, 0.15);
+  border-color: var(--error-bright);
+  color: #e06060;
+}
+
+/* ── Card Grid ── */
+.trader-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+/* ── Entrance Animation ── */
+@keyframes traderCardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 </style>
 </head>
 <body>
@@ -4615,38 +4918,31 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <!-- Main view: grid + detail panel -->
     <div id="traderMainView">
       <!-- PRESETS -->
-      <div class="cc-panel" style="border-left:3px solid #7ab3e0;padding:14px 20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div style="font-size:14px;font-weight:600;color:#7ab3e0;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Presets</div>
-          <div style="display:flex;gap:6px">
-            <button onclick="traderExportPreset()" style="padding:4px 10px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px" title="Download selected preset as JSON file">Export</button>
-            <button onclick="traderShowImport()" style="padding:4px 10px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px" title="Import preset from JSON">Import</button>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <select id="traderPresetSelect" style="flex:1;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-family:var(--font-mono);font-size:12px">
-            <option value="">— Select a preset —</option>
-          </select>
-          <button onclick="traderLoadPreset()" style="padding:6px 12px;background:var(--bg-dark);color:#7ab3e0;border:1px solid rgba(100,160,220,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:12px">Load</button>
-          <button onclick="traderDeletePreset()" style="padding:6px 12px;background:var(--bg-dark);color:var(--error-bright);border:1px solid rgba(139,58,58,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:12px">Delete</button>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
-          <input type="text" id="traderPresetName" placeholder="Preset name..." style="flex:1;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-family:var(--font-mono);font-size:12px">
-          <button onclick="traderSavePreset()" style="padding:6px 12px;background:rgba(100,160,220,0.15);color:#7ab3e0;border:1px solid rgba(100,160,220,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:12px;font-weight:600">Save Current</button>
-        </div>
-        <!-- Import text area (hidden by default) -->
-        <div id="traderImportArea" style="display:none;margin-top:10px">
-          <textarea id="traderImportJson" style="width:100%;height:100px;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:8px;font-family:var(--font-mono);font-size:11px;resize:vertical" placeholder="Paste preset JSON here..."></textarea>
-          <div style="display:flex;gap:8px;margin-top:6px;justify-content:flex-end">
-            <button onclick="document.getElementById('traderImportArea').style.display='none'" style="padding:4px 10px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px">Cancel</button>
-            <button onclick="traderImportPreset()" style="padding:4px 10px;background:rgba(100,160,220,0.15);color:#7ab3e0;border:1px solid rgba(100,160,220,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:12px">Import &amp; Save</button>
-          </div>
+      <div class="trader-presets-row">
+        <select id="traderPresetSelect">
+          <option value="">— Preset —</option>
+        </select>
+        <button onclick="traderLoadPreset()" class="preset-btn-load">Load</button>
+        <button onclick="traderDeletePreset()" class="preset-btn-delete">Delete</button>
+        <div class="trader-preset-sep"></div>
+        <input type="text" id="traderPresetName" placeholder="Preset name...">
+        <button onclick="traderSavePreset()" class="preset-btn-save">Save Current</button>
+        <div class="trader-preset-sep"></div>
+        <button onclick="traderExportPreset()" class="preset-btn-export" title="Download selected preset as JSON file">Export</button>
+        <button onclick="traderShowImport()" class="preset-btn-import" title="Import preset from JSON">Import</button>
+      </div>
+      <!-- Import text area (hidden by default) -->
+      <div id="traderImportArea" style="display:none;margin-bottom:14px;padding:0 2px">
+        <textarea id="traderImportJson" style="width:100%;height:100px;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:8px;font-family:var(--font-mono);font-size:11px;resize:vertical;box-sizing:border-box" placeholder="Paste preset JSON here..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:6px;justify-content:flex-end">
+          <button onclick="document.getElementById('traderImportArea').style.display='none'" style="padding:4px 10px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px">Cancel</button>
+          <button onclick="traderImportPreset()" style="padding:4px 10px;background:rgba(100,160,220,0.15);color:#7ab3e0;border:1px solid rgba(100,160,220,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:12px">Import &amp; Save</button>
         </div>
       </div>
 
       <!-- A) GLOBAL CONTROLS -->
-      <div class="cc-panel" style="border-left:3px solid var(--accent);padding:16px 20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px">
-        <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:14px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Global Trader Controls</div>
+      <div class="trader-glass-panel">
+        <div class="trader-glass-panel-title">Global Trader Controls</div>
         <!-- Row 1: Buy / Sell / Stock sliders -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
           <div>
@@ -4702,16 +4998,15 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
       <!-- B) APPLY & RESET BAR -->
       <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
-        <button onclick="traderApplyAll()" class="cc-apply-btn" style="flex:1;padding:12px;font-size:14px" id="traderApplyBtn">
+        <button onclick="traderApplyAll()" class="trader-apply-btn" id="traderApplyBtn">
           <span id="traderApplyText">&#9733; Apply Changes to All Traders &#9733;</span>
           <span id="traderApplySpinner" style="display:none">Applying...</span>
         </button>
-        <button onclick="traderResetAll()" style="padding:12px 20px;background:var(--bg-dark);color:var(--error-bright);border:1px solid rgba(139,58,58,0.3);border-radius:6px;cursor:pointer;font-family:var(--font-mono);font-size:13px;white-space:nowrap">&#8634; Reset All</button>
+        <button onclick="traderResetAll()" class="trader-reset-btn">&#8634; Reset All</button>
       </div>
 
       <!-- C) TRADER CARD GRID -->
-      <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Traders</div>
-      <div id="traderCardGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+      <div id="traderCardGrid" class="trader-card-grid">
         <div style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:40px;font-style:italic">Loading traders...</div>
       </div>
 
@@ -10552,19 +10847,21 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }
   }
 
-  function traderLetterAvatar(nickname, size) {
+  function traderLetterAvatar(nickname, size, borderColor) {
+    borderColor = borderColor || 'var(--border)';
     var letter = nickname ? escH(nickname.charAt(0).toUpperCase()) : '?';
     var fs = Math.round(size * 0.4);
-    return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:8px;background:var(--bg-dark);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:' + fs + 'px;color:var(--accent);font-weight:700;font-family:var(--font-mono);flex-shrink:0">' + letter + '</div>';
+    return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:10px;background:var(--bg-dark);border:2px solid ' + borderColor + ';display:flex;align-items:center;justify-content:center;font-size:' + fs + 'px;color:var(--accent);font-weight:700;font-family:var(--font-mono);flex-shrink:0">' + letter + '</div>';
   }
 
-  function traderAvatarHtml(t, size) {
+  function traderAvatarHtml(t, size, borderColor) {
     size = size || 48;
-    if (!t.avatarUrl) return traderLetterAvatar(t.nickname, size);
+    borderColor = borderColor || 'var(--border)';
+    if (!t.avatarUrl) return traderLetterAvatar(t.nickname, size, borderColor);
     var src = window.location.protocol + "//" + window.location.hostname + ":6969" + t.avatarUrl;
     var imgId = "tav_" + t.id.substr(0, 8);
-    var img = '<img id="' + imgId + '" src="' + src + '" style="width:' + size + 'px;height:' + size + 'px;border-radius:8px;object-fit:cover;border:2px solid var(--border);background:var(--bg-dark)">';
-    var fallback = '<div id="' + imgId + '_fb" style="display:none;width:' + size + 'px;height:' + size + 'px;border-radius:8px;background:var(--bg-dark);border:2px solid var(--border);align-items:center;justify-content:center;font-size:' + Math.round(size * 0.4) + 'px;color:var(--accent);font-weight:700;font-family:var(--font-mono);flex-shrink:0">' + escH(t.nickname.charAt(0).toUpperCase()) + '</div>';
+    var img = '<img id="' + imgId + '" src="' + src + '" style="width:' + size + 'px;height:' + size + 'px;border-radius:10px;object-fit:cover;border:2px solid ' + borderColor + ';background:var(--bg-dark)">';
+    var fallback = '<div id="' + imgId + '_fb" style="display:none;width:' + size + 'px;height:' + size + 'px;border-radius:10px;background:var(--bg-dark);border:2px solid ' + borderColor + ';align-items:center;justify-content:center;font-size:' + Math.round(size * 0.4) + 'px;color:var(--accent);font-weight:700;font-family:var(--font-mono);flex-shrink:0">' + escH(t.nickname.charAt(0).toUpperCase()) + '</div>';
     // Attach error handler after render via setTimeout
     setTimeout(function() {
       var el = document.getElementById(imgId);
@@ -10575,6 +10872,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       };
     }, 0);
     return img + fallback;
+  }
+
+  function traderGetLLColor(ll) {
+    if (ll >= 4) return '#c8aa6e';
+    if (ll === 3) return '#6abf7b';
+    if (ll === 2) return '#7ab3e0';
+    return 'var(--border)';
   }
 
   function traderRenderCards() {
@@ -10589,28 +10893,45 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       return a.nickname.localeCompare(b.nickname);
     });
     var html = '';
+    var idx = 0;
+    var dividerInserted = false;
     sorted.forEach(function(t) {
+      // Insert section divider before first modded trader
+      if (t.isModded && !dividerInserted) {
+        dividerInserted = true;
+        html += '<div class="trader-section-divider" style="grid-column:1/-1"><span>Modded Traders</span></div>';
+      }
       var hasOv = traderConfig && traderConfig.traderOverrides && traderConfig.traderOverrides[t.id];
-      var borderColor = hasOv ? 'var(--accent)' : 'var(--border)';
-      var moddedBadge = t.isModded ? '<span style="background:#6a5acd;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;margin-left:6px">Modded</span>' : '';
-      html += '<div style="background:var(--bg-panel);border:1px solid ' + borderColor + ';border-radius:6px;padding:14px 16px;cursor:pointer;transition:border-color 0.2s" onclick="traderOpenDetail(\'' + t.id + '\')" onmouseenter="this.style.borderColor=\'var(--accent)\'" onmouseleave="this.style.borderColor=\'' + borderColor + '\'">';
-      html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">';
-      html += traderAvatarHtml(t, 64);
-      html += '<div style="flex:1;min-width:0">';
-      html += '<div style="font-weight:600;color:var(--text-bright);font-family:var(--font-mono);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(t.nickname) + moddedBadge + '</div>';
-      html += '<div style="display:flex;gap:10px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono);margin-top:2px">';
-      html += '<span>' + t.itemCount + ' items</span>';
-      html += '<span>' + (t.currency || 'RUB') + '</span>';
-      html += '<span>LL' + t.loyaltyLevelCount + '</span>';
+      var llColor = traderGetLLColor(t.loyaltyLevelCount);
+      var currency = t.currency || 'RUB';
+
+      // Pills
+      var pills = '';
+      if (t.isModded) pills += '<span class="trader-pill trader-pill-modded">Modded</span>';
+      if (hasOv) pills += '<span class="trader-pill trader-pill-custom">Custom</span>';
+      pills += '<span class="trader-pill trader-pill-currency">' + escH(currency) + '</span>';
+
+      // Stat classes
+      var buyClass = t.currentBuyMultiplier !== 1 ? ' trader-stat-buy' : '';
+      var sellClass = t.currentSellMultiplier !== 1 ? ' trader-stat-sell' : '';
+      var stockClass = t.currentStockMultiplier !== 1 ? ' trader-stat-stock' : '';
+
+      html += '<div class="trader-card" style="animation-delay:' + (idx * 50) + 'ms" onclick="traderOpenDetail(\'' + t.id + '\')">';
+      html += '<div class="trader-card-header">';
+      html += traderAvatarHtml(t, 72, llColor);
+      html += '<div class="trader-card-info">';
+      html += '<div class="trader-card-name">' + escH(t.nickname) + '</div>';
+      html += '<div class="trader-card-pills">' + pills + '</div>';
       html += '</div>';
       html += '</div>';
+      html += '<div class="trader-card-stats">';
+      html += '<span class="trader-stat' + buyClass + '">Buy ' + t.currentBuyMultiplier.toFixed(2) + '&times;</span>';
+      html += '<span class="trader-stat' + sellClass + '">Sell ' + t.currentSellMultiplier.toFixed(2) + '&times;</span>';
+      html += '<span class="trader-stat' + stockClass + '">Stock ' + t.currentStockMultiplier.toFixed(2) + '&times;</span>';
+      html += '<span class="trader-stat">' + t.itemCount + ' items</span>';
       html += '</div>';
-      html += '<div style="display:flex;gap:8px;font-size:11px;font-family:var(--font-mono)">';
-      html += '<span style="color:' + (t.currentBuyMultiplier !== 1 ? '#6abf7b' : 'var(--text-dim)') + '">Buy ' + t.currentBuyMultiplier.toFixed(2) + '&times;</span>';
-      html += '<span style="color:' + (t.currentSellMultiplier !== 1 ? '#7ab3e0' : 'var(--text-dim)') + '">Sell ' + t.currentSellMultiplier.toFixed(2) + '&times;</span>';
-      html += '<span style="color:' + (t.currentStockMultiplier !== 1 ? '#c8aa6e' : 'var(--text-dim)') + '">Stock ' + t.currentStockMultiplier.toFixed(2) + '&times;</span>';
       html += '</div>';
-      html += '</div>';
+      idx++;
     });
     grid.innerHTML = html;
   }
