@@ -3361,33 +3361,28 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 /* ── Trader Card ── */
 .trader-card {
   position: relative;
-  background: rgba(24, 24, 20, 0.6);
-  border-radius: 10px;
-  padding: 18px 20px;
-  cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(200, 170, 110, 0.15);
-  animation: traderCardIn 0.35s ease-out both;
-  overflow: hidden;
-}
-.trader-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 10px;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(200,170,110,0.25), rgba(200,170,110,0.05) 50%, rgba(200,170,110,0.15));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+  border: 1px solid rgba(180, 160, 100, 0.15);
+  border-radius: 8px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  animation: traderCardIn 0.3s ease-out both;
 }
 .trader-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 32px rgba(200, 170, 110, 0.12), 0 0 20px rgba(200, 170, 110, 0.06);
-  border-color: rgba(200, 170, 110, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(180, 160, 100, 0.15);
+  border-color: rgba(180, 160, 100, 0.3);
+}
+/* Override card: gold left accent bar + glow */
+.trader-card.trader-card-override {
+  border-left: 3px solid var(--accent);
+  box-shadow: -2px 0 12px rgba(200, 170, 110, 0.08);
+}
+.trader-card.trader-card-override:hover {
+  box-shadow: 0 4px 20px rgba(180, 160, 100, 0.15), -2px 0 12px rgba(200, 170, 110, 0.12);
 }
 
 /* ── Card Header ── */
@@ -3395,7 +3390,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 .trader-card-info {
   flex: 1;
@@ -3469,20 +3464,55 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .trader-pill-modded { background: rgba(106, 90, 205, 0.25); color: #a99bef; }
 .trader-pill-custom { background: rgba(200, 170, 110, 0.2); color: var(--accent); }
 .trader-pill-currency { background: rgba(200, 200, 200, 0.08); color: var(--text-dim); }
+.trader-pill-ll1 { background: rgba(148, 163, 184, 0.12); color: #94a3b8; }
+.trader-pill-ll2 { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
+.trader-pill-ll3 { background: rgba(96, 165, 250, 0.12); color: #60a5fa; }
+.trader-pill-ll4 { background: rgba(200, 170, 110, 0.18); color: var(--accent); }
+
+/* ── Card Item Count ── */
+.trader-card-item-count {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 8px;
+  margin-bottom: 0;
+}
 
 /* ── Card Stats Bar ── */
 .trader-card-stats {
-  display: flex;
-  gap: 10px;
-  font-size: 11px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
   font-family: var(--font-mono);
   padding-top: 10px;
-  border-top: 1px solid rgba(200, 170, 110, 0.08);
+  border-top: 1px solid rgba(180, 160, 100, 0.1);
 }
-.trader-stat { color: var(--text-dim); }
-.trader-stat-buy { color: #6abf7b; }
-.trader-stat-sell { color: #7ab3e0; }
-.trader-stat-stock { color: var(--accent); }
+.trader-stat-col {
+  text-align: center;
+}
+.trader-stat-col:not(:last-child) {
+  border-right: 1px solid rgba(180, 160, 100, 0.06);
+}
+.trader-stat-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.trader-stat-value {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+.trader-stat-value-buy { color: #4ade80; }
+.trader-stat-value-sell { color: #f59e0b; }
+.trader-stat-value-stock { color: #94a3b8; }
+/* Dim values that are at default 1.00 */
+.trader-stat-value-default { color: var(--text-muted) !important; font-weight: 400; }
 
 /* ── Section Divider (vanilla/modded) ── */
 .trader-section-divider {
@@ -3510,10 +3540,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 /* ── Glass Panel (Global Controls) ── */
 .trader-glass-panel {
   position: relative;
-  background: rgba(24, 24, 20, 0.6);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(200, 170, 110, 0.1);
+  border: 1px solid rgba(180, 160, 100, 0.15);
   border-top: 2px solid var(--accent);
   border-radius: 8px;
   padding: 18px 22px;
@@ -3535,9 +3565,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  background: rgba(24, 24, 20, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(122, 179, 224, 0.15);
   border-left: 3px solid #7ab3e0;
   border-radius: 8px;
@@ -3571,7 +3601,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   font-family: var(--font-mono);
   font-size: 11px;
   white-space: nowrap;
-  transition: border-color 0.2s, color 0.2s;
+  transition: border-color 0.15s ease, color 0.15s ease;
 }
 .trader-presets-row .preset-btn-load { color: #7ab3e0; border-color: rgba(100,160,220,0.3); }
 .trader-presets-row .preset-btn-delete { color: var(--error-bright); border-color: rgba(139,58,58,0.3); }
@@ -3584,7 +3614,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   position: relative;
   flex: 1;
   padding: 12px;
-  background: linear-gradient(135deg, #c8aa6e, #a08a50);
+  background: linear-gradient(135deg, #b8860b, #d4a017);
   color: #000;
   border: none;
   border-radius: 6px;
@@ -3600,7 +3630,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   gap: 10px;
   overflow: hidden;
   text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-  transition: box-shadow 0.3s, transform 0.15s;
+  transition: all 0.2s ease;
 }
 .trader-apply-btn::after {
   content: '';
@@ -3609,7 +3639,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   left: -100%;
   width: 60%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
   transition: left 0.5s ease;
   pointer-events: none;
 }
@@ -3617,7 +3647,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   left: 120%;
 }
 .trader-apply-btn:hover:not(:disabled) {
-  box-shadow: 0 4px 20px rgba(200, 170, 110, 0.3);
+  filter: brightness(1.15);
+  box-shadow: 0 4px 20px rgba(180, 160, 100, 0.25);
   transform: translateY(-1px);
 }
 .trader-apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -3634,7 +3665,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   font-family: var(--font-mono);
   font-size: 13px;
   white-space: nowrap;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  transition: all 0.15s ease;
 }
 .trader-reset-btn:hover {
   background: rgba(196, 80, 80, 0.15);
@@ -3648,11 +3679,15 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   margin-bottom: 16px;
+  position: relative;
+  /* Ambient hex grid background */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23c8aa6e' fill-opacity='0.04'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  padding: 4px;
 }
 
 /* ── Entrance Animation ── */
 @keyframes traderCardIn {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -10881,6 +10916,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     return 'var(--border)';
   }
 
+  function traderGetLLPillClass(ll) {
+    if (ll >= 4) return 'trader-pill-ll4';
+    if (ll === 3) return 'trader-pill-ll3';
+    if (ll === 2) return 'trader-pill-ll2';
+    return 'trader-pill-ll1';
+  }
+
   function traderRenderCards() {
     var grid = document.getElementById('traderCardGrid');
     if (!traderList || traderList.length === 0) {
@@ -10904,19 +10946,21 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var hasOv = traderConfig && traderConfig.traderOverrides && traderConfig.traderOverrides[t.id];
       var llColor = traderGetLLColor(t.loyaltyLevelCount);
       var currency = t.currency || 'RUB';
+      var cardClass = 'trader-card' + (hasOv ? ' trader-card-override' : '');
 
       // Pills
       var pills = '';
       if (t.isModded) pills += '<span class="trader-pill trader-pill-modded">Modded</span>';
       if (hasOv) pills += '<span class="trader-pill trader-pill-custom">Custom</span>';
       pills += '<span class="trader-pill trader-pill-currency">' + escH(currency) + '</span>';
+      pills += '<span class="trader-pill ' + traderGetLLPillClass(t.loyaltyLevelCount) + '">LL' + t.loyaltyLevelCount + '</span>';
 
-      // Stat classes
-      var buyClass = t.currentBuyMultiplier !== 1 ? ' trader-stat-buy' : '';
-      var sellClass = t.currentSellMultiplier !== 1 ? ' trader-stat-sell' : '';
-      var stockClass = t.currentStockMultiplier !== 1 ? ' trader-stat-stock' : '';
+      // Stat default classes
+      var buyDef = t.currentBuyMultiplier === 1 ? ' trader-stat-value-default' : '';
+      var sellDef = t.currentSellMultiplier === 1 ? ' trader-stat-value-default' : '';
+      var stockDef = t.currentStockMultiplier === 1 ? ' trader-stat-value-default' : '';
 
-      html += '<div class="trader-card" style="animation-delay:' + (idx * 50) + 'ms" onclick="traderOpenDetail(\'' + t.id + '\')">';
+      html += '<div class="' + cardClass + '" style="animation-delay:' + (idx * 50) + 'ms" onclick="traderOpenDetail(\'' + t.id + '\')">';
       html += '<div class="trader-card-header">';
       html += traderAvatarHtml(t, 72, llColor);
       html += '<div class="trader-card-info">';
@@ -10924,11 +10968,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '<div class="trader-card-pills">' + pills + '</div>';
       html += '</div>';
       html += '</div>';
+      html += '<div class="trader-card-item-count">' + t.itemCount + ' items</div>';
       html += '<div class="trader-card-stats">';
-      html += '<span class="trader-stat' + buyClass + '">Buy ' + t.currentBuyMultiplier.toFixed(2) + '&times;</span>';
-      html += '<span class="trader-stat' + sellClass + '">Sell ' + t.currentSellMultiplier.toFixed(2) + '&times;</span>';
-      html += '<span class="trader-stat' + stockClass + '">Stock ' + t.currentStockMultiplier.toFixed(2) + '&times;</span>';
-      html += '<span class="trader-stat">' + t.itemCount + ' items</span>';
+      html += '<div class="trader-stat-col"><span class="trader-stat-label">Buy</span><span class="trader-stat-value trader-stat-value-buy' + buyDef + '">' + t.currentBuyMultiplier.toFixed(2) + '&times;</span></div>';
+      html += '<div class="trader-stat-col"><span class="trader-stat-label">Sell</span><span class="trader-stat-value trader-stat-value-sell' + sellDef + '">' + t.currentSellMultiplier.toFixed(2) + '&times;</span></div>';
+      html += '<div class="trader-stat-col"><span class="trader-stat-label">Stock</span><span class="trader-stat-value trader-stat-value-stock' + stockDef + '">' + t.currentStockMultiplier.toFixed(2) + '&times;</span></div>';
       html += '</div>';
       html += '</div>';
       idx++;
