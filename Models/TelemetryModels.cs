@@ -321,10 +321,22 @@ public record RaidSummaryPayload
     public int TotalDeaths { get; set; }
 }
 
+public record InventoryItemEntry
+{
+    [JsonPropertyName("templateId")]
+    public string TemplateId { get; set; } = "";
+
+    [JsonPropertyName("count")]
+    public int Count { get; set; } = 1;
+}
+
 public record RaidSummaryPlayer
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
+
+    [JsonPropertyName("profileId")]
+    public string ProfileId { get; set; } = "";
 
     [JsonPropertyName("outcome")]
     public string Outcome { get; set; } = "";
@@ -407,6 +419,26 @@ public record RaidSummaryPlayer
 
     [JsonPropertyName("xpBodyPart")]
     public int XpBodyPart { get; set; }
+
+    // ── Raid profit ──
+
+    [JsonPropertyName("inventoryValueBefore")]
+    public long InventoryValueBefore { get; set; }
+
+    [JsonPropertyName("inventoryValueAfter")]
+    public long InventoryValueAfter { get; set; }
+
+    [JsonPropertyName("profit")]
+    public long Profit { get; set; }
+
+    // ── Inbound-only: inventory item lists for server-side pricing ──
+    // Not persisted to disk after processing.
+
+    [JsonPropertyName("inventoryBefore")]
+    public List<InventoryItemEntry>? InventoryBefore { get; set; }
+
+    [JsonPropertyName("inventoryAfter")]
+    public List<InventoryItemEntry>? InventoryAfter { get; set; }
 }
 
 public record DamageStatsPayload
@@ -425,6 +457,30 @@ public record DamageStatsPayload
 
     [JsonPropertyName("avgDistance")]
     public double AvgDistance { get; set; }
+
+    [JsonPropertyName("bodyParts")]
+    public HitDistribution BodyParts { get; set; } = new();
+
+    [JsonPropertyName("players")]
+    public Dictionary<string, PlayerDamageStatsDto>? Players { get; set; }
+}
+
+public record PlayerDamageStatsDto
+{
+    [JsonPropertyName("damageDealt")]
+    public int DamageDealt { get; set; }
+
+    [JsonPropertyName("damageReceived")]
+    public int DamageReceived { get; set; }
+
+    [JsonPropertyName("hits")]
+    public int Hits { get; set; }
+
+    [JsonPropertyName("headshots")]
+    public int Headshots { get; set; }
+
+    [JsonPropertyName("longestShot")]
+    public double LongestShot { get; set; }
 
     [JsonPropertyName("bodyParts")]
     public HitDistribution BodyParts { get; set; } = new();

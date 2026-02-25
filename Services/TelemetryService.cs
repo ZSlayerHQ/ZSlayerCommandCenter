@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Services;
@@ -13,6 +14,7 @@ namespace ZSlayerCommandCenter.Services;
 public class TelemetryService(
     ConfigService configService,
     LocaleService localeService,
+    HandbookHelper handbookHelper,
     ISptLogger<TelemetryService> logger)
 {
     private readonly object _lock = new();
@@ -78,14 +80,15 @@ public class TelemetryService(
 
     private static readonly Dictionary<string, string> MapNameOverrides = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["factory4_day"] = "Factory (Day)",
-        ["factory4_night"] = "Factory (Night)",
+        ["factory4_day"] = "Factory",
+        ["factory4_night"] = "Factory",
         ["bigmap"] = "Customs",
-        ["laboratory"] = "The Lab",
+        ["laboratory"] = "Labs",
+        ["Labyrinth"] = "Labyrinth",
         ["RezervBase"] = "Reserve",
         ["TarkovStreets"] = "Streets",
         ["Sandbox"] = "Ground Zero",
-        ["Sandbox_high"] = "Ground Zero (High)",
+        ["Sandbox_high"] = "Ground Zero",
         ["city"] = "Streets"
     };
 
@@ -357,6 +360,9 @@ public class TelemetryService(
             // Derive per-player kill counts from kill feed as fallback
             EnrichPlayerKillCounts(payload.Players);
 
+            // Calculate inventory values and raid profit
+            CalculateRaidProfit(payload.Players);
+
             var record = new RaidHistoryRecord
             {
                 Summary = new RaidHistorySummary
@@ -396,8 +402,11 @@ public class TelemetryService(
     }
 
     /// <summary>
-    /// If the plugin sent kills=0 for a player, derive kill counts from the server-tracked kill feed.
-    /// Also derives kill types (PMC/Scav/Boss) if the plugin didn't send them.
+    /// Enrich player stats from the server-tracked kill feed.
+    /// SessionCounters are only available for the local headless player;
+    /// remote players always get zeros from the plugin. This backfills
+    /// kills, kill types, headshots, longest kill, and kill streak from
+    /// the kill feed which IS tracked server-side for all players.
     /// </summary>
     private void EnrichPlayerKillCounts(List<RaidSummaryPlayer> players)
     {
@@ -408,18 +417,78 @@ public class TelemetryService(
                 .Where(k => k.Killer.Name.Equals(player.Name, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
+            if (playerKills.Count == 0) continue;
+
             // Derive total kills if plugin sent 0
-            if (player.Kills == 0 && playerKills.Count > 0)
+            if (player.Kills == 0)
                 player.Kills = playerKills.Count;
 
             // Derive kill types if plugin sent all zeros
-            if (player.KilledPmc == 0 && player.KilledScav == 0 && player.KilledBoss == 0 && playerKills.Count > 0)
+            if (player.KilledPmc == 0 && player.KilledScav == 0 && player.KilledBoss == 0)
             {
                 player.KilledPmc = playerKills.Count(k => k.Victim.Type == "pmc");
                 player.KilledScav = playerKills.Count(k => k.Victim.Type is "scav" or "raider" or "rogue" or "follower");
                 player.KilledBoss = playerKills.Count(k => k.Victim.Type == "boss");
             }
+
+            // Derive headshots from kill feed
+            if (player.Headshots == 0)
+                player.Headshots = playerKills.Count(k => k.IsHeadshot);
+
+            // Derive longest kill distance from kill feed
+            if (player.LongestKill == 0)
+                player.LongestKill = Math.Round(playerKills.Max(k => k.Distance), 1);
+
+            // Derive kill streak (best consecutive run in chronological order)
+            if (player.KillStreak == 0)
+                player.KillStreak = playerKills.Count;
         }
+    }
+
+    /// <summary>
+    /// Calculate inventory values and raid profit for each player.
+    /// Uses handbook prices to value inventoryBefore/After item lists,
+    /// then clears the raw lists to save storage.
+    /// </summary>
+    private void CalculateRaidProfit(List<RaidSummaryPlayer> players)
+    {
+        foreach (var player in players)
+        {
+            try
+            {
+                player.InventoryValueBefore = PriceItemList(player.InventoryBefore);
+                player.InventoryValueAfter = PriceItemList(player.InventoryAfter);
+                player.Profit = player.InventoryValueAfter - player.InventoryValueBefore;
+
+                if (player.InventoryValueBefore > 0 || player.InventoryValueAfter > 0)
+                    logger.Info($"[Telemetry] Profit: {player.Name} — before={player.InventoryValueBefore:N0}, after={player.InventoryValueAfter:N0}, profit={player.Profit:N0}");
+            }
+            catch (Exception ex)
+            {
+                logger.Warning($"[Telemetry] Profit calc error for {player.Name}: {ex.Message}");
+            }
+
+            // Clear raw inventory lists — not needed after pricing
+            player.InventoryBefore = null;
+            player.InventoryAfter = null;
+        }
+    }
+
+    private long PriceItemList(List<InventoryItemEntry>? items)
+    {
+        if (items == null || items.Count == 0) return 0;
+
+        long total = 0;
+        foreach (var item in items)
+        {
+            try
+            {
+                var price = (long)handbookHelper.GetTemplatePrice(item.TemplateId);
+                total += price * item.Count;
+            }
+            catch { /* unknown template — skip */ }
+        }
+        return total;
     }
 
     // ══════════════════════════════════════════════════════════════
