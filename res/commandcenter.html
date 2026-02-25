@@ -3605,50 +3605,50 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .trader-presets-row .preset-btn-export { color: var(--text-dim); }
 .trader-presets-row .preset-btn-import { color: var(--text-dim); }
 
-/* ── Apply Button (Gold Gradient + Shimmer) ── */
+/* ── Apply Button — Two States (dormant / active) ── */
 .trader-apply-btn {
   position: relative;
   flex: 1;
   padding: 12px;
-  background: linear-gradient(135deg, #8B7209, #b8960b, #d4a017);
-  color: #000;
-  border: none;
+  background: rgba(18, 16, 12, 0.6);
+  color: rgba(240, 234, 214, 0.4);
+  border: 1px solid rgba(180, 160, 100, 0.2);
   border-radius: 6px;
   font-family: var(--font-mono);
   font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  cursor: pointer;
+  cursor: default;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   overflow: hidden;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-  transition: all 0.2s ease;
-}
-.trader-apply-btn::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s ease;
-  pointer-events: none;
-}
-.trader-apply-btn:hover:not(:disabled)::after {
-  left: 120%;
-}
-.trader-apply-btn:hover:not(:disabled) {
-  filter: brightness(1.15);
-  box-shadow: 0 0 20px rgba(180, 150, 50, 0.3);
-  transform: translateY(-1px);
+  transition: all 0.3s ease;
 }
 .trader-apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.trader-apply-btn:active:not(:disabled) { transform: translateY(0); }
+
+/* Active state: pending changes */
+@keyframes btnShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.trader-apply-btn.apply-btn-active {
+  background: linear-gradient(135deg, #8B7209, #b8960b, #d4a017, #b8960b, #8B7209);
+  background-size: 200% 100%;
+  animation: btnShimmer 3s ease-in-out infinite;
+  color: #fff;
+  border: 1px solid rgba(212, 160, 23, 0.5);
+  cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.trader-apply-btn.apply-btn-active:hover:not(:disabled) {
+  filter: brightness(1.15);
+  box-shadow: 0 0 24px rgba(180, 150, 50, 0.35);
+  transform: translateY(-1px);
+}
+.trader-apply-btn.apply-btn-active:active:not(:disabled) { transform: translateY(0); }
 
 /* ── Reset Button (Ghost Red) ── */
 .trader-reset-btn {
@@ -4146,11 +4146,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </div>
       </div>
       <div class="preset-tab-panel" id="ptab-weapons">
+        <div style="color:var(--text-dim);font-size:12px;font-family:var(--font-mono);margin-bottom:10px;padding:0 4px">Weapon presets are imported from the selected player's in-game saved weapon builds (Presets screen in-client).</div>
         <div class="preset-grid" id="weaponBuildsGrid">
           <div style="color:var(--text-dim);padding:40px;text-align:center;font-family:var(--font-mono)">Loading weapon builds...</div>
         </div>
       </div>
       <div class="preset-tab-panel" id="ptab-gear">
+        <div style="color:var(--text-dim);font-size:12px;font-family:var(--font-mono);margin-bottom:10px;padding:0 4px">Gear presets are imported from the selected player's in-game saved equipment loadouts (Presets screen in-client).</div>
         <div class="preset-grid" id="gearBuildsGrid">
           <div style="color:var(--text-dim);padding:40px;text-align:center;font-family:var(--font-mono)">Loading gear builds...</div>
         </div>
@@ -5006,19 +5008,19 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px">
           <div>
             <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Stock Cap<i class="cc-info-icon">i<span class="cc-tip">Cap any item's stock to this maximum BEFORE the stock multiplier is applied. Prevents unlimited buy limits. Leave blank for no cap (default).</span></i></label>
-            <input type="number" id="traderGlobalStockCap" min="1" max="999999" step="1" value="" placeholder="No cap" class="cc-num-input cc-wide-input">
+            <input type="number" id="traderGlobalStockCap" min="1" max="999999" step="1" value="" placeholder="No cap" class="cc-num-input cc-wide-input" oninput="traderCheckDirty()">
           </div>
           <div>
             <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Min (min)<i class="cc-info-icon">i<span class="cc-tip">Minimum time in minutes before a trader restocks their inventory. Leave blank for the server default. Lower values = more frequent restocks.</span></i></label>
-            <input type="number" id="traderGlobalRestockMin" min="1" max="1440" step="1" value="" placeholder="Default" class="cc-num-input cc-wide-input">
+            <input type="number" id="traderGlobalRestockMin" min="1" max="1440" step="1" value="" placeholder="Default" class="cc-num-input cc-wide-input" oninput="traderCheckDirty()">
           </div>
           <div>
             <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Restock Max (min)<i class="cc-info-icon">i<span class="cc-tip">Maximum time in minutes before a trader restocks. Actual restock time is randomized between min and max. Leave blank for the server default.</span></i></label>
-            <input type="number" id="traderGlobalRestockMax" min="1" max="1440" step="1" value="" placeholder="Default" class="cc-num-input cc-wide-input">
+            <input type="number" id="traderGlobalRestockMax" min="1" max="1440" step="1" value="" placeholder="Default" class="cc-num-input cc-wide-input" oninput="traderCheckDirty()">
           </div>
           <div>
             <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">Force Currency<i class="cc-info-icon">i<span class="cc-tip">Override the payment currency for all traders. Default uses each trader's native currency. Useful for making all traders accept Roubles only.</span></i></label>
-            <select id="traderGlobalCurrency" class="cc-num-input cc-wide-input" style="padding:6px 8px">
+            <select id="traderGlobalCurrency" class="cc-num-input cc-wide-input" style="padding:6px 8px" onchange="traderCheckDirty()">
               <option value="">Default</option>
               <option value="RUB">Roubles (&#8381;)</option>
               <option value="USD">Dollars ($)</option>
@@ -5031,7 +5033,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <!-- B) APPLY & RESET BAR -->
       <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
         <button onclick="traderApplyAll()" class="trader-apply-btn" id="traderApplyBtn">
-          <span id="traderApplyText">&#9733; Apply Changes to All Traders &#9733;</span>
+          <span id="traderApplyText">Apply Changes to All Traders</span>
           <span id="traderApplySpinner" style="display:none">Applying...</span>
         </button>
         <button onclick="traderResetAll()" class="trader-reset-btn">&#8634; Reset All</button>
@@ -10853,6 +10855,47 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     });
   }
 
+  // Snapshot of last-applied global values for dirty tracking
+  var traderAppliedValues = {};
+
+  function traderSnapshotApplied() {
+    traderAppliedValues = {
+      buy: document.getElementById('traderGlobalBuyVal').value,
+      sell: document.getElementById('traderGlobalSellVal').value,
+      stock: document.getElementById('traderGlobalStockVal').value,
+      stockCap: document.getElementById('traderGlobalStockCap').value,
+      restockMin: document.getElementById('traderGlobalRestockMin').value,
+      restockMax: document.getElementById('traderGlobalRestockMax').value,
+      currency: document.getElementById('traderGlobalCurrency').value
+    };
+  }
+
+  function traderGetCurrentValues() {
+    return {
+      buy: document.getElementById('traderGlobalBuyVal').value,
+      sell: document.getElementById('traderGlobalSellVal').value,
+      stock: document.getElementById('traderGlobalStockVal').value,
+      stockCap: document.getElementById('traderGlobalStockCap').value,
+      restockMin: document.getElementById('traderGlobalRestockMin').value,
+      restockMax: document.getElementById('traderGlobalRestockMax').value,
+      currency: document.getElementById('traderGlobalCurrency').value
+    };
+  }
+
+  window.traderCheckDirty = function() {
+    var btn = document.getElementById('traderApplyBtn');
+    var cur = traderGetCurrentValues();
+    var dirty = false;
+    for (var k in traderAppliedValues) {
+      if (cur[k] !== traderAppliedValues[k]) { dirty = true; break; }
+    }
+    if (dirty) {
+      btn.classList.add('apply-btn-active');
+    } else {
+      btn.classList.remove('apply-btn-active');
+    }
+  }
+
   function traderPopulateGlobals() {
     if (!traderConfig) return;
     var c = traderConfig;
@@ -10866,10 +10909,15 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('traderGlobalRestockMin').value = c.globalRestockMinSeconds ? Math.round(c.globalRestockMinSeconds / 60) : '';
     document.getElementById('traderGlobalRestockMax').value = c.globalRestockMaxSeconds ? Math.round(c.globalRestockMaxSeconds / 60) : '';
     document.getElementById('traderGlobalCurrency').value = c.forceCurrency || '';
+    // Snapshot current as "applied" baseline
+    traderSnapshotApplied();
+    // Ensure button starts dormant
+    document.getElementById('traderApplyBtn').classList.remove('apply-btn-active');
   }
 
   window.traderSliderSync = function(sliderId, numId) {
     document.getElementById(numId).value = document.getElementById(sliderId).value;
+    traderCheckDirty();
   }
   window.traderNumSync = function(numId, sliderId) {
     var v = parseFloat(document.getElementById(numId).value);
@@ -10877,6 +10925,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var slider = document.getElementById(sliderId);
       slider.value = Math.min(parseFloat(slider.max), Math.max(parseFloat(slider.min), v));
     }
+    traderCheckDirty();
   }
 
   function traderLetterAvatar(nickname, size, borderColor) {
@@ -10926,8 +10975,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:40px;font-style:italic">No traders found</div>';
       return;
     }
+    // Hide traders that should not appear in the UI
+    var hiddenTraders = ['storyteller'];
+    var filtered = traderList.filter(function(t) {
+      return hiddenTraders.indexOf(t.nickname.toLowerCase()) === -1;
+    });
     // Sort: vanilla first (alphabetical), then modded (alphabetical)
-    var sorted = traderList.slice().sort(function(a, b) {
+    var sorted = filtered.slice().sort(function(a, b) {
       if (a.isModded !== b.isModded) return a.isModded ? 1 : -1;
       return a.nickname.localeCompare(b.nickname);
     });
@@ -11022,6 +11076,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       btnText.style.display = 'inline';
       spinner.style.display = 'none';
       if (result.success) {
+        traderSnapshotApplied();
+        document.getElementById('traderApplyBtn').classList.remove('apply-btn-active');
         traderShowToast('Applied: ' + result.itemsModified + ' items modified across ' + result.tradersAffected + ' traders in ' + result.applyTimeMs + 'ms');
         traderRefreshAll();
       } else {

@@ -170,7 +170,7 @@ public class PlayerManagementService(
                             case "KilledSavage": dto.ScavKills = val; break;
                             case "KilledBoss": dto.BossKills = val; break;
                             case "HeadShots": dto.Headshots = val; break;
-                            case "LongestShot": dto.LongestShot = counter.Value ?? 0; break;
+                            case "LongestShot": dto.LongestShot = (counter.Value ?? 0) / 100.0; break;
                             case "AmmoUsed": ammoUsed = val; break;
                             case "HitCount": hitCount = val; break;
                         }
@@ -451,7 +451,7 @@ public class PlayerManagementService(
                             case "CauseArmorDamage": dto.DamageAbsorbedByArmor = v; break;
                             case "ExpKill": dto.KillExperience = v; break;
                             case "ExpLooting": dto.LootingExperience = v; break;
-                            case "LongestShot": dto.LongestShot = vd; break;
+                            case "LongestShot": dto.LongestShot = vd / 100.0; break;
                             case "MobContainers": dto.PlacesLooted = v; break;
                         }
                     }

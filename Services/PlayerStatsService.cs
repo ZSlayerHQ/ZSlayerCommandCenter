@@ -65,7 +65,8 @@ public class PlayerStatsService(
                 {
                     if (counter.Key is { Count: 1 } && counter.Key.First() == "LongestShot")
                     {
-                        longestShot = counter.Value ?? 0;
+                        // EFT stores LongestShot in centimetres; convert to metres
+                        longestShot = (counter.Value ?? 0) / 100.0;
                         break;
                     }
                 }
