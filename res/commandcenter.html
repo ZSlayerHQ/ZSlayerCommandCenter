@@ -48,6 +48,15 @@
   --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
   --shadow-lg: 0 12px 48px rgba(0,0,0,0.6);
   --shadow-glow: 0 0 20px rgba(200,170,110,0.08);
+  --gold-primary: #b8960b;
+  --gold-dim: rgba(180, 160, 100, 0.15);
+  --gold-border: rgba(180, 160, 100, 0.2);
+  --gold-glow: rgba(180, 150, 50, 0.15);
+  --glass-bg: rgba(10, 10, 10, 0.6);
+  --glass-border: rgba(180, 160, 100, 0.12);
+  --stat-buy: #4ade80;
+  --stat-sell: #f59e0b;
+  --stat-stock: #94a3b8;
 }
 
 html { scroll-behavior: smooth; }
@@ -3358,31 +3367,31 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
    TRADER TAB — Glass-morphism Visual Overhaul
    ══════════════════════════════════════════════════════════ */
 
-/* ── Trader Card ── */
+/* ── Trader Card — Glass-morphism ── */
 .trader-card {
-  position: relative;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(180, 160, 100, 0.15);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
-  padding: 18px 20px;
+  padding: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  animation: traderCardIn 0.3s ease-out both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  animation: cardFadeIn 0.4s ease forwards;
+  opacity: 0;
 }
 .trader-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(180, 160, 100, 0.15);
-  border-color: rgba(180, 160, 100, 0.3);
+  box-shadow: 0 4px 24px var(--gold-glow), 0 0 0 1px rgba(180, 160, 100, 0.25);
+  border-color: rgba(180, 160, 100, 0.35);
 }
-/* Override card: gold left accent bar + glow */
+
+/* ── Selected/Override Card ── */
 .trader-card.trader-card-override {
-  border-left: 3px solid var(--accent);
-  box-shadow: -2px 0 12px rgba(200, 170, 110, 0.08);
-}
-.trader-card.trader-card-override:hover {
-  box-shadow: 0 4px 20px rgba(180, 160, 100, 0.15), -2px 0 12px rgba(200, 170, 110, 0.12);
+  border-left: 3px solid var(--gold-primary);
+  box-shadow: -4px 0 16px rgba(180, 150, 50, 0.2), 0 0 12px rgba(180, 150, 50, 0.08);
+  border-top: 1px solid var(--glass-border);
+  border-right: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 /* ── Card Header ── */
@@ -3396,70 +3405,48 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   flex: 1;
   min-width: 0;
 }
+
+/* ── Trader Name ── */
 .trader-card-name {
+  font-size: 18px;
   font-weight: 600;
-  color: var(--text-bright);
+  color: #f0ead6;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.02em;
   font-family: var(--font-mono);
-  font-size: 14px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ── Currency & LL Pills ── */
 .trader-card-pills {
   display: flex;
-  gap: 5px;
-  margin-top: 6px;
+  gap: 6px;
+  margin-top: 4px;
   flex-wrap: wrap;
 }
-
-/* ── Card Avatar ── */
-.trader-card-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 10px;
-  object-fit: cover;
-  background: var(--bg-dark);
-  flex-shrink: 0;
-  border: 2px solid var(--border);
-}
-.trader-card-avatar-wrap {
-  position: relative;
-  width: 72px;
-  height: 72px;
-  flex-shrink: 0;
-}
-.trader-card-avatar-wrap img {
-  width: 72px;
-  height: 72px;
-  border-radius: 10px;
-  object-fit: cover;
-  background: var(--bg-dark);
-}
-.trader-card-avatar-wrap .trader-card-avatar-fallback {
-  width: 72px;
-  height: 72px;
-  border-radius: 10px;
-  background: var(--bg-dark);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  color: var(--accent);
-  font-weight: 700;
-  font-family: var(--font-mono);
+.trader-card-pills span {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
 }
 
-/* ── Pill Tags ── */
+/* ── Pill Tag Base ── */
 .trader-pill {
   display: inline-block;
-  font-size: 9px;
+  font-size: 10px;
   font-family: var(--font-mono);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 2px 7px;
-  border-radius: 10px;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 4px;
   line-height: 1.3;
   white-space: nowrap;
+  font-weight: 500;
 }
 .trader-pill-modded { background: rgba(106, 90, 205, 0.25); color: #a99bef; }
 .trader-pill-custom { background: rgba(200, 170, 110, 0.2); color: var(--accent); }
@@ -3469,50 +3456,59 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .trader-pill-ll3 { background: rgba(96, 165, 250, 0.12); color: #60a5fa; }
 .trader-pill-ll4 { background: rgba(200, 170, 110, 0.18); color: var(--accent); }
 
-/* ── Card Item Count ── */
-.trader-card-item-count {
-  font-size: 10px;
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding-bottom: 8px;
-  margin-bottom: 0;
+/* ── Card Avatar ── */
+.trader-card-header img,
+.trader-card-header div[style*="border-radius"] {
+  transition: border-color 0.2s ease;
+}
+.trader-card:hover .trader-card-header img {
+  filter: brightness(1.1);
 }
 
-/* ── Card Stats Bar ── */
-.trader-card-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0;
+/* ── Item Count ── */
+.trader-card-item-count {
+  font-size: 12px;
   font-family: var(--font-mono);
+  color: rgba(240, 234, 214, 0.45);
+  margin-top: 8px;
+}
+
+/* ── Stat Bar ── */
+.trader-card-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
   padding-top: 10px;
   border-top: 1px solid rgba(180, 160, 100, 0.1);
+  gap: 8px;
+  font-family: var(--font-mono);
 }
 .trader-stat-col {
-  text-align: center;
-}
-.trader-stat-col:not(:last-child) {
-  border-right: 1px solid rgba(180, 160, 100, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
 }
 .trader-stat-label {
-  display: block;
-  font-size: 10px;
+  font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-muted);
-  margin-bottom: 2px;
-}
-.trader-stat-value {
-  display: block;
-  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: rgba(240, 234, 214, 0.35);
+  margin-bottom: 3px;
   font-weight: 600;
 }
-.trader-stat-value-buy { color: #4ade80; }
-.trader-stat-value-sell { color: #f59e0b; }
-.trader-stat-value-stock { color: #94a3b8; }
-/* Dim values that are at default 1.00 */
-.trader-stat-value-default { color: var(--text-muted) !important; font-weight: 400; }
+.trader-stat-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+.trader-stat-value-buy { color: var(--stat-buy); }
+.trader-stat-value-sell { color: var(--stat-sell); }
+.trader-stat-value-stock { color: var(--stat-stock); }
+.trader-stat-value-default { color: var(--stat-stock) !important; }
+/* Non-default values get subtle glow */
+.trader-stat-value-buy:not(.trader-stat-value-default) { text-shadow: 0 0 8px rgba(74, 222, 128, 0.3); }
+.trader-stat-value-sell:not(.trader-stat-value-default) { text-shadow: 0 0 8px rgba(245, 158, 11, 0.3); }
 
 /* ── Section Divider (vanilla/modded) ── */
 .trader-section-divider {
@@ -3526,24 +3522,24 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  background: linear-gradient(90deg, transparent, rgba(180, 160, 100, 0.3), transparent);
 }
 .trader-section-divider span {
   font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-dim);
+  font-size: 11px;
+  color: rgba(180, 160, 100, 0.5);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 0.15em;
   white-space: nowrap;
 }
 
 /* ── Glass Panel (Global Controls) ── */
 .trader-glass-panel {
   position: relative;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(180, 160, 100, 0.15);
+  border: 1px solid var(--glass-border);
   border-top: 2px solid var(--accent);
   border-radius: 8px;
   padding: 18px 22px;
@@ -3565,10 +3561,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(122, 179, 224, 0.15);
+  border: 1px solid var(--glass-border);
   border-left: 3px solid #7ab3e0;
   border-radius: 8px;
   padding: 10px 16px;
@@ -3614,7 +3610,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   position: relative;
   flex: 1;
   padding: 12px;
-  background: linear-gradient(135deg, #b8860b, #d4a017);
+  background: linear-gradient(135deg, #8B7209, #b8960b, #d4a017);
   color: #000;
   border: none;
   border-radius: 6px;
@@ -3622,7 +3618,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.05em;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -3648,7 +3644,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 }
 .trader-apply-btn:hover:not(:disabled) {
   filter: brightness(1.15);
-  box-shadow: 0 4px 20px rgba(180, 160, 100, 0.25);
+  box-shadow: 0 0 20px rgba(180, 150, 50, 0.3);
   transform: translateY(-1px);
 }
 .trader-apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -3686,10 +3682,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 }
 
 /* ── Entrance Animation ── */
-@keyframes traderCardIn {
-  from { opacity: 0; transform: translateY(10px); }
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* JS sets animation-delay per card via inline style */
 
 </style>
 </head>
@@ -10944,16 +10941,19 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         html += '<div class="trader-section-divider" style="grid-column:1/-1"><span>Modded Traders</span></div>';
       }
       var hasOv = traderConfig && traderConfig.traderOverrides && traderConfig.traderOverrides[t.id];
-      var llColor = traderGetLLColor(t.loyaltyLevelCount);
       var currency = t.currency || 'RUB';
       var cardClass = 'trader-card' + (hasOv ? ' trader-card-override' : '');
+
+      // Player's current LL with this trader (from profile), fallback to 1
+      var playerLL = traderPlayerLL[t.id] || 1;
+      var llColor = traderGetLLColor(playerLL);
 
       // Pills
       var pills = '';
       if (t.isModded) pills += '<span class="trader-pill trader-pill-modded">Modded</span>';
       if (hasOv) pills += '<span class="trader-pill trader-pill-custom">Custom</span>';
       pills += '<span class="trader-pill trader-pill-currency">' + escH(currency) + '</span>';
-      pills += '<span class="trader-pill ' + traderGetLLPillClass(t.loyaltyLevelCount) + '">LL' + t.loyaltyLevelCount + '</span>';
+      pills += '<span class="trader-pill ' + traderGetLLPillClass(playerLL) + '">LL' + playerLL + '</span>';
 
       // Stat default classes
       var buyDef = t.currentBuyMultiplier === 1 ? ' trader-stat-value-default' : '';
@@ -11151,14 +11151,27 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }).catch(function(e) { traderShowToast('Import failed: ' + e, true); });
   };
 
+  // Cache of logged-in player's per-trader loyalty levels: { traderId: loyaltyLevel }
+  var traderPlayerLL = {};
+
   function traderRefreshAll() {
-    Promise.all([
+    var fetches = [
       api('traders/config'),
       api('traders/list'),
       api('traders/status')
-    ]).then(function(results) {
+    ];
+    // Also fetch logged-in player's profile for per-trader LL
+    if (sessionId) fetches.push(api('player/' + encodeURIComponent(sessionId)).catch(function() { return null; }));
+    Promise.all(fetches).then(function(results) {
       traderConfig = results[0];
       traderList = results[1].traders || [];
+      // Build per-trader LL map from player profile
+      traderPlayerLL = {};
+      if (results[3] && results[3].traders) {
+        results[3].traders.forEach(function(tr) {
+          traderPlayerLL[tr.traderId] = tr.loyaltyLevel;
+        });
+      }
       traderPopulateGlobals();
       traderRenderCards();
       traderRenderStatus(results[2]);
