@@ -153,7 +153,9 @@ public class CommandCenterMod(
 
         // Watchdog WebSocket endpoint is auto-registered by SPT DI
         logger.Info("[ZSlayerHQ] Watchdog WebSocket endpoint active at /ws/watchdog");
-        logger.Info($"[ZSlayerHQ] Watchdog auth token: {config.Watchdog.WatchdogToken}");
+        var token = config.Watchdog.WatchdogToken;
+        var maskedToken = token.Length > 5 ? token[..^5] + "*****" : new string('*', token.Length);
+        logger.Info($"[ZSlayerHQ] Watchdog auth token: {maskedToken}");
 
         return Task.CompletedTask;
     }

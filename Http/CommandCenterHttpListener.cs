@@ -1317,7 +1317,8 @@ public class CommandCenterHttpListener(
                 await watchdogManager.DisconnectAll("Token regenerated");
 
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Watchdog: token regenerated");
-                logger.Info($"[ZSlayerHQ] Watchdog token regenerated. New token: {newToken}");
+                var masked = newToken.Length > 5 ? newToken[..^5] + "*****" : new string('*', newToken.Length);
+                logger.Info($"[ZSlayerHQ] Watchdog token regenerated. New token: {masked}");
                 await WriteJson(context, 200, new { token = newToken, message = "Token regenerated — all Watchdogs disconnected. Update their config and reconnect." });
                 break;
             }
