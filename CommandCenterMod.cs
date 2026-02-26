@@ -16,7 +16,6 @@ public class CommandCenterMod(
     ConfigService configService,
     ConsoleBufferService consoleBufferService,
     HeadlessLogService headlessLogService,
-    HeadlessProcessService headlessProcessService,
     ActivityLogService activityLogService,
     OfferRegenerationService offerRegenerationService,
     TraderApplyService traderApplyService,
@@ -69,9 +68,8 @@ public class CommandCenterMod(
         consoleBufferService.Configure(config.Dashboard.ConsoleBufferSize);
         consoleBufferService.InstallConsoleInterceptor();
 
-        // Configure headless log reader + process manager
+        // Configure headless log reader
         headlessLogService.Configure(config.Dashboard.HeadlessLogPath, configService.ModPath);
-        headlessProcessService.Configure(configService.ModPath);
 
         // Apply flea market settings (globals, prices, tax) on startup
         offerRegenerationService.ApplyGlobalsAndConfig();
@@ -134,8 +132,8 @@ public class CommandCenterMod(
         PrintStartupBanner(urlLines, publicIp, footer);
         ServerUrls = string.Join("\n", mailLines);
 
-        // Start headless auto-start timer (if configured)
-        headlessProcessService.StartAutoStartTimer();
+        // Watchdog WebSocket endpoint is auto-registered by SPT DI
+        logger.Info("[ZSlayerHQ] Watchdog WebSocket endpoint active at /ws/watchdog");
 
         return Task.CompletedTask;
     }
@@ -153,19 +151,8 @@ public class CommandCenterMod(
         var subtitle = "Open in your browser to manage your server:";
         var quote = $"\"{StartupQuotes[Random.Shared.Next(StartupQuotes.Length)]}\"";
 
-        // Build headless info line (if available)
-        string? headlessLine = null;
-        var headlessStatus = headlessProcessService.GetStatus();
-        if (headlessStatus.Available)
-        {
-            var hlConfig = configService.GetConfig().Headless;
-            if (hlConfig.AutoStart && !string.IsNullOrEmpty(hlConfig.ProfileId))
-                headlessLine = $"Headless client will auto-start in {hlConfig.AutoStartDelaySec}s";
-            else if (string.IsNullOrEmpty(hlConfig.ProfileId))
-                headlessLine = "Headless client detected — set Profile ID to enable";
-            else
-                headlessLine = "Headless client detected — auto-start is disabled";
-        }
+        // Headless info line — Watchdog manages process lifecycle now
+        string? headlessLine = "Headless managed via Watchdog — connect Watchdog app to enable controls";
 
         string? noPublicLine = publicIp == null
             ? "Public IP not detected — Google 'what is my IP' to find it"
@@ -303,14 +290,6 @@ public class CommandCenterMod(
         if (headlessLine != null)
         {
             var centered = Center(headlessLine);
-            // Color the seconds value red in the auto-start line
-            var hlConfig2 = configService.GetConfig().Headless;
-            if (hlConfig2.AutoStart && !string.IsNullOrEmpty(hlConfig2.ProfileId))
-            {
-                var secText = $"{hlConfig2.AutoStartDelaySec}s";
-                const string red = "\x1b[91m";
-                centered = centered.Replace(secText, $"{red}{secText}{cyan}");
-            }
             logger.Info($"{gold}║{reset}{cyan}{centered}{reset}{gold}║{reset}");
             logger.Info($"{gold}║{reset}{Center("")}{gold}║{reset}");
         }
@@ -332,15 +311,8 @@ public class CommandCenterMod(
         logger.Info($"{gold}╠{bar}╣{reset}");
         BlankLine();
 
-        var hlStatusInfo = headlessProcessService.GetStatus();
-        var plainParts = new List<string> { "Config loaded" };
-        var colorParts = new List<string> { $"{green}Config {white}loaded" };
-        if (hlStatusInfo.Available)
-        {
-            plainParts.Add("Headless Client EXE found");
-            colorParts.Add($"{green}Headless Client EXE {white}found");
-        }
-        // Center using plain text length for padding
+        var plainParts = new List<string> { "Config loaded", "Watchdog WebSocket ready" };
+        var colorParts = new List<string> { $"{green}Config {white}loaded", $"{green}Watchdog WebSocket {white}ready" };
         var configPlain = string.Join("  |  ", plainParts);
         var configColored = string.Join($"  {dim}│{reset}  ", colorParts);
         var configLeftPad = (innerWidth - configPlain.Length) / 2;

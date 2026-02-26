@@ -55,9 +55,6 @@ public record HeadlessConfig
 
 public record WatchdogConfig
 {
-    [JsonPropertyName("port")]
-    public int Port { get; set; } = 6971;
-
     [JsonPropertyName("sptServerExe")]
     public string SptServerExe { get; set; } = "auto";
 

@@ -44,8 +44,7 @@ public partial class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
     }
 
     /// <summary>
-    /// Set (or change) the log file to poll. Called by HeadlessProcessService when
-    /// it knows the working directory of the headless client.
+    /// Set (or change) the log file to poll.
     /// </summary>
     public void SetLogFile(string path)
     {

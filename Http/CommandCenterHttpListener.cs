@@ -31,7 +31,7 @@ public class CommandCenterHttpListener(
     FleaPriceService fleaPriceService,
     OfferRegenerationService offerRegenerationService,
     HeadlessLogService headlessLogService,
-    HeadlessProcessService headlessProcessService,
+    WatchdogManager watchdogManager,
     FikaConfigService fikaConfigService,
     TelemetryService telemetryService,
     TraderApplyService traderApplyService,
@@ -505,8 +505,11 @@ public class CommandCenterHttpListener(
         // Server uptime
         var status = serverStatsService.GetStatus();
 
-        // Headless status
-        var headlessStatus = headlessProcessService.GetStatus();
+        // Headless status from Watchdog
+        var headlessWatchdogs = watchdogManager.GetWatchdogsForTarget("headlessClient");
+        var headlessRunning = headlessWatchdogs.Any(w => w.HeadlessClient?.Running == true);
+        var headlessUptime = headlessWatchdogs
+            .FirstOrDefault(w => w.HeadlessClient?.Running == true)?.HeadlessClient?.Uptime ?? "";
 
         await WriteJson(context, 200, new
         {
@@ -515,8 +518,8 @@ public class CommandCenterHttpListener(
             activeRaid,
             onlinePlayers = playerList,
             serverUptime = status.Uptime,
-            headlessRunning = headlessStatus.Running,
-            headlessUptime = headlessStatus.Uptime
+            headlessRunning,
+            headlessUptime
         });
     }
 
@@ -1271,67 +1274,53 @@ public class CommandCenterHttpListener(
         await WriteJson(context, 405, new { error = "Method not allowed" });
     }
 
-    // ── Watchdog Proxy Handlers ──
-
-    private static readonly HttpClient WatchdogClient = new() { Timeout = TimeSpan.FromSeconds(5) };
+    // ── Watchdog Handlers ──
 
     private async Task HandleWatchdogRoute(HttpContext context, string headerSessionId, string path, string method)
     {
         if (!await ValidateAccess(context, headerSessionId)) return;
 
-        var watchdogPort = configService.GetConfig().Watchdog.Port;
         var endpoint = path["watchdog/".Length..];
 
-        // Only allow specific endpoints
-        if (endpoint is not ("status" or "start" or "stop" or "restart"))
+        switch (endpoint)
         {
-            await WriteJson(context, 404, new { error = "Not found" });
-            return;
-        }
-
-        // Status = GET, others = POST
-        if (endpoint == "status" && method != "GET")
-        {
-            await WriteJson(context, 405, new { error = "Method not allowed" });
-            return;
-        }
-        if (endpoint != "status" && method != "POST")
-        {
-            await WriteJson(context, 405, new { error = "Method not allowed" });
-            return;
-        }
-
-        try
-        {
-            var url = $"http://127.0.0.1:{watchdogPort}/{endpoint}";
-            HttpResponseMessage response;
-            if (method == "POST")
+            case "status" when method == "GET":
             {
-                if (endpoint != "status")
-                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Watchdog: {endpoint}");
-                response = await WatchdogClient.PostAsync(url, null);
+                var response = new WatchdogStatusResponse
+                {
+                    Watchdogs = watchdogManager.GetConnectedWatchdogs()
+                };
+                await WriteJson(context, 200, response);
+                break;
             }
-            else
+            case "start" when method == "POST":
             {
-                response = await WatchdogClient.GetAsync(url);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Watchdog: start sptServer");
+                var (sent, message) = await watchdogManager.SendCommandToTarget("sptServer", "start");
+                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
+                break;
             }
-
-            var body = await response.Content.ReadAsStringAsync();
-            context.Response.StatusCode = (int)response.StatusCode;
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(body);
-        }
-        catch (HttpRequestException)
-        {
-            await WriteJson(context, 503, new { available = false, error = "Watchdog not running" });
-        }
-        catch (TaskCanceledException)
-        {
-            await WriteJson(context, 503, new { available = false, error = "Watchdog request timed out" });
+            case "stop" when method == "POST":
+            {
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Watchdog: stop sptServer");
+                var (sent, message) = await watchdogManager.SendCommandToTarget("sptServer", "stop");
+                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
+                break;
+            }
+            case "restart" when method == "POST":
+            {
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Watchdog: restart sptServer");
+                var (sent, message) = await watchdogManager.SendCommandToTarget("sptServer", "restart");
+                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
+                break;
+            }
+            default:
+                await WriteJson(context, 404, new { error = "Not found" });
+                break;
         }
     }
 
-    // ── Headless Process Handlers ──
+    // ── Headless Handlers ──
 
     private async Task HandleHeadlessRoute(HttpContext context, string headerSessionId, string path, string method)
     {
@@ -1340,22 +1329,49 @@ public class CommandCenterHttpListener(
         switch (path)
         {
             case "headless/status" when method == "GET":
-                await WriteJson(context, 200, headlessProcessService.GetStatus());
+            {
+                var (available, wdStatus) = watchdogManager.GetHeadlessStatus();
+                var config = configService.GetConfig().Headless;
+                var dto = new HeadlessStatusDto
+                {
+                    Available = available,
+                    Running = wdStatus?.Running ?? false,
+                    Pid = wdStatus?.Pid,
+                    Uptime = wdStatus?.Uptime ?? "",
+                    UptimeSeconds = 0,
+                    RestartCount = wdStatus?.Crashes ?? 0,
+                    LastCrashReason = available ? null : "No Watchdog connected",
+                    AutoStart = wdStatus?.AutoStart ?? config.AutoStart,
+                    AutoStartDelaySec = config.AutoStartDelaySec,
+                    AutoRestart = wdStatus?.AutoRestart ?? config.AutoRestart,
+                    ProfileId = wdStatus?.Profile ?? config.ProfileId,
+                    ProfileName = "",
+                    ExePath = ""
+                };
+                await WriteJson(context, 200, dto);
                 break;
+            }
             case "headless/start" when method == "POST":
-                var startResult = headlessProcessService.Start();
-                if (startResult.Running)
-                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: started");
-                await WriteJson(context, 200, startResult);
+            {
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: started");
+                var (sent, message) = await watchdogManager.SendCommandToTarget("headlessClient", "start");
+                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
                 break;
+            }
             case "headless/stop" when method == "POST":
+            {
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: stopped");
-                await WriteJson(context, 200, headlessProcessService.Stop());
+                var (sent, message) = await watchdogManager.SendCommandToTarget("headlessClient", "stop");
+                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
                 break;
+            }
             case "headless/restart" when method == "POST":
+            {
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: restarted");
-                await WriteJson(context, 200, headlessProcessService.Restart());
+                var (sent, message) = await watchdogManager.SendCommandToTarget("headlessClient", "restart");
+                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
                 break;
+            }
             case "headless/config" when method == "POST":
             {
                 var body = await ReadBody<HeadlessConfigUpdateRequest>(context);
@@ -1371,7 +1387,7 @@ public class CommandCenterHttpListener(
                 if (body.ProfileId != null) config.ProfileId = body.ProfileId.Trim();
                 configService.SaveConfig();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: config updated");
-                await WriteJson(context, 200, headlessProcessService.GetStatus());
+                await WriteJson(context, 200, new { success = true });
                 break;
             }
             default:
