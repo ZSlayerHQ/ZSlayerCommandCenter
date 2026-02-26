@@ -1954,61 +1954,74 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   border-radius: 1px;
 }
 
-/* ── Alerts ── */
-.alert-bell {
-  position: relative;
-  cursor: pointer;
-  padding: 4px 8px;
-  font-size: 14px;
-  color: var(--text-dim);
-  transition: color 0.2s;
+/* ── Global Alert Widget (top-left) ── */
+.alert-widget {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 9998;
+  width: 280px;
+  font-family: var(--font-mono);
+  pointer-events: none;
 }
-.alert-bell:hover { color: var(--accent); }
-.alert-bell .alert-count {
-  position: absolute;
-  top: 0;
-  right: 0;
-  background: var(--error-bright);
-  color: #fff;
-  font-size: 9px;
-  font-weight: 700;
-  min-width: 14px;
-  height: 14px;
-  border-radius: 7px;
+.alert-widget * { pointer-events: auto; }
+.alert-latest {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  color: var(--text);
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
-.alert-feed {
-  max-height: 300px;
-  overflow-y: auto;
-}
-.alert-feed.collapsed { display: none; }
-.alert-entry {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 6px 4px;
-  border-bottom: 1px solid var(--border-subtle);
-  font-size: 11px;
-  font-family: var(--font-mono);
-}
-.alert-entry:last-child { border-bottom: none; }
-.alert-icon {
-  font-size: 12px;
+.alert-latest.faded { opacity: 0.35; }
+.alert-latest:hover { opacity: 1; }
+.alert-latest .alert-icon { font-size: 11px; flex-shrink: 0; }
+.alert-latest .alert-msg { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alert-latest .alert-time { color: var(--text-muted); font-size: 9px; white-space: nowrap; }
+.alert-latest .alert-expand-btn {
+  color: var(--text-dim);
+  font-size: 9px;
+  margin-left: 2px;
+  transition: transform 0.2s;
   flex-shrink: 0;
-  width: 16px;
-  text-align: center;
 }
+.alert-latest .alert-expand-btn.open { transform: rotate(180deg); }
+.alert-dropdown {
+  margin-top: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  max-height: 320px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  display: none;
+}
+.alert-dropdown.open { display: block; }
+.alert-dropdown .alert-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 10px;
+}
+.alert-dropdown .alert-entry:last-child { border-bottom: none; }
+.alert-dropdown .alert-icon { font-size: 11px; flex-shrink: 0; width: 14px; text-align: center; }
+.alert-dropdown .alert-msg { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alert-dropdown .alert-time { color: var(--text-muted); font-size: 9px; white-space: nowrap; }
 .alert-icon.boss-spawn { color: #c45050; }
 .alert-icon.pmc-kill { color: var(--accent); }
 .alert-icon.headshot { color: #c45050; }
 .alert-icon.raid-start { color: var(--success-bright); }
 .alert-icon.raid-end { color: var(--text-muted); }
 .alert-icon.extract { color: var(--success-bright); }
-.alert-msg { flex: 1; color: var(--text); }
-.alert-time { color: var(--text-muted); font-size: 10px; white-space: nowrap; }
 
 /* Toast notifications */
 .toast-container {
@@ -3940,16 +3953,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       </details>
     </div>
 
-    <!-- Alerts Section -->
-    <div class="raidinfo-section" style="margin-bottom:12px" id="alertsSection">
-      <div class="raidinfo-section-header">
-        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg> Alerts <span class="alert-count" id="alertBadge" style="display:none">0</span></span>
-      </div>
-      <div class="raidinfo-section-body alert-feed" id="alertFeed">
-        <div class="telem-no-data">No alerts yet</div>
-      </div>
-    </div>
-
     <!-- Live Map -->
     <div class="live-map-panel" id="liveMapPanel" style="display:none">
       <div class="live-map-header">
@@ -5420,6 +5423,17 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <span class="phase-badge">Phase 13</span>
     </div>
   </div>
+</div>
+
+<!-- Global Alert Widget -->
+<div class="alert-widget" id="alertWidget" style="display:none">
+  <div class="alert-latest" id="alertLatest" onclick="window.toggleAlertDropdown()">
+    <span class="alert-icon" id="alertLatestIcon"></span>
+    <span class="alert-msg" id="alertLatestMsg"></span>
+    <span class="alert-time" id="alertLatestTime"></span>
+    <span class="alert-expand-btn" id="alertExpandBtn">&#x25BC;</span>
+  </div>
+  <div class="alert-dropdown" id="alertDropdown"></div>
 </div>
 
 <!-- Toasts -->
@@ -8501,7 +8515,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   // ═══════════════════════════════════════════════════════
-  // ALERTS — Raid event notifications
+  // ALERTS — Global top-left widget with fade + dropdown
   // ═══════════════════════════════════════════════════════
 
   var _alertIcons = {
@@ -8513,6 +8527,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     'extract': '\u{1F6AA}'
   };
 
+  var _alertFadeTimer = null;
+  var _alertDropdownOpen = false;
+
   function loadAlerts() {
     var url = 'telemetry/alerts';
     if (_lastAlertTimestamp) url += '?since=' + encodeURIComponent(_lastAlertTimestamp);
@@ -8520,41 +8537,45 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var alerts = d.alerts || [];
       if (alerts.length === 0 && _alertsData.length === 0) return;
 
-      // Merge new alerts
       if (alerts.length > 0) {
-        // Show toasts for new alerts
-        if (_lastAlertTimestamp) {
-          alerts.forEach(function(a) { showAlertToast(a); });
-        }
         _alertsData = alerts.concat(_alertsData).slice(0, 100);
         _lastAlertTimestamp = alerts[0].timestamp;
       }
 
-      // Update badge
-      var badge = document.getElementById('alertBadge');
-      if (_alertsData.length > 0) {
-        badge.style.display = '';
-        badge.textContent = _alertsData.length;
-      } else {
-        badge.style.display = 'none';
-      }
-
-      // Render feed
-      renderAlertFeed();
+      renderAlertWidget();
     }).catch(function(e) { console.error('Alerts error:', e); });
   }
 
-  var _alertsExpanded = false;
+  function renderAlertWidget() {
+    var widget = document.getElementById('alertWidget');
+    if (_alertsData.length === 0) { widget.style.display = 'none'; return; }
+    widget.style.display = '';
 
-  function renderAlertFeed() {
-    var feed = document.getElementById('alertFeed');
-    var section = document.getElementById('alertsSection');
-    if (_alertsData.length === 0) {
-      feed.innerHTML = '<div class="telem-no-data">No alerts yet</div>';
-      return;
-    }
-    var limit = _alertsExpanded ? _alertsData.length : 5;
-    var items = _alertsData.slice(0, limit);
+    // Latest alert in the compact bar
+    var latest = _alertsData[0];
+    var icon = _alertIcons[latest.type] || '\u{1F514}';
+    var ts = new Date(latest.timestamp);
+    var timeStr = ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    document.getElementById('alertLatestIcon').className = 'alert-icon ' + (latest.type || '');
+    document.getElementById('alertLatestIcon').textContent = icon;
+    document.getElementById('alertLatestMsg').textContent = latest.message;
+    document.getElementById('alertLatestTime').textContent = timeStr;
+
+    // Reset fade timer — show fully, fade after 5s
+    var bar = document.getElementById('alertLatest');
+    bar.classList.remove('faded');
+    clearTimeout(_alertFadeTimer);
+    _alertFadeTimer = setTimeout(function() {
+      if (!_alertDropdownOpen) bar.classList.add('faded');
+    }, 5000);
+
+    // Render dropdown list (last 20)
+    renderAlertDropdown();
+  }
+
+  function renderAlertDropdown() {
+    var dd = document.getElementById('alertDropdown');
+    var items = _alertsData.slice(0, 20);
     var html = '';
     items.forEach(function(a) {
       var ts = new Date(a.timestamp);
@@ -8566,40 +8587,37 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         '<span class="alert-time">' + timeStr + '</span>' +
         '</div>';
     });
-    if (_alertsData.length > 5) {
-      if (_alertsExpanded) {
-        html += '<div style="text-align:center;padding:4px"><a href="#" onclick="toggleAlertExpand();return false" style="color:#c8aa6e;font-size:10px">Show less</a></div>';
-      } else {
-        html += '<div style="text-align:center;padding:4px"><a href="#" onclick="toggleAlertExpand();return false" style="color:#c8aa6e;font-size:10px">Show all ' + _alertsData.length + ' alerts</a></div>';
-      }
-    }
-    feed.innerHTML = html;
+    dd.innerHTML = html;
   }
 
-  window.toggleAlertExpand = function() {
-    _alertsExpanded = !_alertsExpanded;
-    renderAlertFeed();
+  window.toggleAlertDropdown = function() {
+    _alertDropdownOpen = !_alertDropdownOpen;
+    var dd = document.getElementById('alertDropdown');
+    var btn = document.getElementById('alertExpandBtn');
+    var bar = document.getElementById('alertLatest');
+    dd.classList.toggle('open', _alertDropdownOpen);
+    btn.classList.toggle('open', _alertDropdownOpen);
+    if (_alertDropdownOpen) {
+      bar.classList.remove('faded');
+      clearTimeout(_alertFadeTimer);
+    } else {
+      _alertFadeTimer = setTimeout(function() { bar.classList.add('faded'); }, 5000);
+    }
   };
 
-  function showAlertToast(alert) {
-    var container = document.getElementById('toastContainer');
-    if (!container) return;
-    var toastCls = 'toast';
-    if (alert.type === 'boss-spawn') toastCls += ' toast-boss';
-    else if (alert.type === 'pmc-kill') toastCls += ' toast-kill';
-    else if (alert.type === 'headshot') toastCls += ' toast-headshot';
-    else toastCls += ' toast-raid';
-
-    var icon = _alertIcons[alert.type] || '\u{1F514}';
-    var el = document.createElement('div');
-    el.className = toastCls;
-    el.innerHTML = icon + ' ' + escH(alert.message);
-    container.appendChild(el);
-    setTimeout(function() {
-      el.classList.add('toast-out');
-      setTimeout(function() { el.remove(); }, 300);
-    }, 5000);
-  }
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!_alertDropdownOpen) return;
+    var widget = document.getElementById('alertWidget');
+    if (widget && !widget.contains(e.target)) {
+      _alertDropdownOpen = false;
+      document.getElementById('alertDropdown').classList.remove('open');
+      document.getElementById('alertExpandBtn').classList.remove('open');
+      _alertFadeTimer = setTimeout(function() {
+        document.getElementById('alertLatest').classList.add('faded');
+      }, 5000);
+    }
+  });
 
   // ═══════════════════════════════════════════════════════
   // LIFETIME STATS — Aggregated player statistics
