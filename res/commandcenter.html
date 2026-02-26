@@ -336,6 +336,23 @@ body {
   border-radius: 50%; animation: hl-spin 0.7s linear infinite;
 }
 
+/* ── Watchdog Cards ── */
+.wd-card-grid { display:flex; flex-wrap:wrap; gap:12px; }
+.wd-card {
+  flex:1 1 260px; max-width:400px; padding:14px; border-radius:var(--radius);
+  background:#232019; border:1px solid var(--border-subtle);
+  transition: opacity 0.3s ease, border-color 0.3s ease;
+}
+.wd-card.wd-connected { border-color: var(--accent-dim); }
+.wd-card.wd-disconnected { opacity:0.5; border-color:var(--border-subtle); }
+.wd-empty { text-align:center; color:var(--text-muted); padding:20px; font-size:13px; }
+.wd-name-label { font-size:10px; color:var(--text-muted); margin-left:6px; font-weight:400; }
+.wd-status-dot {
+  display:inline-block; width:8px; height:8px; border-radius:50%;
+  background:var(--success-bright); animation: pulse-dot 2s ease-in-out infinite;
+}
+.btn-no-watchdog { opacity:0.4 !important; cursor:not-allowed !important; pointer-events:none; }
+
 /* ── Inputs ── */
 input[type="text"], input[type="number"], input[type="password"] {
   padding: 8px 12px;
@@ -4336,16 +4353,24 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <div class="console-jump" id="consoleJump"><button onclick="scrollConsoleBottom()">Jump to bottom</button></div>
     </div>
 
+    <!-- Connected Watchdogs -->
+    <div class="dash-widget" id="connectedWatchdogsSection" style="margin-top:16px;display:none">
+      <div class="dash-widget-header">
+        <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Connected Watchdogs</span>
+      </div>
+      <div class="dash-widget-body" id="connectedWatchdogsBody"></div>
+    </div>
+
     <!-- Status Cards — top row -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
       <!-- SPT Server (top-left) -->
-      <div class="dash-widget" id="watchdogCard" style="display:none">
+      <div class="dash-widget" id="watchdogCard">
         <div class="dash-widget-header">
           <span class="dash-widget-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            SPT Server
+            SPT Server <span id="wdServerLabel" class="wd-name-label"></span>
           </span>
-          <span id="watchdogStatusBadge" class="hl-status-pill"></span>
+          <span id="watchdogStatusBadge" class="hl-status-pill pill-unavailable">Unknown</span>
         </div>
         <div class="dash-widget-body">
           <div class="dash-stat-row">
@@ -4373,46 +4398,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </div>
       </div>
       <!-- Headless Client (top-right) -->
-      <div class="dash-widget" id="headlessManagerCard" style="display:none">
+      <div class="dash-widget" id="headlessManagerCard">
         <div class="dash-widget-header">
           <span class="dash-widget-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            Headless Client
+            Headless Client <span id="hlManagerLabel" class="wd-name-label"></span>
           </span>
-          <span id="headlessStatusBadge" class="hl-status-pill"></span>
+          <span id="headlessStatusBadge" class="hl-status-pill pill-unavailable">Unknown</span>
         </div>
-        <div class="dash-widget-body">
-          <div id="headlessUnavailable" style="display:none;text-align:center;color:var(--text-muted);padding:16px">
-            EscapeFromTarkov.exe not found — headless management unavailable
-          </div>
-          <div id="headlessControls" style="display:none">
-            <div class="dash-stat-row">
-              <div class="dash-stat"><div class="dash-stat-label">Uptime</div><div class="dash-stat-value sm" id="hlUptimeVal">--</div></div>
-              <div class="dash-stat"><div class="dash-stat-label">PID</div><div class="dash-stat-value sm" id="hlPidVal">--</div></div>
-              <div class="dash-stat"><div class="dash-stat-label">Auto-Restart</div><div class="dash-stat-value sm" id="hlAutoRestartVal">--</div></div>
-            </div>
-            <div class="dash-stat-row">
-              <div class="dash-stat"><div class="dash-stat-label">Auto-Start</div><div class="dash-stat-value sm" id="hlAutoStartVal">--</div></div>
-              <div class="dash-stat"><div class="dash-stat-label">Start Delay</div><div class="dash-stat-value sm" id="hlStartDelayVal">--</div></div>
-              <div class="dash-stat"><div class="dash-stat-label">Profile</div><div class="dash-stat-value sm" id="hlProfileVal">--</div></div>
-            </div>
-            <div id="hlRestartAfterRaidsSection" style="display:none;margin-bottom:12px">
-              <div style="display:flex;align-items:center;gap:8px;font-size:12px">
-                <span style="color:var(--text-dim);white-space:nowrap">Restart After Raids:</span>
-                <input type="range" id="fikaHlRestartRaids" min="0" max="50" value="0" oninput="document.getElementById('fikaHlRestartRaidsVal').textContent=this.value==0?'Off':this.value" onchange="saveFikaConfig()" style="flex:1;accent-color:var(--accent)">
-                <span id="fikaHlRestartRaidsVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:28px">Off</span>
-              </div>
-            </div>
-            <div class="dash-stat-row">
-              <div class="dash-stat"><div class="dash-stat-label">Crashes Today</div><div class="dash-stat-value sm" id="hlCrashCount" style="color:var(--text-dim)">0</div></div>
-            </div>
-            <div id="headlessCrashInfo" style="display:none;font-size:11px;color:var(--error-bright);margin-top:4px;font-family:var(--font-mono)"></div>
-            <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
-              <button class="btn btn-sm" id="btnHeadlessStart" onclick="startHeadless()">Start</button>
-              <button class="btn btn-sm" id="btnHeadlessStop" onclick="stopHeadless()" disabled>Stop</button>
-              <button class="btn btn-sm" id="btnHeadlessRestart" onclick="restartHeadless()" disabled>Restart</button>
-            </div>
-          </div>
+        <div class="dash-widget-body" id="headlessCardBody">
+          <div style="text-align:center;color:var(--text-muted);padding:8px;font-size:12px">No Watchdog connected</div>
         </div>
       </div>
     </div>
@@ -4449,6 +4444,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             <button class="btn btn-sm" onclick="saveHeadlessConfig()" style="padding:3px 10px">Save</button>
           </div>
           <div id="hlProfileWarning" style="display:none;font-size:11px;color:var(--warning);margin-bottom:8px">Profile ID required — enter the session ID of the headless profile to enable start.</div>
+          <div id="hlRestartAfterRaidsSection" style="display:none;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+              <span style="color:var(--text-dim);white-space:nowrap">Restart After Raids:</span>
+              <input type="range" id="fikaHlRestartRaids" min="0" max="50" value="0" oninput="document.getElementById('fikaHlRestartRaidsVal').textContent=this.value==0?'Off':this.value" onchange="saveFikaConfig()" style="flex:1;accent-color:var(--accent)">
+              <span id="fikaHlRestartRaidsVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:28px">Off</span>
+            </div>
+          </div>
           <div style="display:flex;justify-content:flex-end;margin-top:12px">
             <button class="btn btn-sm" onclick="saveHeadlessConfig()" style="padding:5px 14px;font-size:12px">Save Headless Settings</button>
           </div>
@@ -6335,7 +6337,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var consoleSearchQuery = '';
   var allConsoleEntries = [];
   var headlessTimer = null;
-  var headlessStatusTimer = null;
   var headlessSince = new Date().toISOString();
   var headlessCollapsed = false;
   var headlessFilters = { info: true, success: true, warning: true, error: true, debug: false };
@@ -6356,7 +6357,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }).catch(function(){}).finally(function() {
       refreshDashboard();
       startDashboardTimers();
-      detectWatchdog();
+      initWatchdogPoller();
     });
     // Live clock
     setInterval(function() {
@@ -6370,14 +6371,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     dashRefreshTimer = setInterval(refreshDashboard, dashConfig.refreshIntervalSeconds * 1000);
     consoleTimer = setInterval(pollConsole, dashConfig.consolePollingMs);
     headlessTimer = setInterval(pollHeadless, dashConfig.consolePollingMs);
-    headlessStatusTimer = setInterval(pollHeadlessStatus, dashConfig.refreshIntervalSeconds * 1000);
   }
 
   function stopDashboardTimers() {
     if (dashRefreshTimer) { clearInterval(dashRefreshTimer); dashRefreshTimer = null; }
     if (consoleTimer) { clearInterval(consoleTimer); consoleTimer = null; }
     if (headlessTimer) { clearInterval(headlessTimer); headlessTimer = null; }
-    if (headlessStatusTimer) { clearInterval(headlessStatusTimer); headlessStatusTimer = null; }
   }
 
   window.refreshDashboard = function() {
@@ -6389,7 +6388,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     loadActivity();
     pollConsole();
     pollHeadless();
-    pollHeadlessStatus();
     loadFikaConfig();
     // Live clock handles time display
   };
@@ -6543,23 +6541,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       document.getElementById('dashOnlineBadge').textContent = d.onlineCount > 0 ? d.onlineCount + ' online' : '';
       document.getElementById('dashOnlineBadge').style.color = d.onlineCount > 0 ? 'var(--success-bright)' : '#8b3a3a';
 
-      // Headless badge in header
-      var headless = (d.players || []).find(function(p) { return p.isHeadless; });
-      var hlBadge = document.getElementById('dashHeadlessBadge');
-      if (headless) {
-        hlBadge.style.display = '';
-        hlBadge.innerHTML = '\uD83E\uDD16 Headless Client <span id="dashHlStatusPill" class="hl-status-pill pill-stopped" style="font-size:10px;padding:1px 8px;margin-left:4px;vertical-align:middle">Stopped</span>';
-        api('headless/status').then(function(hs) {
-          var pill = document.getElementById('dashHlStatusPill');
-          if (!pill) return;
-          if (!hs.available) { pill.className = 'hl-status-pill pill-unavailable'; pill.textContent = 'N/A'; }
-          else if (hs.running) { pill.className = 'hl-status-pill pill-running'; pill.textContent = 'Running'; }
-          else { pill.className = 'hl-status-pill pill-stopped'; pill.textContent = 'Stopped'; }
-          pill.style.fontSize = '10px'; pill.style.padding = '1px 8px';
-        }).catch(function(){});
-      } else {
-        hlBadge.style.display = 'none';
-      }
+      // Headless badge in header (reads from watchdogData)
+      renderHeadlessBadge();
 
       // Determine if data changed (skip re-animation on telemetry refreshes)
       var newJson = JSON.stringify(d.players);
@@ -7777,38 +7760,127 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   };
 
   // ═══════════════════════════════════════════════════════
-  // WATCHDOG — SPT Server Control (auto-detected via CC mod proxy)
+  // WATCHDOG — Multi-Watchdog Polling & Control
   // ═══════════════════════════════════════════════════════
-  var watchdogDetected = false;
-  var watchdogAction = null;
+  var watchdogData = { watchdogs: [] };
   var watchdogPollTimer = null;
+  var watchdogPollFailures = 0;
+  var watchdogActions = {}; // { 'wdId:target': 'starting'|'stopping'|'restarting' }
 
-  function detectWatchdog() {
-    api('watchdog/status').then(function(d) {
-      if (d.available === false) return; // watchdog not running
-      watchdogDetected = true;
-      document.getElementById('watchdogCard').style.display = 'block';
-      updateWatchdogStatus(d);
-      if (!watchdogPollTimer) {
-        watchdogPollTimer = setInterval(pollWatchdogStatus, 3000);
-      }
-    }).catch(function() {});
+  function getActionKey(watchdogId, target) {
+    return (watchdogId || '_') + ':' + target;
+  }
+
+  function formatUptime(val) {
+    if (!val && val !== 0) return '--';
+    if (typeof val === 'string') return val || '--';
+    var s = Math.floor(val);
+    if (s < 60) return s + 's';
+    if (s < 3600) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    return h + 'h ' + m + 'm';
+  }
+
+  function initWatchdogPoller() {
+    // Immediate first poll
+    pollWatchdogStatus();
+    if (!watchdogPollTimer) {
+      watchdogPollTimer = setInterval(pollWatchdogStatus, 5000);
+    }
   }
 
   function pollWatchdogStatus() {
     api('watchdog/status').then(function(d) {
-      updateWatchdogStatus(d);
-    }).catch(function() {});
+      watchdogPollFailures = 0;
+      watchdogData = d || { watchdogs: [] };
+      renderConnectedWatchdogs();
+      renderServerCard();
+      renderHeadlessCard();
+      renderHeadlessBadge();
+    }).catch(function() {
+      watchdogPollFailures++;
+      if (watchdogPollFailures >= 3) {
+        watchdogData = { watchdogs: [] };
+        renderConnectedWatchdogs();
+        renderServerCard();
+        renderHeadlessCard();
+        renderHeadlessBadge();
+      }
+    });
   }
 
-  function updateWatchdogStatus(d) {
-    var badge = document.getElementById('watchdogStatusBadge');
-    badge.className = 'hl-status-pill';
+  // ── Connected Watchdogs Section ──
+  function renderConnectedWatchdogs() {
+    var section = document.getElementById('connectedWatchdogsSection');
+    var body = document.getElementById('connectedWatchdogsBody');
+    var wds = watchdogData.watchdogs || [];
 
-    if (watchdogAction) {
+    section.style.display = 'block';
+
+    if (wds.length === 0) {
+      body.innerHTML = '<div class="wd-empty">No Watchdog applications connected. Start a Watchdog to manage SPT Server and Headless Client processes.</div>';
+      return;
+    }
+
+    var html = '<div class="wd-card-grid">';
+    wds.forEach(function(wd) {
+      var manages = [];
+      if (wd.manages && wd.manages.sptServer) manages.push('SPT Server');
+      if (wd.manages && wd.manages.headlessClient) manages.push('Headless Client');
+      var sys = wd.system || {};
+
+      html += '<div class="wd-card ' + (wd.connected ? 'wd-connected' : 'wd-disconnected') + '">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+      html += '<div style="display:flex;align-items:center;gap:8px">';
+      if (wd.connected) html += '<span class="wd-status-dot"></span>';
+      else html += '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#8b3a3a"></span>';
+      html += '<span style="font-weight:600;color:var(--text-bright)">' + escH(wd.name || wd.watchdogId) + '</span>';
+      html += '</div>';
+      html += '<span style="font-size:10px;color:var(--text-muted)">' + (wd.connected ? 'Connected' : 'Disconnected') + '</span>';
+      html += '</div>';
+
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:11px;color:var(--text-dim)">';
+      html += '<div>Host: <span style="color:var(--text)">' + escH(wd.hostname || '--') + '</span></div>';
+      html += '<div>IP: <span style="color:var(--text)">' + escH(wd.ip || '--') + '</span></div>';
+      html += '<div>Manages: <span style="color:var(--text)">' + (manages.length ? manages.join(', ') : '--') + '</span></div>';
+      if (sys.cpuPercent !== undefined) {
+        html += '<div>CPU: <span style="color:var(--text)">' + sys.cpuPercent.toFixed(0) + '%</span> · RAM: <span style="color:var(--text)">' + (sys.ramUsedGB || 0).toFixed(1) + '/' + (sys.ramTotalGB || 0).toFixed(0) + ' GB</span></div>';
+      } else {
+        html += '<div>System: <span style="color:var(--text-muted)">--</span></div>';
+      }
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    body.innerHTML = html;
+  }
+
+  // ── SPT Server Card ──
+  function renderServerCard() {
+    var wds = watchdogData.watchdogs || [];
+    var wd = wds.find(function(w) { return w.manages && w.manages.sptServer && w.connected; });
+    var spt = wd ? wd.sptServer : null;
+    var badge = document.getElementById('watchdogStatusBadge');
+    var label = document.getElementById('wdServerLabel');
+    var actionKey = getActionKey(wd ? wd.watchdogId : null, 'sptServer');
+    var action = watchdogActions[actionKey];
+
+    // Name label
+    if (wd && wds.length > 1) {
+      label.textContent = '(' + (wd.name || wd.watchdogId) + ')';
+    } else {
+      label.textContent = '';
+    }
+
+    badge.className = 'hl-status-pill';
+    if (!wd) {
+      badge.classList.add('pill-unavailable');
+      badge.textContent = 'Unknown';
+    } else if (action) {
       badge.classList.add('pill-transition');
-      badge.innerHTML = '<span class="hl-spinner"></span> ' + watchdogAction.charAt(0).toUpperCase() + watchdogAction.slice(1) + '\u2026';
-    } else if (d.running) {
+      badge.innerHTML = '<span class="hl-spinner"></span> ' + action.charAt(0).toUpperCase() + action.slice(1) + '\u2026';
+    } else if (spt && spt.running) {
       badge.classList.add('pill-running');
       badge.textContent = '\u25CF Running';
     } else {
@@ -7817,185 +7889,228 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }
 
     // Stats grid
-    document.getElementById('wdUptimeVal').textContent = d.uptime || '--';
-    document.getElementById('wdPidVal').textContent = d.pid || '--';
-    document.getElementById('wdAutoRestart').textContent = d.autoRestartOnCrash ? 'Yes' : 'No';
-    document.getElementById('wdRestartDelay').textContent = d.restartDelaySec + 's';
+    document.getElementById('wdUptimeVal').textContent = spt ? formatUptime(spt.uptime) : '--';
+    document.getElementById('wdPidVal').textContent = (spt && spt.pid) ? spt.pid : '--';
+    document.getElementById('wdAutoRestart').textContent = spt ? (spt.autoRestart ? 'Yes' : 'No') : '--';
+    document.getElementById('wdRestartDelay').textContent = spt && spt.startDelay ? spt.startDelay : '--';
 
-    // Crash count with color coding
-    var crashCount = d.restartCount || 0;
+    // Crash count
+    var crashCount = spt ? (spt.crashes || 0) : 0;
     var ccEl = document.getElementById('wdCrashCount');
     ccEl.textContent = crashCount;
     ccEl.style.color = crashCount >= 3 ? '#8b3a3a' : crashCount >= 1 ? '#c87a3e' : 'var(--text-dim)';
 
-    // Button states
+    // Buttons
     var btnStart = document.getElementById('btnWdStart');
     var btnStop = document.getElementById('btnWdStop');
     var btnRestart = document.getElementById('btnWdRestart');
-    if (watchdogAction) {
-      btnStart.disabled = true; btnStart.classList.add('btn-disabled');
-      btnStop.disabled = true; btnStop.classList.add('btn-disabled');
-      btnRestart.disabled = true; btnRestart.classList.add('btn-disabled');
-    } else if (d.running) {
-      btnStart.disabled = true; btnStart.classList.add('btn-disabled');
-      btnStop.disabled = false; btnStop.classList.remove('btn-disabled');
-      btnRestart.disabled = false; btnRestart.classList.remove('btn-disabled');
+    if (!wd) {
+      btnStart.disabled = true; btnStart.className = 'btn btn-sm btn-no-watchdog'; btnStart.title = 'No Watchdog connected';
+      btnStop.disabled = true; btnStop.className = 'btn btn-sm btn-no-watchdog'; btnStop.title = 'No Watchdog connected';
+      btnRestart.disabled = true; btnRestart.className = 'btn btn-sm btn-no-watchdog'; btnRestart.title = 'No Watchdog connected';
+    } else if (action) {
+      btnStart.disabled = true; btnStart.className = 'btn btn-sm btn-disabled'; btnStart.title = '';
+      btnStop.disabled = true; btnStop.className = 'btn btn-sm btn-disabled'; btnStop.title = '';
+      btnRestart.disabled = true; btnRestart.className = 'btn btn-sm btn-disabled'; btnRestart.title = '';
+    } else if (spt && spt.running) {
+      btnStart.disabled = true; btnStart.className = 'btn btn-sm btn-disabled'; btnStart.title = '';
+      btnStop.disabled = false; btnStop.className = 'btn btn-sm'; btnStop.title = '';
+      btnRestart.disabled = false; btnRestart.className = 'btn btn-sm'; btnRestart.title = '';
     } else {
-      btnStart.disabled = false; btnStart.classList.remove('btn-disabled');
-      btnStop.disabled = true; btnStop.classList.add('btn-disabled');
-      btnRestart.disabled = true; btnRestart.classList.add('btn-disabled');
+      btnStart.disabled = false; btnStart.className = 'btn btn-sm'; btnStart.title = '';
+      btnStop.disabled = true; btnStop.className = 'btn btn-sm btn-disabled'; btnStop.title = '';
+      btnRestart.disabled = true; btnRestart.className = 'btn btn-sm btn-disabled'; btnRestart.title = '';
     }
 
     // Crash info
     var crash = document.getElementById('watchdogCrashInfo');
-    if (d.lastCrashReason && !d.running) {
-      crash.style.display = 'block';
-      crash.textContent = d.lastCrashReason;
-    } else {
-      crash.style.display = 'none';
-    }
+    crash.style.display = 'none';
   }
 
-  window.wdStart = function() {
-    watchdogAction = 'starting';
-    pollWatchdogStatus();
-    api('watchdog/start', { method: 'POST' }).then(function(d) {
-      watchdogAction = null;
-      if (d.running) toast('Server started (PID ' + d.pid + ')', 'success');
-      else toast(d.lastCrashReason || 'Failed to start', 'error');
-      pollWatchdogStatus();
-    }).catch(function() { watchdogAction = null; toast('Failed to start server', 'error'); pollWatchdogStatus(); });
-  };
-
-  window.wdStop = function() {
-    document.getElementById('stopServerModal').classList.add('open');
-  };
-
-  window.confirmStopServer = function() {
-    watchdogAction = 'stopping';
-    pollWatchdogStatus();
-    api('watchdog/stop', { method: 'POST' }).then(function() {
-      watchdogAction = null;
-      toast('Server stopped', 'success');
-      pollWatchdogStatus();
-    }).catch(function() { watchdogAction = null; pollWatchdogStatus(); });
-  }
-
-  window.wdRestart = function() {
-    watchdogAction = 'restarting';
-    pollWatchdogStatus();
-    api('watchdog/restart', { method: 'POST' }).then(function() {
-      watchdogAction = null;
-      toast('Server restarting...', 'success');
-    }).catch(function() { watchdogAction = null; });
-  };
-
-  // Headless Process Manager
-  var headlessAction = null; // null | 'starting' | 'stopping' | 'restarting'
-
-  function setHeadlessBadge(state) {
+  // ── Headless Client Card ──
+  function renderHeadlessCard() {
+    var wds = watchdogData.watchdogs || [];
+    var hlWatchdogs = wds.filter(function(w) { return w.manages && w.manages.headlessClient && w.connected; });
     var badge = document.getElementById('headlessStatusBadge');
-    badge.className = 'hl-status-pill';
-    if (state === 'running') {
-      badge.classList.add('pill-running');
-      badge.textContent = '● Running';
-    } else if (state === 'stopped') {
-      badge.classList.add('pill-stopped');
-      badge.textContent = '● Stopped';
-    } else if (state === 'starting') {
-      badge.classList.add('pill-transition');
-      badge.innerHTML = '<span class="hl-spinner"></span> Starting\u2026';
-    } else if (state === 'stopping') {
-      badge.classList.add('pill-transition');
-      badge.innerHTML = '<span class="hl-spinner"></span> Stopping\u2026';
-    } else if (state === 'restarting') {
-      badge.classList.add('pill-transition');
-      badge.innerHTML = '<span class="hl-spinner"></span> Restarting\u2026';
-    } else {
-      badge.classList.add('pill-unavailable');
-      badge.textContent = 'Unavailable';
-    }
-  }
+    var label = document.getElementById('hlManagerLabel');
+    var body = document.getElementById('headlessCardBody');
 
-  function setHeadlessBtnStates(state, hasProfile) {
-    var btnStart = document.getElementById('btnHeadlessStart');
-    var btnStop = document.getElementById('btnHeadlessStop');
-    var btnRestart = document.getElementById('btnHeadlessRestart');
-    if (state === 'transition') {
-      btnStart.disabled = true; btnStart.classList.add('btn-disabled');
-      btnStop.disabled = true; btnStop.classList.add('btn-disabled');
-      btnRestart.disabled = true; btnRestart.classList.add('btn-disabled');
-    } else if (state === 'running') {
-      btnStart.disabled = true; btnStart.classList.add('btn-disabled');
-      btnStop.disabled = false; btnStop.classList.remove('btn-disabled');
-      btnRestart.disabled = false; btnRestart.classList.remove('btn-disabled');
-    } else {
-      btnStart.disabled = !hasProfile; btnStart.classList.toggle('btn-disabled', !hasProfile);
-      btnStop.disabled = true; btnStop.classList.add('btn-disabled');
-      btnRestart.disabled = true; btnRestart.classList.add('btn-disabled');
-    }
-  }
-
-  function pollHeadlessStatus() {
-    api('headless/status').then(function(d) {
-      var card = document.getElementById('headlessManagerCard');
-      card.style.display = 'block';
+    if (hlWatchdogs.length === 0) {
+      // No watchdog — degraded state
+      badge.className = 'hl-status-pill pill-unavailable';
+      badge.textContent = 'Unknown';
+      label.textContent = '';
+      body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:8px;font-size:12px">No Watchdog connected</div>';
+      // Show settings card anyway (uses CC server config)
       var settingsCard = document.getElementById('headlessSettingsCard');
-      var unavail = document.getElementById('headlessUnavailable');
-      var controls = document.getElementById('headlessControls');
-      if (!d.available) {
-        unavail.style.display = 'block';
-        controls.style.display = 'none';
+      if (settingsCard) settingsCard.style.display = 'block';
+      loadHeadlessSettings();
+      return;
+    }
+
+    // Show settings card
+    var settingsCard = document.getElementById('headlessSettingsCard');
+    if (settingsCard) settingsCard.style.display = 'block';
+
+    if (hlWatchdogs.length === 1) {
+      // Single headless watchdog — same layout as before
+      var wd = hlWatchdogs[0];
+      var hl = wd.headlessClient || {};
+      var actionKey = getActionKey(wd.watchdogId, 'headlessClient');
+      var action = watchdogActions[actionKey];
+
+      if (wds.length > 1) {
+        label.textContent = '(' + (wd.name || wd.watchdogId) + ')';
+      } else {
+        label.textContent = '';
+      }
+
+      badge.className = 'hl-status-pill';
+      if (action) {
+        badge.classList.add('pill-transition');
+        badge.innerHTML = '<span class="hl-spinner"></span> ' + action.charAt(0).toUpperCase() + action.slice(1) + '\u2026';
+      } else if (hl.running) {
+        badge.classList.add('pill-running');
+        badge.textContent = '\u25CF Running';
+      } else {
+        badge.classList.add('pill-stopped');
+        badge.textContent = '\u25CF Stopped';
+      }
+
+      var html = '';
+      html += '<div class="dash-stat-row">';
+      html += '<div class="dash-stat"><div class="dash-stat-label">Uptime</div><div class="dash-stat-value sm">' + formatUptime(hl.uptime) + '</div></div>';
+      html += '<div class="dash-stat"><div class="dash-stat-label">PID</div><div class="dash-stat-value sm">' + (hl.pid || '--') + '</div></div>';
+      html += '<div class="dash-stat"><div class="dash-stat-label">Auto-Restart</div><div class="dash-stat-value sm">' + (hl.autoRestart ? 'Yes' : 'No') + '</div></div>';
+      html += '</div>';
+      html += '<div class="dash-stat-row">';
+      html += '<div class="dash-stat"><div class="dash-stat-label">Auto-Start</div><div class="dash-stat-value sm">' + (hl.autoStart ? 'Yes' : 'No') + '</div></div>';
+      html += '<div class="dash-stat"><div class="dash-stat-label">Start Delay</div><div class="dash-stat-value sm">' + (hl.startDelay || '--') + '</div></div>';
+      html += '<div class="dash-stat"><div class="dash-stat-label">Profile</div><div class="dash-stat-value sm">' + (hl.profile ? '\uD83E\uDD16 ' + escH(hl.profile) : '<span style="color:var(--text-muted)">Not set</span>') + '</div></div>';
+      html += '</div>';
+
+      var crashCount = hl.crashes || 0;
+      var crashColor = crashCount >= 3 ? '#8b3a3a' : crashCount >= 1 ? '#c87a3e' : 'var(--text-dim)';
+      html += '<div class="dash-stat-row"><div class="dash-stat"><div class="dash-stat-label">Crashes Today</div><div class="dash-stat-value sm" style="color:' + crashColor + '">' + crashCount + '</div></div></div>';
+
+      // Buttons
+      var btnDisabledClass = action ? 'btn btn-sm btn-disabled' : '';
+      html += '<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">';
+      if (action) {
+        html += '<button class="btn btn-sm btn-disabled" disabled>Start</button>';
+        html += '<button class="btn btn-sm btn-disabled" disabled>Stop</button>';
+        html += '<button class="btn btn-sm btn-disabled" disabled>Restart</button>';
+      } else if (hl.running) {
+        html += '<button class="btn btn-sm btn-disabled" disabled>Start</button>';
+        html += '<button class="btn btn-sm" onclick="stopHeadless(\'' + escH(wd.watchdogId) + '\')">Stop</button>';
+        html += '<button class="btn btn-sm" onclick="restartHeadless(\'' + escH(wd.watchdogId) + '\')">Restart</button>';
+      } else {
+        html += '<button class="btn btn-sm" onclick="startHeadless(\'' + escH(wd.watchdogId) + '\')">Start</button>';
+        html += '<button class="btn btn-sm btn-disabled" disabled>Stop</button>';
+        html += '<button class="btn btn-sm btn-disabled" disabled>Restart</button>';
+      }
+      html += '</div>';
+      body.innerHTML = html;
+    } else {
+      // Multiple headless watchdogs
+      label.textContent = '';
+      var anyRunning = hlWatchdogs.some(function(w) { return w.headlessClient && w.headlessClient.running; });
+      badge.className = 'hl-status-pill';
+      if (anyRunning) {
+        badge.classList.add('pill-running');
+        var runCount = hlWatchdogs.filter(function(w) { return w.headlessClient && w.headlessClient.running; }).length;
+        badge.textContent = runCount + '/' + hlWatchdogs.length + ' Running';
+      } else {
+        badge.classList.add('pill-stopped');
+        badge.textContent = '\u25CF All Stopped';
+      }
+
+      var html = '';
+      hlWatchdogs.forEach(function(wd) {
+        var hl = wd.headlessClient || {};
+        var actionKey = getActionKey(wd.watchdogId, 'headlessClient');
+        var action = watchdogActions[actionKey];
+
+        html += '<div style="padding:10px;margin-bottom:8px;background:#1a1810;border:1px solid var(--border-subtle);border-radius:var(--radius)">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+        html += '<span style="font-size:12px;font-weight:600;color:var(--text-bright)">' + escH(wd.name || wd.watchdogId) + '</span>';
+
+        var hlBadge = 'hl-status-pill ';
+        var hlBadgeText = '';
+        if (action) {
+          hlBadge += 'pill-transition';
+          hlBadgeText = '<span class="hl-spinner"></span> ' + action.charAt(0).toUpperCase() + action.slice(1) + '\u2026';
+        } else if (hl.running) {
+          hlBadge += 'pill-running';
+          hlBadgeText = '\u25CF Running';
+        } else {
+          hlBadge += 'pill-stopped';
+          hlBadgeText = '\u25CF Stopped';
+        }
+        html += '<span class="' + hlBadge + '" style="font-size:10px;padding:1px 8px">' + hlBadgeText + '</span>';
+        html += '</div>';
+
+        html += '<div class="dash-stat-row" style="margin-bottom:6px">';
+        html += '<div class="dash-stat"><div class="dash-stat-label">Uptime</div><div class="dash-stat-value sm">' + formatUptime(hl.uptime) + '</div></div>';
+        html += '<div class="dash-stat"><div class="dash-stat-label">PID</div><div class="dash-stat-value sm">' + (hl.pid || '--') + '</div></div>';
+        html += '<div class="dash-stat"><div class="dash-stat-label">Crashes</div><div class="dash-stat-value sm">' + (hl.crashes || 0) + '</div></div>';
+        html += '</div>';
+
+        html += '<div style="display:flex;gap:6px;justify-content:flex-end">';
+        if (action) {
+          html += '<button class="btn btn-sm btn-disabled" disabled>Start</button>';
+          html += '<button class="btn btn-sm btn-disabled" disabled>Stop</button>';
+          html += '<button class="btn btn-sm btn-disabled" disabled>Restart</button>';
+        } else if (hl.running) {
+          html += '<button class="btn btn-sm btn-disabled" disabled>Start</button>';
+          html += '<button class="btn btn-sm" onclick="stopHeadless(\'' + escH(wd.watchdogId) + '\')">Stop</button>';
+          html += '<button class="btn btn-sm" onclick="restartHeadless(\'' + escH(wd.watchdogId) + '\')">Restart</button>';
+        } else {
+          html += '<button class="btn btn-sm" onclick="startHeadless(\'' + escH(wd.watchdogId) + '\')">Start</button>';
+          html += '<button class="btn btn-sm btn-disabled" disabled>Stop</button>';
+          html += '<button class="btn btn-sm btn-disabled" disabled>Restart</button>';
+        }
+        html += '</div></div>';
+      });
+      body.innerHTML = html;
+    }
+
+    // Load settings from CC server config (not watchdog)
+    loadHeadlessSettings();
+  }
+
+  // ── Headless Badge (Players Widget Header) ──
+  function renderHeadlessBadge() {
+    var hlBadge = document.getElementById('dashHeadlessBadge');
+    if (!hlBadge) return;
+    var wds = watchdogData.watchdogs || [];
+    var hlWatchdogs = wds.filter(function(w) { return w.manages && w.manages.headlessClient && w.connected; });
+
+    if (hlWatchdogs.length === 0) {
+      hlBadge.style.display = '';
+      hlBadge.innerHTML = '\uD83E\uDD16 Headless Client <span class="hl-status-pill pill-unavailable" style="font-size:10px;padding:1px 8px;margin-left:4px;vertical-align:middle">Unknown</span>';
+    } else if (hlWatchdogs.length === 1) {
+      var hl = hlWatchdogs[0].headlessClient || {};
+      hlBadge.style.display = '';
+      var pillClass = hl.running ? 'pill-running' : 'pill-stopped';
+      var pillText = hl.running ? 'Running' : 'Stopped';
+      hlBadge.innerHTML = '\uD83E\uDD16 Headless Client <span class="hl-status-pill ' + pillClass + '" style="font-size:10px;padding:1px 8px;margin-left:4px;vertical-align:middle">' + pillText + '</span>';
+    } else {
+      var runCount = hlWatchdogs.filter(function(w) { return w.headlessClient && w.headlessClient.running; }).length;
+      hlBadge.style.display = '';
+      hlBadge.innerHTML = '\uD83E\uDD16 Headless Clients: ' + runCount + '/' + hlWatchdogs.length + ' Running';
+    }
+  }
+
+  // ── Headless Settings (from CC server config, not watchdog) ──
+  function loadHeadlessSettings() {
+    api('headless/status').then(function(d) {
+      var settingsCard = document.getElementById('headlessSettingsCard');
+      if (!d.available && !(watchdogData.watchdogs || []).some(function(w) { return w.manages && w.manages.headlessClient; })) {
         if (settingsCard) settingsCard.style.display = 'none';
-        setHeadlessBadge('unavailable');
         return;
       }
-      unavail.style.display = 'none';
-      controls.style.display = 'block';
       if (settingsCard) settingsCard.style.display = 'block';
-
-      // Badge
-      if (headlessAction) {
-        setHeadlessBadge(headlessAction);
-      } else {
-        setHeadlessBadge(d.running ? 'running' : 'stopped');
-      }
-
-      // Stats grid
-      document.getElementById('hlUptimeVal').textContent = d.uptime || '--';
-      document.getElementById('hlPidVal').textContent = d.pid || '--';
-      document.getElementById('hlAutoRestartVal').textContent = d.autoRestart ? 'Yes' : 'No';
-      document.getElementById('hlAutoStartVal').textContent = d.autoStart ? 'Yes' : 'No';
-      document.getElementById('hlStartDelayVal').textContent = d.autoStartDelaySec + 's';
-      var profEl = document.getElementById('hlProfileVal');
-      if (d.profileName) {
-        profEl.innerHTML = '\uD83E\uDD16 ' + d.profileName;
-      } else {
-        profEl.innerHTML = '<span style="color:var(--text-muted)">Not set</span>';
-      }
-
-      // Crash count with color coding
-      var crashCount = d.restartCount || 0;
-      var ccEl = document.getElementById('hlCrashCount');
-      ccEl.textContent = crashCount;
-      ccEl.style.color = crashCount >= 3 ? '#8b3a3a' : crashCount >= 1 ? '#c87a3e' : 'var(--text-dim)';
-
-      // Button states
-      if (headlessAction) {
-        setHeadlessBtnStates('transition', false);
-      } else {
-        setHeadlessBtnStates(d.running ? 'running' : 'stopped', !!d.profileId);
-      }
-
-      var crash = document.getElementById('headlessCrashInfo');
-      if (d.lastCrashReason && !d.running) {
-        crash.style.display = 'block';
-        crash.textContent = d.lastCrashReason;
-      } else {
-        crash.style.display = 'none';
-      }
-
-      // Settings card fields
       document.getElementById('hlAutoStart').checked = d.autoStart;
       document.getElementById('hlAutoRestart').checked = d.autoRestart;
       document.getElementById('hlDelay').value = d.autoStartDelaySec;
@@ -8007,37 +8122,62 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }).catch(function(){});
   }
 
-  window.startHeadless = function() {
-    headlessAction = 'starting';
-    pollHeadlessStatus();
-    api('headless/start', { method: 'POST' }).then(function(d) {
-      headlessAction = null;
-      if (d.running) showToast('Headless client started (PID ' + d.pid + ')', 'success');
-      else showToast(d.lastCrashReason || 'Failed to start', 'error');
-      pollHeadlessStatus();
-    }).catch(function() { headlessAction = null; showToast('Failed to start headless', 'error'); pollHeadlessStatus(); });
+  // ── Command Sending ──
+  function sendWatchdogCommand(target, action, watchdogId) {
+    var actionKey = getActionKey(watchdogId, target);
+    watchdogActions[actionKey] = action === 'start' ? 'starting' : action === 'stop' ? 'stopping' : 'restarting';
+    // Immediate re-render with transition state
+    if (target === 'sptServer') renderServerCard();
+    else renderHeadlessCard();
+
+    var endpoint = (target === 'sptServer' ? 'watchdog/' : 'headless/') + action;
+    if (watchdogId) endpoint += '?watchdogId=' + encodeURIComponent(watchdogId);
+
+    api(endpoint, { method: 'POST' }).then(function(d) {
+      delete watchdogActions[actionKey];
+      if (d.success) {
+        toast((target === 'sptServer' ? 'Server' : 'Headless') + ' ' + action + ' command sent', 'success');
+      } else {
+        toast(d.message || 'Command failed', 'error');
+      }
+      pollWatchdogStatus();
+    }).catch(function() {
+      delete watchdogActions[actionKey];
+      toast('Failed to ' + action + ' ' + (target === 'sptServer' ? 'server' : 'headless'), 'error');
+      pollWatchdogStatus();
+    });
+  }
+
+  window.wdStart = function() {
+    var wd = (watchdogData.watchdogs || []).find(function(w) { return w.manages && w.manages.sptServer && w.connected; });
+    sendWatchdogCommand('sptServer', 'start', wd ? wd.watchdogId : null);
   };
 
-  window.stopHeadless = function() {
+  window.wdStop = function() {
+    document.getElementById('stopServerModal').classList.add('open');
+  };
+
+  window.confirmStopServer = function() {
+    var wd = (watchdogData.watchdogs || []).find(function(w) { return w.manages && w.manages.sptServer && w.connected; });
+    sendWatchdogCommand('sptServer', 'stop', wd ? wd.watchdogId : null);
+  };
+
+  window.wdRestart = function() {
+    var wd = (watchdogData.watchdogs || []).find(function(w) { return w.manages && w.manages.sptServer && w.connected; });
+    sendWatchdogCommand('sptServer', 'restart', wd ? wd.watchdogId : null);
+  };
+
+  window.startHeadless = function(watchdogId) {
+    sendWatchdogCommand('headlessClient', 'start', watchdogId || null);
+  };
+
+  window.stopHeadless = function(watchdogId) {
     if (!confirm('Stop the headless client?')) return;
-    headlessAction = 'stopping';
-    pollHeadlessStatus();
-    api('headless/stop', { method: 'POST' }).then(function() {
-      headlessAction = null;
-      showToast('Headless client stopped', 'success');
-      pollHeadlessStatus();
-    }).catch(function() { headlessAction = null; showToast('Failed to stop', 'error'); pollHeadlessStatus(); });
+    sendWatchdogCommand('headlessClient', 'stop', watchdogId || null);
   };
 
-  window.restartHeadless = function() {
-    headlessAction = 'restarting';
-    pollHeadlessStatus();
-    api('headless/restart', { method: 'POST' }).then(function(d) {
-      headlessAction = null;
-      if (d.running) showToast('Headless client restarted (PID ' + d.pid + ')', 'success');
-      else showToast(d.lastCrashReason || 'Failed to restart', 'error');
-      pollHeadlessStatus();
-    }).catch(function() { headlessAction = null; showToast('Failed to restart', 'error'); pollHeadlessStatus(); });
+  window.restartHeadless = function(watchdogId) {
+    sendWatchdogCommand('headlessClient', 'restart', watchdogId || null);
   };
 
   window.saveHeadlessConfig = function() {
@@ -8048,8 +8188,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       profileId: document.getElementById('hlProfileId').value.trim()
     };
     api('headless/config', { method: 'POST', body: JSON.stringify(body) }).then(function() {
-      pollHeadlessStatus();
-    }).catch(function() { showToast('Failed to save config', 'error'); });
+      loadHeadlessSettings();
+    }).catch(function() { toast('Failed to save config', 'error'); });
   };
 
   window.saveHeadlessAll = function() {
