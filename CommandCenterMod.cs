@@ -58,7 +58,24 @@ public class CommandCenterMod(
         configService.LoadConfig();
         var config = configService.GetConfig();
 
-        // Auto-generate Watchdog auth token if not set
+        // Recover Watchdog token from file if config lost it (e.g. after config upgrade)
+        var tokenFilePath = Path.Combine(configService.ModPath, "watchdog-token.txt");
+        if (string.IsNullOrEmpty(config.Watchdog.WatchdogToken) && File.Exists(tokenFilePath))
+        {
+            try
+            {
+                var saved = File.ReadAllText(tokenFilePath).Trim();
+                if (!string.IsNullOrEmpty(saved))
+                {
+                    config.Watchdog.WatchdogToken = saved;
+                    configService.SaveConfig();
+                    logger.Info("[ZSlayerHQ] Restored Watchdog auth token from watchdog-token.txt");
+                }
+            }
+            catch { /* ignore */ }
+        }
+
+        // Generate new token only if truly missing (first run)
         if (string.IsNullOrEmpty(config.Watchdog.WatchdogToken))
         {
             config.Watchdog.WatchdogToken = WatchdogManager.GenerateToken();
@@ -66,11 +83,10 @@ public class CommandCenterMod(
             logger.Info("[ZSlayerHQ] Generated new Watchdog auth token");
         }
 
-        // Write token to file for easy Watchdog setup
+        // Write token to file (source of truth for Watchdog auto-discovery)
         try
         {
-            var tokenPath = Path.Combine(configService.ModPath, "watchdog-token.txt");
-            File.WriteAllText(tokenPath, config.Watchdog.WatchdogToken);
+            File.WriteAllText(tokenFilePath, config.Watchdog.WatchdogToken);
         }
         catch (Exception ex)
         {
