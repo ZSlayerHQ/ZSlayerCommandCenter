@@ -67,5 +67,14 @@
     "autoRestart": true,
     "profileId": "",
     "exePath": ""
+  },
+  "watchdog": {
+    "sptServerExe": "auto",
+    "autoStartServer": true,
+    "autoStartDelaySec": 3,
+    "autoRestartOnCrash": true,
+    "restartDelaySec": 5,
+    "sessionTimeoutMin": 5,
+    "watchdogToken": ""
   }
 }

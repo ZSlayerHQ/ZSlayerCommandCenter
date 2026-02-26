@@ -72,6 +72,9 @@ public record WatchdogConfig
 
     [JsonPropertyName("sessionTimeoutMin")]
     public int SessionTimeoutMin { get; set; } = 5;
+
+    [JsonPropertyName("watchdogToken")]
+    public string WatchdogToken { get; set; } = "";
 }
 
 public record AccessControlConfig

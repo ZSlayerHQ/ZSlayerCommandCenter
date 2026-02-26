@@ -58,6 +58,25 @@ public class CommandCenterMod(
         configService.LoadConfig();
         var config = configService.GetConfig();
 
+        // Auto-generate Watchdog auth token if not set
+        if (string.IsNullOrEmpty(config.Watchdog.WatchdogToken))
+        {
+            config.Watchdog.WatchdogToken = WatchdogManager.GenerateToken();
+            configService.SaveConfig();
+            logger.Info("[ZSlayerHQ] Generated new Watchdog auth token");
+        }
+
+        // Write token to file for easy Watchdog setup
+        try
+        {
+            var tokenPath = Path.Combine(configService.ModPath, "watchdog-token.txt");
+            File.WriteAllText(tokenPath, config.Watchdog.WatchdogToken);
+        }
+        catch (Exception ex)
+        {
+            logger.Warning($"[ZSlayerHQ] Failed to write watchdog-token.txt: {ex.Message}");
+        }
+
         // Wire up late-bound services
         telemetryService.SetSeasonService(seasonalEventService);
 
@@ -134,6 +153,7 @@ public class CommandCenterMod(
 
         // Watchdog WebSocket endpoint is auto-registered by SPT DI
         logger.Info("[ZSlayerHQ] Watchdog WebSocket endpoint active at /ws/watchdog");
+        logger.Info($"[ZSlayerHQ] Watchdog auth token: {config.Watchdog.WatchdogToken}");
 
         return Task.CompletedTask;
     }

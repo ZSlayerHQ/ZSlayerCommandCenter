@@ -1293,25 +1293,56 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, 200, response);
                 break;
             }
+            case "token" when method == "GET":
+            {
+                var token = configService.GetConfig().Watchdog.WatchdogToken;
+                await WriteJson(context, 200, new { token });
+                break;
+            }
+            case "token" when method == "POST":
+            {
+                var newToken = WatchdogManager.GenerateToken();
+                configService.GetConfig().Watchdog.WatchdogToken = newToken;
+                configService.SaveConfig();
+
+                // Write updated token file
+                try
+                {
+                    var tokenPath = Path.Combine(configService.ModPath, "watchdog-token.txt");
+                    File.WriteAllText(tokenPath, newToken);
+                }
+                catch { /* best effort */ }
+
+                // Disconnect all watchdogs so they must reconnect with new token
+                await watchdogManager.DisconnectAll("Token regenerated");
+
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Watchdog: token regenerated");
+                logger.Info($"[ZSlayerHQ] Watchdog token regenerated. New token: {newToken}");
+                await WriteJson(context, 200, new { token = newToken, message = "Token regenerated — all Watchdogs disconnected. Update their config and reconnect." });
+                break;
+            }
             case "start" when method == "POST":
             {
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Watchdog: start sptServer");
                 var (sent, message) = await watchdogManager.SendCommandToTarget("sptServer", "start");
-                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
+                var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
+                await WriteJson(context, status, new { success = sent, message });
                 break;
             }
             case "stop" when method == "POST":
             {
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Watchdog: stop sptServer");
                 var (sent, message) = await watchdogManager.SendCommandToTarget("sptServer", "stop");
-                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
+                var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
+                await WriteJson(context, status, new { success = sent, message });
                 break;
             }
             case "restart" when method == "POST":
             {
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Watchdog: restart sptServer");
                 var (sent, message) = await watchdogManager.SendCommandToTarget("sptServer", "restart");
-                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
+                var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
+                await WriteJson(context, status, new { success = sent, message });
                 break;
             }
             default:
@@ -1355,21 +1386,24 @@ public class CommandCenterHttpListener(
             {
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: started");
                 var (sent, message) = await watchdogManager.SendCommandToTarget("headlessClient", "start");
-                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
+                var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
+                await WriteJson(context, status, new { success = sent, message });
                 break;
             }
             case "headless/stop" when method == "POST":
             {
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: stopped");
                 var (sent, message) = await watchdogManager.SendCommandToTarget("headlessClient", "stop");
-                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
+                var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
+                await WriteJson(context, status, new { success = sent, message });
                 break;
             }
             case "headless/restart" when method == "POST":
             {
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: restarted");
                 var (sent, message) = await watchdogManager.SendCommandToTarget("headlessClient", "restart");
-                await WriteJson(context, sent ? 200 : 503, new { success = sent, message });
+                var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
+                await WriteJson(context, status, new { success = sent, message });
                 break;
             }
             case "headless/config" when method == "POST":

@@ -1,4 +1,5 @@
 using System.Net.WebSockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using SPTarkov.DI.Annotations;
@@ -18,6 +19,9 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
     private readonly Dictionary<string, ConnectedWatchdog> _watchdogs = new();
     private readonly Dictionary<string, string> _sessionToWatchdog = new();
     private readonly Lock _lock = new();
+    private readonly Dictionary<string, DateTime> _lastCommandTime = new();
+    private static readonly TimeSpan CommandCooldown = TimeSpan.FromSeconds(5);
+    private const string TokenChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     public void HandleRegister(string sessionIdContext, WebSocket socket, WatchdogRegisterMessage msg)
     {
@@ -187,6 +191,14 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
             return (false, $"No Watchdog connected for {target}");
         }
 
+        // Rate limit check using the first candidate's ID
+        var (allowed, rateLimitMsg) = CheckRateLimit(candidates[0].WatchdogId, target);
+        if (!allowed)
+        {
+            logger.Warning($"[ZSlayerHQ] {rateLimitMsg}");
+            return (false, rateLimitMsg);
+        }
+
         // Send to the first available Watchdog
         return await SendCommand(candidates[0].WatchdogId, target, action);
     }
@@ -202,5 +214,73 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
             return (false, null);
 
         return (true, candidates[0].HeadlessClient);
+    }
+
+    /// <summary>
+    /// Generate a cryptographically random 32-char alphanumeric token.
+    /// </summary>
+    public static string GenerateToken()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(32);
+        var chars = new char[32];
+        for (var i = 0; i < 32; i++)
+            chars[i] = TokenChars[bytes[i] % TokenChars.Length];
+        return new string(chars);
+    }
+
+    /// <summary>
+    /// Check if a command to a target is rate-limited (5s cooldown per watchdog+target).
+    /// </summary>
+    public (bool Allowed, string Message) CheckRateLimit(string watchdogId, string target)
+    {
+        var key = $"{watchdogId}:{target}";
+        using (_lock.EnterScope())
+        {
+            if (_lastCommandTime.TryGetValue(key, out var lastTime))
+            {
+                var elapsed = DateTime.UtcNow - lastTime;
+                if (elapsed < CommandCooldown)
+                {
+                    var remaining = (int)Math.Ceiling((CommandCooldown - elapsed).TotalSeconds);
+                    return (false, $"Rate limited — wait {remaining}s before sending another command to {target}");
+                }
+            }
+
+            _lastCommandTime[key] = DateTime.UtcNow;
+        }
+
+        return (true, "");
+    }
+
+    /// <summary>
+    /// Disconnect all connected Watchdogs (e.g. after token regeneration).
+    /// </summary>
+    public async Task DisconnectAll(string reason)
+    {
+        List<(WebSocket Socket, string Name)> toClose;
+        using (_lock.EnterScope())
+        {
+            toClose = _watchdogs.Values
+                .Select(wd => (wd.Socket, wd.Name))
+                .ToList();
+            _watchdogs.Clear();
+            _sessionToWatchdog.Clear();
+            _lastCommandTime.Clear();
+        }
+
+        foreach (var (socket, name) in toClose)
+        {
+            try
+            {
+                if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
+                {
+                    await socket.CloseAsync(
+                        (WebSocketCloseStatus)4001, reason, CancellationToken.None);
+                }
+            }
+            catch { /* best effort */ }
+
+            logger.Info($"[ZSlayerHQ] Watchdog disconnected (token change): {name}");
+        }
     }
 }

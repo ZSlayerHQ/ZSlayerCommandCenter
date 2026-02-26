@@ -12,6 +12,7 @@ namespace ZSlayerCommandCenter.Services;
 [Injectable(InjectionType.Singleton)]
 public class WatchdogWebSocketHandler(
     WatchdogManager watchdogManager,
+    ConfigService configService,
     ISptLogger<WatchdogWebSocketHandler> logger) : IWebSocketConnectionHandler
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -22,20 +23,42 @@ public class WatchdogWebSocketHandler(
     // Track WebSocket → sessionIdContext mapping (OnMessage doesn't receive sessionIdContext)
     private readonly Dictionary<WebSocket, string> _socketToSession = new();
     private readonly Lock _mapLock = new();
+    private bool _warnedOpenMode;
 
     public string GetHookUrl() => "/ws/watchdog";
 
     public string GetSocketId() => "ZSlayer Watchdog WebSocket";
 
-    public Task OnConnection(WebSocket ws, HttpContext context, string sessionIdContext)
+    public async Task OnConnection(WebSocket ws, HttpContext context, string sessionIdContext)
     {
+        var token = configService.GetConfig().Watchdog.WatchdogToken;
+        var remoteIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        if (!string.IsNullOrEmpty(token))
+        {
+            var clientToken = context.Request.Query["token"].ToString();
+            if (clientToken != token)
+            {
+                logger.Warning($"[ZSlayerHQ] Watchdog connection rejected — invalid token from {remoteIp}");
+                await ws.CloseAsync(
+                    (WebSocketCloseStatus)4001,
+                    "Invalid or missing auth token",
+                    CancellationToken.None);
+                return;
+            }
+        }
+        else if (!_warnedOpenMode)
+        {
+            logger.Warning("[ZSlayerHQ] Watchdog WebSocket running in OPEN mode — no auth token configured. Set watchdogToken in config.");
+            _warnedOpenMode = true;
+        }
+
         using (_mapLock.EnterScope())
         {
             _socketToSession[ws] = sessionIdContext;
         }
 
-        logger.Info($"[ZSlayerHQ] Watchdog WebSocket connection opened (ref: {sessionIdContext})");
-        return Task.CompletedTask;
+        logger.Info($"[ZSlayerHQ] Watchdog WebSocket authenticated and connected from {remoteIp} (ref: {sessionIdContext})");
     }
 
     public Task OnMessage(byte[] rawData, WebSocketMessageType messageType, WebSocket ws, HttpContext context)
