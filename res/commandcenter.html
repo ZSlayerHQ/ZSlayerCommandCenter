@@ -2495,24 +2495,220 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .quest-condition.pending .qc-text { color: var(--text-muted); }
 .quest-condition .qc-type { font-size: 10px; font-family: var(--font-mono); color: var(--text-dim); background: rgba(100,100,100,0.15); padding: 1px 5px; border-radius: 3px; }
 
-/* Quest Browser */
-.qb-map-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.qb-chip { padding: 4px 10px; font-size: 12px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-muted); cursor: pointer; transition: all 0.15s ease; font-family: var(--font-mono); }
-.qb-chip:hover { border-color: var(--accent-dim); color: var(--text); }
-.qb-chip.active { background: rgba(200,170,110,0.15); border-color: var(--accent); color: var(--accent); }
-.qb-chip .qb-chip-count { font-size: 10px; color: var(--text-dim); margin-left: 3px; }
-.qb-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
-.qb-sortable:hover { color: var(--accent); }
-.qb-sort-arrow { font-size: 10px; color: var(--accent); margin-left: 2px; }
-.qb-detail-row td { padding: 0 !important; border-bottom: 1px solid var(--border-subtle); }
-.qb-detail-inner { padding: 10px 14px 10px 26px; background: var(--bg-input); border-left: 2px solid var(--accent-dim); }
-.qb-detail-inner h4 { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-family: var(--font-mono); margin: 0 0 6px 0; letter-spacing: 0.5px; }
-.qb-obj-list { margin: 0 0 12px 0; padding: 0; list-style: none; }
-.qb-obj-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; color: var(--text-muted); }
-.qb-obj-item .qb-obj-type { font-size: 10px; font-family: var(--font-mono); color: var(--text-dim); background: rgba(100,100,100,0.15); padding: 1px 5px; border-radius: 3px; }
-.qb-state-setter { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--border-subtle); }
-.qb-state-setter select { background: var(--bg-input); border: 1px solid var(--border); color: var(--text); font-size: 12px; padding: 4px 8px; border-radius: 4px; }
-.qb-state-setter label { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); text-transform: uppercase; }
+/* ═══ Quest Editor ═══ */
+.quest-glass-panel {
+  position: relative; background: var(--glass-bg);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border); border-top: 2px solid var(--accent);
+  border-radius: 8px; padding: 18px 22px; margin-bottom: 14px;
+}
+.quest-glass-panel-title {
+  font-size: 13px; font-weight: 600; color: var(--accent);
+  margin-bottom: 14px; font-family: var(--font-mono);
+  text-transform: uppercase; letter-spacing: 1.5px;
+}
+.quest-apply-btn {
+  position: relative; flex: 1; padding: 12px;
+  background: rgba(18, 16, 12, 0.6); color: rgba(240, 234, 214, 0.4);
+  border: 1px solid rgba(180, 160, 100, 0.2); border-radius: 6px;
+  font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  cursor: default; display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all 0.3s ease;
+}
+.quest-apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.quest-apply-btn.apply-btn-active {
+  background: linear-gradient(135deg, #8B7209, #b8960b, #d4a017, #b8960b, #8B7209);
+  background-size: 200% 100%; animation: btnShimmer 3s ease-in-out infinite;
+  color: #fff; border: 1px solid rgba(212, 160, 23, 0.5); cursor: pointer;
+}
+.quest-apply-btn.apply-btn-active:hover:not(:disabled) {
+  filter: brightness(1.15); box-shadow: 0 0 24px rgba(180, 150, 50, 0.35); transform: translateY(-1px);
+}
+.quest-apply-btn.apply-btn-active:active:not(:disabled) { transform: translateY(0); }
+.quest-reset-btn {
+  padding: 12px 20px; background: transparent; color: var(--error-bright);
+  border: 1px solid rgba(139, 58, 58, 0.3); border-radius: 6px;
+  cursor: pointer; font-family: var(--font-mono); font-size: 13px;
+  transition: all 0.2s ease;
+}
+.quest-reset-btn:hover { background: rgba(196, 80, 80, 0.15); border-color: var(--error-bright); color: #e06060; }
+.quest-filter-row {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;
+}
+.quest-filter-row select, .quest-filter-row input[type="text"] {
+  background: var(--bg-input); color: var(--text); border: 1px solid var(--border);
+  border-radius: 4px; padding: 7px 10px; font-family: var(--font-mono); font-size: 12px;
+}
+.quest-filter-row select:focus, .quest-filter-row input:focus { border-color: var(--accent); outline: none; }
+.quest-view-tabs { display: flex; gap: 0; margin-bottom: 14px; }
+.quest-view-tab {
+  padding: 8px 18px; font-size: 12px; font-family: var(--font-mono); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer;
+  background: var(--bg-input); border: 1px solid var(--border); color: var(--text-dim);
+  transition: all 0.15s ease;
+}
+.quest-view-tab:first-child { border-radius: 4px 0 0 4px; }
+.quest-view-tab:last-child { border-radius: 0 4px 4px 0; }
+.quest-view-tab:not(:first-child) { border-left: none; }
+.quest-view-tab.active { background: rgba(200,170,110,0.15); border-color: var(--accent); color: var(--accent); }
+.quest-view-tab:hover:not(.active) { color: var(--text); border-color: var(--border-light); }
+.quest-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+.quest-sortable:hover { color: var(--accent); }
+.quest-sort-arrow { font-size: 10px; color: var(--accent); margin-left: 2px; }
+.quest-status-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  vertical-align: middle;
+}
+.quest-status-dot.default { background: var(--text-dim); }
+.quest-status-dot.modified { background: var(--accent); box-shadow: 0 0 6px rgba(200,170,110,0.4); }
+.quest-status-dot.disabled { background: var(--error-bright); }
+.quest-row { cursor: pointer; transition: background 0.15s ease; }
+.quest-row:hover { background: rgba(200,170,110,0.06); }
+.quest-row.quest-disabled td { opacity: 0.45; text-decoration: line-through; }
+.quest-row.quest-modified { border-left: 3px solid var(--accent); }
+.quest-map-group-header {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: 6px; margin-bottom: 8px; cursor: pointer;
+  transition: all 0.15s ease; user-select: none;
+}
+.quest-map-group-header:hover { border-color: rgba(180,160,100,0.3); }
+.quest-map-group-header .quest-map-chevron {
+  font-size: 10px; color: var(--text-dim); transition: transform 0.2s ease;
+  display: inline-block;
+}
+.quest-map-group-header.open .quest-map-chevron { transform: rotate(90deg); color: var(--accent); }
+.quest-map-group-header .quest-map-name {
+  font-size: 13px; font-weight: 600; color: var(--text-bright); font-family: var(--font-mono);
+}
+.quest-map-group-header .quest-map-count {
+  font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);
+}
+.quest-map-group-body { margin-bottom: 12px; }
+/* Detail panel */
+.quest-back-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+  background: transparent; border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text-dim); font-family: var(--font-mono); font-size: 12px;
+  cursor: pointer; margin-bottom: 14px; transition: all 0.15s ease;
+}
+.quest-back-btn:hover { border-color: var(--accent); color: var(--accent); }
+.quest-section {
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px;
+  margin-bottom: 12px; overflow: hidden;
+}
+.quest-section-header {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  cursor: pointer; user-select: none; transition: background 0.15s ease;
+}
+.quest-section-header:hover { background: rgba(200,170,110,0.04); }
+.quest-section-header .quest-section-chevron {
+  font-size: 10px; color: var(--text-dim); transition: transform 0.2s ease;
+  display: inline-block;
+}
+.quest-section.open .quest-section-chevron { transform: rotate(90deg); color: var(--accent); }
+.quest-section-header .quest-section-title {
+  font-size: 12px; font-weight: 600; color: var(--accent); font-family: var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+.quest-section-header .quest-section-count {
+  font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);
+}
+.quest-section-body { display: none; padding: 0 16px 14px 16px; }
+.quest-section.open .quest-section-body { display: block; }
+.quest-obj-card {
+  background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px 14px; margin-bottom: 8px;
+}
+.quest-obj-card .quest-obj-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.quest-obj-card .quest-obj-type {
+  font-size: 10px; font-family: var(--font-mono); color: var(--text-dim);
+  background: rgba(100,100,100,0.2); padding: 2px 7px; border-radius: 3px;
+  text-transform: uppercase;
+}
+.quest-obj-card .quest-obj-desc {
+  font-size: 13px; color: var(--text); flex: 1;
+}
+.quest-obj-card .quest-obj-fields {
+  display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12px;
+  align-items: center;
+}
+.quest-obj-card .quest-obj-label {
+  color: var(--text-dim); font-family: var(--font-mono); font-size: 11px;
+  text-transform: uppercase; text-align: right;
+}
+.quest-reward-row {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle); font-size: 13px;
+}
+.quest-reward-row:last-child { border-bottom: none; }
+.quest-reward-type {
+  font-size: 10px; font-family: var(--font-mono); color: var(--text-dim);
+  background: rgba(100,100,100,0.2); padding: 2px 7px; border-radius: 3px;
+  text-transform: uppercase; min-width: 80px; text-align: center;
+}
+.quest-prereq-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: 4px; margin-bottom: 6px; font-size: 13px;
+}
+.quest-prereq-item .quest-prereq-name { flex: 1; color: var(--text); }
+.quest-prereq-item .quest-prereq-status {
+  font-size: 10px; font-family: var(--font-mono); color: var(--text-dim);
+  text-transform: uppercase;
+}
+.quest-prereq-remove {
+  background: transparent; border: 1px solid rgba(139,58,58,0.3); color: var(--error-bright);
+  font-size: 11px; padding: 3px 8px; border-radius: 3px; cursor: pointer;
+  font-family: var(--font-mono); transition: all 0.15s ease;
+}
+.quest-prereq-remove:hover { background: rgba(196,80,80,0.15); border-color: var(--error-bright); }
+.quest-status-pill {
+  display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 8px;
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.5px;
+}
+.quest-status-pill.locked { background: rgba(100,100,100,0.15); color: var(--text-dim); }
+.quest-status-pill.available { background: rgba(90,122,181,0.2); color: #5a7ab5; }
+.quest-status-pill.started { background: rgba(200,170,110,0.15); color: var(--accent); }
+.quest-status-pill.ready { background: rgba(74,222,128,0.15); color: #4ade80; }
+.quest-status-pill.success { background: rgba(74,124,74,0.2); color: var(--success-bright); }
+.quest-status-pill.fail { background: rgba(139,58,58,0.2); color: var(--error-bright); }
+/* Trader colors for quest rows */
+.quest-trader-border-prapor { border-left: 3px solid #4a7c59; }
+.quest-trader-border-therapist { border-left: 3px solid #5a7ab5; }
+.quest-trader-border-skier { border-left: 3px solid #c8aa6e; }
+.quest-trader-border-mechanic { border-left: 3px solid #c87a3e; }
+.quest-trader-border-ragman { border-left: 3px solid #b54a4a; }
+.quest-trader-border-jaeger { border-left: 3px solid #7a5ab5; }
+.quest-trader-border-peacekeeper { border-left: 3px solid #aaaaaa; }
+.quest-trader-border-fence { border-left: 3px solid #6a8a6a; }
+.quest-trader-border-modded { border-left: 3px solid #6a5acd; }
+.quest-save-btn {
+  width: 100%; padding: 12px; background: var(--accent); color: #000;
+  border: none; border-radius: 6px; font-family: var(--font-mono);
+  font-size: 14px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; cursor: pointer; transition: all 0.2s ease;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.quest-save-btn:hover { filter: brightness(1.1); }
+.quest-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.quest-detail-info {
+  display: grid; grid-template-columns: auto 1fr; gap: 8px 16px;
+  font-size: 13px; align-items: center;
+}
+.quest-detail-label {
+  color: var(--text-dim); font-family: var(--font-mono); font-size: 11px;
+  text-transform: uppercase; text-align: right; white-space: nowrap;
+}
+.quest-player-row {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle); font-size: 13px;
+}
+.quest-player-row:last-child { border-bottom: none; }
+.quest-player-name { flex: 1; color: var(--text); font-weight: 500; }
 
 .profile-mini-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .profile-mini-table th {
@@ -5344,31 +5540,245 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   </div>
 
   <div class="main-tab-panel" id="main-quests">
-    <!-- Quest Browser Controls -->
-    <div style="display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
-      <input type="text" id="questSearchInput" class="search-input" placeholder="Search quests..." style="flex:1;min-width:200px;max-width:360px" oninput="debounceQuestSearch()">
-      <span style="font-size:12px;color:var(--text-dim);font-family:var(--font-mono)" id="questCountLabel">0 quests</span>
+
+    <div id="questMainView">
+      <!-- Warning banner -->
+      <div style="background:rgba(200,122,62,0.1);border:1px solid rgba(200,122,62,0.3);border-radius:6px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--warning)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Changes apply to <strong>all players</strong> on the server. Players must restart their client to see updated quest data.
+      </div>
+
+      <!-- Toast -->
+      <div id="questToast" style="display:none;background:rgba(74,124,89,0.15);border:1px solid rgba(74,124,89,0.4);border-radius:6px;padding:10px 16px;margin-bottom:14px;font-size:13px;color:#6abf7b;font-family:var(--font-mono)"></div>
+
+      <!-- Global Controls -->
+      <div class="quest-glass-panel">
+        <div class="quest-glass-panel-title">Global Quest Controls</div>
+        <!-- Row 1: XP / Kill Count -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+              Quest XP Multiplier
+              <i class="cc-info-icon">i<span class="cc-tip">Multiplies experience rewards from all quests. 2.0 = double XP. Max 100x.</span></i>
+            </label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="questGlobalXp" min="0" max="100" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalXp','questGlobalXpVal')">
+              <input type="number" id="questGlobalXpVal" min="0" max="100" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalXpVal','questGlobalXp')">
+              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+              Kill Count Multiplier
+              <i class="cc-info-icon">i<span class="cc-tip">Multiplies kill/elimination objective counts. 0.5 = half the kills needed.</span></i>
+            </label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="questGlobalKill" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalKill','questGlobalKillVal')">
+              <input type="number" id="questGlobalKillVal" min="0.1" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalKillVal','questGlobalKill')">
+              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+            </div>
+          </div>
+        </div>
+        <!-- Row 2: Standing / Handover -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+              Standing Multiplier
+              <i class="cc-info-icon">i<span class="cc-tip">Multiplies trader standing rewards. 2.0 = double standing gain.</span></i>
+            </label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="questGlobalStanding" min="0" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalStanding','questGlobalStandingVal')">
+              <input type="number" id="questGlobalStandingVal" min="0" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalStandingVal','questGlobalStanding')">
+              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+              Handover Count Multiplier
+              <i class="cc-info-icon">i<span class="cc-tip">Multiplies item handover/find objective counts. 0.5 = half items needed.</span></i>
+            </label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="questGlobalHandover" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalHandover','questGlobalHandoverVal')">
+              <input type="number" id="questGlobalHandoverVal" min="0.1" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalHandoverVal','questGlobalHandover')">
+              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+            </div>
+          </div>
+        </div>
+        <!-- Row 3: Item Rewards / Level Shift -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+              Item Reward Multiplier
+              <i class="cc-info-icon">i<span class="cc-tip">Multiplies item reward stack counts. 2.0 = double items received.</span></i>
+            </label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="questGlobalItemReward" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalItemReward','questGlobalItemRewardVal')">
+              <input type="number" id="questGlobalItemRewardVal" min="0.1" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalItemRewardVal','questGlobalItemReward')">
+              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+              Level Requirement Shift
+              <i class="cc-info-icon">i<span class="cc-tip">Shift all quest level requirements. Negative = lower levels needed. -5 means a level 15 quest becomes level 10.</span></i>
+            </label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="number" id="questGlobalLevelShift" min="-50" max="50" step="1" value="0" class="cc-num-input" style="width:80px" oninput="questCheckDirty()">
+              <span style="font-size:12px;color:var(--text-dim)">levels</span>
+            </div>
+          </div>
+        </div>
+        <!-- Row 4: FIR toggle -->
+        <div style="display:flex;align-items:center;gap:10px">
+          <label class="cc-toggle">
+            <input type="checkbox" id="questGlobalRemoveFIR" onchange="questCheckDirty()">
+            <span class="cc-toggle-slider"></span>
+          </label>
+          <span style="font-size:13px;color:var(--text)">Remove Found-in-Raid requirements</span>
+          <i class="cc-info-icon">i<span class="cc-tip">Removes the "found in raid" requirement from all handover/find item objectives. Items can be purchased from flea or traders.</span></i>
+        </div>
+      </div>
+
+      <!-- Apply & Reset Bar -->
+      <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+        <button onclick="questApplyAll()" class="quest-apply-btn" id="questApplyBtn">
+          <span id="questApplyText">Apply Changes to All Quests</span>
+          <span id="questApplySpinner" style="display:none">Applying...</span>
+        </button>
+        <button onclick="questResetAll()" class="quest-reset-btn">&#8634; Reset All</button>
+      </div>
+
+      <!-- Filter Row -->
+      <div class="quest-filter-row">
+        <select id="questFilterTrader" onchange="questLoadList()">
+          <option value="">All Traders</option>
+        </select>
+        <select id="questFilterType" onchange="questLoadList()">
+          <option value="">All Types</option>
+        </select>
+        <select id="questFilterMap" onchange="questLoadList()">
+          <option value="">All Maps</option>
+        </select>
+        <input type="text" id="questSearchInput" placeholder="Search quests..." style="flex:1;min-width:180px" oninput="questDebounceSearch()">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);font-family:var(--font-mono);white-space:nowrap;cursor:pointer">
+          <input type="checkbox" id="questShowDisabled" onchange="questRenderTable(); if(questViewMode==='map') questRenderMapView();" style="accent-color:var(--accent)">
+          Show Disabled
+        </label>
+        <span id="questCountLabel" style="font-size:12px;color:var(--text-dim);font-family:var(--font-mono);white-space:nowrap">0 quests</span>
+      </div>
+
+      <!-- View Toggle -->
+      <div class="quest-view-tabs">
+        <button class="quest-view-tab active" id="questViewAll" onclick="questSetView('all')">All Quests</button>
+        <button class="quest-view-tab" id="questViewMap" onclick="questSetView('map')">By Map</button>
+        <button class="quest-view-tab" id="questViewTree" onclick="questSetView('tree')">Prerequisite Tree</button>
+      </div>
+
+      <!-- All Quests Table -->
+      <div id="questAllView">
+        <div class="table-wrap">
+          <table class="data-table" style="width:100%">
+            <thead>
+              <tr>
+                <th class="quest-sortable" onclick="questSetSort('name')" style="text-align:left">Quest Name <span class="quest-sort-arrow" id="questArrow_name"></span></th>
+                <th class="quest-sortable" onclick="questSetSort('trader')" style="text-align:left">Trader <span class="quest-sort-arrow" id="questArrow_trader"></span></th>
+                <th class="quest-sortable" onclick="questSetSort('map')" style="text-align:left">Map <span class="quest-sort-arrow" id="questArrow_map"></span></th>
+                <th class="quest-sortable" onclick="questSetSort('level')" style="text-align:center;width:60px">Lvl <span class="quest-sort-arrow" id="questArrow_level"></span></th>
+                <th class="quest-sortable" onclick="questSetSort('objectives')" style="text-align:center;width:50px">Obj <span class="quest-sort-arrow" id="questArrow_objectives"></span></th>
+                <th style="text-align:center;width:50px">Status</th>
+              </tr>
+            </thead>
+            <tbody id="questTableBody">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:40px;font-style:italic">Loading quests...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Pagination -->
+        <div id="questPagination" style="display:flex;justify-content:center;align-items:center;gap:12px;margin-top:12px;font-size:12px;font-family:var(--font-mono);color:var(--text-dim)"></div>
+      </div>
+
+      <!-- By Map View -->
+      <div id="questMapView" style="display:none">
+        <div id="questMapGroups"></div>
+      </div>
+
+      <!-- Prerequisite Tree View (placeholder) -->
+      <div id="questTreeView" style="display:none">
+        <div style="text-align:center;padding:60px 20px;color:var(--text-dim)">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px">Prerequisite Tree</div>
+          <div style="font-size:12px">Interactive quest prerequisite visualization — coming in Phase 5B</div>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div id="questStatusBar" style="text-align:center;font-size:12px;color:var(--text-dim);font-family:var(--font-mono);padding:8px 0;border-top:1px solid var(--border);margin-top:12px"></div>
     </div>
-    <!-- Map Filter Chips -->
-    <div class="qb-map-chips" id="questMapChips"></div>
-    <!-- Quest Table -->
-    <div class="table-wrap">
-      <table class="data-table" id="questBrowserTable">
-        <thead>
-          <tr>
-            <th class="qb-sortable" data-sort="name" onclick="setQuestSort('name')">Quest Name <span class="qb-sort-arrow" id="qbArrow_name"></span></th>
-            <th class="qb-sortable" data-sort="trader" onclick="setQuestSort('trader')">Trader <span class="qb-sort-arrow" id="qbArrow_trader"></span></th>
-            <th class="qb-sortable" data-sort="map" onclick="setQuestSort('map')">Map <span class="qb-sort-arrow" id="qbArrow_map"></span></th>
-            <th class="qb-sortable" data-sort="level" onclick="setQuestSort('level')">Level <span class="qb-sort-arrow" id="qbArrow_level"></span></th>
-            <th class="qb-sortable" data-sort="objectives" onclick="setQuestSort('objectives')">Obj. <span class="qb-sort-arrow" id="qbArrow_objectives"></span></th>
-            <th style="width:30px"></th>
-          </tr>
-        </thead>
-        <tbody id="questBrowserBody">
-          <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px">Loading quests...</td></tr>
-        </tbody>
-      </table>
+
+    <!-- Detail Panel (hidden) -->
+    <div id="questDetailPanel" style="display:none">
+      <button class="quest-back-btn" onclick="questBackToList()">&#8592; Back to Quest List</button>
+
+      <!-- Quest Info Header -->
+      <div class="cc-panel" id="questDetailHeader" style="padding:20px;background:var(--bg-panel);border-radius:6px;margin-bottom:14px">
+      </div>
+
+      <!-- Prerequisites Section -->
+      <div class="quest-section open" id="questPrereqSection">
+        <div class="quest-section-header" onclick="questToggleSection('questPrereqSection')">
+          <span class="quest-section-chevron">&#9654;</span>
+          <span class="quest-section-title">Prerequisites</span>
+          <span class="quest-section-count" id="questPrereqCount"></span>
+        </div>
+        <div class="quest-section-body" id="questPrereqBody"></div>
+      </div>
+
+      <!-- Objectives Section -->
+      <div class="quest-section open" id="questObjSection">
+        <div class="quest-section-header" onclick="questToggleSection('questObjSection')">
+          <span class="quest-section-chevron">&#9654;</span>
+          <span class="quest-section-title">Objectives</span>
+          <span class="quest-section-count" id="questObjCount"></span>
+        </div>
+        <div class="quest-section-body" id="questObjBody"></div>
+      </div>
+
+      <!-- Rewards Section -->
+      <div class="quest-section open" id="questRewardSection">
+        <div class="quest-section-header" onclick="questToggleSection('questRewardSection')">
+          <span class="quest-section-chevron">&#9654;</span>
+          <span class="quest-section-title">Rewards</span>
+          <span class="quest-section-count" id="questRewardCount"></span>
+        </div>
+        <div class="quest-section-body" id="questRewardBody"></div>
+      </div>
+
+      <!-- Player Quest Status Section -->
+      <div class="quest-section" id="questPlayerSection">
+        <div class="quest-section-header" onclick="questToggleSection('questPlayerSection')">
+          <span class="quest-section-chevron">&#9654;</span>
+          <span class="quest-section-title">Player Quest Status</span>
+          <span class="quest-section-count" id="questPlayerCount"></span>
+        </div>
+        <div class="quest-section-body" id="questPlayerBody">
+          <div style="font-size:11px;color:var(--warning);margin-bottom:10px;font-family:var(--font-mono)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            This modifies player save data directly
+          </div>
+          <div id="questPlayerTable"></div>
+        </div>
+      </div>
+
+      <!-- Save / Actions -->
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="quest-save-btn" id="questSaveBtn" onclick="questSaveOverride()">
+          <span id="questSaveText">Save Quest Overrides</span>
+          <span id="questSaveSpinner" style="display:none">Saving...</span>
+        </button>
+      </div>
+      <div id="questDetailToast" style="display:none;margin-top:10px;background:rgba(74,124,89,0.15);border:1px solid rgba(74,124,89,0.4);border-radius:6px;padding:10px 16px;font-size:13px;color:#6abf7b;font-family:var(--font-mono)"></div>
     </div>
+
   </div>
 
   <div class="main-tab-panel" id="main-progression">
@@ -5946,7 +6356,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     // Lazy-load tabs on first visit
     if (tab === 'players' && !playersLoaded) loadPlayerRoster();
-    if (tab === 'quests' && !questsLoaded) loadQuestBrowser();
+    if (tab === 'quests' && !questsLoaded) questsInit();
     if (tab === 'flea' && !fleaLoaded) fleaInit();
     if (tab === 'traders' && !tradersLoaded) tradersInit();
     if (tab === 'raidinfo' && !raidInfoLoaded) raidInfoInit();
@@ -8996,8 +9406,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   function loadMapPositions() {
     api('telemetry/positions').then(function(positions) {
       _mapPositions = positions || [];
+      console.log('[CC Map]', _mapPositions.length, 'entities');
       drawMap();
-    }).catch(function() {});
+    }).catch(function(err) { console.warn('[CC Map] positions fetch failed', err); });
   }
 
   function gameToMap(gx, gz, config) {
@@ -10310,172 +10721,853 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   };
 
   // ═══════════════════════════════════════════════════════
-  // QUEST BROWSER
+  // QUEST EDITOR
   // ═══════════════════════════════════════════════════════
   var questsLoaded = false;
-  var questBrowserData = [];
-  var questBrowserMaps = [];
-  var questBrowserExpanded = {};
-  var questBrowserSort = 'trader';
-  var questBrowserSortDir = 'asc';
-  var questBrowserMapFilter = 'all';
+  var questConfig = null;
+  var questList = [];
+  var questTraders = [];
+  var questLocations = [];
+  var questCurrentId = null;
+  var questDetailData = null;
+  var questSort = 'trader';
+  var questSortDir = 'asc';
+  var questViewMode = 'all';
+  var questPage = 0;
+  var questTotal = 0;
+  var questLimit = 50;
   var questSearchTimer = null;
+  var questAppliedValues = {};
   var questPlayersCache = null;
+  var questMapGroupsOpen = {};
 
-  window.debounceQuestSearch = function() {
-    clearTimeout(questSearchTimer);
-    questSearchTimer = setTimeout(function() { loadQuestBrowser(); }, 300);
+  // Trader color map for row borders
+  var questTraderColors = {
+    'prapor': 'prapor', 'therapist': 'therapist', 'skier': 'skier',
+    'mechanic': 'mechanic', 'ragman': 'ragman', 'jaeger': 'jaeger',
+    'peacekeeper': 'peacekeeper', 'fence': 'fence'
+  };
+
+  function questGetTraderBorderClass(traderName) {
+    var lower = (traderName || '').toLowerCase();
+    for (var k in questTraderColors) {
+      if (lower.indexOf(k) !== -1) return 'quest-trader-border-' + questTraderColors[k];
+    }
+    return 'quest-trader-border-modded';
   }
 
-  function loadQuestBrowser() {
+  // ── Init ──
+  function questsInit() {
+    questsLoaded = true;
+    Promise.all([
+      api('quests/config'),
+      api('quests/traders'),
+      api('quests/locations'),
+      api('quests/status')
+    ]).then(function(results) {
+      questConfig = results[0];
+      questTraders = results[1].traders || results[1] || [];
+      questLocations = results[2].locations || results[2] || [];
+      questPopulateGlobals();
+      questPopulateFilters();
+      questRenderStatus(results[3]);
+      questSnapshotApplied();
+      questLoadList();
+      // Pre-fetch players for state setter
+      api('players').then(function(d) { questPlayersCache = d.players || []; }).catch(function() { questPlayersCache = []; });
+    }).catch(function(e) {
+      console.error('Quest editor init failed:', e);
+      document.getElementById('questTableBody').innerHTML =
+        '<tr><td colspan="6" style="text-align:center;color:var(--error-bright);padding:20px">Failed to initialize: ' + escH(e.message) + '</td></tr>';
+    });
+  }
+
+  // ── Populate globals from config ──
+  function questPopulateGlobals() {
+    if (!questConfig) return;
+    var c = questConfig;
+    questSetSlider('questGlobalXp', 'questGlobalXpVal', c.globalXpMultiplier || 1);
+    questSetSlider('questGlobalKill', 'questGlobalKillVal', c.globalKillCountMultiplier || 1);
+    questSetSlider('questGlobalStanding', 'questGlobalStandingVal', c.globalStandingMultiplier || 1);
+    questSetSlider('questGlobalHandover', 'questGlobalHandoverVal', c.globalHandoverCountMultiplier || 1);
+    questSetSlider('questGlobalItemReward', 'questGlobalItemRewardVal', c.globalItemRewardMultiplier || 1);
+    var ls = document.getElementById('questGlobalLevelShift');
+    if (ls) ls.value = c.globalLevelRequirementShift || 0;
+    var fir = document.getElementById('questGlobalRemoveFIR');
+    if (fir) fir.checked = !!c.removeFIRRequirements;
+  }
+
+  function questSetSlider(sliderId, numId, val) {
+    var s = document.getElementById(sliderId);
+    var n = document.getElementById(numId);
+    if (s) s.value = val;
+    if (n) n.value = val;
+  }
+
+  // ── Populate filter dropdowns ──
+  function questPopulateFilters() {
+    var ts = document.getElementById('questFilterTrader');
+    if (ts) {
+      var html = '<option value="">All Traders</option>';
+      questTraders.forEach(function(t) {
+        html += '<option value="' + escA(t.id) + '">' + escH(t.name) + '</option>';
+      });
+      ts.innerHTML = html;
+    }
+    var ms = document.getElementById('questFilterMap');
+    if (ms) {
+      var html2 = '<option value="">All Maps</option>';
+      questLocations.forEach(function(l) {
+        html2 += '<option value="' + escA(l.id) + '">' + escH(l.name) + '</option>';
+      });
+      ms.innerHTML = html2;
+    }
+  }
+
+  // ── Slider sync ──
+  window.questSliderSync = function(sliderId, numId) {
+    document.getElementById(numId).value = document.getElementById(sliderId).value;
+    questCheckDirty();
+  };
+  window.questNumSync = function(numId, sliderId) {
+    var v = parseFloat(document.getElementById(numId).value);
+    if (!isNaN(v)) {
+      var slider = document.getElementById(sliderId);
+      slider.value = Math.min(parseFloat(slider.max), Math.max(parseFloat(slider.min), v));
+    }
+    questCheckDirty();
+  };
+
+  // ── Dirty tracking ──
+  function questSnapshotApplied() {
+    questAppliedValues = {
+      xp: (document.getElementById('questGlobalXpVal') || {}).value || '1',
+      kill: (document.getElementById('questGlobalKillVal') || {}).value || '1',
+      standing: (document.getElementById('questGlobalStandingVal') || {}).value || '1',
+      handover: (document.getElementById('questGlobalHandoverVal') || {}).value || '1',
+      itemReward: (document.getElementById('questGlobalItemRewardVal') || {}).value || '1',
+      levelShift: (document.getElementById('questGlobalLevelShift') || {}).value || '0',
+      removeFIR: (document.getElementById('questGlobalRemoveFIR') || {}).checked ? 'true' : 'false'
+    };
+  }
+
+  window.questCheckDirty = function() {
+    var btn = document.getElementById('questApplyBtn');
+    if (!btn) return;
+    var cur = {
+      xp: (document.getElementById('questGlobalXpVal') || {}).value || '1',
+      kill: (document.getElementById('questGlobalKillVal') || {}).value || '1',
+      standing: (document.getElementById('questGlobalStandingVal') || {}).value || '1',
+      handover: (document.getElementById('questGlobalHandoverVal') || {}).value || '1',
+      itemReward: (document.getElementById('questGlobalItemRewardVal') || {}).value || '1',
+      levelShift: (document.getElementById('questGlobalLevelShift') || {}).value || '0',
+      removeFIR: (document.getElementById('questGlobalRemoveFIR') || {}).checked ? 'true' : 'false'
+    };
+    var dirty = false;
+    for (var k in questAppliedValues) {
+      if (cur[k] !== questAppliedValues[k]) { dirty = true; break; }
+    }
+    if (dirty) btn.classList.add('apply-btn-active');
+    else btn.classList.remove('apply-btn-active');
+  };
+
+  // ── Toast ──
+  function questShowToast(msg, isError) {
+    var el = document.getElementById('questToast');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.background = isError ? 'rgba(139,58,58,0.15)' : 'rgba(74,124,89,0.15)';
+    el.style.borderColor = isError ? 'rgba(139,58,58,0.4)' : 'rgba(74,124,89,0.4)';
+    el.style.color = isError ? '#c45050' : '#6abf7b';
+    setTimeout(function() { el.style.display = 'none'; }, 6000);
+  }
+
+  function questShowDetailToast(msg, isError) {
+    var el = document.getElementById('questDetailToast');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.background = isError ? 'rgba(139,58,58,0.15)' : 'rgba(74,124,89,0.15)';
+    el.style.borderColor = isError ? 'rgba(139,58,58,0.4)' : 'rgba(74,124,89,0.4)';
+    el.style.color = isError ? '#c45050' : '#6abf7b';
+    setTimeout(function() { el.style.display = 'none'; }, 6000);
+  }
+
+  // ── Status bar ──
+  function questRenderStatus(status) {
+    var bar = document.getElementById('questStatusBar');
+    if (!bar || !status) return;
+    bar.textContent = (status.totalQuests || 0) + ' quests | ' +
+      (status.overrideCount || 0) + ' overrides | ' +
+      (status.disabledCount || 0) + ' disabled';
+  }
+
+  // ── Apply All ──
+  window.questApplyAll = function() {
+    var btnText = document.getElementById('questApplyText');
+    var spinner = document.getElementById('questApplySpinner');
+    var btn = document.getElementById('questApplyBtn');
+    if (btnText) btnText.style.display = 'none';
+    if (spinner) spinner.style.display = 'inline';
+    if (btn) btn.disabled = true;
+
+    var body = {
+      globalXpMultiplier: parseFloat((document.getElementById('questGlobalXpVal') || {}).value) || 1,
+      globalKillCountMultiplier: parseFloat((document.getElementById('questGlobalKillVal') || {}).value) || 1,
+      globalStandingMultiplier: parseFloat((document.getElementById('questGlobalStandingVal') || {}).value) || 1,
+      globalHandoverCountMultiplier: parseFloat((document.getElementById('questGlobalHandoverVal') || {}).value) || 1,
+      globalItemRewardMultiplier: parseFloat((document.getElementById('questGlobalItemRewardVal') || {}).value) || 1,
+      globalLevelRequirementShift: parseInt((document.getElementById('questGlobalLevelShift') || {}).value) || 0,
+      removeFIRRequirements: !!(document.getElementById('questGlobalRemoveFIR') || {}).checked
+    };
+
+    api('quests/config/global', 'POST', body).then(function() {
+      return api('quests/apply', 'POST', {});
+    }).then(function(result) {
+      if (btnText) btnText.style.display = 'inline';
+      if (spinner) spinner.style.display = 'none';
+      if (btn) btn.disabled = false;
+      if (result.success) {
+        questSnapshotApplied();
+        if (btn) btn.classList.remove('apply-btn-active');
+        questShowToast('Applied: ' + (result.questsModified || 0) + ' quests, ' +
+          (result.objectivesModified || 0) + ' objectives, ' +
+          (result.rewardsModified || 0) + ' rewards (' + (result.applyTimeMs || 0) + 'ms)');
+        questRefreshAll();
+      } else {
+        questShowToast('Apply failed: ' + (result.error || 'Unknown error'), true);
+      }
+    }).catch(function(e) {
+      if (btnText) btnText.style.display = 'inline';
+      if (spinner) spinner.style.display = 'none';
+      if (btn) btn.disabled = false;
+      questShowToast('Apply failed: ' + e.message, true);
+    });
+  };
+
+  // ── Reset All ──
+  window.questResetAll = function() {
+    if (!confirm('Reset ALL quest overrides to defaults? This cannot be undone.')) return;
+
+    api('quests/reset', 'POST', {}).then(function(result) {
+      if (result.success) {
+        questShowToast('Reset ' + (result.questsModified || 0) + ' quests to defaults');
+        // Re-init to get fresh config
+        questConfig = null;
+        Promise.all([
+          api('quests/config'),
+          api('quests/status')
+        ]).then(function(results) {
+          questConfig = results[0];
+          questPopulateGlobals();
+          questSnapshotApplied();
+          questRenderStatus(results[1]);
+          var btn = document.getElementById('questApplyBtn');
+          if (btn) btn.classList.remove('apply-btn-active');
+          questLoadList();
+        });
+      } else {
+        questShowToast('Reset failed: ' + (result.error || 'Unknown'), true);
+      }
+    }).catch(function(e) {
+      questShowToast('Reset failed: ' + e.message, true);
+    });
+  };
+
+  // ── Refresh all data ──
+  function questRefreshAll() {
+    Promise.all([
+      api('quests/config'),
+      api('quests/status')
+    ]).then(function(results) {
+      questConfig = results[0];
+      questRenderStatus(results[1]);
+      questLoadList();
+    });
+  }
+
+  // ── Search debounce ──
+  window.questDebounceSearch = function() {
+    clearTimeout(questSearchTimer);
+    questSearchTimer = setTimeout(function() {
+      questPage = 0;
+      questLoadList();
+    }, 300);
+  };
+
+  // ── View toggle ──
+  window.questSetView = function(mode) {
+    questViewMode = mode;
+    document.getElementById('questViewAll').classList.toggle('active', mode === 'all');
+    document.getElementById('questViewMap').classList.toggle('active', mode === 'map');
+    document.getElementById('questViewTree').classList.toggle('active', mode === 'tree');
+    document.getElementById('questAllView').style.display = mode === 'all' ? '' : 'none';
+    document.getElementById('questMapView').style.display = mode === 'map' ? '' : 'none';
+    document.getElementById('questTreeView').style.display = mode === 'tree' ? '' : 'none';
+    if (mode === 'map') questRenderMapView();
+  };
+
+  // ── Sort ──
+  window.questSetSort = function(field) {
+    if (questSort === field) {
+      questSortDir = questSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      questSort = field;
+      questSortDir = 'asc';
+    }
+    questRenderTable();
+  };
+
+  // ── Load quest list from API ──
+  window.questLoadList = function() {
     var search = (document.getElementById('questSearchInput') || {}).value || '';
-    var params = 'quests?sort=' + encodeURIComponent(questBrowserSort)
-      + '&dir=' + encodeURIComponent(questBrowserSortDir);
+    var trader = (document.getElementById('questFilterTrader') || {}).value || '';
+    var type = (document.getElementById('questFilterType') || {}).value || '';
+    var map = (document.getElementById('questFilterMap') || {}).value || '';
+    var offset = questPage * questLimit;
+
+    var params = 'quests?limit=' + questLimit + '&offset=' + offset;
     if (search) params += '&search=' + encodeURIComponent(search);
-    if (questBrowserMapFilter && questBrowserMapFilter !== 'all')
-      params += '&map=' + encodeURIComponent(questBrowserMapFilter);
+    if (trader) params += '&trader=' + encodeURIComponent(trader);
+    if (type) params += '&type=' + encodeURIComponent(type);
+    if (map) params += '&map=' + encodeURIComponent(map);
 
     api(params).then(function(d) {
-      questsLoaded = true;
-      questBrowserData = d.quests || [];
-      questBrowserMaps = d.maps || [];
-      document.getElementById('questCountLabel').textContent = d.total + ' quests';
-      renderQuestMapChips();
-      renderQuestBrowserTable();
+      questList = d.quests || [];
+      questTotal = d.total || 0;
+      document.getElementById('questCountLabel').textContent = questTotal + ' quests';
+
+      // Populate type filter from data if empty
+      var typeSelect = document.getElementById('questFilterType');
+      if (typeSelect && typeSelect.options.length <= 1 && questList.length > 0) {
+        var types = {};
+        questList.forEach(function(q) { if (q.type) types[q.type] = true; });
+        Object.keys(types).sort().forEach(function(t) {
+          var opt = document.createElement('option');
+          opt.value = t; opt.textContent = t;
+          typeSelect.appendChild(opt);
+        });
+      }
+
+      questRenderTable();
+      questRenderPagination();
+      if (questViewMode === 'map') questRenderMapView();
     }).catch(function(e) {
-      document.getElementById('questBrowserBody').innerHTML =
-        '<tr><td colspan="6" style="text-align:center;color:var(--error-bright);padding:20px">Failed to load quests: ' + escH(e.message) + '</td></tr>';
+      document.getElementById('questTableBody').innerHTML =
+        '<tr><td colspan="6" style="text-align:center;color:var(--error-bright);padding:20px">Failed to load: ' + escH(e.message) + '</td></tr>';
     });
-  }
+  };
 
-  function renderQuestMapChips() {
-    var el = document.getElementById('questMapChips');
-    var total = 0;
-    questBrowserMaps.forEach(function(m) { total += m.count; });
-
-    var html = '<button class="qb-chip' + (questBrowserMapFilter === 'all' ? ' active' : '') +
-      '" onclick="setQuestMapFilter(\'all\')">All <span class="qb-chip-count">(' + total + ')</span></button>';
-
-    questBrowserMaps.forEach(function(m) {
-      var active = questBrowserMapFilter === m.location ? ' active' : '';
-      html += '<button class="qb-chip' + active + '" onclick="setQuestMapFilter(\'' + escA(m.location) + '\')">' +
-        escH(m.locationName) + ' <span class="qb-chip-count">(' + m.count + ')</span></button>';
-    });
-    el.innerHTML = html;
-  }
-
-  function renderQuestBrowserTable() {
+  // ── Render quest table (All Quests view) ──
+  function questRenderTable() {
     // Update sort arrows
     ['name','trader','map','level','objectives'].forEach(function(f) {
-      var arrow = document.getElementById('qbArrow_' + f);
-      if (arrow) arrow.textContent = questBrowserSort === f ? (questBrowserSortDir === 'asc' ? '\u25B2' : '\u25BC') : '';
+      var arrow = document.getElementById('questArrow_' + f);
+      if (arrow) arrow.textContent = questSort === f ? (questSortDir === 'asc' ? '\u25B2' : '\u25BC') : '';
     });
 
-    var body = document.getElementById('questBrowserBody');
-    if (questBrowserData.length === 0) {
-      body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px">No quests found</td></tr>';
+    var config = questConfig || {};
+    var disabled = config.disabledQuests || [];
+    var overrides = config.questOverrides || {};
+    var showDisabled = !!(document.getElementById('questShowDisabled') || {}).checked;
+
+    // Filter disabled quests unless toggle is on
+    var filtered = questList.filter(function(q) {
+      if (!showDisabled) {
+        var isDisabled = disabled.indexOf(q.questId) !== -1 || q.isDisabled;
+        if (isDisabled) return false;
+      }
+      return true;
+    });
+
+    // Client-side sort
+    filtered.sort(function(a, b) {
+      var va, vb;
+      switch (questSort) {
+        case 'name': va = (a.questName || '').toLowerCase(); vb = (b.questName || '').toLowerCase(); return questSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        case 'trader': va = (a.traderName || '').toLowerCase(); vb = (b.traderName || '').toLowerCase(); var tc = questSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va); return tc !== 0 ? tc : (a.levelRequired || 0) - (b.levelRequired || 0);
+        case 'map': va = (a.locationName || '').toLowerCase(); vb = (b.locationName || '').toLowerCase(); return questSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        case 'level': return questSortDir === 'asc' ? (a.levelRequired || 0) - (b.levelRequired || 0) : (b.levelRequired || 0) - (a.levelRequired || 0);
+        case 'objectives': return questSortDir === 'asc' ? (a.objectiveCount || 0) - (b.objectiveCount || 0) : (b.objectiveCount || 0) - (a.objectiveCount || 0);
+        default: return 0;
+      }
+    });
+
+    var body = document.getElementById('questTableBody');
+    if (filtered.length === 0) {
+      body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:40px">No quests found' +
+        (disabled.length > 0 && !showDisabled ? ' <span style="font-size:11px">('+disabled.length+' disabled — check "Show Disabled" to see them)</span>' : '') + '</td></tr>';
       return;
     }
 
     var html = '';
-    questBrowserData.forEach(function(q, i) {
-      var isExp = !!questBrowserExpanded[q.questId];
-      html += '<tr>';
-      html += '<td style="font-weight:500">' + escH(q.questName) + '</td>';
+    filtered.forEach(function(q) {
+      var isDisabled = disabled.indexOf(q.questId) !== -1 || q.isDisabled;
+      var hasOverride = !!overrides[q.questId] || q.hasOverrides;
+      var rowClass = 'quest-row';
+      if (isDisabled) rowClass += ' quest-disabled';
+      else if (hasOverride) rowClass += ' quest-modified';
+      rowClass += ' ' + questGetTraderBorderClass(q.traderName);
+
+      // Status: disabled (red), modified (gold), default (grey)
+      var statusDot, statusTitle;
+      if (isDisabled) {
+        statusDot = 'disabled'; statusTitle = 'Disabled (level set to 999)';
+      } else if (hasOverride) {
+        statusDot = 'modified'; statusTitle = 'Has overrides';
+      } else {
+        statusDot = 'default'; statusTitle = 'Default (no changes)';
+      }
+
+      html += '<tr class="' + rowClass + '" onclick="questOpenDetail(\'' + escA(q.questId) + '\')">';
+      html += '<td style="font-weight:500;padding-left:12px">' + escH(q.questName) + '</td>';
       html += '<td>' + escH(q.traderName) + '</td>';
       html += '<td>' + escH(q.locationName) + '</td>';
-      html += '<td style="text-align:center">' + q.levelRequired + '</td>';
-      html += '<td style="text-align:center">' + q.objectiveCount + '</td>';
-      html += '<td><span class="quest-chevron' + (isExp ? ' expanded' : '') + '" id="qbchev_' + i + '" onclick="toggleQuestBrowserDetail(\'' + escA(q.questId) + '\',' + i + ')">&#9654;</span></td>';
+      html += '<td style="text-align:center">' + (q.levelRequired || '—') + '</td>';
+      html += '<td style="text-align:center">' + (q.objectiveCount || 0) + '</td>';
+      html += '<td style="text-align:center" title="' + statusTitle + '"><span class="quest-status-dot ' + statusDot + '"></span></td>';
       html += '</tr>';
-      // Detail row (hidden by default)
-      html += '<tr class="qb-detail-row" id="qbdet_' + i + '" style="display:' + (isExp ? '' : 'none') + '">';
-      html += '<td colspan="6"><div class="qb-detail-inner" id="qbdetc_' + i + '">';
-      if (isExp) html += buildQuestDetailHtml(q.questId, i);
-      html += '</div></td></tr>';
     });
     body.innerHTML = html;
+
+    // Update count label to reflect filtered count
+    var countLabel = document.getElementById('questCountLabel');
+    if (countLabel) {
+      var hiddenCount = questList.length - filtered.length;
+      countLabel.textContent = filtered.length + ' quests' + (hiddenCount > 0 ? ' (' + hiddenCount + ' hidden)' : '');
+    }
   }
 
-  window.toggleQuestBrowserDetail = function(questId, idx) {
-    var wasExpanded = !!questBrowserExpanded[questId];
-    questBrowserExpanded[questId] = !wasExpanded;
-    var chevron = document.getElementById('qbchev_' + idx);
-    var detail = document.getElementById('qbdet_' + idx);
-    var detailContent = document.getElementById('qbdetc_' + idx);
-    if (chevron) chevron.classList.toggle('expanded', !wasExpanded);
-    if (detail) detail.style.display = wasExpanded ? 'none' : '';
-    if (!wasExpanded && detailContent) {
-      detailContent.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px">Loading...</div>';
-      api('quests/' + encodeURIComponent(questId)).then(function(d) {
-        detailContent.innerHTML = buildQuestDetailFromData(d);
-      }).catch(function(e) {
-        detailContent.innerHTML = '<div style="color:var(--error-bright);font-size:12px;padding:8px">Failed to load: ' + escH(e.message) + '</div>';
-      });
-    }
+  // ── Pagination ──
+  function questRenderPagination() {
+    var el = document.getElementById('questPagination');
+    if (!el) return;
+    var totalPages = Math.max(1, Math.ceil(questTotal / questLimit));
+    var curPage = questPage + 1;
+    if (questTotal <= questLimit) { el.innerHTML = ''; return; }
+
+    var html = '<button onclick="questPrevPage()" style="background:var(--bg-input);border:1px solid var(--border);color:var(--text-dim);padding:4px 10px;border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px"' +
+      (questPage === 0 ? ' disabled style="opacity:0.3;cursor:default"' : '') + '>&laquo; Prev</button>';
+    html += '<span>Page ' + curPage + ' of ' + totalPages + '</span>';
+    html += '<button onclick="questNextPage()" style="background:var(--bg-input);border:1px solid var(--border);color:var(--text-dim);padding:4px 10px;border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px"' +
+      (curPage >= totalPages ? ' disabled style="opacity:0.3;cursor:default"' : '') + '>Next &raquo;</button>';
+    html += '<span style="color:var(--text-muted);margin-left:8px">Showing ' + Math.min(questTotal, questPage * questLimit + 1) + '-' + Math.min(questTotal, (questPage + 1) * questLimit) + ' of ' + questTotal + '</span>';
+    el.innerHTML = html;
+  }
+
+  window.questPrevPage = function() { if (questPage > 0) { questPage--; questLoadList(); } };
+  window.questNextPage = function() { if ((questPage + 1) * questLimit < questTotal) { questPage++; questLoadList(); } };
+
+  // ── By Map View ──
+  function questRenderMapView() {
+    var container = document.getElementById('questMapGroups');
+    if (!container) return;
+
+    var config = questConfig || {};
+    var disabled = config.disabledQuests || [];
+    var overrides = config.questOverrides || {};
+    var showDisabled = !!(document.getElementById('questShowDisabled') || {}).checked;
+
+    // Filter disabled quests
+    var visibleQuests = questList.filter(function(q) {
+      if (!showDisabled) {
+        var isDisabled = disabled.indexOf(q.questId) !== -1 || q.isDisabled;
+        if (isDisabled) return false;
+      }
+      return true;
+    });
+
+    // Group quests by locationName
+    var groups = {};
+    visibleQuests.forEach(function(q) {
+      var loc = q.locationName || 'Unknown';
+      if (!groups[loc]) groups[loc] = [];
+      groups[loc].push(q);
+    });
+
+    // Sort map names, put "Any Location" last
+    var mapNames = Object.keys(groups).sort(function(a, b) {
+      if (a === 'Any Location') return 1;
+      if (b === 'Any Location') return -1;
+      return a.localeCompare(b);
+    });
+
+    var html = '';
+    mapNames.forEach(function(mapName) {
+      var quests = groups[mapName];
+      var isOpen = !!questMapGroupsOpen[mapName];
+      html += '<div class="quest-map-group-header' + (isOpen ? ' open' : '') + '" onclick="questToggleMapGroup(\'' + escA(mapName) + '\')">';
+      html += '<span class="quest-map-chevron">&#9654;</span>';
+      html += '<span class="quest-map-name">' + escH(mapName) + '</span>';
+      html += '<span class="quest-map-count">(' + quests.length + ' quests)</span>';
+      html += '</div>';
+
+      html += '<div class="quest-map-group-body" style="display:' + (isOpen ? 'block' : 'none') + '" id="questMapGroup_' + escA(mapName) + '">';
+      if (isOpen) {
+        html += '<table class="data-table" style="width:100%;margin-bottom:4px"><thead><tr>';
+        html += '<th style="text-align:left">Quest Name</th><th style="text-align:left">Trader</th>';
+        html += '<th style="text-align:center;width:60px">Lvl</th><th style="text-align:center;width:50px">Status</th>';
+        html += '</tr></thead><tbody>';
+        quests.forEach(function(q) {
+          var isDisabled = disabled.indexOf(q.questId) !== -1 || q.isDisabled;
+          var hasOverride = !!overrides[q.questId] || q.hasOverrides;
+          var rowClass = 'quest-row';
+          if (isDisabled) rowClass += ' quest-disabled';
+          else if (hasOverride) rowClass += ' quest-modified';
+          var statusDot = isDisabled ? 'disabled' : (hasOverride ? 'modified' : 'default');
+          var statusTitle = isDisabled ? 'Disabled' : (hasOverride ? 'Has overrides' : 'Default');
+          html += '<tr class="' + rowClass + '" onclick="questOpenDetail(\'' + escA(q.questId) + '\')">';
+          html += '<td style="font-weight:500">' + escH(q.questName) + '</td>';
+          html += '<td>' + escH(q.traderName) + '</td>';
+          html += '<td style="text-align:center">' + (q.levelRequired || '—') + '</td>';
+          html += '<td style="text-align:center" title="' + statusTitle + '"><span class="quest-status-dot ' + statusDot + '"></span></td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  window.questToggleMapGroup = function(mapName) {
+    questMapGroupsOpen[mapName] = !questMapGroupsOpen[mapName];
+    questRenderMapView();
   };
 
-  function buildQuestDetailHtml(questId, idx) {
-    return '<div style="color:var(--text-dim);font-size:12px;padding:8px">Loading...</div>';
-  }
+  // ── Detail Panel ──
+  window.questOpenDetail = function(questId) {
+    questCurrentId = questId;
+    document.getElementById('questMainView').style.display = 'none';
+    document.getElementById('questDetailPanel').style.display = 'block';
 
-  function buildQuestDetailFromData(d) {
-    var html = '';
-    // Objectives
-    if (d.objectives && d.objectives.length > 0) {
-      html += '<h4>Objectives</h4><ul class="qb-obj-list">';
-      d.objectives.forEach(function(obj) {
-        html += '<li class="qb-obj-item">';
-        html += '<span class="qb-obj-type">' + escH(obj.type) + '</span>';
-        html += '<span>' + escH(obj.description) + '</span>';
-        html += '</li>';
-      });
-      html += '</ul>';
-    } else {
-      html += '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px">No objectives defined</div>';
-    }
+    // Show loading state
+    document.getElementById('questDetailHeader').innerHTML = '<div style="color:var(--text-dim);padding:10px">Loading quest details...</div>';
+    document.getElementById('questPrereqBody').innerHTML = '';
+    document.getElementById('questObjBody').innerHTML = '';
+    document.getElementById('questRewardBody').innerHTML = '';
+    document.getElementById('questPlayerTable').innerHTML = '';
 
-    // Player state setter
-    html += '<h4>Set Player Quest State</h4>';
-    html += '<div class="qb-state-setter">';
-    html += '<label>Player</label>';
-    html += '<select id="qbPlayer_' + escA(d.questId) + '" class="qb-player-select" style="min-width:140px">';
-    html += '<option value="">Select player...</option>';
-    if (questPlayersCache) {
-      questPlayersCache.forEach(function(p) {
-        html += '<option value="' + escA(p.sessionId) + '">' + escH(p.nickname) + ' (Lv ' + p.level + ')</option>';
-      });
-    }
-    html += '</select>';
-    html += '<label>Status</label>';
-    html += '<select id="qbStatus_' + escA(d.questId) + '">';
-    ['Locked','AvailableForStart','Started','AvailableForFinish','Success','Fail','FailRestartable','MarkedAsFailed','Expired'].forEach(function(s) {
-      html += '<option value="' + s + '">' + s + '</option>';
+    Promise.all([
+      api('quests/' + encodeURIComponent(questId)),
+      api('quests/' + encodeURIComponent(questId) + '/players').catch(function() { return []; })
+    ]).then(function(results) {
+      questDetailData = results[0];
+      var players = results[1];
+      questRenderDetailHeader(results[0]);
+      questRenderPrerequisites(results[0]);
+      questRenderObjectives(results[0]);
+      questRenderRewards(results[0]);
+      questRenderPlayerStatus(results[0], players);
+    }).catch(function(e) {
+      document.getElementById('questDetailHeader').innerHTML =
+        '<div style="color:var(--error-bright);padding:10px">Failed to load: ' + escH(e.message) + '</div>';
+    });
+  };
+
+  window.questBackToList = function() {
+    questCurrentId = null;
+    questDetailData = null;
+    document.getElementById('questDetailPanel').style.display = 'none';
+    document.getElementById('questMainView').style.display = 'block';
+    questRefreshAll();
+  };
+
+  // ── Render detail header ──
+  function questRenderDetailHeader(d) {
+    var config = questConfig || {};
+    var disabled = (config.disabledQuests || []);
+    var isDisabled = disabled.indexOf(d.questId) !== -1;
+    var override = (config.questOverrides || {})[d.questId] || {};
+
+    var html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">';
+    // Left: info
+    html += '<div style="flex:1;min-width:300px">';
+    html += '<div style="font-size:20px;font-weight:700;color:var(--text-bright);margin-bottom:12px;font-family:var(--font-mono)">' + escH(d.questName) + '</div>';
+
+    html += '<div class="quest-detail-info">';
+    // Trader
+    html += '<span class="quest-detail-label">Trader</span>';
+    html += '<select id="questDetailTrader" style="background:var(--bg-input);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-family:var(--font-mono);font-size:12px;max-width:200px">';
+    questTraders.forEach(function(t) {
+      var sel = (override.traderIdOverride || d.traderId) === t.id ? ' selected' : '';
+      html += '<option value="' + escA(t.id) + '"' + sel + '>' + escH(t.name) + '</option>';
     });
     html += '</select>';
-    html += '<button class="btn btn-accent btn-sm" onclick="submitQuestBrowserState(\'' + escA(d.questId) + '\')">Set</button>';
-    html += '<span id="qbStateMsg_' + escA(d.questId) + '" style="font-size:12px"></span>';
+
+    // Level
+    html += '<span class="quest-detail-label">Level</span>';
+    html += '<input type="number" id="questDetailLevel" min="1" max="79" value="' + (override.levelRequirementOverride || d.levelRequired || 1) + '" class="cc-num-input" style="width:60px">';
+
+    // Location
+    html += '<span class="quest-detail-label">Location</span>';
+    html += '<span style="color:var(--text)">' + escH(d.locationName || 'Any') + ' <span style="font-size:10px;color:var(--text-dim)">(' + escH(d.location || 'any') + ')</span></span>';
+
+    // Type
+    html += '<span class="quest-detail-label">Type</span>';
+    html += '<span style="color:var(--text)">' + escH(d.type || 'Unknown') + '</span>';
+
+    html += '</div>'; // end quest-detail-info
+    html += '</div>'; // end left
+
+    // Right: actions
+    html += '<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">';
+    // Enable/Disable toggle
+    html += '<div style="display:flex;align-items:center;gap:8px">';
+    html += '<span style="font-size:12px;color:var(--text-dim);font-family:var(--font-mono)">ENABLED</span>';
+    html += '<label class="cc-toggle"><input type="checkbox" id="questDetailEnabled" ' + (isDisabled ? '' : 'checked') + ' onchange="questToggleEnabled()"><span class="cc-toggle-slider"></span></label>';
+    html += '</div>';
+    // Remove overrides
+    html += '<button onclick="questRemoveOverride()" style="padding:6px 12px;background:transparent;border:1px solid rgba(139,58,58,0.3);color:var(--error-bright);border-radius:4px;font-family:var(--font-mono);font-size:11px;cursor:pointer">Remove All Overrides</button>';
     html += '</div>';
 
+    html += '</div>'; // end flex container
+    document.getElementById('questDetailHeader').innerHTML = html;
+  }
+
+  // ── Toggle enabled ──
+  window.questToggleEnabled = function() {
+    var checked = document.getElementById('questDetailEnabled').checked;
+    var endpoint = checked ? 'enable' : 'disable';
+    api('quests/' + encodeURIComponent(questCurrentId) + '/' + endpoint, 'POST', {}).then(function() {
+      return api('quests/apply', 'POST', {});
+    }).then(function() {
+      questShowDetailToast(checked ? 'Quest enabled' : 'Quest disabled');
+      // Refresh config
+      api('quests/config').then(function(c) { questConfig = c; questRenderDetailHeader(questDetailData); });
+    }).catch(function(e) {
+      questShowDetailToast('Failed: ' + e.message, true);
+    });
+  };
+
+  // ── Render prerequisites ──
+  function questRenderPrerequisites(d) {
+    var prereqs = d.prerequisites || [];
+    document.getElementById('questPrereqCount').textContent = '(' + prereqs.length + ')';
+
+    if (prereqs.length === 0) {
+      document.getElementById('questPrereqBody').innerHTML =
+        '<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:4px 0">(none — this is a starter quest)</div>';
+      return;
+    }
+
+    var config = questConfig || {};
+    var override = (config.questOverrides || {})[questCurrentId] || {};
+    var removed = override.removedPrerequisites || [];
+
+    var html = '';
+    prereqs.forEach(function(p) {
+      var isRemoved = removed.indexOf(p.questId) !== -1;
+      html += '<div class="quest-prereq-item" style="' + (isRemoved ? 'opacity:0.4;text-decoration:line-through' : '') + '">';
+      html += '<span class="quest-prereq-name">' + escH(p.questName || p.questId) + '</span>';
+      html += '<span class="quest-prereq-status">' + escH(p.status || 'Complete') + '</span>';
+      if (!isRemoved) {
+        html += '<button class="quest-prereq-remove" onclick="questRemovePrereq(\'' + escA(p.questId) + '\')">Remove</button>';
+      } else {
+        html += '<span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono)">REMOVED</span>';
+      }
+      html += '</div>';
+    });
+    document.getElementById('questPrereqBody').innerHTML = html;
+  }
+
+  window.questRemovePrereq = function(prereqQuestId) {
+    var config = questConfig || {};
+    var override = (config.questOverrides || {})[questCurrentId] || {};
+    var removed = override.removedPrerequisites || [];
+    if (removed.indexOf(prereqQuestId) === -1) removed.push(prereqQuestId);
+    // Mark locally and re-render
+    if (!config.questOverrides) config.questOverrides = {};
+    if (!config.questOverrides[questCurrentId]) config.questOverrides[questCurrentId] = {};
+    config.questOverrides[questCurrentId].removedPrerequisites = removed;
+    questRenderPrerequisites(questDetailData);
+  };
+
+  // ── Render objectives ──
+  function questRenderObjectives(d) {
+    var objectives = d.objectives || [];
+    document.getElementById('questObjCount').textContent = '(' + objectives.length + ')';
+
+    if (objectives.length === 0) {
+      document.getElementById('questObjBody').innerHTML =
+        '<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:4px 0">No objectives defined</div>';
+      return;
+    }
+
+    var config = questConfig || {};
+    var override = (config.questOverrides || {})[questCurrentId] || {};
+    var condOverrides = override.conditionOverrides || {};
+
+    var html = '';
+    objectives.forEach(function(obj, idx) {
+      var co = condOverrides[obj.conditionId] || {};
+      html += '<div class="quest-obj-card">';
+      html += '<div class="quest-obj-header">';
+      html += '<span class="quest-obj-type">' + escH(obj.type) + '</span>';
+      html += '<span class="quest-obj-desc">' + escH(obj.description) + '</span>';
+      html += '</div>';
+
+      html += '<div class="quest-obj-fields">';
+
+      // Value field (if applicable)
+      if (obj.originalValue != null) {
+        var curVal = co.valueOverride != null ? co.valueOverride : obj.originalValue;
+        html += '<span class="quest-obj-label">Count</span>';
+        html += '<div style="display:flex;align-items:center;gap:8px">';
+        html += '<input type="number" id="questObj_' + idx + '_val" min="0" value="' + curVal + '" class="cc-num-input" style="width:70px">';
+        if (obj.originalValue != curVal) {
+          html += '<span style="font-size:11px;color:var(--text-dim)">was ' + obj.originalValue + '</span>';
+        }
+        html += '</div>';
+      }
+
+      // FIR field (if applicable)
+      if (obj.type === 'HandoverItem' || obj.type === 'FindItem') {
+        var firVal = co.onlyFoundInRaidOverride != null ? co.onlyFoundInRaidOverride : obj.onlyFoundInRaid;
+        html += '<span class="quest-obj-label">FIR</span>';
+        html += '<label class="cc-toggle"><input type="checkbox" id="questObj_' + idx + '_fir" ' + (firVal ? 'checked' : '') + '><span class="cc-toggle-slider"></span></label>';
+      }
+
+      // Target info (read-only)
+      if (obj.targets && obj.targets.length > 0) {
+        html += '<span class="quest-obj-label">Target</span>';
+        html += '<span style="color:var(--text);font-size:12px">' + escH(obj.targets.join(', ')) + '</span>';
+      }
+
+      html += '</div>'; // end fields
+      html += '</div>'; // end card
+    });
+    document.getElementById('questObjBody').innerHTML = html;
+  }
+
+  // ── Render rewards ──
+  function questRenderRewards(d) {
+    var successRewards = d.rewards ? (d.rewards.filter(function(r) { return r.group === 'Success'; })) : [];
+    var failRewards = d.rewards ? (d.rewards.filter(function(r) { return r.group === 'Fail'; })) : [];
+    var startRewards = d.rewards ? (d.rewards.filter(function(r) { return r.group === 'Started'; })) : [];
+    var totalCount = (d.rewards || []).length;
+
+    document.getElementById('questRewardCount').textContent = '(' + totalCount + ')';
+
+    var config = questConfig || {};
+    var override = (config.questOverrides || {})[questCurrentId] || {};
+    var rewardOverrides = override.rewardOverrides || {};
+
+    var html = '';
+
+    if (successRewards.length > 0) {
+      html += '<div style="font-size:11px;color:var(--accent);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:4px">Success Rewards</div>';
+      successRewards.forEach(function(r, idx) {
+        html += questBuildRewardRow(r, idx, rewardOverrides);
+      });
+    }
+
+    if (startRewards.length > 0) {
+      html += '<div style="font-size:11px;color:var(--accent);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 8px 0">Start Rewards</div>';
+      startRewards.forEach(function(r, idx) {
+        html += questBuildRewardRow(r, idx + 1000, rewardOverrides);
+      });
+    }
+
+    if (failRewards.length > 0) {
+      html += '<div style="font-size:11px;color:var(--error-bright);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 8px 0">Fail Penalties</div>';
+      failRewards.forEach(function(r, idx) {
+        html += questBuildRewardRow(r, idx + 2000, rewardOverrides);
+      });
+    }
+
+    if (totalCount === 0) {
+      html = '<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:4px 0">No rewards defined</div>';
+    }
+
+    document.getElementById('questRewardBody').innerHTML = html;
+  }
+
+  function questBuildRewardRow(r, idx, rewardOverrides) {
+    var ro = rewardOverrides[r.rewardId] || {};
+    var html = '<div class="quest-reward-row">';
+    html += '<span class="quest-reward-type">' + escH(r.type) + '</span>';
+    html += '<span style="flex:1;color:var(--text)">' + escH(r.description || r.target || '') + '</span>';
+
+    if (r.value != null && r.type !== 'Item') {
+      var curVal = ro.valueOverride != null ? ro.valueOverride : r.value;
+      html += '<input type="number" id="questReward_' + idx + '_val" data-reward-id="' + escA(r.rewardId) + '" value="' + curVal + '" step="any" class="cc-num-input" style="width:80px">';
+      if (r.originalValue != null && r.originalValue != curVal) {
+        html += '<span style="font-size:11px;color:var(--text-dim);white-space:nowrap">was ' + r.originalValue + '</span>';
+      }
+    } else if (r.type === 'Item' && r.items && r.items.length > 0) {
+      html += '<span style="font-size:12px;color:var(--text-dim)">';
+      r.items.forEach(function(item, i) {
+        if (i > 0) html += ', ';
+        html += escH(item.name || item.tpl) + (item.count > 1 ? ' x' + item.count : '');
+      });
+      html += '</span>';
+    }
+
+    html += '</div>';
     return html;
   }
 
-  window.submitQuestBrowserState = function(questId) {
-    var playerSel = document.getElementById('qbPlayer_' + questId);
-    var statusSel = document.getElementById('qbStatus_' + questId);
-    var msgEl = document.getElementById('qbStateMsg_' + questId);
-    if (!playerSel || !statusSel) return;
-    var sid = playerSel.value;
-    var status = statusSel.value;
-    if (!sid) { if (msgEl) { msgEl.style.color = 'var(--error-bright)'; msgEl.textContent = 'Select a player'; } return; }
+  // ── Render player quest status ──
+  function questRenderPlayerStatus(d, players) {
+    var list = players || [];
+    document.getElementById('questPlayerCount').textContent = '(' + list.length + ')';
+
+    if (list.length === 0 && questPlayersCache && questPlayersCache.length > 0) {
+      // Build from players cache if no specific quest status data
+      list = questPlayersCache.map(function(p) {
+        return { sessionId: p.sessionId, playerName: p.nickname || p.name, status: null, level: p.level };
+      });
+    }
+
+    if (list.length === 0) {
+      document.getElementById('questPlayerTable').innerHTML =
+        '<div style="font-size:12px;color:var(--text-dim);font-style:italic">No players found</div>';
+      return;
+    }
+
+    var statuses = ['Locked','AvailableForStart','Started','AvailableForFinish','Success','Fail','FailRestartable','MarkedAsFailed','Expired'];
+
+    var html = '';
+    list.forEach(function(p) {
+      var curStatus = p.status || 'Not Started';
+      var pillClass = 'locked';
+      var sl = curStatus.toLowerCase();
+      if (sl === 'success') pillClass = 'success';
+      else if (sl === 'started') pillClass = 'started';
+      else if (sl === 'availableforstart') pillClass = 'available';
+      else if (sl === 'availableforfinish') pillClass = 'ready';
+      else if (sl.indexOf('fail') !== -1) pillClass = 'fail';
+
+      html += '<div class="quest-player-row">';
+      html += '<span class="quest-player-name">' + escH(p.playerName || p.sessionId) + '</span>';
+      html += '<span class="quest-status-pill ' + pillClass + '">' + escH(curStatus) + '</span>';
+      html += '<select id="questPlayerState_' + escA(p.sessionId) + '" style="background:var(--bg-input);border:1px solid var(--border);color:var(--text);font-size:12px;padding:4px 8px;border-radius:4px;font-family:var(--font-mono)">';
+      statuses.forEach(function(s) {
+        html += '<option value="' + s + '">' + s + '</option>';
+      });
+      html += '</select>';
+      html += '<button onclick="questSetPlayerState(\'' + escA(p.sessionId) + '\')" style="padding:4px 10px;background:var(--bg-input);border:1px solid var(--border);color:var(--accent);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px">Set</button>';
+      html += '<span id="questPlayerMsg_' + escA(p.sessionId) + '" style="font-size:11px"></span>';
+      html += '</div>';
+    });
+    document.getElementById('questPlayerTable').innerHTML = html;
+  }
+
+  window.questSetPlayerState = function(sessionId) {
+    var sel = document.getElementById('questPlayerState_' + sessionId);
+    var msgEl = document.getElementById('questPlayerMsg_' + sessionId);
+    if (!sel) return;
+    var status = sel.value;
     if (msgEl) { msgEl.style.color = 'var(--text-dim)'; msgEl.textContent = 'Setting...'; }
 
-    api('quests/' + encodeURIComponent(questId) + '/state', {
-      method: 'POST',
-      body: JSON.stringify({ sessionId: sid, status: status })
+    api('quests/' + encodeURIComponent(questCurrentId) + '/state', 'POST', {
+      sessionId: sessionId,
+      status: status
     }).then(function(d) {
       if (d.success) {
-        if (msgEl) { msgEl.style.color = 'var(--success-bright)'; msgEl.textContent = d.message || 'Done'; }
+        if (msgEl) { msgEl.style.color = 'var(--success-bright)'; msgEl.textContent = d.previousStatus + ' → ' + d.newStatus; }
       } else {
         if (msgEl) { msgEl.style.color = 'var(--error-bright)'; msgEl.textContent = d.error || 'Failed'; }
       }
@@ -10484,36 +11576,128 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     });
   };
 
-  window.setQuestSort = function(field) {
-    if (questBrowserSort === field) {
-      questBrowserSortDir = questBrowserSortDir === 'asc' ? 'desc' : 'asc';
-    } else {
-      questBrowserSort = field;
-      questBrowserSortDir = 'asc';
-    }
-    questBrowserExpanded = {};
-    loadQuestBrowser();
+  // ── Save per-quest override ──
+  window.questSaveOverride = function() {
+    var btnText = document.getElementById('questSaveText');
+    var spinner = document.getElementById('questSaveSpinner');
+    if (btnText) btnText.style.display = 'none';
+    if (spinner) spinner.style.display = 'inline';
+
+    var d = questDetailData;
+    if (!d) { if (spinner) spinner.style.display = 'none'; if (btnText) btnText.style.display = 'inline'; return; }
+
+    var config = questConfig || {};
+    var existingOverride = (config.questOverrides || {})[questCurrentId] || {};
+
+    // Gather trader override
+    var traderSel = document.getElementById('questDetailTrader');
+    var traderIdOverride = traderSel ? traderSel.value : null;
+    if (traderIdOverride === d.traderId) traderIdOverride = null; // no change
+
+    // Gather level override
+    var levelInput = document.getElementById('questDetailLevel');
+    var levelOverride = levelInput ? parseInt(levelInput.value) : null;
+    if (levelOverride === d.levelRequired) levelOverride = null; // no change
+
+    // Gather condition overrides
+    var conditionOverrides = {};
+    (d.objectives || []).forEach(function(obj, idx) {
+      var valInput = document.getElementById('questObj_' + idx + '_val');
+      var firInput = document.getElementById('questObj_' + idx + '_fir');
+      var co = {};
+      var hasOverride = false;
+
+      if (valInput) {
+        var newVal = parseFloat(valInput.value);
+        if (!isNaN(newVal) && newVal !== obj.originalValue) {
+          co.valueOverride = newVal;
+          hasOverride = true;
+        }
+      }
+      if (firInput) {
+        var newFir = firInput.checked;
+        if (newFir !== obj.onlyFoundInRaid) {
+          co.onlyFoundInRaidOverride = newFir;
+          hasOverride = true;
+        }
+      }
+      if (hasOverride) conditionOverrides[obj.conditionId] = co;
+    });
+
+    // Gather reward overrides
+    var rewardOverrides = {};
+    var rewardInputs = document.querySelectorAll('[id^="questReward_"][id$="_val"]');
+    rewardInputs.forEach(function(input) {
+      var rewardId = input.getAttribute('data-reward-id');
+      if (!rewardId) return;
+      var newVal = parseFloat(input.value);
+      if (!isNaN(newVal)) {
+        // Find original reward
+        var origReward = (d.rewards || []).find(function(r) { return r.rewardId === rewardId; });
+        if (origReward && newVal !== origReward.originalValue && newVal !== origReward.value) {
+          rewardOverrides[rewardId] = { valueOverride: newVal };
+        }
+      }
+    });
+
+    // Gather removed prerequisites
+    var removedPrerequisites = existingOverride.removedPrerequisites || [];
+
+    var body = {};
+    if (traderIdOverride) body.traderIdOverride = traderIdOverride;
+    if (levelOverride != null) body.levelRequirementOverride = levelOverride;
+    if (Object.keys(conditionOverrides).length > 0) body.conditionOverrides = conditionOverrides;
+    if (Object.keys(rewardOverrides).length > 0) body.rewardOverrides = rewardOverrides;
+    if (removedPrerequisites.length > 0) body.removedPrerequisites = removedPrerequisites;
+
+    api('quests/' + encodeURIComponent(questCurrentId) + '/override', 'POST', body).then(function() {
+      return api('quests/apply', 'POST', {});
+    }).then(function(result) {
+      if (btnText) btnText.style.display = 'inline';
+      if (spinner) spinner.style.display = 'none';
+      if (result.success) {
+        questShowDetailToast('Saved and applied: ' + (result.questsModified || 0) + ' quests modified');
+        // Refresh config
+        api('quests/config').then(function(c) { questConfig = c; });
+      } else {
+        questShowDetailToast('Apply failed: ' + (result.error || 'Unknown'), true);
+      }
+    }).catch(function(e) {
+      if (btnText) btnText.style.display = 'inline';
+      if (spinner) spinner.style.display = 'none';
+      questShowDetailToast('Save failed: ' + e.message, true);
+    });
   };
 
-  window.setQuestMapFilter = function(location) {
-    questBrowserMapFilter = location;
-    questBrowserExpanded = {};
-    loadQuestBrowser();
+  // ── Remove override ──
+  window.questRemoveOverride = function() {
+    if (!confirm('Remove all overrides for this quest and restore defaults?')) return;
+
+    api('quests/' + encodeURIComponent(questCurrentId) + '/override', { method: 'DELETE' }).then(function() {
+      return api('quests/apply', 'POST', {});
+    }).then(function() {
+      questShowDetailToast('Override removed, quest restored to defaults');
+      // Refresh config and re-render
+      api('quests/config').then(function(c) {
+        questConfig = c;
+        // Re-fetch detail
+        api('quests/' + encodeURIComponent(questCurrentId)).then(function(d) {
+          questDetailData = d;
+          questRenderDetailHeader(d);
+          questRenderPrerequisites(d);
+          questRenderObjectives(d);
+          questRenderRewards(d);
+        });
+      });
+    }).catch(function(e) {
+      questShowDetailToast('Failed: ' + e.message, true);
+    });
   };
 
-  // Pre-fetch player list for quest state setter
-  function ensureQuestPlayersCache() {
-    if (questPlayersCache !== null) return;
-    api('players').then(function(d) {
-      questPlayersCache = d.players || [];
-    }).catch(function() { questPlayersCache = []; });
-  }
-
-  // Override loadQuestBrowser to also load players cache
-  var _origLoadQuestBrowser = loadQuestBrowser;
-  loadQuestBrowser = function() {
-    ensureQuestPlayersCache();
-    _origLoadQuestBrowser();
+  // ── Toggle section ──
+  window.questToggleSection = function(sectionId) {
+    var el = document.getElementById(sectionId);
+    if (el) el.classList.toggle('open');
   };
 
   // ═══════════════════════════════════════════════════════

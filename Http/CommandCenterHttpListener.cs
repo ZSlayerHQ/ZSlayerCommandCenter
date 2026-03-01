@@ -27,7 +27,8 @@ public class CommandCenterHttpListener(
     MailSendService mailSendService,
     PlayerManagementService playerManagementService,
     PlayerMailService playerMailService,
-    QuestBrowserService questBrowserService,
+    QuestDiscoveryService questDiscoveryService,
+    QuestOverrideService questOverrideService,
     FleaPriceService fleaPriceService,
     OfferRegenerationService offerRegenerationService,
     HeadlessLogService headlessLogService,
@@ -130,15 +131,21 @@ public class CommandCenterHttpListener(
             }
 
             // Handle parameterized quest routes: quests/{questId}/action
+            // Must exclude known sub-routes handled by the switch-case below
             if (path.StartsWith("quests/") && path.Length > "quests/".Length)
             {
                 var segments = path.Split('/');
                 if (segments.Length >= 2)
                 {
-                    var questId = segments[1];
-                    var action = segments.Length >= 3 ? segments[2] : "";
-                    await HandleQuestRoute(context, headerSessionId, questId, action, method);
-                    return;
+                    var firstSeg = segments[1];
+                    // Skip known fixed routes — let them fall through to the switch-case
+                    if (firstSeg is not ("config" or "apply" or "reset" or "status" or "tree" or "traders" or "locations"))
+                    {
+                        var questId = firstSeg;
+                        var action = segments.Length >= 3 ? segments[2] : "";
+                        await HandleQuestRoute(context, headerSessionId, questId, action, method);
+                        return;
+                    }
                 }
             }
 
@@ -286,9 +293,33 @@ public class CommandCenterHttpListener(
                 case "headless-console" when method == "GET":
                     await HandleHeadlessConsole(context, headerSessionId);
                     break;
-                // Quest browser routes
+                // Quest editor routes
                 case "quests" when method == "GET":
                     await HandleQuestList(context, headerSessionId);
+                    break;
+                case "quests/config" when method == "GET":
+                    await HandleQuestConfig(context, headerSessionId);
+                    break;
+                case "quests/config/global" when method == "POST":
+                    await HandleQuestGlobalConfig(context, headerSessionId);
+                    break;
+                case "quests/apply" when method == "POST":
+                    await HandleQuestApply(context, headerSessionId);
+                    break;
+                case "quests/reset" when method == "POST":
+                    await HandleQuestReset(context, headerSessionId);
+                    break;
+                case "quests/status" when method == "GET":
+                    await HandleQuestStatus(context, headerSessionId);
+                    break;
+                case "quests/tree" when method == "GET":
+                    await HandleQuestTree(context, headerSessionId);
+                    break;
+                case "quests/traders" when method == "GET":
+                    await HandleQuestTraders(context, headerSessionId);
+                    break;
+                case "quests/locations" when method == "GET":
+                    await HandleQuestLocations(context, headerSessionId);
                     break;
                 // Player management routes
                 case "players" when method == "GET":
@@ -1005,9 +1036,17 @@ public class CommandCenterHttpListener(
         var search = query["search"].FirstOrDefault();
         var map = query["map"].FirstOrDefault();
         var trader = query["trader"].FirstOrDefault();
+        var type = query["type"].FirstOrDefault();
         var sort = query["sort"].FirstOrDefault();
         var sortDir = query["dir"].FirstOrDefault();
-        var result = questBrowserService.GetQuests(search, map, trader, sort, sortDir);
+        var limitStr = query["limit"].FirstOrDefault();
+        var offsetStr = query["offset"].FirstOrDefault();
+
+        int limit = int.TryParse(limitStr, out var limVal) ? Math.Clamp(limVal, 1, 200) : 50;
+        int offset = int.TryParse(offsetStr, out var offVal) ? Math.Max(0, offVal) : 0;
+
+        var config = configService.GetConfig().Quests;
+        var result = questDiscoveryService.GetQuests(config, search, map, trader, type, sort, sortDir, limit, offset);
         await WriteJson(context, 200, result);
     }
 
@@ -1018,28 +1057,190 @@ public class CommandCenterHttpListener(
         switch (action)
         {
             case "" when method == "GET":
-                var detail = questBrowserService.GetQuestDetail(questId);
+            {
+                var config = configService.GetConfig().Quests;
+                var detail = questDiscoveryService.GetQuestDetail(questId, config);
                 if (detail == null)
                     await WriteJson(context, 404, new { error = "Quest not found" });
                 else
                     await WriteJson(context, 200, detail);
                 break;
+            }
+
+            case "override" when method == "POST":
+            {
+                var body = await ReadBody<QuestOverrideRequest>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    return;
+                }
+
+                var config = configService.GetConfig().Quests;
+                var questOverride = config.QuestOverrides.GetValueOrDefault(questId) ?? new QuestOverrideConfig();
+
+                // Merge incoming overrides
+                if (body.TraderIdOverride != null) questOverride.TraderIdOverride = body.TraderIdOverride;
+                if (body.LevelRequirementOverride.HasValue) questOverride.LevelRequirementOverride = body.LevelRequirementOverride;
+                if (body.RemovedPrerequisites != null) questOverride.RemovedPrerequisites = body.RemovedPrerequisites;
+                if (body.ConditionOverrides != null)
+                {
+                    foreach (var (k, v) in body.ConditionOverrides)
+                        questOverride.ConditionOverrides[k] = v;
+                }
+                if (body.RewardOverrides != null)
+                {
+                    foreach (var (k, v) in body.RewardOverrides)
+                        questOverride.RewardOverrides[k] = v;
+                }
+                if (body.RemovedRewards != null) questOverride.RemovedRewards = body.RemovedRewards;
+                if (body.LocaleOverrides != null)
+                {
+                    foreach (var (k, v) in body.LocaleOverrides)
+                        questOverride.LocaleOverrides[k] = v;
+                }
+
+                config.QuestOverrides[questId] = questOverride;
+                configService.SaveConfig();
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+
+            case "override" when method == "DELETE":
+            {
+                var config = configService.GetConfig().Quests;
+                config.QuestOverrides.Remove(questId);
+                configService.SaveConfig();
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+
+            case "disable" when method == "POST":
+            {
+                var config = configService.GetConfig().Quests;
+                if (!config.DisabledQuests.Contains(questId))
+                    config.DisabledQuests.Add(questId);
+                configService.SaveConfig();
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+
+            case "enable" when method == "POST":
+            {
+                var config = configService.GetConfig().Quests;
+                config.DisabledQuests.Remove(questId);
+                configService.SaveConfig();
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
 
             case "state" when method == "POST":
+            {
                 var body = await ReadBody<SetQuestStateRequest>(context);
                 if (body == null || string.IsNullOrEmpty(body.SessionId) || string.IsNullOrEmpty(body.Status))
                 {
-                    await WriteJson(context, 400, new SetQuestStateResponse { Success = false, Error = "SessionId and Status required" });
+                    await WriteJson(context, 400, new { error = "SessionId and Status required" });
                     return;
                 }
-                var result = questBrowserService.SetQuestState(headerSessionId, questId, body.SessionId, body.Status);
+                var result = questOverrideService.SetPlayerQuestState(headerSessionId, questId, body.SessionId, body.Status);
                 await WriteJson(context, 200, result);
                 break;
+            }
+
+            case "players" when method == "GET":
+            {
+                var result = questDiscoveryService.GetPlayerQuestStatuses(questId);
+                await WriteJson(context, 200, result);
+                break;
+            }
 
             default:
                 await WriteJson(context, 404, new { error = "Not found" });
                 break;
         }
+    }
+
+    private async Task HandleQuestConfig(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var config = configService.GetConfig().Quests;
+        await WriteJson(context, 200, config);
+    }
+
+    private async Task HandleQuestGlobalConfig(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var body = await ReadBody<QuestGlobalConfigRequest>(context);
+        if (body == null)
+        {
+            await WriteJson(context, 400, new { error = "Invalid request body" });
+            return;
+        }
+
+        var config = configService.GetConfig().Quests;
+        if (body.GlobalXpMultiplier.HasValue) config.GlobalXpMultiplier = Math.Clamp(body.GlobalXpMultiplier.Value, 0.0, 100.0);
+        if (body.GlobalStandingMultiplier.HasValue) config.GlobalStandingMultiplier = Math.Clamp(body.GlobalStandingMultiplier.Value, 0.0, 10.0);
+        if (body.GlobalItemRewardMultiplier.HasValue) config.GlobalItemRewardMultiplier = Math.Clamp(body.GlobalItemRewardMultiplier.Value, 0.1, 10.0);
+        if (body.GlobalKillCountMultiplier.HasValue) config.GlobalKillCountMultiplier = Math.Clamp(body.GlobalKillCountMultiplier.Value, 0.1, 10.0);
+        if (body.GlobalHandoverCountMultiplier.HasValue) config.GlobalHandoverCountMultiplier = Math.Clamp(body.GlobalHandoverCountMultiplier.Value, 0.1, 10.0);
+        if (body.RemoveFIRRequirements.HasValue) config.RemoveFIRRequirements = body.RemoveFIRRequirements.Value;
+        if (body.GlobalLevelRequirementShift.HasValue) config.GlobalLevelRequirementShift = Math.Clamp(body.GlobalLevelRequirementShift.Value, -50, 0);
+
+        configService.SaveConfig();
+        await WriteJson(context, 200, new { success = true });
+    }
+
+    private async Task HandleQuestApply(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var result = questOverrideService.ApplyConfig();
+        if (result.Success)
+        {
+            activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                $"Quests: applied — {result.QuestsModified} quests, {result.ObjectivesModified} objectives, {result.RewardsModified} rewards in {result.ApplyTimeMs}ms");
+        }
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandleQuestReset(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var result = questOverrideService.ResetAll();
+        if (result.Success)
+        {
+            activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                $"Quests: reset all — {result.QuestsModified} quests restored");
+        }
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandleQuestStatus(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var result = questOverrideService.GetStatus();
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandleQuestTree(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var config = configService.GetConfig().Quests;
+        var result = questDiscoveryService.GetQuestTree(config);
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandleQuestTraders(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var result = questDiscoveryService.GetTraderList();
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandleQuestLocations(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var result = questDiscoveryService.GetLocationList();
+        await WriteJson(context, 200, result);
     }
 
     private async Task HandleGetBanList(HttpContext context, string headerSessionId)
@@ -1177,8 +1378,9 @@ public class CommandCenterHttpListener(
                 case "telemetry/positions":
                 {
                     var body = await ReadBody<PositionPayload>(context);
-                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    if (body == null) { logger.Warning("[HTTP] telemetry/positions POST: body was null/invalid"); await WriteJson(context, 400, new { error = "Invalid body" }); return; }
                     telemetryService.UpdatePositions(body);
+                    logger.Info($"[Telemetry] Positions updated: {body.Positions.Count} entities");
                     await WriteJson(context, 200, new { ok = true });
                     break;
                 }

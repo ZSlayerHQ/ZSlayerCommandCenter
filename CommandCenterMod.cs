@@ -19,6 +19,7 @@ public class CommandCenterMod(
     ActivityLogService activityLogService,
     OfferRegenerationService offerRegenerationService,
     TraderApplyService traderApplyService,
+    QuestOverrideService questOverrideService,
     TelemetryService telemetryService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
@@ -111,6 +112,9 @@ public class CommandCenterMod(
 
         // Initialize trader control (discover traders, snapshot, apply config)
         traderApplyService.Initialize();
+
+        // Initialize quest editor (discover quests, snapshot, apply config)
+        questOverrideService.Initialize();
 
         // Clean up old activity logs
         activityLogService.CleanupOldLogs();
