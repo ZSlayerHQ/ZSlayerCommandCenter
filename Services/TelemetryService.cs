@@ -15,6 +15,7 @@ public class TelemetryService(
     ConfigService configService,
     LocaleService localeService,
     HandbookHelper handbookHelper,
+    WatchdogManager watchdogManager,
     ISptLogger<TelemetryService> logger)
 {
     private readonly object _lock = new();
@@ -206,7 +207,10 @@ public class TelemetryService(
         if (payload.Status is "loading" or "deploying" && wasIdle)
             AddAlert("raid-start", $"Raid starting on {payload.Map}", payload.Map, "rocket");
         if (payload.Status == "idle" && wasActive)
+        {
             AddAlert("raid-end", "Raid ended", payload.Map, "flag");
+            watchdogManager.BroadcastRaidEnd(payload.Map ?? "");
+        }
 
         logger.Info($"[Telemetry] Raid state → {payload.Status}, map: {payload.Map}, timer: {payload.RaidTimer}s");
     }

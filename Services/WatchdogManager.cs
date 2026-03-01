@@ -253,6 +253,34 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
     }
 
     /// <summary>
+    /// Broadcast a raidEnd event to all Watchdogs managing the headless client.
+    /// Each watchdog decides locally whether RAR is enabled.
+    /// </summary>
+    public void BroadcastRaidEnd(string map)
+    {
+        var targets = GetWatchdogsForTarget("headlessClient");
+        if (targets.Count == 0) return;
+
+        var msg = new WatchdogRaidEndMessage { Map = map };
+        var json = JsonSerializer.Serialize(msg, JsonOptions);
+        var bytes = Encoding.UTF8.GetBytes(json);
+
+        logger.Info($"[ZSlayerHQ] Broadcasting raidEnd to {targets.Count} watchdog(s) (map: {map})");
+
+        foreach (var wd in targets)
+        {
+            try
+            {
+                _ = wd.Socket.SendAsync(bytes, System.Net.WebSockets.WebSocketMessageType.Text, true, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                logger.Warning($"[ZSlayerHQ] Failed to send raidEnd to {wd.Name}: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
     /// Disconnect all connected Watchdogs (e.g. after token regeneration).
     /// </summary>
     public async Task DisconnectAll(string reason)

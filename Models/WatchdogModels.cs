@@ -148,6 +148,12 @@ public record WatchdogCommandMessage
     public string Action { get; set; } = "";
 }
 
+public record WatchdogRaidEndMessage
+{
+    [JsonPropertyName("type")] public string Type { get; set; } = "raidEnd";
+    [JsonPropertyName("map")] public string Map { get; set; } = "";
+}
+
 // ── API Response Models ──
 
 public record WatchdogStatusResponse
