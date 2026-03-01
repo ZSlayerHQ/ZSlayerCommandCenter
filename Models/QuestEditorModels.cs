@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 
 namespace ZSlayerCommandCenter.Models;
 
@@ -103,6 +104,9 @@ public class QuestSnapshot
 
     /// <summary>Original locale entries (key → original text) for this quest.</summary>
     public Dictionary<string, string> LocaleEntries { get; set; } = new();
+
+    /// <summary>Original AvailableForStart condition objects (for restoring removed prerequisites).</summary>
+    public List<QuestCondition>? OriginalStartConditions { get; set; }
 }
 
 public class ConditionSnapshot
@@ -177,6 +181,9 @@ public record QuestSummaryDto
 
     [JsonPropertyName("hasOverrides")]
     public bool HasOverrides { get; set; }
+
+    [JsonPropertyName("playerStatus")]
+    public string PlayerStatus { get; set; } = "";
 }
 
 public record QuestMapGroup

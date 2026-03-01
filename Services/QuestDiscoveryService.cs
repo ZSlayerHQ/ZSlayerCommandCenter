@@ -106,6 +106,10 @@ public class QuestDiscoveryService(
         SnapshotConditions(snapshot, quest.Conditions?.AvailableForFinish);
         SnapshotConditions(snapshot, quest.Conditions?.Fail);
 
+        // Snapshot the original AvailableForStart list membership (for restoring removed prerequisites)
+        if (quest.Conditions?.AvailableForStart != null)
+            snapshot.OriginalStartConditions = new List<QuestCondition>(quest.Conditions.AvailableForStart);
+
         // Snapshot rewards
         if (quest.Rewards != null)
         {
@@ -245,15 +249,20 @@ public class QuestDiscoveryService(
         QuestEditorConfig config,
         string? search, string? map, string? trader, string? type,
         string? sort, string? sortDir,
-        int limit = 50, int offset = 0)
+        int limit = 50, int offset = 0,
+        string? sessionId = null)
     {
-        // Decorate summaries with config status
+        // Build player quest status lookup for logged-in player
+        var playerStatuses = BuildPlayerQuestStatusMap(sessionId);
+
+        // Decorate summaries with config status + player status
         var decorated = _summaries.Select(s =>
         {
             var copy = s with
             {
                 IsDisabled = config.DisabledQuests.Contains(s.QuestId),
-                HasOverrides = config.QuestOverrides.ContainsKey(s.QuestId)
+                HasOverrides = config.QuestOverrides.ContainsKey(s.QuestId),
+                PlayerStatus = playerStatuses.GetValueOrDefault(s.QuestId, "Locked")
             };
             return copy;
         });
@@ -703,5 +712,26 @@ public class QuestDiscoveryService(
         if (target.IsList && target.List != null) return target.List;
         if (target.IsItem && target.Item != null) return [target.Item];
         return [];
+    }
+
+    /// <summary>Build a questId → status string map for the given player session.</summary>
+    private Dictionary<string, string> BuildPlayerQuestStatusMap(string? sessionId)
+    {
+        var map = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (string.IsNullOrEmpty(sessionId)) return map;
+
+        var profiles = saveServer.GetProfiles();
+        if (!profiles.TryGetValue(sessionId, out var profile)) return map;
+
+        var pmc = profile.CharacterData?.PmcData;
+        if (pmc?.Quests == null) return map;
+
+        foreach (var q in pmc.Quests)
+        {
+            var qid = q.QId.ToString();
+            map[qid] = q.Status.ToString();
+        }
+
+        return map;
     }
 }

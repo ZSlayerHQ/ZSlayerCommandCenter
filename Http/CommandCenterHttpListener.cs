@@ -1046,7 +1046,7 @@ public class CommandCenterHttpListener(
         int offset = int.TryParse(offsetStr, out var offVal) ? Math.Max(0, offVal) : 0;
 
         var config = configService.GetConfig().Quests;
-        var result = questDiscoveryService.GetQuests(config, search, map, trader, type, sort, sortDir, limit, offset);
+        var result = questDiscoveryService.GetQuests(config, search, map, trader, type, sort, sortDir, limit, offset, headerSessionId);
         await WriteJson(context, 200, result);
     }
 

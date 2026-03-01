@@ -2563,6 +2563,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .quest-status-dot.default { background: var(--text-dim); }
 .quest-status-dot.modified { background: var(--accent); box-shadow: 0 0 6px rgba(200,170,110,0.4); }
 .quest-status-dot.disabled { background: var(--error-bright); }
+.quest-player-pill {
+  display: inline-block; font-size: 10px; font-family: var(--font-mono);
+  padding: 2px 8px; border-radius: 10px; font-weight: 600; letter-spacing: 0.3px;
+}
+.quest-ps-locked { background: rgba(100,100,100,0.3); color: var(--text-dim); }
+.quest-ps-availableforstart { background: rgba(70,140,210,0.2); color: #6aadff; }
+.quest-ps-started { background: rgba(200,170,110,0.2); color: var(--accent); }
+.quest-ps-availableforfinsih, .quest-ps-availableforfinish { background: rgba(200,170,110,0.3); color: #e0c87a; }
+.quest-ps-success { background: rgba(80,200,120,0.2); color: var(--success-bright); }
+.quest-ps-fail { background: rgba(220,80,80,0.2); color: var(--error-bright); }
 .quest-row { cursor: pointer; transition: background 0.15s ease; }
 .quest-row:hover { background: rgba(200,170,110,0.06); }
 .quest-row.quest-disabled td { opacity: 0.45; text-decoration: line-through; }
@@ -5685,11 +5695,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
                 <th class="quest-sortable" onclick="questSetSort('map')" style="text-align:left">Map <span class="quest-sort-arrow" id="questArrow_map"></span></th>
                 <th class="quest-sortable" onclick="questSetSort('level')" style="text-align:center;width:60px">Lvl <span class="quest-sort-arrow" id="questArrow_level"></span></th>
                 <th class="quest-sortable" onclick="questSetSort('objectives')" style="text-align:center;width:50px">Obj <span class="quest-sort-arrow" id="questArrow_objectives"></span></th>
+                <th style="text-align:center;width:80px">Progress</th>
                 <th style="text-align:center;width:50px">Status</th>
               </tr>
             </thead>
             <tbody id="questTableBody">
-              <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:40px;font-style:italic">Loading quests...</td></tr>
+              <tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:40px;font-style:italic">Loading quests...</td></tr>
             </tbody>
           </table>
         </div>
@@ -10756,6 +10767,15 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     return 'quest-trader-border-modded';
   }
 
+  function questFormatStatus(status) {
+    var map = {
+      'Locked': 'Locked', 'AvailableForStart': 'Available',
+      'Started': 'Started', 'AvailableForFinish': 'Ready',
+      'Success': 'Complete', 'Fail': 'Failed'
+    };
+    return map[status] || status;
+  }
+
   // ── Init ──
   function questsInit() {
     questsLoaded = true;
@@ -11072,11 +11092,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var overrides = config.questOverrides || {};
     var showDisabled = !!(document.getElementById('questShowDisabled') || {}).checked;
 
-    // Filter disabled quests unless toggle is on
+    // Filter disabled/locked quests unless toggle is on
+    var hiddenCount = 0;
     var filtered = questList.filter(function(q) {
       if (!showDisabled) {
         var isDisabled = disabled.indexOf(q.questId) !== -1 || q.isDisabled;
-        if (isDisabled) return false;
+        var isLocked = q.playerStatus === 'Locked' || q.playerStatus === '';
+        if (isDisabled || isLocked) { hiddenCount++; return false; }
       }
       return true;
     });
@@ -11096,8 +11118,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     var body = document.getElementById('questTableBody');
     if (filtered.length === 0) {
-      body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:40px">No quests found' +
-        (disabled.length > 0 && !showDisabled ? ' <span style="font-size:11px">('+disabled.length+' disabled — check "Show Disabled" to see them)</span>' : '') + '</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:40px">No quests found' +
+        (hiddenCount > 0 ? ' <span style="font-size:11px">(' + hiddenCount + ' hidden — check "Show Disabled" to see them)</span>' : '') + '</td></tr>';
       return;
     }
 
@@ -11110,7 +11132,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       else if (hasOverride) rowClass += ' quest-modified';
       rowClass += ' ' + questGetTraderBorderClass(q.traderName);
 
-      // Status: disabled (red), modified (gold), default (grey)
+      // Status dot: disabled (red), modified (gold), default (grey)
       var statusDot, statusTitle;
       if (isDisabled) {
         statusDot = 'disabled'; statusTitle = 'Disabled (level set to 999)';
@@ -11120,12 +11142,21 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         statusDot = 'default'; statusTitle = 'Default (no changes)';
       }
 
+      // Player quest status pill
+      var ps = q.playerStatus || '';
+      var psPill = '';
+      if (ps) {
+        var psClass = 'quest-ps-' + ps.toLowerCase();
+        psPill = '<span class="quest-player-pill ' + psClass + '">' + escH(questFormatStatus(ps)) + '</span>';
+      }
+
       html += '<tr class="' + rowClass + '" onclick="questOpenDetail(\'' + escA(q.questId) + '\')">';
       html += '<td style="font-weight:500;padding-left:12px">' + escH(q.questName) + '</td>';
       html += '<td>' + escH(q.traderName) + '</td>';
       html += '<td>' + escH(q.locationName) + '</td>';
       html += '<td style="text-align:center">' + (q.levelRequired || '—') + '</td>';
       html += '<td style="text-align:center">' + (q.objectiveCount || 0) + '</td>';
+      html += '<td style="text-align:center">' + psPill + '</td>';
       html += '<td style="text-align:center" title="' + statusTitle + '"><span class="quest-status-dot ' + statusDot + '"></span></td>';
       html += '</tr>';
     });
@@ -11134,7 +11165,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     // Update count label to reflect filtered count
     var countLabel = document.getElementById('questCountLabel');
     if (countLabel) {
-      var hiddenCount = questList.length - filtered.length;
       countLabel.textContent = filtered.length + ' quests' + (hiddenCount > 0 ? ' (' + hiddenCount + ' hidden)' : '');
     }
   }
@@ -11169,11 +11199,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var overrides = config.questOverrides || {};
     var showDisabled = !!(document.getElementById('questShowDisabled') || {}).checked;
 
-    // Filter disabled quests
+    // Filter disabled/locked quests
     var visibleQuests = questList.filter(function(q) {
       if (!showDisabled) {
         var isDisabled = disabled.indexOf(q.questId) !== -1 || q.isDisabled;
-        if (isDisabled) return false;
+        var isLocked = q.playerStatus === 'Locked' || q.playerStatus === '';
+        if (isDisabled || isLocked) return false;
       }
       return true;
     });
@@ -11207,7 +11238,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       if (isOpen) {
         html += '<table class="data-table" style="width:100%;margin-bottom:4px"><thead><tr>';
         html += '<th style="text-align:left">Quest Name</th><th style="text-align:left">Trader</th>';
-        html += '<th style="text-align:center;width:60px">Lvl</th><th style="text-align:center;width:50px">Status</th>';
+        html += '<th style="text-align:center;width:60px">Lvl</th><th style="text-align:center;width:80px">Progress</th><th style="text-align:center;width:50px">Status</th>';
         html += '</tr></thead><tbody>';
         quests.forEach(function(q) {
           var isDisabled = disabled.indexOf(q.questId) !== -1 || q.isDisabled;
@@ -11217,10 +11248,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           else if (hasOverride) rowClass += ' quest-modified';
           var statusDot = isDisabled ? 'disabled' : (hasOverride ? 'modified' : 'default');
           var statusTitle = isDisabled ? 'Disabled' : (hasOverride ? 'Has overrides' : 'Default');
+          var ps = q.playerStatus || '';
+          var psPill = ps ? '<span class="quest-player-pill quest-ps-' + ps.toLowerCase() + '">' + escH(questFormatStatus(ps)) + '</span>' : '';
           html += '<tr class="' + rowClass + '" onclick="questOpenDetail(\'' + escA(q.questId) + '\')">';
           html += '<td style="font-weight:500">' + escH(q.questName) + '</td>';
           html += '<td>' + escH(q.traderName) + '</td>';
           html += '<td style="text-align:center">' + (q.levelRequired || '—') + '</td>';
+          html += '<td style="text-align:center">' + psPill + '</td>';
           html += '<td style="text-align:center" title="' + statusTitle + '"><span class="quest-status-dot ' + statusDot + '"></span></td>';
           html += '</tr>';
         });

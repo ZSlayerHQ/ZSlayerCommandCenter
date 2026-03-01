@@ -134,7 +134,19 @@ public class QuestOverrideService(
                     if (questModified) questsModified++;
                 }
 
-                // Step 8: Update locale strings
+                // Step 8: Auto-unlock chains — remove prerequisite conditions referencing disabled quests
+                if (config.DisabledQuests.Count > 0)
+                {
+                    var disabledSet = new HashSet<string>(config.DisabledQuests, StringComparer.Ordinal);
+                    var unlockedCount = RemoveDisabledPrerequisites(questTemplates, disabledSet);
+                    if (unlockedCount > 0)
+                    {
+                        logger.Info($"[ZSlayerHQ] Quests: Auto-unlocked {unlockedCount} prerequisite conditions for disabled quests");
+                        objectivesModified += unlockedCount;
+                    }
+                }
+
+                // Step 9: Update locale strings
                 var localeMods = localeService.ApplyLocaleOverrides(config, snapshots);
                 if (localeMods > 0)
                     logger.Info($"[ZSlayerHQ] Quests: Updated {localeMods} locale strings");
@@ -202,6 +214,13 @@ public class QuestOverrideService(
         // Restore TraderId
         quest.TraderId = new MongoId(snapshot.TraderId);
 
+        // Restore AvailableForStart list membership (re-add prerequisites removed by auto-unlock)
+        if (snapshot.OriginalStartConditions != null && quest.Conditions?.AvailableForStart != null)
+        {
+            quest.Conditions.AvailableForStart.Clear();
+            quest.Conditions.AvailableForStart.AddRange(snapshot.OriginalStartConditions);
+        }
+
         // Restore condition values
         RestoreConditions(quest.Conditions?.AvailableForStart, snapshot);
         RestoreConditions(quest.Conditions?.AvailableForFinish, snapshot);
@@ -237,6 +256,43 @@ public class QuestOverrideService(
                 cond.OnlyFoundInRaid = cs.OnlyFoundInRaid;
             }
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  AUTO-UNLOCK — Remove prerequisites referencing disabled quests
+    // ═══════════════════════════════════════════════════════════════
+
+    private static int RemoveDisabledPrerequisites(
+        Dictionary<MongoId, Quest> questTemplates,
+        HashSet<string> disabledQuestIds)
+    {
+        int removed = 0;
+
+        foreach (var (_, quest) in questTemplates)
+        {
+            var startConditions = quest.Conditions?.AvailableForStart;
+            if (startConditions == null) continue;
+
+            // Find prerequisite conditions that reference a disabled quest
+            var toRemove = new List<QuestCondition>();
+            foreach (var cond in startConditions)
+            {
+                if (!string.Equals(cond.ConditionType, "Quest", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var targets = QuestDiscoveryService.ToStringList(cond.Target);
+                if (targets.Any(t => disabledQuestIds.Contains(t)))
+                    toRemove.Add(cond);
+            }
+
+            foreach (var cond in toRemove)
+            {
+                startConditions.Remove(cond);
+                removed++;
+            }
+        }
+
+        return removed;
     }
 
     // ═══════════════════════════════════════════════════════════════
