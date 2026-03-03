@@ -345,23 +345,26 @@ public class TraderDiscoveryService(
 
     private void ApplyAvatarRoutes(TraderControlConfig config)
     {
-        // Build set of routes that should currently have custom avatars
-        var activeCustomRoutes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var traders = databaseService.GetTables().Traders;
+        if (traders == null) return;
+
+        // Build set of trader IDs that should currently have custom avatars
+        var activeCustomTraders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var (traderId, displayOv) in config.TraderDisplayOverrides)
         {
             if (string.IsNullOrWhiteSpace(displayOv.CustomAvatar)) continue;
             if (!_originalDisplayInfo.TryGetValue(traderId, out var origInfo) || origInfo.AvatarUrl == null) continue;
 
-            var avatar = origInfo.AvatarUrl;
-            var extIdx = avatar.LastIndexOf('.');
+            var originalAvatar = origInfo.AvatarUrl;  // e.g. "/files/trader/avatar/54cb50c76803fa8b248b4571.jpg"
+            var extIdx = originalAvatar.LastIndexOf('.');
             if (extIdx <= 0) continue;
 
-            var route = avatar[..extIdx];
-            var routeKey = route.ToLowerInvariant();
-            activeCustomRoutes.Add(routeKey);
+            var originalRoute = originalAvatar[..extIdx];  // "/files/trader/avatar/54cb50c76803fa8b248b4571"
+            var routeKey = originalRoute.ToLowerInvariant();
+            activeCustomTraders.Add(traderId);
 
-            // Save original file path before first override
+            // Save original image router file path before first override
             if (!_originalAvatarRoutes.ContainsKey(routeKey))
             {
                 var original = imageRouterService.GetByKey(routeKey);
@@ -370,15 +373,43 @@ public class TraderDiscoveryService(
             }
 
             var filePath = System.IO.Path.Combine(configService.ModPath, "res", "Trader Icons", displayOv.CustomAvatar);
-            if (File.Exists(filePath))
-                imageRouter.AddRoute(route, filePath);
+            if (!File.Exists(filePath)) continue;
+
+            // Cache-bust: use a new URL path so the game client doesn't serve a stale cached image.
+            // The client caches avatars by URL — same URL = cached forever. A new URL forces re-download.
+            var ext = originalAvatar[extIdx..];  // ".jpg"
+            var cacheBustRoute = $"{originalRoute}_cc{ext}";  // "/files/trader/avatar/54cb...71_cc.jpg"
+            var cacheBustRouteKey = cacheBustRoute[..cacheBustRoute.LastIndexOf('.')].ToLowerInvariant();
+
+            imageRouter.AddRoute(cacheBustRouteKey, filePath);
+
+            // Also keep the original route pointing to the custom file (for any code that uses the old URL)
+            imageRouter.AddRoute(originalRoute, filePath);
+
+            // Update trader.Base.Avatar to the cache-busted URL so the client requests the new path
+            if (traders.TryGetValue(traderId, out var trader))
+                trader.Base.Avatar = cacheBustRoute;
         }
 
-        // Restore original routes for any previously overridden traders that no longer have custom avatars
-        foreach (var (routeKey, originalPath) in _originalAvatarRoutes)
+        // Restore original routes and Avatar URLs for traders whose custom avatar was removed
+        foreach (var (traderId, origInfo) in _originalDisplayInfo)
         {
-            if (!activeCustomRoutes.Contains(routeKey))
+            if (activeCustomTraders.Contains(traderId)) continue;
+            if (origInfo.AvatarUrl == null) continue;
+
+            var extIdx = origInfo.AvatarUrl.LastIndexOf('.');
+            if (extIdx <= 0) continue;
+
+            var originalRoute = origInfo.AvatarUrl[..extIdx];
+            var routeKey = originalRoute.ToLowerInvariant();
+
+            // Restore original image router path if we had one saved
+            if (_originalAvatarRoutes.TryGetValue(routeKey, out var originalPath))
                 imageRouter.AddRoute(routeKey, originalPath);
+
+            // Restore trader.Base.Avatar to the original URL
+            if (traders.TryGetValue(traderId, out var trader) && trader.Base.Avatar != origInfo.AvatarUrl)
+                trader.Base.Avatar = origInfo.AvatarUrl;
         }
     }
 
