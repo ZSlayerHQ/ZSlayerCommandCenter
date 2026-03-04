@@ -1,4 +1,5 @@
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Enums;
@@ -14,6 +15,7 @@ namespace ZSlayerCommandCenter.Services;
 public class QuestDiscoveryService(
     DatabaseService databaseService,
     LocaleService localeService,
+    HandbookHelper handbookHelper,
     SaveServer saveServer,
     ISptLogger<QuestDiscoveryService> logger)
 {
@@ -222,6 +224,14 @@ public class QuestDiscoveryService(
         var prerequisiteCount = quest.Conditions?.AvailableForStart?
             .Count(c => string.Equals(c.ConditionType, "Quest", StringComparison.OrdinalIgnoreCase)) ?? 0;
 
+        // Distinct objective types
+        var objectiveTypes = quest.Conditions?.AvailableForFinish?
+            .Where(c => !string.IsNullOrEmpty(c.ConditionType))
+            .Select(c => c.ConditionType!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? [];
+
         return new QuestSummaryDto
         {
             QuestId = qid,
@@ -237,7 +247,8 @@ public class QuestDiscoveryService(
             Side = quest.Side ?? "",
             Type = quest.Type.ToString(),
             IsDisabled = false,
-            HasOverrides = false
+            HasOverrides = false,
+            ObjectiveTypes = objectiveTypes
         };
     }
 
@@ -713,6 +724,147 @@ public class QuestDiscoveryService(
         if (target.IsItem && target.Item != null) return [target.Item];
         return [];
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  OBJECTIVE TYPES (for filter dropdown)
+    // ═══════════════════════════════════════════════════════════════
+
+    public List<string> GetObjectiveTypeList()
+    {
+        var types = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var s in _summaries)
+        {
+            foreach (var t in s.ObjectiveTypes)
+                types.Add(t);
+        }
+        return types.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  COMPLETION STATS (per-player progress)
+    // ═══════════════════════════════════════════════════════════════
+
+    public QuestCompletionStats GetCompletionStats(string? sessionId)
+    {
+        var total = _summaries.Count;
+        if (string.IsNullOrEmpty(sessionId) || total == 0)
+            return new QuestCompletionStats { TotalQuests = total };
+
+        var statuses = BuildPlayerQuestStatusMap(sessionId);
+        int completed = 0, inProgress = 0, available = 0, locked = 0, failed = 0;
+
+        foreach (var s in _summaries)
+        {
+            var status = statuses.GetValueOrDefault(s.QuestId, "");
+            switch (status)
+            {
+                case "Success":
+                    completed++;
+                    break;
+                case "Started":
+                    inProgress++;
+                    break;
+                case "AvailableForStart":
+                case "AvailableForFinish":
+                    available++;
+                    break;
+                case "Fail":
+                case "FailRestartable":
+                    failed++;
+                    break;
+                default:
+                    locked++;
+                    break;
+            }
+        }
+
+        return new QuestCompletionStats
+        {
+            TotalQuests = total,
+            Completed = completed,
+            InProgress = inProgress,
+            Available = available,
+            Locked = locked,
+            Failed = failed,
+            CompletionPercent = total > 0 ? Math.Round(100.0 * completed / total, 1) : 0
+        };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  REWARD SUMMARY (aggregate across all quests)
+    // ═══════════════════════════════════════════════════════════════
+
+    public QuestRewardSummaryResponse GetRewardSummary(QuestEditorConfig config)
+    {
+        var questTemplates = databaseService.GetQuests();
+        var locale = localeService.GetLocaleDb("en");
+        var disabledSet = new HashSet<string>(config.DisabledQuests, StringComparer.Ordinal);
+
+        double totalXp = 0;
+        var standingByTrader = new Dictionary<string, double>();
+        double totalItemValue = 0;
+        int itemCount = 0;
+        int questCount = 0;
+
+        foreach (var (questMongoId, quest) in questTemplates)
+        {
+            var qid = questMongoId.ToString();
+            if (disabledSet.Contains(qid)) continue;
+
+            if (quest.Rewards == null || !quest.Rewards.TryGetValue("Success", out var rewards) || rewards == null)
+                continue;
+
+            questCount++;
+
+            foreach (var reward in rewards)
+            {
+                var value = reward.Value ?? 0;
+                switch (reward.Type)
+                {
+                    case RewardType.Experience:
+                        totalXp += value;
+                        break;
+
+                    case RewardType.TraderStanding:
+                    {
+                        var traderId = reward.Target ?? "";
+                        var traderName = ResolveTraderName(traderId, locale);
+                        standingByTrader[traderName] = standingByTrader.GetValueOrDefault(traderName) + value;
+                        break;
+                    }
+
+                    case RewardType.Item:
+                    {
+                        if (reward.Items != null)
+                        {
+                            foreach (var item in reward.Items)
+                            {
+                                var tpl = item.Template.ToString();
+                                var count = (int)(item.Upd?.StackObjectsCount ?? 1);
+                                var price = handbookHelper.GetTemplatePrice(tpl);
+                                totalItemValue += price * count;
+                                itemCount += count;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        return new QuestRewardSummaryResponse
+        {
+            TotalXp = totalXp,
+            StandingByTrader = standingByTrader,
+            TotalItemValue = totalItemValue,
+            ItemCount = itemCount,
+            QuestCount = questCount
+        };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  HELPERS (private)
+    // ═══════════════════════════════════════════════════════════════
 
     /// <summary>Build a questId → status string map for the given player session.</summary>
     private Dictionary<string, string> BuildPlayerQuestStatusMap(string? sessionId)

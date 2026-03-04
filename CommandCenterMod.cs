@@ -20,6 +20,7 @@ public class CommandCenterMod(
     OfferRegenerationService offerRegenerationService,
     TraderApplyService traderApplyService,
     QuestOverrideService questOverrideService,
+    ProgressionControlService progressionControlService,
     TelemetryService telemetryService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
@@ -115,6 +116,9 @@ public class CommandCenterMod(
 
         // Initialize quest editor (discover quests, snapshot, apply config)
         questOverrideService.Initialize();
+
+        // Initialize progression controls (snapshot globals, apply config)
+        progressionControlService.Initialize();
 
         // Clean up old activity logs
         activityLogService.CleanupOldLogs();

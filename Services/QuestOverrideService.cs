@@ -1,3 +1,4 @@
+using System.Text.Json;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
@@ -677,7 +678,7 @@ public class QuestOverrideService(
     //  STATUS
     // ═══════════════════════════════════════════════════════════════
 
-    public QuestStatusResponse GetStatus()
+    public QuestStatusResponse GetStatus(string? sessionId = null)
     {
         var config = configService.GetConfig().Quests;
         var questTemplates = databaseService.GetQuests();
@@ -687,7 +688,261 @@ public class QuestOverrideService(
             TotalQuests = questTemplates.Count,
             OverrideCount = config.QuestOverrides.Count,
             DisabledCount = config.DisabledQuests.Count,
-            GlobalsActive = HasAnyOverrides(config)
+            GlobalsActive = HasAnyOverrides(config),
+            CompletionStats = discoveryService.GetCompletionStats(sessionId)
         };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  QUEST PRESETS (mirrors TraderApplyService pattern)
+    // ═══════════════════════════════════════════════════════════════
+
+    private static readonly JsonSerializerOptions PresetJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    private string GetQuestPresetsDir()
+    {
+        var dir = System.IO.Path.Combine(configService.ModPath, "config", "quest-presets");
+        if (!Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = System.IO.Path.GetInvalidFileNameChars();
+        var clean = new string(name.Where(c => !invalid.Contains(c)).ToArray()).Trim();
+        if (clean.Length > 50) clean = clean[..50];
+        return string.IsNullOrEmpty(clean) ? "preset" : clean;
+    }
+
+    private QuestGameplayConfig SnapshotQuestConfig()
+    {
+        var config = configService.GetConfig().Quests;
+        return new QuestGameplayConfig
+        {
+            GlobalXpMultiplier = config.GlobalXpMultiplier,
+            GlobalStandingMultiplier = config.GlobalStandingMultiplier,
+            GlobalItemRewardMultiplier = config.GlobalItemRewardMultiplier,
+            GlobalKillCountMultiplier = config.GlobalKillCountMultiplier,
+            GlobalHandoverCountMultiplier = config.GlobalHandoverCountMultiplier,
+            RemoveFIRRequirements = config.RemoveFIRRequirements,
+            GlobalLevelRequirementShift = config.GlobalLevelRequirementShift,
+            DisabledQuests = [.. config.DisabledQuests],
+            QuestOverrides = config.QuestOverrides.ToDictionary(
+                kv => kv.Key,
+                kv => kv.Value with
+                {
+                    RemovedPrerequisites = [.. kv.Value.RemovedPrerequisites],
+                    RemovedRewards = [.. kv.Value.RemovedRewards],
+                    ConditionOverrides = new Dictionary<string, ConditionOverrideConfig>(kv.Value.ConditionOverrides),
+                    RewardOverrides = new Dictionary<string, RewardOverrideConfig>(kv.Value.RewardOverrides),
+                    LocaleOverrides = new Dictionary<string, string>(kv.Value.LocaleOverrides)
+                })
+        };
+    }
+
+    private void ApplyQuestGameplayConfig(QuestGameplayConfig src)
+    {
+        var config = configService.GetConfig().Quests;
+        config.GlobalXpMultiplier = src.GlobalXpMultiplier;
+        config.GlobalStandingMultiplier = src.GlobalStandingMultiplier;
+        config.GlobalItemRewardMultiplier = src.GlobalItemRewardMultiplier;
+        config.GlobalKillCountMultiplier = src.GlobalKillCountMultiplier;
+        config.GlobalHandoverCountMultiplier = src.GlobalHandoverCountMultiplier;
+        config.RemoveFIRRequirements = src.RemoveFIRRequirements;
+        config.GlobalLevelRequirementShift = src.GlobalLevelRequirementShift;
+        config.DisabledQuests = [.. src.DisabledQuests];
+        config.QuestOverrides = src.QuestOverrides.ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value with
+            {
+                RemovedPrerequisites = [.. kv.Value.RemovedPrerequisites],
+                RemovedRewards = [.. kv.Value.RemovedRewards],
+                ConditionOverrides = new Dictionary<string, ConditionOverrideConfig>(kv.Value.ConditionOverrides),
+                RewardOverrides = new Dictionary<string, RewardOverrideConfig>(kv.Value.RewardOverrides),
+                LocaleOverrides = new Dictionary<string, string>(kv.Value.LocaleOverrides)
+            });
+    }
+
+    public QuestPresetListResponse ListQuestPresets()
+    {
+        var dir = GetQuestPresetsDir();
+        var presets = new List<QuestPresetSummary>();
+        foreach (var file in Directory.GetFiles(dir, "*.json"))
+        {
+            try
+            {
+                var json = File.ReadAllText(file);
+                var preset = JsonSerializer.Deserialize<QuestPreset>(json, PresetJsonOptions);
+                if (preset != null)
+                {
+                    presets.Add(new QuestPresetSummary
+                    {
+                        Name = preset.Name,
+                        Description = preset.Description,
+                        CreatedUtc = preset.CreatedUtc
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Debug($"[ZSlayerHQ] Quests: Skipping invalid preset file '{System.IO.Path.GetFileName(file)}': {ex.Message}");
+            }
+        }
+        presets.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        return new QuestPresetListResponse { Presets = presets };
+    }
+
+    public QuestPreset SaveQuestPreset(string name, string description)
+    {
+        var preset = new QuestPreset
+        {
+            Name = name,
+            Description = description,
+            CreatedUtc = DateTime.UtcNow,
+            Config = SnapshotQuestConfig()
+        };
+        var dir = GetQuestPresetsDir();
+        var filePath = System.IO.Path.Combine(dir, SanitizeFileName(name) + ".json");
+        var json = JsonSerializer.Serialize(preset, PresetJsonOptions);
+        File.WriteAllText(filePath, json);
+        logger.Info($"[ZSlayerHQ] Quests: Saved preset '{name}' to {System.IO.Path.GetFileName(filePath)}");
+        return preset;
+    }
+
+    public QuestPreset? LoadQuestPreset(string name)
+    {
+        var dir = GetQuestPresetsDir();
+        var filePath = System.IO.Path.Combine(dir, SanitizeFileName(name) + ".json");
+        if (!File.Exists(filePath))
+            return null;
+        var json = File.ReadAllText(filePath);
+        return JsonSerializer.Deserialize<QuestPreset>(json, PresetJsonOptions);
+    }
+
+    public QuestApplyResult LoadAndApplyQuestPreset(string name)
+    {
+        lock (_lock)
+        {
+            var preset = LoadQuestPreset(name);
+            if (preset == null)
+                return new QuestApplyResult { Success = false, Error = "Preset not found" };
+
+            ApplyQuestGameplayConfig(preset.Config);
+            configService.SaveConfig();
+            return ApplyConfig();
+        }
+    }
+
+    public bool DeleteQuestPreset(string name)
+    {
+        var dir = GetQuestPresetsDir();
+        var filePath = System.IO.Path.Combine(dir, SanitizeFileName(name) + ".json");
+        if (!File.Exists(filePath))
+            return false;
+        File.Delete(filePath);
+        logger.Info($"[ZSlayerHQ] Quests: Deleted preset '{name}'");
+        return true;
+    }
+
+    public QuestPreset UploadQuestPreset(string name, string presetJson)
+    {
+        var preset = JsonSerializer.Deserialize<QuestPreset>(presetJson, PresetJsonOptions)
+                     ?? throw new InvalidOperationException("Invalid preset JSON");
+        if (!string.IsNullOrWhiteSpace(name))
+            preset.Name = name;
+        preset.CreatedUtc = DateTime.UtcNow;
+        var dir = GetQuestPresetsDir();
+        var filePath = System.IO.Path.Combine(dir, SanitizeFileName(preset.Name) + ".json");
+        var json = JsonSerializer.Serialize(preset, PresetJsonOptions);
+        File.WriteAllText(filePath, json);
+        logger.Info($"[ZSlayerHQ] Quests: Imported preset '{preset.Name}'");
+        return preset;
+    }
+
+    public string? DownloadQuestPreset(string name)
+    {
+        var dir = GetQuestPresetsDir();
+        var filePath = System.IO.Path.Combine(dir, SanitizeFileName(name) + ".json");
+        return File.Exists(filePath) ? File.ReadAllText(filePath) : null;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  BULK PLAYER QUEST STATE
+    // ═══════════════════════════════════════════════════════════════
+
+    public object BulkSetQuestState(string adminSessionId, string targetSessionId, string status, List<string>? questIds)
+    {
+        try
+        {
+            var profiles = saveServer.GetProfiles();
+            var targetMongoId = new MongoId(targetSessionId);
+
+            if (!profiles.TryGetValue(targetMongoId, out var profile))
+                return new { success = false, error = "Player not found" };
+
+            var pmc = profile.CharacterData?.PmcData;
+            if (pmc == null)
+                return new { success = false, error = "Player PMC data not found" };
+
+            if (!Enum.TryParse<QuestStatusEnum>(status, ignoreCase: true, out var questStatus))
+                return new { success = false, error = $"Invalid quest status: {status}" };
+
+            // If no quest IDs specified, use all quest templates
+            var targetQuestIds = questIds ?? [.. databaseService.GetQuests().Keys.Select(k => k.ToString())];
+
+            var count = 0;
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            foreach (var questId in targetQuestIds)
+            {
+                var questMongoId = new MongoId(questId);
+                var existing = pmc.Quests.FirstOrDefault(q => q.QId == questMongoId);
+
+                if (questStatus == QuestStatusEnum.Locked && existing != null)
+                {
+                    pmc.Quests.Remove(existing);
+                    count++;
+                }
+                else if (existing != null)
+                {
+                    existing.Status = questStatus;
+                    existing.StatusTimers ??= new Dictionary<QuestStatusEnum, double>();
+                    existing.StatusTimers[questStatus] = now;
+                    count++;
+                }
+                else if (questStatus != QuestStatusEnum.Locked)
+                {
+                    pmc.Quests.Add(new QuestStatus
+                    {
+                        QId = questMongoId,
+                        Status = questStatus,
+                        StartTime = now,
+                        CompletedConditions = [],
+                        StatusTimers = new Dictionary<QuestStatusEnum, double>
+                        {
+                            [questStatus] = now
+                        }
+                    });
+                    count++;
+                }
+            }
+
+            _ = saveServer.SaveProfileAsync(targetSessionId);
+
+            var playerName = pmc.Info?.Nickname ?? "Unknown";
+            logger.Info($"[ZSlayerHQ] Admin {adminSessionId} bulk-set {count} quests to {status} for player {playerName} ({targetSessionId})");
+
+            return new { success = true, count, status };
+        }
+        catch (Exception ex)
+        {
+            logger.Error($"[ZSlayerHQ] Error in bulk quest state: {ex.Message}");
+            return new { success = false, error = ex.Message };
+        }
     }
 }

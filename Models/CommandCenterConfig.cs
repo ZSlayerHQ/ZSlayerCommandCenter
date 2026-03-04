@@ -31,6 +31,9 @@ public record CommandCenterConfig
     [JsonPropertyName("quests")]
     public QuestEditorConfig Quests { get; set; } = new();
 
+    [JsonPropertyName("progression")]
+    public ProgressionConfig Progression { get; set; } = new();
+
     [JsonPropertyName("profileAvatars")]
     public Dictionary<string, string> ProfileAvatars { get; set; } = new();
 }
@@ -78,6 +81,15 @@ public record WatchdogConfig
 
     [JsonPropertyName("watchdogToken")]
     public string WatchdogToken { get; set; } = "";
+
+    [JsonPropertyName("startHidden")]
+    public bool StartHidden { get; set; } = false;
+
+    [JsonPropertyName("showHeadlessConsole")]
+    public bool ShowHeadlessConsole { get; set; } = true;
+
+    [JsonPropertyName("minimizeToTray")]
+    public bool MinimizeToTray { get; set; } = false;
 }
 
 public record AccessControlConfig

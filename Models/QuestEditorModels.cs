@@ -184,6 +184,9 @@ public record QuestSummaryDto
 
     [JsonPropertyName("playerStatus")]
     public string PlayerStatus { get; set; } = "";
+
+    [JsonPropertyName("objectiveTypes")]
+    public List<string> ObjectiveTypes { get; set; } = [];
 }
 
 public record QuestMapGroup
@@ -478,6 +481,9 @@ public record QuestStatusResponse
 
     [JsonPropertyName("globalsActive")]
     public bool GlobalsActive { get; set; }
+
+    [JsonPropertyName("completionStats")]
+    public QuestCompletionStats? CompletionStats { get; set; }
 }
 
 public record QuestPlayerStatus
@@ -502,4 +508,161 @@ public record QuestTraderInfo
 
     [JsonPropertyName("questCount")]
     public int QuestCount { get; set; }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  QUEST PRESETS (mirrors TraderPreset pattern)
+// ═══════════════════════════════════════════════════════════════════
+
+public record QuestGameplayConfig
+{
+    [JsonPropertyName("globalXpMultiplier")]
+    public double GlobalXpMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("globalStandingMultiplier")]
+    public double GlobalStandingMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("globalItemRewardMultiplier")]
+    public double GlobalItemRewardMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("globalKillCountMultiplier")]
+    public double GlobalKillCountMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("globalHandoverCountMultiplier")]
+    public double GlobalHandoverCountMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("removeFIRRequirements")]
+    public bool RemoveFIRRequirements { get; set; }
+
+    [JsonPropertyName("globalLevelRequirementShift")]
+    public int GlobalLevelRequirementShift { get; set; }
+
+    [JsonPropertyName("disabledQuests")]
+    public List<string> DisabledQuests { get; set; } = [];
+
+    [JsonPropertyName("questOverrides")]
+    public Dictionary<string, QuestOverrideConfig> QuestOverrides { get; set; } = new();
+}
+
+public record QuestPreset
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = "";
+
+    [JsonPropertyName("createdUtc")]
+    public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
+
+    [JsonPropertyName("config")]
+    public QuestGameplayConfig Config { get; set; } = new();
+}
+
+public record QuestPresetSummary
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = "";
+
+    [JsonPropertyName("createdUtc")]
+    public DateTime CreatedUtc { get; set; }
+}
+
+public record QuestPresetListResponse
+{
+    [JsonPropertyName("presets")]
+    public List<QuestPresetSummary> Presets { get; set; } = [];
+}
+
+public record QuestPresetSaveRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = "";
+}
+
+public record QuestPresetLoadRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+}
+
+public record QuestPresetUploadRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("presetJson")]
+    public string PresetJson { get; set; } = "";
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  COMPLETION STATS
+// ═══════════════════════════════════════════════════════════════════
+
+public record QuestCompletionStats
+{
+    [JsonPropertyName("totalQuests")]
+    public int TotalQuests { get; set; }
+
+    [JsonPropertyName("completed")]
+    public int Completed { get; set; }
+
+    [JsonPropertyName("inProgress")]
+    public int InProgress { get; set; }
+
+    [JsonPropertyName("available")]
+    public int Available { get; set; }
+
+    [JsonPropertyName("locked")]
+    public int Locked { get; set; }
+
+    [JsonPropertyName("failed")]
+    public int Failed { get; set; }
+
+    [JsonPropertyName("completionPercent")]
+    public double CompletionPercent { get; set; }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  REWARD SUMMARY
+// ═══════════════════════════════════════════════════════════════════
+
+public record QuestRewardSummaryResponse
+{
+    [JsonPropertyName("totalXp")]
+    public double TotalXp { get; set; }
+
+    [JsonPropertyName("standingByTrader")]
+    public Dictionary<string, double> StandingByTrader { get; set; } = new();
+
+    [JsonPropertyName("totalItemValue")]
+    public double TotalItemValue { get; set; }
+
+    [JsonPropertyName("itemCount")]
+    public int ItemCount { get; set; }
+
+    [JsonPropertyName("questCount")]
+    public int QuestCount { get; set; }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  BULK OPERATIONS
+// ═══════════════════════════════════════════════════════════════════
+
+public record BulkQuestStateRequest
+{
+    [JsonPropertyName("sessionId")]
+    public string SessionId { get; set; } = "";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "";
+
+    [JsonPropertyName("questIds")]
+    public List<string>? QuestIds { get; set; }
 }

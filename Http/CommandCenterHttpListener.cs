@@ -38,6 +38,7 @@ public class CommandCenterHttpListener(
     TraderApplyService traderApplyService,
     TraderDiscoveryService traderDiscoveryService,
     PlayerBuildService playerBuildService,
+    ProgressionControlService progressionControlService,
     DatabaseService databaseService,
     ConfigServer configServer,
     SaveServer saveServer,
@@ -139,7 +140,7 @@ public class CommandCenterHttpListener(
                 {
                     var firstSeg = segments[1];
                     // Skip known fixed routes — let them fall through to the switch-case
-                    if (firstSeg is not ("config" or "apply" or "reset" or "status" or "tree" or "traders" or "locations"))
+                    if (firstSeg is not ("config" or "apply" or "reset" or "status" or "tree" or "traders" or "locations" or "presets" or "bulk-state" or "reward-summary" or "objective-types"))
                     {
                         var questId = firstSeg;
                         var action = segments.Length >= 3 ? segments[2] : "";
@@ -167,6 +168,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("headless/"))
             {
                 await HandleHeadlessRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle progression routes
+            if (path.StartsWith("progression/") || path == "progression")
+            {
+                await HandleProgressionRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -321,6 +329,27 @@ public class CommandCenterHttpListener(
                 case "quests/locations" when method == "GET":
                     await HandleQuestLocations(context, headerSessionId);
                     break;
+                case "quests/objective-types" when method == "GET":
+                    await HandleQuestObjectiveTypes(context, headerSessionId);
+                    break;
+                case "quests/reward-summary" when method == "GET":
+                    await HandleQuestRewardSummary(context, headerSessionId);
+                    break;
+                case "quests/presets" when method == "GET":
+                    await HandleQuestPresetList(context, headerSessionId);
+                    break;
+                case "quests/presets/save" when method == "POST":
+                    await HandleQuestPresetSave(context, headerSessionId);
+                    break;
+                case "quests/presets/load" when method == "POST":
+                    await HandleQuestPresetLoad(context, headerSessionId);
+                    break;
+                case "quests/presets/upload" when method == "POST":
+                    await HandleQuestPresetUpload(context, headerSessionId);
+                    break;
+                case "quests/bulk-state" when method == "POST":
+                    await HandleQuestBulkState(context, headerSessionId);
+                    break;
                 // Player management routes
                 case "players" when method == "GET":
                     await HandlePlayerRoster(context, headerSessionId);
@@ -341,8 +370,48 @@ public class CommandCenterHttpListener(
                     await HandlePlayerGiveAll(context, headerSessionId);
                     break;
                 default:
+                {
+                    // DELETE quests/presets/{name}
+                    if (method == "DELETE" && path.StartsWith("quests/presets/"))
+                    {
+                        if (!await ValidateAccess(context, headerSessionId)) return;
+                        var presetName = Uri.UnescapeDataString(path["quests/presets/".Length..]);
+                        if (string.IsNullOrEmpty(presetName))
+                        {
+                            await WriteJson(context, 400, new { error = "Missing preset name" });
+                            break;
+                        }
+                        var deleted = questOverrideService.DeleteQuestPreset(presetName);
+                        if (deleted)
+                            activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Quests: deleted preset '{presetName}'");
+                        await WriteJson(context, 200, new { success = deleted });
+                        break;
+                    }
+
+                    // GET quests/presets/{name}/download
+                    if (method == "GET" && path.StartsWith("quests/presets/") && path.EndsWith("/download"))
+                    {
+                        if (!await ValidateAccess(context, headerSessionId)) return;
+                        var segment = path["quests/presets/".Length..^"/download".Length];
+                        var presetName = Uri.UnescapeDataString(segment);
+                        if (string.IsNullOrEmpty(presetName))
+                        {
+                            await WriteJson(context, 400, new { error = "Missing preset name" });
+                            break;
+                        }
+                        var json = questOverrideService.DownloadQuestPreset(presetName);
+                        if (json == null)
+                        {
+                            await WriteJson(context, 404, new { error = "Preset not found" });
+                            break;
+                        }
+                        await WriteJson(context, 200, new { success = true, json });
+                        break;
+                    }
+
                     await WriteJson(context, 404, new { error = "Not found" });
                     break;
+                }
             }
         }
         catch (Exception ex)
@@ -1042,7 +1111,7 @@ public class CommandCenterHttpListener(
         var limitStr = query["limit"].FirstOrDefault();
         var offsetStr = query["offset"].FirstOrDefault();
 
-        int limit = int.TryParse(limitStr, out var limVal) ? Math.Clamp(limVal, 1, 200) : 50;
+        int limit = int.TryParse(limitStr, out var limVal) ? Math.Clamp(limVal, 1, 10000) : 50;
         int offset = int.TryParse(offsetStr, out var offVal) ? Math.Max(0, offVal) : 0;
 
         var config = configService.GetConfig().Quests;
@@ -1217,7 +1286,8 @@ public class CommandCenterHttpListener(
     private async Task HandleQuestStatus(HttpContext context, string headerSessionId)
     {
         if (!await ValidateAccess(context, headerSessionId)) return;
-        var result = questOverrideService.GetStatus();
+        var playerSessionId = context.Request.Query["sessionId"].FirstOrDefault();
+        var result = questOverrideService.GetStatus(playerSessionId);
         await WriteJson(context, 200, result);
     }
 
@@ -1240,6 +1310,91 @@ public class CommandCenterHttpListener(
     {
         if (!await ValidateAccess(context, headerSessionId)) return;
         var result = questDiscoveryService.GetLocationList();
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandleQuestObjectiveTypes(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var result = questDiscoveryService.GetObjectiveTypeList();
+        await WriteJson(context, 200, new { types = result });
+    }
+
+    private async Task HandleQuestRewardSummary(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var config = configService.GetConfig().Quests;
+        var result = questDiscoveryService.GetRewardSummary(config);
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandleQuestPresetList(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var result = questOverrideService.ListQuestPresets();
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandleQuestPresetSave(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var body = await ReadBody<QuestPresetSaveRequest>(context);
+        if (body == null || string.IsNullOrWhiteSpace(body.Name))
+        {
+            await WriteJson(context, 400, new { error = "Missing preset name" });
+            return;
+        }
+        var result = questOverrideService.SaveQuestPreset(body.Name.Trim(), body.Description?.Trim() ?? "");
+        activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Quests: saved preset '{body.Name}'");
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandleQuestPresetLoad(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var body = await ReadBody<QuestPresetLoadRequest>(context);
+        if (body == null || string.IsNullOrWhiteSpace(body.Name))
+        {
+            await WriteJson(context, 400, new { error = "Missing preset name" });
+            return;
+        }
+        var result = questOverrideService.LoadAndApplyQuestPreset(body.Name.Trim());
+        if (result.Success)
+            activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Quests: loaded preset '{body.Name}'");
+        await WriteJson(context, 200, result);
+    }
+
+    private async Task HandleQuestPresetUpload(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var body = await ReadBody<QuestPresetUploadRequest>(context);
+        if (body == null || string.IsNullOrWhiteSpace(body.PresetJson))
+        {
+            await WriteJson(context, 400, new { error = "Missing preset JSON" });
+            return;
+        }
+        try
+        {
+            var result = questOverrideService.UploadQuestPreset(body.Name?.Trim() ?? "", body.PresetJson);
+            activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Quests: imported preset '{result.Name}'");
+            await WriteJson(context, 200, new { success = true, name = result.Name });
+        }
+        catch (Exception ex)
+        {
+            await WriteJson(context, 400, new { error = $"Invalid preset JSON: {ex.Message}" });
+        }
+    }
+
+    private async Task HandleQuestBulkState(HttpContext context, string headerSessionId)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+        var body = await ReadBody<BulkQuestStateRequest>(context);
+        if (body == null || string.IsNullOrEmpty(body.SessionId) || string.IsNullOrEmpty(body.Status))
+        {
+            await WriteJson(context, 400, new { error = "SessionId and Status required" });
+            return;
+        }
+        var result = questOverrideService.BulkSetQuestState(headerSessionId, body.SessionId, body.Status, body.QuestIds);
         await WriteJson(context, 200, result);
     }
 
@@ -2374,6 +2529,96 @@ public class CommandCenterHttpListener(
 
                     var result = traderApplyService.GetTraderItems(traderId, search, ll, limit, offset);
                     await WriteJson(context, 200, result);
+                    break;
+                }
+
+                await WriteJson(context, 404, new { error = "Not found" });
+                break;
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  PROGRESSION ROUTES
+    // ═══════════════════════════════════════════════════════════════
+
+    private async Task HandleProgressionRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        var subPath = path == "progression" ? "" : path["progression/".Length..];
+
+        switch (subPath)
+        {
+            case "" when method == "GET":
+            {
+                var config = configService.GetConfig().Progression;
+                await WriteJson(context, 200, config);
+                break;
+            }
+            case "" when method == "POST":
+            {
+                var body = await ReadBody<ProgressionConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var config = configService.GetConfig();
+                config.Progression = body;
+                configService.SaveConfig();
+                progressionControlService.ClearActivePreset();
+                var result = progressionControlService.ApplyConfig();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Progression: updated config — {result.SettingsModified} settings applied");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "apply" when method == "POST":
+            {
+                var result = progressionControlService.ApplyConfig();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "reset" when method == "POST":
+            {
+                var result = progressionControlService.ResetToDefaults();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Progression: reset all settings to defaults");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "status" when method == "GET":
+            {
+                var status = progressionControlService.GetStatus();
+                await WriteJson(context, 200, status);
+                break;
+            }
+            case "presets" when method == "GET":
+            {
+                var presets = progressionControlService.GetPresets();
+                await WriteJson(context, 200, new { presets });
+                break;
+            }
+            default:
+            {
+                // POST progression/presets/{name}
+                if (method == "POST" && subPath.StartsWith("presets/"))
+                {
+                    var presetName = Uri.UnescapeDataString(subPath["presets/".Length..]);
+                    if (string.IsNullOrEmpty(presetName))
+                    {
+                        await WriteJson(context, 400, new { error = "Missing preset name" });
+                        break;
+                    }
+                    var result = progressionControlService.ApplyPreset(presetName);
+                    if (result.Success)
+                    {
+                        configService.SaveConfig();
+                        activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                            $"Progression: applied '{presetName}' preset — {result.SettingsModified} settings");
+                    }
+                    await WriteJson(context, result.Success ? 200 : 400, result);
                     break;
                 }
 

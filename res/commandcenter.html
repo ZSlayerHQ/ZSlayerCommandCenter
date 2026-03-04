@@ -2533,6 +2533,33 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   transition: all 0.2s ease;
 }
 .quest-reset-btn:hover { background: rgba(196, 80, 80, 0.15); border-color: var(--error-bright); color: #e06060; }
+.quest-toolbar {
+  display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin-bottom: 12px;
+  background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px;
+  overflow: hidden;
+}
+.quest-toolbar .quest-view-tab {
+  padding: 8px 18px; font-size: 12px; font-family: var(--font-mono); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer;
+  background: transparent; border: none; border-right: 1px solid var(--border); color: var(--text-dim);
+  transition: all 0.15s ease;
+}
+.quest-toolbar .quest-view-tab.active { background: rgba(200,170,110,0.15); color: var(--accent); }
+.quest-toolbar .quest-view-tab:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.03); }
+.quest-toolbar .quest-toolbar-filters {
+  display: flex; align-items: center; gap: 8px; flex: 1; padding: 4px 10px; flex-wrap: wrap;
+}
+.quest-toolbar .quest-toolbar-filters select {
+  background: var(--bg-dark); color: var(--text); border: 1px solid var(--border);
+  border-radius: 4px; padding: 5px 8px; font-family: var(--font-mono); font-size: 11px;
+}
+.quest-toolbar .quest-toolbar-filters input[type="text"] {
+  background: var(--bg-dark); color: var(--text); border: 1px solid var(--border);
+  border-radius: 4px; padding: 5px 8px; font-family: var(--font-mono); font-size: 11px;
+  flex: 1; min-width: 140px;
+}
+.quest-toolbar .quest-toolbar-filters select:focus,
+.quest-toolbar .quest-toolbar-filters input:focus { border-color: var(--accent); outline: none; }
 .quest-filter-row {
   display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;
 }
@@ -2541,18 +2568,24 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   border-radius: 4px; padding: 7px 10px; font-family: var(--font-mono); font-size: 12px;
 }
 .quest-filter-row select:focus, .quest-filter-row input:focus { border-color: var(--accent); outline: none; }
-.quest-view-tabs { display: flex; gap: 0; margin-bottom: 14px; }
-.quest-view-tab {
-  padding: 8px 18px; font-size: 12px; font-family: var(--font-mono); font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer;
-  background: var(--bg-input); border: 1px solid var(--border); color: var(--text-dim);
-  transition: all 0.15s ease;
+.quest-global-toggle {
+  display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+  background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border); border-radius: 6px; margin-bottom: 14px;
+  cursor: pointer; user-select: none; transition: all 0.15s ease;
 }
-.quest-view-tab:first-child { border-radius: 4px 0 0 4px; }
-.quest-view-tab:last-child { border-radius: 0 4px 4px 0; }
-.quest-view-tab:not(:first-child) { border-left: none; }
-.quest-view-tab.active { background: rgba(200,170,110,0.15); border-color: var(--accent); color: var(--accent); }
-.quest-view-tab:hover:not(.active) { color: var(--text); border-color: var(--border-light); }
+.quest-global-toggle:hover { border-color: var(--accent); }
+.quest-global-toggle .quest-global-chevron {
+  font-size: 10px; color: var(--text-dim); transition: transform 0.2s ease; display: inline-block;
+}
+.quest-global-toggle.open .quest-global-chevron { transform: rotate(90deg); color: var(--accent); }
+.quest-global-toggle .quest-global-label {
+  font-size: 12px; font-weight: 600; color: var(--text-dim); font-family: var(--font-mono);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.quest-global-toggle:hover .quest-global-label { color: var(--text); }
+.quest-global-body { display: none; }
+.quest-global-body.open { display: block; }
 .quest-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
 .quest-sortable:hover { color: var(--accent); }
 .quest-sort-arrow { font-size: 10px; color: var(--accent); margin-left: 2px; }
@@ -2596,6 +2629,194 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);
 }
 .quest-map-group-body { margin-bottom: 12px; }
+/* ── Quest Trader Portrait Selector ── */
+.quest-trader-strip {
+  display: flex; gap: 10px; padding: 8px 4px 12px; margin-bottom: 16px;
+  overflow-x: auto; scrollbar-width: thin; scrollbar-color: rgba(200,170,110,0.3) transparent;
+}
+.quest-trader-strip::-webkit-scrollbar { height: 4px; }
+.quest-trader-strip::-webkit-scrollbar-thumb { background: rgba(200,170,110,0.3); border-radius: 2px; }
+.quest-trader-strip::-webkit-scrollbar-track { background: transparent; }
+.quest-trader-portrait {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 12px 8px; min-width: 88px; border-radius: 8px; cursor: pointer;
+  background: rgba(0,0,0,0.25); border: 2px solid transparent;
+  transition: all 0.25s ease; position: relative; flex-shrink: 0;
+  opacity: 0.55;
+}
+.quest-trader-portrait:hover {
+  opacity: 0.85; background: rgba(200,170,110,0.06);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.quest-trader-portrait.active {
+  opacity: 1; border-color: var(--accent);
+  background: rgba(200,170,110,0.08);
+  box-shadow: 0 0 20px rgba(200,170,110,0.15), 0 4px 16px rgba(0,0,0,0.3);
+}
+.quest-trader-portrait .qtp-img {
+  width: 64px; height: 64px; border-radius: 8px; object-fit: cover;
+  border: 2px solid var(--border); background: var(--bg-dark);
+  transition: border-color 0.25s ease, filter 0.25s ease;
+}
+.quest-trader-portrait.active .qtp-img { border-color: var(--accent); }
+.quest-trader-portrait:hover .qtp-img { filter: brightness(1.15); }
+.quest-trader-portrait .qtp-letter {
+  width: 64px; height: 64px; border-radius: 8px; background: var(--bg-dark);
+  border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
+  font-size: 24px; color: var(--accent); font-weight: 700; font-family: var(--font-mono);
+  transition: border-color 0.25s ease;
+}
+.quest-trader-portrait.active .qtp-letter { border-color: var(--accent); }
+.quest-trader-portrait .qtp-name {
+  font-size: 11px; font-family: var(--font-mono); font-weight: 600;
+  color: var(--text-dim); text-align: center; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; max-width: 80px;
+  transition: color 0.25s ease;
+}
+.quest-trader-portrait.active .qtp-name { color: var(--accent); }
+.quest-trader-portrait .qtp-count {
+  font-size: 10px; font-family: var(--font-mono); color: var(--text-dim);
+  background: rgba(255,255,255,0.05); padding: 1px 7px; border-radius: 8px;
+}
+.quest-trader-portrait.active .qtp-count {
+  background: rgba(200,170,110,0.15); color: var(--accent);
+}
+.quest-trader-portrait .qtp-all-icon {
+  width: 64px; height: 64px; border-radius: 8px; background: var(--bg-dark);
+  border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.25s ease;
+}
+.quest-trader-portrait.active .qtp-all-icon { border-color: var(--accent); }
+
+.quest-bottleneck { border-left: 3px solid var(--warning) !important; }
+
+/* Quest Hover Preview Panel */
+.quest-hover-panel {
+  display: none; position: fixed; z-index: 9999;
+  width: 420px; max-height: 450px; overflow-y: auto;
+  background: #1a1a16; border: 1px solid var(--accent); border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 1px var(--accent);
+  padding: 16px; font-family: var(--font-mono); font-size: 12px;
+  pointer-events: auto;
+}
+.quest-hover-panel.visible { display: block; }
+.quest-hover-panel .qhp-title {
+  font-size: 14px; font-weight: 700; color: var(--text-bright);
+  margin-bottom: 4px; line-height: 1.3;
+}
+.quest-hover-panel .qhp-meta {
+  font-size: 11px; color: var(--text-dim); margin-bottom: 12px;
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.quest-hover-panel .qhp-meta span { white-space: nowrap; }
+.quest-hover-panel .qhp-section-label {
+  font-size: 10px; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin: 10px 0 6px; border-bottom: 1px solid rgba(200,170,110,0.15); padding-bottom: 3px;
+}
+.quest-hover-panel .qhp-obj {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.quest-hover-panel .qhp-obj:last-child { border-bottom: none; }
+.quest-hover-panel .qhp-obj-type {
+  font-size: 9px; font-weight: 700; color: var(--text-dim);
+  background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 3px;
+  white-space: nowrap; flex-shrink: 0; margin-top: 1px;
+}
+.quest-hover-panel .qhp-obj-desc { color: var(--text); line-height: 1.4; flex: 1; }
+.quest-hover-panel .qhp-obj-val {
+  color: var(--accent); font-weight: 600; white-space: nowrap; flex-shrink: 0;
+}
+.quest-hover-panel .qhp-fir {
+  font-size: 9px; color: var(--warning); font-weight: 700;
+  background: rgba(220,180,60,0.12); padding: 1px 5px; border-radius: 3px;
+}
+.quest-hover-panel .qhp-reward {
+  display: flex; align-items: center; gap: 8px; padding: 3px 0;
+}
+.quest-hover-panel .qhp-reward-type {
+  font-size: 9px; font-weight: 700; color: var(--text-dim);
+  background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 3px;
+}
+.quest-hover-panel .qhp-reward-val { color: var(--success-bright); font-weight: 600; }
+.quest-hover-panel .qhp-btn {
+  display: block; width: 100%; margin-top: 12px; padding: 8px;
+  background: rgba(200,170,110,0.12); border: 1px solid var(--accent);
+  color: var(--accent); border-radius: 5px; cursor: pointer;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  text-align: center; transition: background 0.15s;
+}
+.quest-hover-panel .qhp-btn:hover { background: rgba(200,170,110,0.25); }
+.quest-hover-panel .qhp-loading {
+  color: var(--text-dim); font-style: italic; padding: 20px 0; text-align: center;
+}
+.quest-stats-bar {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  padding: 10px 16px; margin-bottom: 14px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 6px;
+}
+.quest-stats-bar .quest-stat-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-family: var(--font-mono); font-weight: 600;
+  padding: 3px 10px; border-radius: 12px;
+}
+.quest-stat-pill.stat-completed { background: rgba(80,200,120,0.15); color: var(--success-bright); }
+.quest-stat-pill.stat-inprogress { background: rgba(200,170,110,0.2); color: var(--accent); }
+.quest-stat-pill.stat-available { background: rgba(70,140,210,0.15); color: #6aadff; }
+.quest-stat-pill.stat-locked { background: rgba(100,100,100,0.2); color: var(--text-dim); }
+.quest-stat-pill.stat-failed { background: rgba(220,80,80,0.15); color: var(--error-bright); }
+.quest-stats-progress {
+  flex: 1; min-width: 120px; height: 6px; background: rgba(255,255,255,0.06);
+  border-radius: 3px; overflow: hidden;
+}
+.quest-stats-progress-fill { height: 100%; background: var(--success-bright); border-radius: 3px; transition: width 0.5s ease; }
+.quest-preset-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border); border-left: 3px solid var(--accent);
+  border-radius: 8px; padding: 10px 16px; margin-bottom: 14px;
+  font-family: var(--font-mono); font-size: 12px;
+}
+.quest-preset-sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+.quest-preset-bar select, .quest-preset-bar input[type="text"] {
+  background: var(--bg-input); color: var(--text); border: 1px solid var(--border);
+  border-radius: 4px; padding: 6px 10px; font-family: var(--font-mono); font-size: 12px;
+}
+.quest-preset-bar select { min-width: 160px; }
+.quest-preset-bar input[type="text"] { min-width: 120px; }
+.quest-preset-bar button {
+  padding: 6px 12px; background: var(--bg-dark); border: 1px solid var(--border);
+  border-radius: 4px; cursor: pointer; font-family: var(--font-mono); font-size: 11px;
+  white-space: nowrap; transition: border-color 0.15s ease, color 0.15s ease;
+}
+.quest-preset-bar .preset-btn-load { color: var(--accent); border-color: rgba(200,170,110,0.3); }
+.quest-preset-bar .preset-btn-load:hover { border-color: var(--accent); }
+.quest-preset-bar .preset-btn-delete { color: var(--error-bright); border-color: rgba(139,58,58,0.3); }
+.quest-preset-bar .preset-btn-delete:hover { border-color: var(--error-bright); }
+.quest-preset-bar .preset-btn-save { background: rgba(200,170,110,0.15); color: var(--accent); border-color: rgba(200,170,110,0.3); font-weight: 600; }
+.quest-preset-bar .preset-btn-save:hover { border-color: var(--accent); }
+.quest-preset-bar .preset-btn-export { color: var(--text-dim); }
+.quest-preset-bar .preset-btn-import { color: var(--text-dim); }
+.quest-reward-summary {
+  background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 6px;
+  padding: 14px 18px; margin-top: 14px;
+}
+.quest-reward-summary .reward-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-top: 10px;
+}
+.quest-reward-summary .reward-stat {
+  background: rgba(0,0,0,0.2); border-radius: 6px; padding: 10px 14px;
+}
+.quest-reward-summary .reward-stat-label {
+  font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+}
+.quest-reward-summary .reward-stat-value {
+  font-size: 18px; font-weight: 700; color: var(--text-bright); font-family: var(--font-mono);
+}
 /* Detail panel */
 .quest-back-btn {
   display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
@@ -3607,8 +3828,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .trader-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 6px;
+  padding: 10px 12px;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   position: relative;
@@ -3634,8 +3855,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .trader-card-header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 6px;
 }
 .trader-card-info {
   flex: 1;
@@ -3644,15 +3865,51 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 /* ── Trader Name ── */
 .trader-card-name {
-  font-size: 18px;
-  font-weight: 600;
-  color: #f0ead6;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  letter-spacing: 0.02em;
+  font-size: 15px;
+  font-weight: 700;
+  color: transparent;
+  letter-spacing: 0.05em;
   font-family: var(--font-mono);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  background: linear-gradient(
+    135deg,
+    #e8d5a0 0%, #f5ecd0 20%, #c8aa6e 40%,
+    #a08040 60%, #d4bc82 80%, #f0e0b8 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  /* Emboss: light highlight on top, dark inset on bottom */
+  -webkit-text-stroke: 0.3px rgba(200, 170, 110, 0.2);
+  position: relative;
+  animation: traderNameShimmer 6s ease-in-out infinite;
+  transition: filter 0.3s ease;
+}
+.trader-card-name::before {
+  content: attr(data-name);
+  position: absolute; top: 0; left: 0; right: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.25) 0%,
+    transparent 45%,
+    rgba(0,0,0,0.15) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  pointer-events: none;
+}
+@keyframes traderNameShimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.trader-card:hover .trader-card-name {
+  filter: brightness(1.25);
+  -webkit-text-stroke: 0.3px rgba(255, 240, 200, 0.3);
 }
 
 /* ── Currency & LL Pills ── */
@@ -3703,20 +3960,20 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 /* ── Item Count ── */
 .trader-card-item-count {
-  font-size: 12px;
+  font-size: 11px;
   font-family: var(--font-mono);
   color: rgba(240, 234, 214, 0.45);
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 /* ── Stat Bar ── */
 .trader-card-stats {
   display: flex;
   justify-content: space-between;
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px solid rgba(180, 160, 100, 0.1);
-  gap: 8px;
+  gap: 4px;
   font-family: var(--font-mono);
 }
 .trader-stat-col {
@@ -3734,7 +3991,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   font-weight: 600;
 }
 .trader-stat-value {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   font-family: 'Courier New', monospace;
 }
@@ -3908,8 +4165,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 /* ── Card Grid ── */
 .trader-card-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
   margin-bottom: 16px;
   position: relative;
   /* Ambient hex grid background */
@@ -3923,6 +4180,44 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   to { opacity: 1; transform: translateY(0); }
 }
 /* JS sets animation-delay per card via inline style */
+
+/* ═══════ PROGRESSION TAB ═══════ */
+.prog-panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+.prog-panel .panel-header { padding: 12px 16px; border-bottom: 1px solid transparent; }
+.prog-panel .panel-header:hover { background: rgba(200,170,110,0.04); }
+.prog-panel-body { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.prog-panel.collapsed .prog-panel-body { display: none; }
+.prog-panel.collapsed .prog-chevron { transform: rotate(-90deg); }
+
+.prog-slider-row, .prog-override-row { display: flex; align-items: center; gap: 10px; }
+.prog-slider-row label, .prog-override-row label { min-width: 140px; font-size: 13px; color: var(--text-secondary); flex-shrink: 0; }
+.prog-slider { flex: 1; height: 6px; -webkit-appearance: none; appearance: none; background: var(--border); border-radius: 3px; outline: none; cursor: pointer; }
+.prog-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg-panel); }
+.prog-slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg-panel); }
+.prog-slider.prog-green::-webkit-slider-thumb { background: #4ade80; }
+.prog-slider.prog-red::-webkit-slider-thumb { background: #f87171; }
+.prog-slider.prog-green::-moz-range-thumb { background: #4ade80; }
+.prog-slider.prog-red::-moz-range-thumb { background: #f87171; }
+.prog-num { width: 72px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; color: var(--text-primary); font-size: 13px; text-align: right; }
+.prog-num:focus { border-color: var(--accent); outline: none; }
+.prog-override { flex: 1; max-width: 220px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; color: var(--text-primary); font-size: 13px; }
+.prog-override:focus { border-color: var(--accent); outline: none; }
+.prog-override::placeholder { color: var(--text-dim); font-size: 12px; }
+.prog-unit { font-size: 12px; color: var(--text-dim); min-width: 24px; }
+
+.prog-slider-row.disabled .prog-slider { opacity: 0.3; pointer-events: none; }
+.prog-slider-row.disabled .prog-num { opacity: 0.3; pointer-events: none; }
+.prog-slider-row.disabled label { opacity: 0.4; }
+
+.prog-apply-bar { position: sticky; bottom: 0; background: var(--bg-panel); border-top: 1px solid var(--border); padding: 12px 16px; margin: 16px -16px -16px; z-index: 10; }
+.prog-apply-bar .btn-primary { background: linear-gradient(135deg, #c8aa6e, #a08040); color: #000; font-weight: 600; border: none; padding: 8px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+.prog-apply-bar .btn-primary:hover { filter: brightness(1.1); }
+.prog-apply-bar .btn-primary.prog-dirty { box-shadow: 0 0 12px rgba(200,170,110,0.4); animation: progPulse 2s infinite; }
+@keyframes progPulse { 0%,100% { box-shadow: 0 0 8px rgba(200,170,110,0.3); } 50% { box-shadow: 0 0 16px rgba(200,170,110,0.6); } }
+
+.prog-preset-btn { border: 1px solid var(--border); border-radius: 6px; padding: 5px 14px; font-size: 13px; cursor: pointer; transition: all .15s; }
+.prog-preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+.prog-preset-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(200,170,110,0.1); }
 
 </style>
 </head>
@@ -3980,7 +4275,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <button class="nav-btn" data-nav="flea" onclick="switchMainTab('flea')">Flea Market</button>
     <button class="nav-btn" data-nav="traders" onclick="switchMainTab('traders')">Traders</button>
     <button class="nav-btn" data-nav="quests" onclick="switchMainTab('quests')">Quests</button>
-    <button class="nav-btn disabled" data-nav="progression" onclick="switchMainTab('progression')">Progression <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
+    <button class="nav-btn" data-nav="progression" onclick="switchMainTab('progression')">Progression</button>
     <button class="nav-btn disabled" data-nav="backups" onclick="switchMainTab('backups')">Backups <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="events" onclick="switchMainTab('events')">Events <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="gamevalues" onclick="switchMainTab('gamevalues')">Game Values <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
@@ -5552,6 +5847,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   <div class="main-tab-panel" id="main-quests">
 
     <div id="questMainView">
+      <!-- Trader Portrait Selector -->
+      <div class="quest-trader-strip" id="questTraderStrip">
+        <div style="color:var(--text-dim);padding:20px;font-style:italic;font-size:12px;white-space:nowrap">Loading traders...</div>
+      </div>
+
       <!-- Warning banner -->
       <div style="background:rgba(200,122,62,0.1);border:1px solid rgba(200,122,62,0.3);border-radius:6px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--warning)">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -5561,127 +5861,190 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <!-- Toast -->
       <div id="questToast" style="display:none;background:rgba(74,124,89,0.15);border:1px solid rgba(74,124,89,0.4);border-radius:6px;padding:10px 16px;margin-bottom:14px;font-size:13px;color:#6abf7b;font-family:var(--font-mono)"></div>
 
-      <!-- Global Controls -->
-      <div class="quest-glass-panel">
-        <div class="quest-glass-panel-title">Global Quest Controls</div>
-        <!-- Row 1: XP / Kill Count -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-          <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
-              Quest XP Multiplier
-              <i class="cc-info-icon">i<span class="cc-tip">Multiplies experience rewards from all quests. 2.0 = double XP. Max 100x.</span></i>
-            </label>
-            <div style="display:flex;align-items:center;gap:10px">
-              <input type="range" id="questGlobalXp" min="0" max="100" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalXp','questGlobalXpVal')">
-              <input type="number" id="questGlobalXpVal" min="0" max="100" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalXpVal','questGlobalXp')">
-              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+      <!-- Completion Stats Bar (always visible) -->
+      <div class="quest-stats-bar" id="questStatsBar">
+        <select id="questStatsPlayer" onchange="questRefreshStats()" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-family:var(--font-mono);font-size:11px;min-width:140px">
+          <option value="">Select Player...</option>
+        </select>
+        <span class="quest-stat-pill stat-completed" id="questStatCompleted" title="Completed">&mdash; Done</span>
+        <span class="quest-stat-pill stat-inprogress" id="questStatInProgress" title="In Progress">&mdash; Active</span>
+        <span class="quest-stat-pill stat-available" id="questStatAvailable" title="Available">&mdash; Available</span>
+        <span class="quest-stat-pill stat-locked" id="questStatLocked" title="Locked">&mdash; Locked</span>
+        <span class="quest-stat-pill stat-failed" id="questStatFailed" title="Failed">&mdash; Failed</span>
+        <div class="quest-stats-progress">
+          <div class="quest-stats-progress-fill" id="questStatsProgressFill" style="width:0%"></div>
+        </div>
+        <span style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono)" id="questStatsPercent">&mdash;</span>
+      </div>
+
+      <!-- Global Settings (collapsible) -->
+      <div class="quest-global-toggle" id="questGlobalToggle" onclick="questToggleGlobal()">
+        <span class="quest-global-chevron" id="questGlobalChevron">&#9654;</span>
+        <span class="quest-global-label">Global Settings &amp; Presets</span>
+        <span style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);margin-left:auto">Multipliers, FIR, presets</span>
+      </div>
+      <div class="quest-global-body" id="questGlobalBody">
+        <!-- Global Controls -->
+        <div class="quest-glass-panel">
+          <div class="quest-glass-panel-title">Global Quest Controls</div>
+          <!-- Row 1: XP / Kill Count -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+                Quest XP Multiplier
+                <i class="cc-info-icon">i<span class="cc-tip">Multiplies experience rewards from all quests. 2.0 = double XP. Max 100x.</span></i>
+              </label>
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="range" id="questGlobalXp" min="0" max="100" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalXp','questGlobalXpVal')">
+                <input type="number" id="questGlobalXpVal" min="0" max="100" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalXpVal','questGlobalXp')">
+                <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+                Kill Count Multiplier
+                <i class="cc-info-icon">i<span class="cc-tip">Multiplies kill/elimination objective counts. 0.5 = half the kills needed.</span></i>
+              </label>
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="range" id="questGlobalKill" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalKill','questGlobalKillVal')">
+                <input type="number" id="questGlobalKillVal" min="0.1" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalKillVal','questGlobalKill')">
+                <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+              </div>
             </div>
           </div>
-          <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
-              Kill Count Multiplier
-              <i class="cc-info-icon">i<span class="cc-tip">Multiplies kill/elimination objective counts. 0.5 = half the kills needed.</span></i>
-            </label>
-            <div style="display:flex;align-items:center;gap:10px">
-              <input type="range" id="questGlobalKill" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalKill','questGlobalKillVal')">
-              <input type="number" id="questGlobalKillVal" min="0.1" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalKillVal','questGlobalKill')">
-              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+          <!-- Row 2: Standing / Handover -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+                Standing Multiplier
+                <i class="cc-info-icon">i<span class="cc-tip">Multiplies trader standing rewards. 2.0 = double standing gain.</span></i>
+              </label>
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="range" id="questGlobalStanding" min="0" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalStanding','questGlobalStandingVal')">
+                <input type="number" id="questGlobalStandingVal" min="0" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalStandingVal','questGlobalStanding')">
+                <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+              </div>
             </div>
+            <div>
+              <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+                Handover Count Multiplier
+                <i class="cc-info-icon">i<span class="cc-tip">Multiplies item handover/find objective counts. 0.5 = half items needed.</span></i>
+              </label>
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="range" id="questGlobalHandover" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalHandover','questGlobalHandoverVal')">
+                <input type="number" id="questGlobalHandoverVal" min="0.1" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalHandoverVal','questGlobalHandover')">
+                <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+              </div>
+            </div>
+          </div>
+          <!-- Row 3: Item Rewards / Level Shift -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+                Item Reward Multiplier
+                <i class="cc-info-icon">i<span class="cc-tip">Multiplies item reward stack counts. 2.0 = double items received.</span></i>
+              </label>
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="range" id="questGlobalItemReward" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalItemReward','questGlobalItemRewardVal')">
+                <input type="number" id="questGlobalItemRewardVal" min="0.1" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalItemRewardVal','questGlobalItemReward')">
+                <span style="font-size:12px;color:var(--text-dim)">&times;</span>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
+                Level Requirement Shift
+                <i class="cc-info-icon">i<span class="cc-tip">Shift all quest level requirements. Negative = lower levels needed. -5 means a level 15 quest becomes level 10.</span></i>
+              </label>
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="number" id="questGlobalLevelShift" min="-50" max="50" step="1" value="0" class="cc-num-input" style="width:80px" oninput="questCheckDirty()">
+                <span style="font-size:12px;color:var(--text-dim)">levels</span>
+              </div>
+            </div>
+          </div>
+          <!-- Row 4: FIR toggle -->
+          <div style="display:flex;align-items:center;gap:10px">
+            <label class="cc-toggle">
+              <input type="checkbox" id="questGlobalRemoveFIR" onchange="questCheckDirty()">
+              <span class="cc-toggle-slider"></span>
+            </label>
+            <span style="font-size:13px;color:var(--text)">Remove Found-in-Raid requirements</span>
+            <i class="cc-info-icon">i<span class="cc-tip">Removes the "found in raid" requirement from all handover/find item objectives. Items can be purchased from flea or traders.</span></i>
           </div>
         </div>
-        <!-- Row 2: Standing / Handover -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-          <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
-              Standing Multiplier
-              <i class="cc-info-icon">i<span class="cc-tip">Multiplies trader standing rewards. 2.0 = double standing gain.</span></i>
-            </label>
-            <div style="display:flex;align-items:center;gap:10px">
-              <input type="range" id="questGlobalStanding" min="0" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalStanding','questGlobalStandingVal')">
-              <input type="number" id="questGlobalStandingVal" min="0" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalStandingVal','questGlobalStanding')">
-              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
-            </div>
-          </div>
-          <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
-              Handover Count Multiplier
-              <i class="cc-info-icon">i<span class="cc-tip">Multiplies item handover/find objective counts. 0.5 = half items needed.</span></i>
-            </label>
-            <div style="display:flex;align-items:center;gap:10px">
-              <input type="range" id="questGlobalHandover" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalHandover','questGlobalHandoverVal')">
-              <input type="number" id="questGlobalHandoverVal" min="0.1" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalHandoverVal','questGlobalHandover')">
-              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
-            </div>
+
+        <!-- Apply & Reset Bar -->
+        <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+          <button onclick="questApplyAll()" class="quest-apply-btn" id="questApplyBtn">
+            <span id="questApplyText">Apply Changes to All Quests</span>
+            <span id="questApplySpinner" style="display:none">Applying...</span>
+          </button>
+          <button onclick="questResetAll()" class="quest-reset-btn">&#8634; Reset All</button>
+        </div>
+
+        <!-- Quest Presets -->
+        <div class="quest-preset-bar">
+          <span style="font-size:11px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:1px">Presets</span>
+          <select id="questPresetSelect"><option value="">— select preset —</option></select>
+          <button class="preset-btn-load" onclick="questLoadPreset()">Load</button>
+          <button class="preset-btn-delete" onclick="questDeletePreset()">Delete</button>
+          <div class="quest-preset-sep"></div>
+          <input type="text" id="questPresetName" placeholder="Preset name...">
+          <button class="preset-btn-save" onclick="questSavePreset()">Save</button>
+          <div class="quest-preset-sep"></div>
+          <button class="preset-btn-export" onclick="questExportPreset()">Export</button>
+          <button class="preset-btn-import" onclick="questShowImport()">Import</button>
+        </div>
+        <div id="questImportArea" style="display:none;margin-bottom:14px">
+          <textarea id="questImportJson" rows="4" placeholder="Paste preset JSON here..." style="width:100%;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:8px;font-family:var(--font-mono);font-size:11px;resize:vertical;margin-bottom:6px"></textarea>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="questImportName" placeholder="Preset name (optional)" style="flex:1;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-family:var(--font-mono);font-size:11px">
+            <button onclick="questImportPreset()" style="padding:6px 14px;background:var(--bg-input);color:var(--accent);border:1px solid rgba(200,170,110,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px;font-weight:600">Import</button>
+            <button onclick="document.getElementById('questImportArea').style.display='none'" style="padding:6px 14px;background:var(--bg-input);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px">Cancel</button>
           </div>
         </div>
-        <!-- Row 3: Item Rewards / Level Shift -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-          <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
-              Item Reward Multiplier
-              <i class="cc-info-icon">i<span class="cc-tip">Multiplies item reward stack counts. 2.0 = double items received.</span></i>
-            </label>
-            <div style="display:flex;align-items:center;gap:10px">
-              <input type="range" id="questGlobalItemReward" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--accent)" oninput="questSliderSync('questGlobalItemReward','questGlobalItemRewardVal')">
-              <input type="number" id="questGlobalItemRewardVal" min="0.1" max="10" step="0.1" value="1.0" class="cc-num-input" oninput="questNumSync('questGlobalItemRewardVal','questGlobalItemReward')">
-              <span style="font-size:12px;color:var(--text-dim)">&times;</span>
-            </div>
-          </div>
-          <div>
-            <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px">
-              Level Requirement Shift
-              <i class="cc-info-icon">i<span class="cc-tip">Shift all quest level requirements. Negative = lower levels needed. -5 means a level 15 quest becomes level 10.</span></i>
-            </label>
-            <div style="display:flex;align-items:center;gap:10px">
-              <input type="number" id="questGlobalLevelShift" min="-50" max="50" step="1" value="0" class="cc-num-input" style="width:80px" oninput="questCheckDirty()">
-              <span style="font-size:12px;color:var(--text-dim)">levels</span>
-            </div>
-          </div>
-        </div>
-        <!-- Row 4: FIR toggle -->
-        <div style="display:flex;align-items:center;gap:10px">
-          <label class="cc-toggle">
-            <input type="checkbox" id="questGlobalRemoveFIR" onchange="questCheckDirty()">
-            <span class="cc-toggle-slider"></span>
+      </div>
+
+      <!-- View Tabs + Filters (merged toolbar) -->
+      <div class="quest-toolbar">
+        <button class="quest-view-tab active" id="questViewAll" onclick="questSetView('all')">All</button>
+        <button class="quest-view-tab" id="questViewMap" onclick="questSetView('map')">Map</button>
+        <button class="quest-view-tab" id="questViewTree" onclick="questSetView('tree')">Tree</button>
+        <div class="quest-toolbar-filters">
+          <select id="questFilterTrader" onchange="questApplyFilters()">
+            <option value="">All Traders</option>
+          </select>
+          <select id="questFilterType" onchange="questApplyFilters()">
+            <option value="">All Types</option>
+          </select>
+          <select id="questFilterMap" onchange="questApplyFilters()">
+            <option value="">All Maps</option>
+          </select>
+          <select id="questFilterObjType" onchange="questApplyFilters()">
+            <option value="">All Objectives</option>
+          </select>
+          <input type="text" id="questSearchInput" placeholder="Search..." oninput="questDebounceSearch()">
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono);white-space:nowrap;cursor:pointer">
+            <input type="checkbox" id="questShowCompleted" onchange="questApplyFilters()" style="accent-color:var(--accent)">
+            Completed
           </label>
-          <span style="font-size:13px;color:var(--text)">Remove Found-in-Raid requirements</span>
-          <i class="cc-info-icon">i<span class="cc-tip">Removes the "found in raid" requirement from all handover/find item objectives. Items can be purchased from flea or traders.</span></i>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono);white-space:nowrap;cursor:pointer">
+            <input type="checkbox" id="questShowLocked" onchange="questApplyFilters()" style="accent-color:var(--accent)" checked>
+            Locked
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono);white-space:nowrap;cursor:pointer">
+            <input type="checkbox" id="questShowDisabled" onchange="questApplyFilters()" style="accent-color:var(--accent)">
+            Disabled
+          </label>
+          <span id="questCountLabel" style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);white-space:nowrap">0 quests</span>
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0">
+            <div style="width:1px;height:18px;background:var(--border)"></div>
+            <select id="questBulkPlayer" style="background:var(--bg-dark);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-family:var(--font-mono);font-size:11px;min-width:130px">
+              <option value="">Bulk player...</option>
+            </select>
+            <button onclick="questBulkOp('Success')" style="padding:4px 10px;background:rgba(80,200,120,0.1);color:var(--success-bright);border:1px solid rgba(80,200,120,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:10px;font-weight:600">Complete</button>
+            <button onclick="questBulkOp('Locked')" style="padding:4px 10px;background:rgba(139,58,58,0.1);color:var(--error-bright);border:1px solid rgba(139,58,58,0.3);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:10px;font-weight:600">Reset</button>
+          </div>
         </div>
-      </div>
-
-      <!-- Apply & Reset Bar -->
-      <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
-        <button onclick="questApplyAll()" class="quest-apply-btn" id="questApplyBtn">
-          <span id="questApplyText">Apply Changes to All Quests</span>
-          <span id="questApplySpinner" style="display:none">Applying...</span>
-        </button>
-        <button onclick="questResetAll()" class="quest-reset-btn">&#8634; Reset All</button>
-      </div>
-
-      <!-- Filter Row -->
-      <div class="quest-filter-row">
-        <select id="questFilterTrader" onchange="questLoadList()">
-          <option value="">All Traders</option>
-        </select>
-        <select id="questFilterType" onchange="questLoadList()">
-          <option value="">All Types</option>
-        </select>
-        <select id="questFilterMap" onchange="questLoadList()">
-          <option value="">All Maps</option>
-        </select>
-        <input type="text" id="questSearchInput" placeholder="Search quests..." style="flex:1;min-width:180px" oninput="questDebounceSearch()">
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);font-family:var(--font-mono);white-space:nowrap;cursor:pointer">
-          <input type="checkbox" id="questShowDisabled" onchange="questRenderTable(); if(questViewMode==='map') questRenderMapView();" style="accent-color:var(--accent)">
-          Show Disabled
-        </label>
-        <span id="questCountLabel" style="font-size:12px;color:var(--text-dim);font-family:var(--font-mono);white-space:nowrap">0 quests</span>
-      </div>
-
-      <!-- View Toggle -->
-      <div class="quest-view-tabs">
-        <button class="quest-view-tab active" id="questViewAll" onclick="questSetView('all')">All Quests</button>
-        <button class="quest-view-tab" id="questViewMap" onclick="questSetView('map')">By Map</button>
-        <button class="quest-view-tab" id="questViewTree" onclick="questSetView('tree')">Prerequisite Tree</button>
       </div>
 
       <!-- All Quests Table -->
@@ -5695,7 +6058,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
                 <th class="quest-sortable" onclick="questSetSort('map')" style="text-align:left">Map <span class="quest-sort-arrow" id="questArrow_map"></span></th>
                 <th class="quest-sortable" onclick="questSetSort('level')" style="text-align:center;width:60px">Lvl <span class="quest-sort-arrow" id="questArrow_level"></span></th>
                 <th class="quest-sortable" onclick="questSetSort('objectives')" style="text-align:center;width:50px">Obj <span class="quest-sort-arrow" id="questArrow_objectives"></span></th>
-                <th style="text-align:center;width:80px">Progress</th>
+                <th class="quest-sortable" onclick="questSetSort('progress')" style="text-align:center;width:80px">Progress <span class="quest-sort-arrow" id="questArrow_progress"></span></th>
                 <th style="text-align:center;width:50px">Status</th>
               </tr>
             </thead>
@@ -5722,9 +6085,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </div>
       </div>
 
+      <!-- Reward Summary (on-demand) -->
+      <div id="questRewardSummaryWrap" style="margin-top:14px">
+        <button id="questRewardSummaryBtn" onclick="questLoadRewardSummary()" style="width:100%;padding:8px;background:var(--bg-input);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;transition:all 0.15s ease">Show Reward Summary</button>
+        <div id="questRewardSummaryPanel" style="display:none" class="quest-reward-summary"></div>
+      </div>
+
       <!-- Status Bar -->
       <div id="questStatusBar" style="text-align:center;font-size:12px;color:var(--text-dim);font-family:var(--font-mono);padding:8px 0;border-top:1px solid var(--border);margin-top:12px"></div>
     </div>
+
+    <!-- Hover Preview Panel (floating) -->
+    <div id="questHoverPanel" class="quest-hover-panel"></div>
 
     <!-- Detail Panel (hidden) -->
     <div id="questDetailPanel" style="display:none">
@@ -5793,11 +6165,179 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   </div>
 
   <div class="main-tab-panel" id="main-progression">
-    <div class="coming-soon">
-      <div class="coming-soon-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-      <h2>Progression & Skills</h2>
-      <p>XP multipliers, skill leveling rates, fatigue settings, and hideout timers.</p>
-      <span class="phase-badge">Phase 6</span>
+    <!-- Warning banner -->
+    <div class="prog-warning" style="background:rgba(200,170,110,0.08);border:1px solid rgba(200,170,110,0.25);border-radius:8px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-dim)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="18" height="18" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Changes apply to <strong>all players</strong>. Game clients must <strong>restart</strong> to pick up new values.</span>
+    </div>
+
+    <!-- Preset buttons -->
+    <div class="prog-presets" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <span style="color:var(--text-dim);font-size:13px;align-self:center;margin-right:4px">Presets:</span>
+      <button class="btn btn-ghost btn-sm prog-preset-btn" data-preset="Casual" onclick="progApplyPreset('Casual')">Casual</button>
+      <button class="btn btn-ghost btn-sm prog-preset-btn" data-preset="Hardcore" onclick="progApplyPreset('Hardcore')">Hardcore</button>
+      <button class="btn btn-ghost btn-sm prog-preset-btn" data-preset="Testing" onclick="progApplyPreset('Testing')">Testing</button>
+    </div>
+
+    <!-- Experience Panel -->
+    <div class="panel prog-panel" id="progPanelXp">
+      <div class="panel-header" onclick="progTogglePanel('Xp')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Experience
+        </h3>
+        <svg class="prog-chevron" id="progChevronXp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodyXp">
+        <div class="prog-slider-row" data-key="xp.globalXpMultiplier"><label>Global XP</label><input type="range" min="0" max="100" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="100" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="xp.raidXpMultiplier"><label>Raid XP</label><input type="range" min="0" max="100" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="100" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="xp.questXpMultiplier"><label>Quest XP</label><input type="range" min="0" max="100" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="100" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="xp.craftXpMultiplier"><label>Craft XP</label><input type="range" min="0" max="100" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="100" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="xp.healXpMultiplier"><label>Heal XP</label><input type="range" min="0" max="100" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="100" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="xp.examineXpMultiplier"><label>Examine XP</label><input type="range" min="0" max="100" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="100" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+      </div>
+    </div>
+
+    <!-- Skills Panel -->
+    <div class="panel prog-panel" id="progPanelSkills">
+      <div class="panel-header" onclick="progTogglePanel('Skills')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Skills
+        </h3>
+        <svg class="prog-chevron" id="progChevronSkills" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodySkills">
+        <div class="prog-slider-row" data-key="skills.globalSkillSpeedMultiplier"><label>Global Skill Speed</label><input type="range" min="0" max="100" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="100" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="skills.skillFatigueMultiplier"><label>Skill Fatigue</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div style="margin-top:8px;font-size:12px;color:var(--text-dim)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          Fatigue 0 = no diminishing returns (very fast leveling). Lower = easier. Per-skill overrides coming in Phase 6B.
+        </div>
+      </div>
+    </div>
+
+    <!-- Hideout Panel -->
+    <div class="panel prog-panel" id="progPanelHideout">
+      <div class="panel-header" onclick="progTogglePanel('Hideout')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Hideout
+        </h3>
+        <svg class="prog-chevron" id="progChevronHideout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodyHideout">
+        <div class="prog-slider-row" data-key="hideout.buildTimeMultiplier"><label>Build Time</label><input type="range" min="0.001" max="10" step="0.01" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.001" max="10" step="0.01" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-override-row" data-key="hideout.buildTimeOverrideSeconds"><label>Build Override</label><input type="number" min="1" max="999999" step="1" value="" placeholder="seconds (blank = use multiplier)" class="prog-override" oninput="progOverrideSync(this)" /><span class="prog-unit">sec</span></div>
+        <div class="prog-slider-row" data-key="hideout.craftTimeMultiplier"><label>Craft Time</label><input type="range" min="0.001" max="10" step="0.01" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.001" max="10" step="0.01" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-override-row" data-key="hideout.craftTimeOverrideSeconds"><label>Craft Override</label><input type="number" min="1" max="999999" step="1" value="" placeholder="seconds (blank = use multiplier)" class="prog-override" oninput="progOverrideSync(this)" /><span class="prog-unit">sec</span></div>
+        <div class="prog-slider-row" data-key="hideout.fuelConsumptionMultiplier"><label>Fuel Consumption</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+      </div>
+    </div>
+
+    <!-- Insurance Panel -->
+    <div class="panel prog-panel" id="progPanelInsurance">
+      <div class="panel-header" onclick="progTogglePanel('Insurance')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Insurance
+        </h3>
+        <svg class="prog-chevron" id="progChevronInsurance" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodyInsurance">
+        <div class="prog-slider-row" data-key="insurance.costMultiplier"><label>Cost</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="insurance.returnTimeMultiplier"><label>Return Time</label><input type="range" min="0.01" max="10" step="0.01" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.01" max="10" step="0.01" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-override-row" data-key="insurance.returnTimeOverrideHours"><label>Return Override</label><input type="number" min="0.01" max="168" step="0.01" value="" placeholder="hours (blank = use multiplier)" class="prog-override" oninput="progOverrideSync(this)" /><span class="prog-unit">hrs</span></div>
+        <div class="prog-slider-row" data-key="insurance.returnChanceMultiplier"><label>Return Chance</label><input type="range" min="0" max="5" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="5" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+      </div>
+    </div>
+
+    <!-- Repairs Panel -->
+    <div class="panel prog-panel" id="progPanelRepair">
+      <div class="panel-header" onclick="progTogglePanel('Repair')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+          Repairs
+        </h3>
+        <svg class="prog-chevron" id="progChevronRepair" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodyRepair">
+        <div class="prog-slider-row" data-key="repair.costMultiplier"><label>Repair Cost</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="repair.durabilityLossMultiplier"><label>Durability Loss</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+      </div>
+    </div>
+
+    <!-- Scav Panel -->
+    <div class="panel prog-panel" id="progPanelScav">
+      <div class="panel-header" onclick="progTogglePanel('Scav')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+          Scav
+        </h3>
+        <svg class="prog-chevron" id="progChevronScav" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodyScav">
+        <div class="prog-override-row" data-key="scav.cooldownSeconds"><label>Cooldown</label><input type="number" min="1" max="86400" step="1" value="" placeholder="seconds (blank = default)" class="prog-override" oninput="progOverrideSync(this)" /><span class="prog-unit">sec</span></div>
+        <div class="prog-slider-row" data-key="scav.karmaGainMultiplier"><label>Karma Gain</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="scav.karmaLossMultiplier"><label>Karma Loss</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+      </div>
+    </div>
+
+    <!-- Health Panel -->
+    <div class="panel prog-panel" id="progPanelHealth">
+      <div class="panel-header" onclick="progTogglePanel('Health')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Health
+        </h3>
+        <svg class="prog-chevron" id="progChevronHealth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodyHealth">
+        <div class="prog-slider-row" data-key="health.energyDrainMultiplier"><label>Energy Drain</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="health.hydrationDrainMultiplier"><label>Hydration Drain</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="health.outOfRaidHealingSpeedMultiplier"><label>Out-of-Raid Healing</label><input type="range" min="0" max="100" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="100" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+      </div>
+    </div>
+
+    <!-- Stamina Panel -->
+    <div class="panel prog-panel" id="progPanelStamina">
+      <div class="panel-header" onclick="progTogglePanel('Stamina')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Stamina
+        </h3>
+        <svg class="prog-chevron" id="progChevronStamina" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodyStamina">
+        <div class="prog-slider-row" data-key="stamina.capacityMultiplier"><label>Capacity</label><input type="range" min="0.1" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.1" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="stamina.recoveryMultiplier"><label>Recovery</label><input type="range" min="0.1" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.1" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="stamina.sprintDrainMultiplier"><label>Sprint Drain</label><input type="range" min="0.1" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.1" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="stamina.jumpCostMultiplier"><label>Jump Cost</label><input type="range" min="0.1" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.1" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+      </div>
+    </div>
+
+    <!-- Traders Panel -->
+    <div class="panel prog-panel" id="progPanelTraders">
+      <div class="panel-header" onclick="progTogglePanel('Traders')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 00-8 0v2"/></svg>
+          Traders
+        </h3>
+        <svg class="prog-chevron" id="progChevronTraders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodyTraders">
+        <div class="prog-slider-row" data-key="traders.globalLoyaltyRequirementMultiplier"><label>Loyalty Requirements</label><input type="range" min="0.01" max="10" step="0.01" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.01" max="10" step="0.01" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-override-row" data-key="traders.fleaMarketLevel"><label>Flea Market Level</label><input type="number" min="1" max="99" step="1" value="" placeholder="level (blank = default)" class="prog-override" oninput="progOverrideSync(this)" /><span class="prog-unit">lvl</span></div>
+      </div>
+    </div>
+
+    <!-- Apply bar (sticky) -->
+    <div class="prog-apply-bar" id="progApplyBar">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <button class="btn btn-primary" id="progApplyBtn" onclick="progApplyAll()" style="min-width:180px">Apply All Changes</button>
+        <button class="btn btn-ghost btn-sm" onclick="progResetDefaults()">Reset Defaults</button>
+        <span class="prog-status" id="progStatus" style="font-size:12px;color:var(--text-dim)"></span>
+      </div>
     </div>
   </div>
 
@@ -6371,6 +6911,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'flea' && !fleaLoaded) fleaInit();
     if (tab === 'traders' && !tradersLoaded) tradersInit();
     if (tab === 'raidinfo' && !raidInfoLoaded) raidInfoInit();
+    if (tab === 'progression' && !progressionLoaded) progressionInit();
 
     // Manage raid info polling — start when on tab, stop when leaving
     if (tab === 'raidinfo') {
@@ -8749,9 +9290,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       launcherListAllProfiles: document.getElementById('fikaAllProfiles').checked
     };
     api('fika/config', { method: 'POST', body: JSON.stringify(body) }).then(function(d) {
-      showToast('FIKA settings saved', 'success');
+      toast('FIKA settings saved', 'success');
       if (d.available) loadFikaConfig();
-    }).catch(function() { showToast('Failed to save FIKA settings', 'error'); });
+    }).catch(function() { toast('Failed to save FIKA settings', 'error'); });
   };
 
   // Headless Console
@@ -8853,9 +9394,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   window.sendUrlsToPlayers = function() {
     if (!confirm('Send Command Center URLs to all players via in-game mail?')) return;
     api('dashboard/send-urls', { method: 'POST' }).then(function(d) {
-      if (d.success) showToast('URLs sent to ' + d.recipientCount + ' player(s)', 'success');
-      else showToast('Failed: ' + (d.error || 'Unknown error'), 'error');
-    }).catch(function() { showToast('Failed to send URLs', 'error'); });
+      if (d.success) toast('URLs sent to ' + d.recipientCount + ' player(s)', 'success');
+      else toast('Failed: ' + (d.error || 'Unknown error'), 'error');
+    }).catch(function() { toast('Failed to send URLs', 'error'); });
   };
 
   window.openBroadcastModal = function() {
@@ -10741,7 +11282,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var questLocations = [];
   var questCurrentId = null;
   var questDetailData = null;
-  var questSort = 'trader';
+  var questSort = 'progress';
   var questSortDir = 'asc';
   var questViewMode = 'all';
   var questPage = 0;
@@ -10750,7 +11291,42 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var questSearchTimer = null;
   var questAppliedValues = {};
   var questPlayersCache = null;
+  var questObjectiveTypes = [];
+  var questTradersFull = []; // Full trader data with avatars from traders/list
+  var questSelectedTraderId = ''; // '' = all traders
+  // Canonical in-game trader order (vanilla)
+  var questVanillaTraderOrder = {
+    'prapor': 0, 'therapist': 1, 'fence': 2, 'skier': 3,
+    'peacekeeper': 4, 'mechanic': 5, 'ragman': 6, 'jaeger': 7,
+    'ref': 8, 'lightkeeper': 8
+  };
+  function questTraderSortKey(t) {
+    var nick = (t.nickname || t.traderName || '').toLowerCase();
+    var order = questVanillaTraderOrder[nick];
+    if (order !== undefined) return order;
+    // Modded traders after vanilla, sorted alphabetically
+    return 100;
+  }
   var questMapGroupsOpen = {};
+
+  // Objective type color map
+  var questObjTypeColors = {
+    'CounterCreator':       { fg: '#e06060', bg: 'rgba(224,96,96,0.15)' },     // red — kills/combat
+    'Elimination':          { fg: '#e06060', bg: 'rgba(224,96,96,0.15)' },     // red
+    'HandoverItem':         { fg: '#e0a040', bg: 'rgba(224,160,64,0.12)' },    // orange — turn in
+    'FindItem':             { fg: '#d0c050', bg: 'rgba(208,192,80,0.12)' },    // yellow — find
+    'LeaveItemAtLocation':  { fg: '#60b8e0', bg: 'rgba(96,184,224,0.12)' },    // cyan — place
+    'PlaceBeacon':          { fg: '#60b8e0', bg: 'rgba(96,184,224,0.12)' },    // cyan
+    'Skill':                { fg: '#a080e0', bg: 'rgba(160,128,224,0.12)' },   // purple — skill
+    'TraderLoyalty':        { fg: '#c8aa6e', bg: 'rgba(200,170,110,0.12)' },   // gold — loyalty
+    'WeaponAssembly':       { fg: '#80c880', bg: 'rgba(128,200,128,0.12)' },   // green — build
+    'TraderStanding':       { fg: '#c8aa6e', bg: 'rgba(200,170,110,0.12)' },   // gold
+    'Level':                { fg: '#80c0e0', bg: 'rgba(128,192,224,0.12)' },   // blue — level
+    'Quest':                { fg: '#b0b0b0', bg: 'rgba(176,176,176,0.10)' }    // grey — quest prereq
+  };
+  function questObjTypeColor(type) {
+    return questObjTypeColors[type] || { fg: 'var(--text-dim)', bg: 'rgba(255,255,255,0.06)' };
+  }
 
   // Trader color map for row borders
   var questTraderColors = {
@@ -10783,22 +11359,53 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       api('quests/config'),
       api('quests/traders'),
       api('quests/locations'),
-      api('quests/status')
+      api('quests/status'),
+      api('quests/objective-types').catch(function() { return { types: [] }; }),
+      api('quests/presets').catch(function() { return { presets: [] }; }),
+      api('traders/list').catch(function() { return { traders: [] }; })
     ]).then(function(results) {
       questConfig = results[0];
       questTraders = results[1].traders || results[1] || [];
       questLocations = results[2].locations || results[2] || [];
+      questObjectiveTypes = (results[4] && results[4].types) || [];
+      questTradersFull = (results[6] && results[6].traders) || [];
       questPopulateGlobals();
       questPopulateFilters();
+      questPopulateObjTypeFilter();
+      // Auto-select first trader with quests
+      if (!questSelectedTraderId && questTradersFull.length > 0) {
+        var countMap = {};
+        questTraders.forEach(function(t) { countMap[t.traderId] = t.questCount || 0; });
+        var hiddenTraders = ['storyteller'];
+        var withQuests = questTradersFull.filter(function(t) {
+          return countMap[t.id] > 0 && hiddenTraders.indexOf((t.nickname || '').toLowerCase()) === -1;
+        });
+        withQuests.sort(function(a, b) {
+          var oa = questTraderSortKey(a), ob = questTraderSortKey(b);
+          if (oa !== ob) return oa - ob;
+          return (a.nickname || '').localeCompare(b.nickname || '');
+        });
+        if (withQuests.length > 0) {
+          questSelectedTraderId = withQuests[0].id;
+          var sel = document.getElementById('questFilterTrader');
+          if (sel) sel.value = questSelectedTraderId;
+        }
+      }
+      questRenderTraderPortraits();
       questRenderStatus(results[3]);
+      questRenderCompletionStats(results[3].completionStats);
       questSnapshotApplied();
       questLoadList();
-      // Pre-fetch players for state setter
-      api('players').then(function(d) { questPlayersCache = d.players || []; }).catch(function() { questPlayersCache = []; });
+      questRenderPresetList((results[5] && results[5].presets) || []);
+      // Pre-fetch players for state setter + stats bar + bulk ops
+      api('players').then(function(d) {
+        questPlayersCache = d.players || [];
+        questPopulatePlayerSelectors();
+      }).catch(function() { questPlayersCache = []; });
     }).catch(function(e) {
       console.error('Quest editor init failed:', e);
       document.getElementById('questTableBody').innerHTML =
-        '<tr><td colspan="6" style="text-align:center;color:var(--error-bright);padding:20px">Failed to initialize: ' + escH(e.message) + '</td></tr>';
+        '<tr><td colspan="7" style="text-align:center;color:var(--error-bright);padding:20px">Failed to initialize: ' + escH(e.message) + '</td></tr>';
     });
   }
 
@@ -10829,8 +11436,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var ts = document.getElementById('questFilterTrader');
     if (ts) {
       var html = '<option value="">All Traders</option>';
-      questTraders.forEach(function(t) {
-        html += '<option value="' + escA(t.id) + '">' + escH(t.name) + '</option>';
+      var sortedTraders = questTraders.slice().sort(function(a, b) {
+        var oa = questTraderSortKey(a), ob = questTraderSortKey(b);
+        if (oa !== ob) return oa - ob;
+        return (a.traderName || '').localeCompare(b.traderName || '');
+      });
+      sortedTraders.forEach(function(t) {
+        html += '<option value="' + escA(t.traderId) + '">' + escH(t.traderName) + ' (' + (t.questCount || 0) + ')</option>';
       });
       ts.innerHTML = html;
     }
@@ -10838,7 +11450,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (ms) {
       var html2 = '<option value="">All Maps</option>';
       questLocations.forEach(function(l) {
-        html2 += '<option value="' + escA(l.id) + '">' + escH(l.name) + '</option>';
+        html2 += '<option value="' + escA(l.location) + '">' + escH(l.locationName) + ' (' + (l.count || 0) + ')</option>';
       });
       ms.innerHTML = html2;
     }
@@ -10923,6 +11535,317 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       (status.disabledCount || 0) + ' disabled';
   }
 
+  // ── Completion Stats ──
+  function questRenderCompletionStats(stats) {
+    var el = function(id) { return document.getElementById(id); };
+    if (!stats || !stats.totalQuests) {
+      el('questStatCompleted').innerHTML = '&mdash; Done';
+      el('questStatInProgress').innerHTML = '&mdash; Active';
+      el('questStatAvailable').innerHTML = '&mdash; Available';
+      el('questStatLocked').innerHTML = '&mdash; Locked';
+      el('questStatFailed').innerHTML = '&mdash; Failed';
+      el('questStatsProgressFill').style.width = '0%';
+      el('questStatsPercent').innerHTML = '&mdash;';
+      return;
+    }
+    el('questStatCompleted').textContent = (stats.completed || 0) + ' Done';
+    el('questStatInProgress').textContent = (stats.inProgress || 0) + ' Active';
+    el('questStatAvailable').textContent = (stats.available || 0) + ' Available';
+    el('questStatLocked').textContent = (stats.locked || 0) + ' Locked';
+    el('questStatFailed').textContent = (stats.failed || 0) + ' Failed';
+    var pct = stats.completionPercent || 0;
+    el('questStatsProgressFill').style.width = pct + '%';
+    el('questStatsPercent').textContent = pct + '%';
+  }
+
+  window.questRefreshStats = function() {
+    var sid = (document.getElementById('questStatsPlayer') || {}).value || '';
+    var url = sid ? 'quests/status?sessionId=' + encodeURIComponent(sid) : 'quests/status';
+    api(url).then(function(r) {
+      questRenderCompletionStats(r.completionStats);
+      questRenderStatus(r);
+    });
+  };
+
+  // ── Player Selectors ──
+  function questPopulatePlayerSelectors() {
+    var players = questPlayersCache || [];
+    var html = '<option value="">Select Player...</option>';
+    var html2 = '<option value="">Player for bulk ops...</option>';
+    players.forEach(function(p) {
+      var opt = '<option value="' + escA(p.sessionId) + '">' + escH(p.nickname || 'Unknown') + ' (Lv ' + (p.level || '?') + ')</option>';
+      html += opt;
+      html2 += opt;
+    });
+    var statsEl = document.getElementById('questStatsPlayer');
+    if (statsEl) statsEl.innerHTML = html;
+    var bulkEl = document.getElementById('questBulkPlayer');
+    if (bulkEl) bulkEl.innerHTML = html2;
+  }
+
+  // ── Objective Type Filter ──
+  function questPopulateObjTypeFilter() {
+    var sel = document.getElementById('questFilterObjType');
+    if (!sel) return;
+    var objTypeLabels = {
+      'countercreator': 'Kills',
+      'handoveritem': 'Hand Over',
+      'finditem': 'Find',
+      'leaveitemat': 'Place Item',
+      'plantitem': 'Plant Item',
+      'skill': 'Skill',
+      'weapondoormechanism': 'Interaction'
+    };
+    var html = '<option value="">All Objectives</option>';
+    questObjectiveTypes.forEach(function(t) {
+      var label = objTypeLabels[t.toLowerCase()] || t;
+      html += '<option value="' + escA(t) + '">' + escH(label) + '</option>';
+    });
+    sel.innerHTML = html;
+  }
+
+  // ── Trader Portrait Strip ──
+  function questRenderTraderPortraits() {
+    var strip = document.getElementById('questTraderStrip');
+    if (!strip) return;
+
+    // Build quest count map from questTraders
+    var countMap = {};
+    var totalQuests = 0;
+    questTraders.forEach(function(t) {
+      countMap[t.traderId] = t.questCount || 0;
+      totalQuests += t.questCount || 0;
+    });
+
+    // Build portrait list: only traders that have quests, sorted vanilla first then modded
+    var hiddenTraders = ['storyteller'];
+    var withQuests = questTradersFull.filter(function(t) {
+      return countMap[t.id] > 0 && hiddenTraders.indexOf((t.nickname || '').toLowerCase()) === -1;
+    });
+    withQuests.sort(function(a, b) {
+      var oa = questTraderSortKey(a), ob = questTraderSortKey(b);
+      if (oa !== ob) return oa - ob;
+      return (a.nickname || '').localeCompare(b.nickname || '');
+    });
+
+    var html = '';
+
+    // "All" button
+    var allActive = !questSelectedTraderId ? ' active' : '';
+    html += '<div class="quest-trader-portrait' + allActive + '" onclick="questSelectTrader(\'\')" title="Show all traders">';
+    html += '<div class="qtp-all-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="' + (!questSelectedTraderId ? 'var(--accent)' : 'var(--text-dim)') + '" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>';
+    html += '<div class="qtp-name">All</div>';
+    html += '<div class="qtp-count">' + totalQuests + '</div>';
+    html += '</div>';
+
+    withQuests.forEach(function(t) {
+      var isActive = questSelectedTraderId === t.id;
+      var cls = 'quest-trader-portrait' + (isActive ? ' active' : '');
+      var count = countMap[t.id] || 0;
+
+      html += '<div class="' + cls + '" onclick="questSelectTrader(\'' + escA(t.id) + '\')" title="' + escA(t.nickname || t.id) + ' (' + count + ' quests)">';
+
+      // Avatar image
+      if (t.avatarUrl) {
+        var src = window.location.protocol + '//' + window.location.hostname + ':6969' + t.avatarUrl;
+        var imgId = 'qtp_' + t.id.substr(0, 8);
+        html += '<img id="' + imgId + '" class="qtp-img" src="' + escA(src) + '" alt="' + escA(t.nickname) + '">';
+        // Attach error fallback after render
+        setTimeout((function(id, nick) {
+          return function() {
+            var el = document.getElementById(id);
+            if (el) el.onerror = function() {
+              el.outerHTML = '<div class="qtp-letter">' + escH(nick.charAt(0).toUpperCase()) + '</div>';
+            };
+          };
+        })(imgId, t.nickname || '?'), 0);
+      } else {
+        html += '<div class="qtp-letter">' + escH((t.nickname || '?').charAt(0).toUpperCase()) + '</div>';
+      }
+
+      html += '<div class="qtp-name">' + escH(t.nickname || t.id) + '</div>';
+      html += '<div class="qtp-count">' + count + '</div>';
+      html += '</div>';
+    });
+
+    strip.innerHTML = html;
+  }
+
+  window.questSelectTrader = function(traderId) {
+    questSelectedTraderId = traderId;
+    // Sync with the filter dropdown
+    var sel = document.getElementById('questFilterTrader');
+    if (sel) sel.value = traderId;
+    // Re-render portraits to update active state
+    questRenderTraderPortraits();
+    // Re-filter and render the quest list
+    questPage = 0;
+    questFilterAndSort();
+    questRenderAll();
+  };
+
+  // ── Quest Presets ──
+  function questRenderPresetList(presets) {
+    var sel = document.getElementById('questPresetSelect');
+    if (!sel) return;
+    var html = '<option value="">— select preset —</option>';
+    (presets || []).forEach(function(p) {
+      html += '<option value="' + escA(p.name) + '">' + escH(p.name) + (p.description ? ' — ' + escH(p.description) : '') + '</option>';
+    });
+    sel.innerHTML = html;
+  }
+
+  window.questRefreshPresets = function() {
+    api('quests/presets').then(function(r) {
+      questRenderPresetList(r.presets || []);
+    });
+  };
+
+  window.questSavePreset = function() {
+    var nameEl = document.getElementById('questPresetName');
+    var name = (nameEl && nameEl.value || '').trim();
+    if (!name) { name = prompt('Preset name:'); }
+    if (!name || !name.trim()) return;
+    var desc = prompt('Description (optional):', '') || '';
+    api('quests/presets/save', 'POST', { name: name.trim(), description: desc.trim() }).then(function() {
+      questShowToast('Saved preset: ' + name.trim());
+      if (nameEl) nameEl.value = '';
+      questRefreshPresets();
+    }).catch(function(e) { questShowToast('Save failed: ' + e.message, true); });
+  };
+
+  window.questLoadPreset = function() {
+    var sel = document.getElementById('questPresetSelect');
+    var name = sel ? sel.value : '';
+    if (!name) { questShowToast('Select a preset first', true); return; }
+    if (!confirm('Load preset "' + name + '"? This will overwrite your current quest settings.')) return;
+    api('quests/presets/load', 'POST', { name: name }).then(function(result) {
+      if (result.success) {
+        questShowToast('Loaded preset: ' + name + ' — ' + (result.questsModified || 0) + ' quests modified');
+        questConfig = null;
+        Promise.all([api('quests/config'), api('quests/status')]).then(function(r) {
+          questConfig = r[0];
+          questPopulateGlobals();
+          questSnapshotApplied();
+          questRenderStatus(r[1]);
+          questRenderCompletionStats(r[1].completionStats);
+          var btn = document.getElementById('questApplyBtn');
+          if (btn) btn.classList.remove('apply-btn-active');
+          questLoadList();
+        });
+      } else {
+        questShowToast('Load failed: ' + (result.error || 'Unknown'), true);
+      }
+    }).catch(function(e) { questShowToast('Load failed: ' + e.message, true); });
+  };
+
+  window.questDeletePreset = function() {
+    var sel = document.getElementById('questPresetSelect');
+    var name = sel ? sel.value : '';
+    if (!name) { questShowToast('Select a preset first', true); return; }
+    if (!confirm('Delete preset "' + name + '"?')) return;
+    api('quests/presets/' + encodeURIComponent(name), 'DELETE').then(function(r) {
+      if (r.success) { questShowToast('Deleted preset: ' + name); questRefreshPresets(); }
+      else questShowToast('Delete failed', true);
+    }).catch(function(e) { questShowToast('Delete failed: ' + e.message, true); });
+  };
+
+  window.questExportPreset = function() {
+    var sel = document.getElementById('questPresetSelect');
+    var name = sel ? sel.value : '';
+    if (!name) { questShowToast('Select a preset first', true); return; }
+    api('quests/presets/' + encodeURIComponent(name) + '/download').then(function(r) {
+      if (r.json) {
+        var blob = new Blob([r.json], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.json';
+        a.click(); URL.revokeObjectURL(url);
+        questShowToast('Exported preset: ' + name);
+      } else {
+        questShowToast('Export failed: preset not found', true);
+      }
+    }).catch(function(e) { questShowToast('Export failed: ' + e.message, true); });
+  };
+
+  window.questShowImport = function() {
+    var area = document.getElementById('questImportArea');
+    if (area) area.style.display = area.style.display === 'none' ? 'block' : 'none';
+  };
+
+  window.questImportPreset = function() {
+    var json = (document.getElementById('questImportJson') || {}).value || '';
+    var name = (document.getElementById('questImportName') || {}).value || '';
+    if (!json.trim()) { questShowToast('Paste preset JSON first', true); return; }
+    api('quests/presets/upload', 'POST', { name: name.trim(), presetJson: json.trim() }).then(function(r) {
+      if (r.success) {
+        questShowToast('Imported preset: ' + (r.name || 'Unknown'));
+        document.getElementById('questImportArea').style.display = 'none';
+        document.getElementById('questImportJson').value = '';
+        document.getElementById('questImportName').value = '';
+        questRefreshPresets();
+      } else {
+        questShowToast('Import failed: ' + (r.error || 'Unknown'), true);
+      }
+    }).catch(function(e) { questShowToast('Import failed: ' + e.message, true); });
+  };
+
+  // ── Bulk Operations ──
+  window.questBulkOp = function(status) {
+    var playerSel = document.getElementById('questBulkPlayer');
+    var sessionId = playerSel ? playerSel.value : '';
+    if (!sessionId) { questShowToast('Select a player for bulk operations first', true); return; }
+    var label = status === 'Success' ? 'complete' : 'reset';
+    var questIds = questFiltered.map(function(q) { return q.questId; });
+    if (questIds.length === 0) { questShowToast('No visible quests to ' + label, true); return; }
+    var playerName = playerSel.options[playerSel.selectedIndex].text;
+    if (!confirm(label.charAt(0).toUpperCase() + label.slice(1) + ' ' + questIds.length + ' visible quests for ' + playerName + '?')) return;
+    api('quests/bulk-state', 'POST', { sessionId: sessionId, status: status, questIds: questIds }).then(function(r) {
+      if (r.success) {
+        questShowToast('Bulk ' + label + ': ' + (r.count || 0) + ' quests updated for ' + playerName);
+        questRefreshAll();
+      } else {
+        questShowToast('Bulk op failed: ' + (r.error || 'Unknown'), true);
+      }
+    }).catch(function(e) { questShowToast('Bulk op failed: ' + e.message, true); });
+  };
+
+  // ── Reward Summary ──
+  window.questLoadRewardSummary = function() {
+    var panel = document.getElementById('questRewardSummaryPanel');
+    var btn = document.getElementById('questRewardSummaryBtn');
+    if (!panel) return;
+    if (panel.style.display !== 'none') { panel.style.display = 'none'; btn.textContent = 'Show Reward Summary'; return; }
+    btn.textContent = 'Loading...';
+    api('quests/reward-summary').then(function(r) {
+      btn.textContent = 'Hide Reward Summary';
+      var html = '<div class="reward-grid">';
+      html += '<div class="reward-stat"><div class="reward-stat-label">Total XP</div><div class="reward-stat-value">' + Math.round(r.totalXp || 0).toLocaleString() + '</div></div>';
+      html += '<div class="reward-stat"><div class="reward-stat-label">Total Item Value</div><div class="reward-stat-value">' + Math.round(r.totalItemValue || 0).toLocaleString() + ' &#8381;</div></div>';
+      html += '<div class="reward-stat"><div class="reward-stat-label">Item Count</div><div class="reward-stat-value">' + (r.itemCount || 0).toLocaleString() + '</div></div>';
+      html += '<div class="reward-stat"><div class="reward-stat-label">Quests with Rewards</div><div class="reward-stat-value">' + (r.questCount || 0) + '</div></div>';
+      html += '</div>';
+      // Standing by trader
+      var standing = r.standingByTrader || {};
+      var traders = Object.keys(standing).sort();
+      if (traders.length > 0) {
+        html += '<div style="margin-top:12px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Standing by Trader</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+        traders.forEach(function(t) {
+          var val = standing[t];
+          var color = val >= 0 ? 'var(--success-bright)' : 'var(--error-bright)';
+          html += '<span style="font-size:12px;font-family:var(--font-mono);background:rgba(0,0,0,0.2);padding:4px 10px;border-radius:4px">' + escH(t) + ': <span style="color:' + color + ';font-weight:600">' + (val >= 0 ? '+' : '') + val.toFixed(2) + '</span></span>';
+        });
+        html += '</div>';
+      }
+      panel.innerHTML = html;
+      panel.style.display = 'block';
+    }).catch(function(e) {
+      btn.textContent = 'Show Reward Summary';
+      questShowToast('Failed to load reward summary: ' + e.message, true);
+    });
+  };
+
   // ── Apply All ──
   window.questApplyAll = function() {
     var btnText = document.getElementById('questApplyText');
@@ -10983,6 +11906,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           questPopulateGlobals();
           questSnapshotApplied();
           questRenderStatus(results[1]);
+          questRenderCompletionStats(results[1].completionStats);
           var btn = document.getElementById('questApplyBtn');
           if (btn) btn.classList.remove('apply-btn-active');
           questLoadList();
@@ -10997,23 +11921,35 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   // ── Refresh all data ──
   function questRefreshAll() {
+    questHoverCache = {}; // clear hover cache on refresh
+    var statsPlayer = (document.getElementById('questStatsPlayer') || {}).value || '';
+    var statusUrl = statsPlayer ? 'quests/status?sessionId=' + encodeURIComponent(statsPlayer) : 'quests/status';
     Promise.all([
       api('quests/config'),
-      api('quests/status')
+      api(statusUrl),
+      api('quests/presets').catch(function() { return { presets: [] }; })
     ]).then(function(results) {
       questConfig = results[0];
       questRenderStatus(results[1]);
+      questRenderCompletionStats(results[1].completionStats);
       questLoadList();
+      questRenderPresetList((results[2] && results[2].presets) || []);
     });
   }
 
   // ── Search debounce ──
   window.questDebounceSearch = function() {
     clearTimeout(questSearchTimer);
-    questSearchTimer = setTimeout(function() {
-      questPage = 0;
-      questLoadList();
-    }, 300);
+    questSearchTimer = setTimeout(function() { questApplyFilters(); }, 300);
+  };
+
+  // ── Global settings collapse ──
+  window.questToggleGlobal = function() {
+    var toggle = document.getElementById('questGlobalToggle');
+    var body = document.getElementById('questGlobalBody');
+    if (!toggle || !body) return;
+    var isOpen = body.classList.toggle('open');
+    toggle.classList.toggle('open', isOpen);
   };
 
   // ── View toggle ──
@@ -11036,53 +11972,135 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       questSort = field;
       questSortDir = 'asc';
     }
-    questRenderTable();
+    questRenderAll();
   };
 
-  // ── Load quest list from API ──
+  // ── Fetch all quests once from API ──
   window.questLoadList = function() {
-    var search = (document.getElementById('questSearchInput') || {}).value || '';
-    var trader = (document.getElementById('questFilterTrader') || {}).value || '';
-    var type = (document.getElementById('questFilterType') || {}).value || '';
-    var map = (document.getElementById('questFilterMap') || {}).value || '';
-    var offset = questPage * questLimit;
-
-    var params = 'quests?limit=' + questLimit + '&offset=' + offset;
-    if (search) params += '&search=' + encodeURIComponent(search);
-    if (trader) params += '&trader=' + encodeURIComponent(trader);
-    if (type) params += '&type=' + encodeURIComponent(type);
-    if (map) params += '&map=' + encodeURIComponent(map);
-
-    api(params).then(function(d) {
+    api('quests?limit=9999&offset=0').then(function(d) {
       questList = d.quests || [];
-      questTotal = d.total || 0;
-      document.getElementById('questCountLabel').textContent = questTotal + ' quests';
+      questTotal = questList.length;
 
       // Populate type filter from data if empty
       var typeSelect = document.getElementById('questFilterType');
       if (typeSelect && typeSelect.options.length <= 1 && questList.length > 0) {
         var types = {};
         questList.forEach(function(q) { if (q.type) types[q.type] = true; });
+        var html = '<option value="">All Types</option>';
         Object.keys(types).sort().forEach(function(t) {
-          var opt = document.createElement('option');
-          opt.value = t; opt.textContent = t;
-          typeSelect.appendChild(opt);
+          html += '<option value="' + escA(t) + '">' + escH(t) + '</option>';
         });
+        typeSelect.innerHTML = html;
       }
 
-      questRenderTable();
-      questRenderPagination();
-      if (questViewMode === 'map') questRenderMapView();
+      questApplyFilters();
     }).catch(function(e) {
       document.getElementById('questTableBody').innerHTML =
-        '<tr><td colspan="6" style="text-align:center;color:var(--error-bright);padding:20px">Failed to load: ' + escH(e.message) + '</td></tr>';
+        '<tr><td colspan="7" style="text-align:center;color:var(--error-bright);padding:20px">Failed to load: ' + escH(e.message) + '</td></tr>';
     });
   };
+
+  // ── Client-side filter + sort + paginate ──
+  var questFiltered = [];
+
+  window.questApplyFilters = function() {
+    questPage = 0;
+    // Sync portrait strip from dropdown (if changed via dropdown)
+    var dropdownTrader = (document.getElementById('questFilterTrader') || {}).value || '';
+    if (dropdownTrader !== questSelectedTraderId) {
+      questSelectedTraderId = dropdownTrader;
+      questRenderTraderPortraits();
+    }
+    questFilterAndSort();
+    questRenderAll();
+  };
+
+  function questFilterAndSort() {
+    var search = ((document.getElementById('questSearchInput') || {}).value || '').toLowerCase();
+    var trader = (document.getElementById('questFilterTrader') || {}).value || '';
+    var type = (document.getElementById('questFilterType') || {}).value || '';
+    var map = (document.getElementById('questFilterMap') || {}).value || '';
+    var objType = (document.getElementById('questFilterObjType') || {}).value || '';
+    var showDisabled = !!(document.getElementById('questShowDisabled') || {}).checked;
+    var showLocked = !!(document.getElementById('questShowLocked') || {}).checked;
+    var showCompleted = !!(document.getElementById('questShowCompleted') || {}).checked;
+    var config = questConfig || {};
+    var disabled = config.disabledQuests || [];
+
+    questFiltered = questList.filter(function(q) {
+      // Hide admin-disabled quests unless toggle is on
+      if (!showDisabled) {
+        var isDisabled = disabled.indexOf(q.questId) !== -1 || q.isDisabled;
+        if (isDisabled) return false;
+      }
+      // Hide locked quests unless toggle is on
+      if (!showLocked && (q.playerStatus === 'Locked' || q.playerStatus === '')) return false;
+      // Hide completed quests unless toggle is on
+      if (!showCompleted && (q.playerStatus === 'Success' || q.playerStatus === 'AvailableForFinish')) return false;
+      // Trader filter
+      if (trader && q.traderId !== trader) return false;
+      // Type filter
+      if (type && q.type !== type) return false;
+      // Map filter
+      if (map) {
+        var loc = (!q.location || q.location === '') ? 'any' : q.location.toLowerCase();
+        if (loc !== map.toLowerCase()) return false;
+      }
+      // Objective type filter
+      if (objType && q.objectiveTypes) {
+        var found = false;
+        for (var i = 0; i < q.objectiveTypes.length; i++) {
+          if (q.objectiveTypes[i].toLowerCase() === objType.toLowerCase()) { found = true; break; }
+        }
+        if (!found) return false;
+      }
+      // Enhanced search: quest name, ID, trader name, location name, type
+      if (search && (q.questName || '').toLowerCase().indexOf(search) === -1 &&
+          (q.questId || '').toLowerCase().indexOf(search) === -1 &&
+          (q.traderName || '').toLowerCase().indexOf(search) === -1 &&
+          (q.locationName || '').toLowerCase().indexOf(search) === -1 &&
+          (q.type || '').toLowerCase().indexOf(search) === -1) return false;
+      return true;
+    });
+
+    // Sort
+    var statusOrder = { 'Started': 0, 'AvailableForFinish': 1, 'AvailableForStart': 2, 'Locked': 3, 'Success': 4, 'Fail': 5 };
+    questFiltered.sort(function(a, b) {
+      var va, vb;
+      switch (questSort) {
+        case 'name': va = (a.questName || '').toLowerCase(); vb = (b.questName || '').toLowerCase(); return questSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        case 'trader':
+          va = questTraderSortKey(a); vb = questTraderSortKey(b);
+          if (va !== vb) return questSortDir === 'asc' ? va - vb : vb - va;
+          // Same trader order → secondary sort by name within modded
+          var tc = (a.traderName || '').localeCompare(b.traderName || '');
+          if (tc !== 0) return questSortDir === 'asc' ? tc : -tc;
+          return (a.levelRequired || 0) - (b.levelRequired || 0);
+        case 'map': va = (a.locationName || '').toLowerCase(); vb = (b.locationName || '').toLowerCase(); return questSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        case 'level': return questSortDir === 'asc' ? (a.levelRequired || 0) - (b.levelRequired || 0) : (b.levelRequired || 0) - (a.levelRequired || 0);
+        case 'objectives': return questSortDir === 'asc' ? (a.objectiveCount || 0) - (b.objectiveCount || 0) : (b.objectiveCount || 0) - (a.objectiveCount || 0);
+        case 'progress':
+          va = statusOrder[a.playerStatus] !== undefined ? statusOrder[a.playerStatus] : 9;
+          vb = statusOrder[b.playerStatus] !== undefined ? statusOrder[b.playerStatus] : 9;
+          if (va !== vb) return questSortDir === 'asc' ? va - vb : vb - va;
+          return (a.questName || '').localeCompare(b.questName || '');
+        default: return 0;
+      }
+    });
+
+    questTotal = questFiltered.length;
+  }
+
+  function questRenderAll() {
+    questRenderTable();
+    questRenderPagination();
+    if (questViewMode === 'map') questRenderMapView();
+  }
 
   // ── Render quest table (All Quests view) ──
   function questRenderTable() {
     // Update sort arrows
-    ['name','trader','map','level','objectives'].forEach(function(f) {
+    ['name','trader','map','level','objectives','progress'].forEach(function(f) {
       var arrow = document.getElementById('questArrow_' + f);
       if (arrow) arrow.textContent = questSort === f ? (questSortDir === 'asc' ? '\u25B2' : '\u25BC') : '';
     });
@@ -11090,47 +12108,47 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var config = questConfig || {};
     var disabled = config.disabledQuests || [];
     var overrides = config.questOverrides || {};
-    var showDisabled = !!(document.getElementById('questShowDisabled') || {}).checked;
 
-    // Filter disabled/locked quests unless toggle is on
-    var hiddenCount = 0;
-    var filtered = questList.filter(function(q) {
-      if (!showDisabled) {
-        var isDisabled = disabled.indexOf(q.questId) !== -1 || q.isDisabled;
-        var isLocked = q.playerStatus === 'Locked' || q.playerStatus === '';
-        if (isDisabled || isLocked) { hiddenCount++; return false; }
-      }
-      return true;
-    });
-
-    // Client-side sort
-    filtered.sort(function(a, b) {
-      var va, vb;
-      switch (questSort) {
-        case 'name': va = (a.questName || '').toLowerCase(); vb = (b.questName || '').toLowerCase(); return questSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
-        case 'trader': va = (a.traderName || '').toLowerCase(); vb = (b.traderName || '').toLowerCase(); var tc = questSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va); return tc !== 0 ? tc : (a.levelRequired || 0) - (b.levelRequired || 0);
-        case 'map': va = (a.locationName || '').toLowerCase(); vb = (b.locationName || '').toLowerCase(); return questSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
-        case 'level': return questSortDir === 'asc' ? (a.levelRequired || 0) - (b.levelRequired || 0) : (b.levelRequired || 0) - (a.levelRequired || 0);
-        case 'objectives': return questSortDir === 'asc' ? (a.objectiveCount || 0) - (b.objectiveCount || 0) : (b.objectiveCount || 0) - (a.objectiveCount || 0);
-        default: return 0;
-      }
-    });
+    // Client-side pagination
+    var start = questPage * questLimit;
+    var page = questFiltered.slice(start, start + questLimit);
 
     var body = document.getElementById('questTableBody');
-    if (filtered.length === 0) {
+    var hiddenCount = questList.length - questFiltered.length;
+    if (page.length === 0) {
       body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:40px">No quests found' +
-        (hiddenCount > 0 ? ' <span style="font-size:11px">(' + hiddenCount + ' hidden — check "Show Disabled" to see them)</span>' : '') + '</td></tr>';
+        (hiddenCount > 0 ? ' <span style="font-size:11px">(' + hiddenCount + ' hidden — check "Show Disabled")</span>' : '') + '</td></tr>';
+      // Update count
+      var cl = document.getElementById('questCountLabel');
+      if (cl) cl.textContent = '0 quests' + (hiddenCount > 0 ? ' (' + hiddenCount + ' hidden)' : '');
       return;
     }
 
     var html = '';
-    filtered.forEach(function(q) {
+    // Get selected player level for bottleneck detection
+    var bottleneckPlayerLevel = 0;
+    if (questPlayersCache && questPlayersCache.length > 0) {
+      var statsPlayer = (document.getElementById('questStatsPlayer') || {}).value;
+      if (statsPlayer) {
+        var pp = questPlayersCache.find(function(p) { return p.sessionId === statsPlayer; });
+        if (pp) bottleneckPlayerLevel = pp.level || 0;
+      } else {
+        bottleneckPlayerLevel = questPlayersCache[0].level || 0;
+      }
+    }
+
+    page.forEach(function(q) {
       var isDisabled = disabled.indexOf(q.questId) !== -1 || q.isDisabled;
       var hasOverride = !!overrides[q.questId] || q.hasOverrides;
       var rowClass = 'quest-row';
       if (isDisabled) rowClass += ' quest-disabled';
       else if (hasOverride) rowClass += ' quest-modified';
       rowClass += ' ' + questGetTraderBorderClass(q.traderName);
+
+      // Bottleneck: started quest at reachable level
+      if (!isDisabled && q.playerStatus === 'Started' && bottleneckPlayerLevel > 0 && (q.levelRequired || 0) <= bottleneckPlayerLevel) {
+        rowClass += ' quest-bottleneck';
+      }
 
       // Status dot: disabled (red), modified (gold), default (grey)
       var statusDot, statusTitle;
@@ -11150,7 +12168,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         psPill = '<span class="quest-player-pill ' + psClass + '">' + escH(questFormatStatus(ps)) + '</span>';
       }
 
-      html += '<tr class="' + rowClass + '" onclick="questOpenDetail(\'' + escA(q.questId) + '\')">';
+      html += '<tr class="' + rowClass + '" data-quest-id="' + escA(q.questId) + '" onmouseenter="questHoverIn(this,\'' + escA(q.questId) + '\')" onmouseleave="questHoverOut()">';
       html += '<td style="font-weight:500;padding-left:12px">' + escH(q.questName) + '</td>';
       html += '<td>' + escH(q.traderName) + '</td>';
       html += '<td>' + escH(q.locationName) + '</td>';
@@ -11162,10 +12180,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     });
     body.innerHTML = html;
 
-    // Update count label to reflect filtered count
+    // Update count label
     var countLabel = document.getElementById('questCountLabel');
     if (countLabel) {
-      countLabel.textContent = filtered.length + ' quests' + (hiddenCount > 0 ? ' (' + hiddenCount + ' hidden)' : '');
+      countLabel.textContent = questFiltered.length + ' quests' + (hiddenCount > 0 ? ' (' + hiddenCount + ' hidden)' : '');
     }
   }
 
@@ -11173,21 +12191,23 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   function questRenderPagination() {
     var el = document.getElementById('questPagination');
     if (!el) return;
-    var totalPages = Math.max(1, Math.ceil(questTotal / questLimit));
+    var total = questFiltered.length;
+    var totalPages = Math.max(1, Math.ceil(total / questLimit));
     var curPage = questPage + 1;
-    if (questTotal <= questLimit) { el.innerHTML = ''; return; }
+    if (total <= questLimit) { el.innerHTML = ''; return; }
 
-    var html = '<button onclick="questPrevPage()" style="background:var(--bg-input);border:1px solid var(--border);color:var(--text-dim);padding:4px 10px;border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px"' +
+    var btnStyle = 'background:var(--bg-input);border:1px solid var(--border);color:var(--text-dim);padding:4px 10px;border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px';
+    var html = '<button onclick="questPrevPage()" style="' + btnStyle + '"' +
       (questPage === 0 ? ' disabled style="opacity:0.3;cursor:default"' : '') + '>&laquo; Prev</button>';
     html += '<span>Page ' + curPage + ' of ' + totalPages + '</span>';
-    html += '<button onclick="questNextPage()" style="background:var(--bg-input);border:1px solid var(--border);color:var(--text-dim);padding:4px 10px;border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-size:11px"' +
+    html += '<button onclick="questNextPage()" style="' + btnStyle + '"' +
       (curPage >= totalPages ? ' disabled style="opacity:0.3;cursor:default"' : '') + '>Next &raquo;</button>';
-    html += '<span style="color:var(--text-muted);margin-left:8px">Showing ' + Math.min(questTotal, questPage * questLimit + 1) + '-' + Math.min(questTotal, (questPage + 1) * questLimit) + ' of ' + questTotal + '</span>';
+    html += '<span style="color:var(--text-muted);margin-left:8px">Showing ' + Math.min(total, questPage * questLimit + 1) + '-' + Math.min(total, (questPage + 1) * questLimit) + ' of ' + total + '</span>';
     el.innerHTML = html;
   }
 
-  window.questPrevPage = function() { if (questPage > 0) { questPage--; questLoadList(); } };
-  window.questNextPage = function() { if ((questPage + 1) * questLimit < questTotal) { questPage++; questLoadList(); } };
+  window.questPrevPage = function() { if (questPage > 0) { questPage--; questRenderAll(); } };
+  window.questNextPage = function() { if ((questPage + 1) * questLimit < questFiltered.length) { questPage++; questRenderAll(); } };
 
   // ── By Map View ──
   function questRenderMapView() {
@@ -11197,17 +12217,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var config = questConfig || {};
     var disabled = config.disabledQuests || [];
     var overrides = config.questOverrides || {};
-    var showDisabled = !!(document.getElementById('questShowDisabled') || {}).checked;
 
-    // Filter disabled/locked quests
-    var visibleQuests = questList.filter(function(q) {
-      if (!showDisabled) {
-        var isDisabled = disabled.indexOf(q.questId) !== -1 || q.isDisabled;
-        var isLocked = q.playerStatus === 'Locked' || q.playerStatus === '';
-        if (isDisabled || isLocked) return false;
-      }
-      return true;
-    });
+    // Use the already-filtered list
+    var visibleQuests = questFiltered;
 
     // Group quests by locationName
     var groups = {};
@@ -11250,7 +12262,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           var statusTitle = isDisabled ? 'Disabled' : (hasOverride ? 'Has overrides' : 'Default');
           var ps = q.playerStatus || '';
           var psPill = ps ? '<span class="quest-player-pill quest-ps-' + ps.toLowerCase() + '">' + escH(questFormatStatus(ps)) + '</span>' : '';
-          html += '<tr class="' + rowClass + '" onclick="questOpenDetail(\'' + escA(q.questId) + '\')">';
+          html += '<tr class="' + rowClass + '" data-quest-id="' + escA(q.questId) + '" onmouseenter="questHoverIn(this,\'' + escA(q.questId) + '\')" onmouseleave="questHoverOut()">';
           html += '<td style="font-weight:500">' + escH(q.questName) + '</td>';
           html += '<td>' + escH(q.traderName) + '</td>';
           html += '<td style="text-align:center">' + (q.levelRequired || '—') + '</td>';
@@ -11268,6 +12280,194 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   window.questToggleMapGroup = function(mapName) {
     questMapGroupsOpen[mapName] = !questMapGroupsOpen[mapName];
     questRenderMapView();
+  };
+
+  // ── Hover Preview Panel ──
+  var questHoverCache = {};
+  var questHoverTimer = null;
+  var questHoverHideTimer = null;
+  var questHoverCurrentId = null;
+  var questHoverPanelEl = null;
+
+  function questGetHoverPanel() {
+    if (!questHoverPanelEl) questHoverPanelEl = document.getElementById('questHoverPanel');
+    return questHoverPanelEl;
+  }
+
+  window.questHoverIn = function(rowEl, questId) {
+    clearTimeout(questHoverHideTimer);
+    if (questHoverCurrentId === questId) return; // already showing this one
+    clearTimeout(questHoverTimer);
+    questHoverTimer = setTimeout(function() {
+      questHoverCurrentId = questId;
+      var panel = questGetHoverPanel();
+      // Position near the row
+      var rect = rowEl.getBoundingClientRect();
+      panel.innerHTML = '<div class="qhp-loading">Loading...</div>';
+      panel.classList.add('visible');
+      questPositionHoverPanel(panel, rect);
+
+      // Fetch detail (cached)
+      if (questHoverCache[questId]) {
+        questRenderHoverPanel(questHoverCache[questId]);
+      } else {
+        api('quests/' + encodeURIComponent(questId)).then(function(data) {
+          questHoverCache[questId] = data;
+          if (questHoverCurrentId === questId) questRenderHoverPanel(data);
+        }).catch(function() {
+          if (questHoverCurrentId === questId) {
+            panel.innerHTML = '<div class="qhp-loading">Failed to load</div>';
+          }
+        });
+      }
+    }, 200);
+  };
+
+  window.questHoverOut = function() {
+    clearTimeout(questHoverTimer);
+    questHoverHideTimer = setTimeout(function() {
+      questHoverCurrentId = null;
+      var panel = questGetHoverPanel();
+      panel.classList.remove('visible');
+    }, 250);
+  };
+
+  // Keep panel open when mouse enters it
+  (function() {
+    var attachPanelEvents = function() {
+      var panel = document.getElementById('questHoverPanel');
+      if (!panel) return;
+      panel.addEventListener('mouseenter', function() {
+        clearTimeout(questHoverHideTimer);
+      });
+      panel.addEventListener('mouseleave', function() {
+        questHoverHideTimer = setTimeout(function() {
+          questHoverCurrentId = null;
+          panel.classList.remove('visible');
+        }, 200);
+      });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attachPanelEvents);
+    else attachPanelEvents();
+  })();
+
+  function questPositionHoverPanel(panel, rowRect) {
+    var pw = 420, margin = 12;
+    // Try right side of the row first
+    var left = rowRect.right + margin;
+    var top = rowRect.top;
+    // If goes off right edge, show on left side
+    if (left + pw > window.innerWidth - 10) {
+      left = rowRect.left - pw - margin;
+    }
+    // If goes off left edge, center horizontally
+    if (left < 10) {
+      left = Math.max(10, (window.innerWidth - pw) / 2);
+    }
+    // Vertical: keep within viewport
+    var maxH = Math.min(450, window.innerHeight - 40);
+    if (top + maxH > window.innerHeight - 10) {
+      top = Math.max(10, window.innerHeight - maxH - 10);
+    }
+    panel.style.left = left + 'px';
+    panel.style.top = top + 'px';
+    panel.style.maxHeight = maxH + 'px';
+  }
+
+  function questRenderHoverPanel(d) {
+    var panel = questGetHoverPanel();
+    var html = '';
+
+    // Title + wiki link
+    var wikiUrl = 'https://escapefromtarkov.fandom.com/wiki/' + d.questName.replace(/ /g, '_');
+    html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">';
+    html += '<div class="qhp-title">' + escH(d.questName) + '</div>';
+    html += '<a href="' + escA(wikiUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open wiki page" style="flex-shrink:0;padding:3px 8px;font-size:10px;font-weight:700;color:var(--accent);background:rgba(200,170,110,0.1);border:1px solid rgba(200,170,110,0.25);border-radius:4px;text-decoration:none;white-space:nowrap;line-height:1.4;font-family:var(--font-mono)">WIKI</a>';
+    html += '</div>';
+
+    // Meta row
+    html += '<div class="qhp-meta">';
+    html += '<span>Trader: <b style="color:var(--text)">' + escH(d.traderName) + '</b></span>';
+    html += '<span>Lvl: <b style="color:var(--text)">' + (d.levelRequired || '—') + '</b></span>';
+    html += '<span>Map: <b style="color:var(--text)">' + escH(d.locationName || 'Any') + '</b></span>';
+    html += '<span>Type: <b style="color:var(--text)">' + escH(d.type || '—') + '</b></span>';
+    html += '</div>';
+
+    // Description
+    if (d.description) {
+      html += '<div style="color:var(--text-dim);font-size:11px;margin-bottom:10px;line-height:1.4;font-style:italic;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">' + escH(d.description) + '</div>';
+    }
+
+    // Objectives
+    var objs = d.objectives || [];
+    if (objs.length > 0) {
+      html += '<div class="qhp-section-label">Objectives (' + objs.length + ')</div>';
+      objs.forEach(function(obj) {
+        html += '<div class="qhp-obj">';
+        var objColor = questObjTypeColor(obj.conditionType);
+        html += '<span class="qhp-obj-type" style="color:' + objColor.fg + ';background:' + objColor.bg + '">' + escH(obj.conditionType || '?') + '</span>';
+        html += '<span class="qhp-obj-desc">' + escH(obj.description || '—') + '</span>';
+        var valParts = [];
+        if (obj.value != null && obj.value > 0) {
+          var valStr = '' + obj.value;
+          if (obj.originalValue != null && obj.value !== obj.originalValue) {
+            valStr += ' <span style="font-size:10px;color:var(--text-dim);text-decoration:line-through">' + obj.originalValue + '</span>';
+          }
+          valParts.push(valStr);
+        }
+        if (valParts.length > 0) html += '<span class="qhp-obj-val">' + valParts.join('') + '</span>';
+        if (obj.onlyFoundInRaid) html += '<span class="qhp-fir">FIR</span>';
+        html += '</div>';
+      });
+    } else {
+      html += '<div class="qhp-section-label">Objectives</div>';
+      html += '<div style="color:var(--text-dim);font-size:11px;font-style:italic">No objectives defined</div>';
+    }
+
+    // Rewards (success only for preview)
+    var rewards = d.successRewards || [];
+    if (rewards.length > 0) {
+      html += '<div class="qhp-section-label">Rewards (' + rewards.length + ')</div>';
+      rewards.forEach(function(r) {
+        html += '<div class="qhp-reward">';
+        html += '<span class="qhp-reward-type">' + escH(r.type || '?') + '</span>';
+        var rLabel = '';
+        if (r.type === 'Experience') rLabel = (r.value || 0).toLocaleString() + ' XP';
+        else if (r.type === 'TraderStanding') rLabel = (r.value >= 0 ? '+' : '') + r.value + ' ' + escH(r.targetName || r.target || '');
+        else if (r.type === 'Item' && r.items && r.items.length > 0) rLabel = r.items.map(function(i) { return escH(i.name || i.templateId) + (i.count > 1 ? ' x' + i.count : ''); }).join(', ');
+        else if (r.type === 'Skill') rLabel = '+' + r.value + ' ' + escH(r.targetName || r.target || '');
+        else rLabel = r.value ? ('' + r.value) : '—';
+        html += '<span class="qhp-reward-val">' + rLabel + '</span>';
+        html += '</div>';
+      });
+    }
+
+    // Prerequisites
+    var prereqs = d.prerequisites || [];
+    if (prereqs.length > 0) {
+      html += '<div class="qhp-section-label">Prerequisites (' + prereqs.length + ')</div>';
+      prereqs.forEach(function(p) {
+        html += '<div style="color:var(--text);font-size:11px;padding:2px 0">';
+        html += escH(p.questName || p.questId);
+        if (p.requiredStatuses && p.requiredStatuses.length > 0) {
+          html += ' <span style="color:var(--text-dim)">(' + escH(p.requiredStatuses.join(', ')) + ')</span>';
+        }
+        html += '</div>';
+      });
+    }
+
+    // View Details button
+    html += '<button class="qhp-btn" onclick="questHoverOpenDetail(\'' + escA(d.questId) + '\')">View Details &rarr;</button>';
+
+    panel.innerHTML = html;
+  }
+
+  window.questHoverOpenDetail = function(questId) {
+    // Hide hover panel and open full detail
+    questHoverCurrentId = null;
+    var panel = questGetHoverPanel();
+    panel.classList.remove('visible');
+    questOpenDetail(questId);
   };
 
   // ── Detail Panel ──
@@ -11438,7 +12638,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var co = condOverrides[obj.conditionId] || {};
       html += '<div class="quest-obj-card">';
       html += '<div class="quest-obj-header">';
-      html += '<span class="quest-obj-type">' + escH(obj.type) + '</span>';
+      var dtlObjColor = questObjTypeColor(obj.type || obj.conditionType);
+      html += '<span class="quest-obj-type" style="color:' + dtlObjColor.fg + ';background:' + dtlObjColor.bg + '">' + escH(obj.type || obj.conditionType) + '</span>';
       html += '<span class="quest-obj-desc">' + escH(obj.description) + '</span>';
       html += '</div>';
 
@@ -12495,9 +13696,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
       html += '<div class="' + cardClass + '" style="animation-delay:' + (idx * 50) + 'ms" onclick="traderOpenDetail(\'' + t.id + '\')">';
       html += '<div class="trader-card-header">';
-      html += traderAvatarHtml(t, 72, llColor);
+      html += traderAvatarHtml(t, 64, llColor);
       html += '<div class="trader-card-info">';
-      html += '<div class="trader-card-name">' + escH(t.nickname) + '</div>';
+      html += '<div class="trader-card-name" data-name="' + escA(t.nickname) + '">' + escH(t.nickname) + '</div>';
       html += '<div class="trader-card-pills">' + pills + '</div>';
       html += '</div>';
       html += '</div>';
@@ -13020,6 +14221,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   window.traderLoadItems = function() {
     if (!traderCurrentId) return;
+    var tbody = document.getElementById('traderItemTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px;font-style:italic">Loading items...</td></tr>';
     var search = document.getElementById('traderItemSearch').value;
     var ll = document.getElementById('traderItemLLFilter').value;
     var offset = traderItemPage * traderItemLimit;
@@ -13074,6 +14277,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         pagHtml += '<span style="color:var(--text-muted)">Showing ' + data.items.length + '/' + traderItemTotal + '</span>';
       }
       document.getElementById('traderItemPagination').innerHTML = pagHtml;
+    }).catch(function(e) {
+      var tb = document.getElementById('traderItemTableBody');
+      tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--error-bright);padding:20px;font-style:italic">Failed to load items: ' + escH(e.message) + '</td></tr>';
+      document.getElementById('traderItemPagination').innerHTML = '';
     });
   }
 
@@ -13337,6 +14544,256 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       switchMainTab(hash);
     }
   });
+
+  // ═══════════════════════════════════════════════════════
+  // PROGRESSION TAB
+  // ═══════════════════════════════════════════════════════
+  var progressionLoaded = false;
+  var _progConfig = null;    // Local copy of config for dirty tracking
+  var _progSavedJson = '';   // JSON of last-saved config for dirty check
+  var _progActivePreset = null;
+
+  function progressionInit() {
+    if (progressionLoaded) return;
+    progressionLoaded = true;
+    progLoadConfig();
+  }
+  window.progressionInit = progressionInit;
+
+  function progLoadConfig() {
+    api('progression/status').then(function(data) {
+      _progConfig = data.config;
+      _progSavedJson = JSON.stringify(data.config);
+      _progActivePreset = data.activePreset;
+      progFillSliders(data.config);
+      progUpdatePresetButtons();
+      progUpdateDirty();
+      progUpdateStatus(data);
+    });
+  }
+
+  function progFillSliders(config) {
+    // Flatten config into dot-notation keys
+    var flat = {};
+    Object.keys(config).forEach(function(section) {
+      var obj = config[section];
+      if (obj && typeof obj === 'object') {
+        Object.keys(obj).forEach(function(key) {
+          flat[section + '.' + key] = obj[key];
+        });
+      }
+    });
+
+    // Fill slider rows
+    document.querySelectorAll('#main-progression .prog-slider-row').forEach(function(row) {
+      var key = row.dataset.key;
+      var val = flat[key];
+      if (val === undefined || val === null) val = 1;
+      var slider = row.querySelector('.prog-slider');
+      var num = row.querySelector('.prog-num');
+      if (slider) slider.value = val;
+      if (num) num.value = val;
+      progColorSlider(slider, val);
+    });
+
+    // Fill override rows
+    document.querySelectorAll('#main-progression .prog-override-row').forEach(function(row) {
+      var key = row.dataset.key;
+      var val = flat[key];
+      var inp = row.querySelector('.prog-override');
+      if (inp) inp.value = (val !== null && val !== undefined) ? val : '';
+    });
+
+    // Grey out sliders when override is set
+    progUpdateOverrideDisable();
+  }
+
+  function progBuildConfig() {
+    var config = {
+      xp: {}, skills: { perSkillMultipliers: {} }, hideout: {},
+      insurance: {}, repair: {}, scav: {}, health: {}, stamina: {}, traders: {}
+    };
+
+    document.querySelectorAll('#main-progression .prog-slider-row').forEach(function(row) {
+      var key = row.dataset.key;
+      var parts = key.split('.');
+      var num = row.querySelector('.prog-num');
+      if (num && parts.length === 2) {
+        config[parts[0]][parts[1]] = parseFloat(num.value) || 1;
+      }
+    });
+
+    document.querySelectorAll('#main-progression .prog-override-row').forEach(function(row) {
+      var key = row.dataset.key;
+      var parts = key.split('.');
+      var inp = row.querySelector('.prog-override');
+      if (inp && parts.length === 2) {
+        var val = inp.value.trim();
+        config[parts[0]][parts[1]] = val === '' ? null : parseFloat(val);
+      }
+    });
+
+    return config;
+  }
+
+  window.progSliderSync = function(slider) {
+    var row = slider.closest('.prog-slider-row');
+    var num = row.querySelector('.prog-num');
+    var val = parseFloat(slider.value);
+    if (num) num.value = val;
+    progColorSlider(slider, val);
+    _progActivePreset = null;
+    progUpdatePresetButtons();
+    progUpdateDirty();
+  };
+
+  window.progNumSync = function(num) {
+    var row = num.closest('.prog-slider-row');
+    var slider = row.querySelector('.prog-slider');
+    var val = parseFloat(num.value);
+    if (isNaN(val)) return;
+    if (slider) {
+      // Clamp to slider range
+      var max = parseFloat(slider.max);
+      var min = parseFloat(slider.min);
+      slider.value = Math.max(min, Math.min(max, val));
+    }
+    progColorSlider(slider, val);
+    _progActivePreset = null;
+    progUpdatePresetButtons();
+    progUpdateDirty();
+  };
+
+  window.progOverrideSync = function(inp) {
+    progUpdateOverrideDisable();
+    _progActivePreset = null;
+    progUpdatePresetButtons();
+    progUpdateDirty();
+  };
+
+  function progColorSlider(slider, val) {
+    if (!slider) return;
+    slider.classList.remove('prog-green', 'prog-red');
+    if (val < 0.999) slider.classList.add('prog-green');
+    else if (val > 1.001) slider.classList.add('prog-red');
+  }
+
+  function progUpdateOverrideDisable() {
+    // Build time override disables build time slider
+    var overrideMap = {
+      'hideout.buildTimeOverrideSeconds': 'hideout.buildTimeMultiplier',
+      'hideout.craftTimeOverrideSeconds': 'hideout.craftTimeMultiplier',
+      'insurance.returnTimeOverrideHours': 'insurance.returnTimeMultiplier'
+    };
+    Object.keys(overrideMap).forEach(function(overrideKey) {
+      var sliderKey = overrideMap[overrideKey];
+      var overrideRow = document.querySelector('.prog-override-row[data-key="' + overrideKey + '"]');
+      var sliderRow = document.querySelector('.prog-slider-row[data-key="' + sliderKey + '"]');
+      if (!overrideRow || !sliderRow) return;
+      var val = overrideRow.querySelector('.prog-override').value.trim();
+      if (val !== '') {
+        sliderRow.classList.add('disabled');
+      } else {
+        sliderRow.classList.remove('disabled');
+      }
+    });
+  }
+
+  function progUpdateDirty() {
+    var current = JSON.stringify(progBuildConfig());
+    var isDirty = current !== _progSavedJson;
+    var btn = document.getElementById('progApplyBtn');
+    if (btn) btn.classList.toggle('prog-dirty', isDirty);
+
+    // Count modified settings
+    var config = progBuildConfig();
+    var count = 0;
+    function check(val, def) { if (val === null || val === undefined) return; if (typeof def === 'number' && Math.abs(val - def) > 0.001) count++; if (def === null && val !== null) count++; }
+    var xp = config.xp;
+    check(xp.globalXpMultiplier, 1); check(xp.raidXpMultiplier, 1); check(xp.questXpMultiplier, 1);
+    check(xp.craftXpMultiplier, 1); check(xp.healXpMultiplier, 1); check(xp.examineXpMultiplier, 1);
+    check(config.skills.globalSkillSpeedMultiplier, 1); check(config.skills.skillFatigueMultiplier, 1);
+    check(config.hideout.buildTimeMultiplier, 1); check(config.hideout.buildTimeOverrideSeconds, null);
+    check(config.hideout.craftTimeMultiplier, 1); check(config.hideout.craftTimeOverrideSeconds, null);
+    check(config.hideout.fuelConsumptionMultiplier, 1);
+    check(config.insurance.costMultiplier, 1); check(config.insurance.returnTimeMultiplier, 1);
+    check(config.insurance.returnTimeOverrideHours, null); check(config.insurance.returnChanceMultiplier, 1);
+    check(config.repair.costMultiplier, 1); check(config.repair.durabilityLossMultiplier, 1);
+    check(config.scav.cooldownSeconds, null); check(config.scav.karmaGainMultiplier, 1); check(config.scav.karmaLossMultiplier, 1);
+    check(config.health.energyDrainMultiplier, 1); check(config.health.hydrationDrainMultiplier, 1); check(config.health.outOfRaidHealingSpeedMultiplier, 1);
+    check(config.stamina.capacityMultiplier, 1); check(config.stamina.recoveryMultiplier, 1);
+    check(config.stamina.sprintDrainMultiplier, 1); check(config.stamina.jumpCostMultiplier, 1);
+    check(config.traders.globalLoyaltyRequirementMultiplier, 1); check(config.traders.fleaMarketLevel, null);
+
+    var status = document.getElementById('progStatus');
+    if (status) {
+      if (count > 0) status.textContent = count + ' setting' + (count !== 1 ? 's' : '') + ' modified';
+      else status.textContent = 'All defaults';
+    }
+  }
+
+  function progUpdatePresetButtons() {
+    document.querySelectorAll('.prog-preset-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.preset === _progActivePreset);
+    });
+  }
+
+  function progUpdateStatus(data) {
+    var status = document.getElementById('progStatus');
+    if (status && data.settingsModified !== undefined) {
+      var c = data.settingsModified;
+      if (c > 0) status.textContent = c + ' setting' + (c !== 1 ? 's' : '') + ' modified';
+      else status.textContent = 'All defaults';
+    }
+  }
+
+  window.progTogglePanel = function(name) {
+    var panel = document.getElementById('progPanel' + name);
+    if (panel) panel.classList.toggle('collapsed');
+  };
+
+  window.progApplyAll = function() {
+    var config = progBuildConfig();
+    var btn = document.getElementById('progApplyBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Applying...'; }
+    api('progression', 'POST', config).then(function(result) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Apply All Changes'; }
+      if (result && result.success) {
+        _progSavedJson = JSON.stringify(config);
+        progUpdateDirty();
+        toast('Progression settings applied (' + result.settingsModified + ' settings, ' + result.applyTimeMs + 'ms)');
+      } else {
+        toast('Failed to apply: ' + (result && result.message || 'Unknown error'), 'error');
+      }
+    }).catch(function(err) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Apply All Changes'; }
+      toast('Error applying progression settings', 'error');
+    });
+  };
+
+  window.progResetDefaults = function() {
+    if (!confirm('Reset all progression settings to defaults?')) return;
+    api('progression/reset', 'POST').then(function(result) {
+      if (result && result.success) {
+        progLoadConfig();
+        toast('All progression settings reset to defaults');
+      } else {
+        toast('Failed to reset: ' + (result && result.message || 'Unknown error'), 'error');
+      }
+    });
+  };
+
+  window.progApplyPreset = function(name) {
+    api('progression/presets/' + encodeURIComponent(name), 'POST').then(function(result) {
+      if (result && result.success) {
+        _progActivePreset = name;
+        progLoadConfig();
+        toast('Applied "' + name + '" preset (' + result.settingsModified + ' settings)');
+      } else {
+        toast('Failed to apply preset: ' + (result && result.message || 'Unknown error'), 'error');
+      }
+    });
+  };
 
   // ═══════════════════════════════════════════════════════
   // AUTO-LOGIN + PROFILE LIST
