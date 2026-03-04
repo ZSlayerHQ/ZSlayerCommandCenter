@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Servers;
@@ -49,6 +50,10 @@ public class ProgressionControlService(
     private double _snapSkillPointsBeforeFatigue;
     private double _snapSkillFatigueReset;
 
+    // ── Strength/Endurance DependentSkillRatios snapshots ──
+    private List<DependentSkillRatio> _snapEnduranceDependentRatios = [];
+    private List<DependentSkillRatio> _snapStrengthDependentRatios = [];
+
     // ── Hideout snapshots ──
     private int _snapHideoutOverrideBuildTime;
     private int _snapHideoutOverrideCraftTime;
@@ -83,12 +88,45 @@ public class ProgressionControlService(
     private double _snapStaminaSprintDrain;
     private double _snapStaminaJumpConsumption;
 
+    // ── Weight limit snapshots ──
+    private (double? x, double? y) _snapBaseOverweightLimits;
+    private (double? x, double? y) _snapWalkOverweightLimits;
+    private (double? x, double? y) _snapSprintOverweightLimits;
+    private (double? x, double? y) _snapWalkSpeedOverweightLimits;
+
+    // ── Location snapshots (loot, boss, raid time) ──
+    private Dictionary<string, (double? looseLoot, double? containerLoot)> _snapLocationLootModifiers = new();
+    private Dictionary<string, List<(int index, double? chance)>> _snapLocationBossChances = new();
+    private Dictionary<string, double?> _snapLocationEscapeTimes = new();
+
+    // ── Airdrop snapshots ──
+    private double _snapAirdropDuration;
+    private double _snapAirdropFlareWait;
+    private double _snapAirdropPlaneSpeed;
+
     // ── Trader snapshots ──
     private int _snapRagfairMinUserLevel;
     private Dictionary<string, List<(int? minLevel, long? minSalesSum, double? minStanding)>> _snapLoyaltyLevels = new();
 
     // Track active preset
     private string? _activePreset;
+
+    // Playable location IDs for loot/raid/boss iteration
+    private static readonly string[] PlayableLocationIds =
+    [
+        "bigmap", "factory4_day", "factory4_night", "interchange",
+        "laboratory", "lighthouse", "rezervbase", "sandbox", "sandbox_high",
+        "shoreline", "tarkovstreets", "woods", "labyrinth"
+    ];
+
+    // Real boss names (skip PMC spawns like pmcBEAR, pmcUSEC, pmcBot)
+    private static readonly HashSet<string> BossNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "bossBully", "bossKnight", "bossPartisan", "sectantPriest", "bossTagilla",
+        "bossKilla", "bossGluhar", "bossZryachiy", "bossSanitar", "bossBoar",
+        "bossBoarSniper", "bossKojaniy", "bossKolontay", "peacemaker", "exUsec",
+        "bossTagillaAgro", "bossKillaAgro"
+    };
 
     // ═══════════════════════════════════════════════════════════════
     //  INITIALIZATION
@@ -121,6 +159,7 @@ public class ProgressionControlService(
             || Math.Abs(config.Skills.GlobalSkillSpeedMultiplier - 1.0) > 0.001
             || Math.Abs(config.Skills.SkillFatigueMultiplier - 1.0) > 0.001
             || config.Skills.PerSkillMultipliers.Count > 0
+            || config.Skills.SimultaneousStrengthEndurance
             || Math.Abs(config.Hideout.BuildTimeMultiplier - 1.0) > 0.001
             || config.Hideout.BuildTimeOverrideSeconds.HasValue
             || Math.Abs(config.Hideout.CraftTimeMultiplier - 1.0) > 0.001
@@ -142,6 +181,15 @@ public class ProgressionControlService(
             || Math.Abs(config.Stamina.RecoveryMultiplier - 1.0) > 0.001
             || Math.Abs(config.Stamina.SprintDrainMultiplier - 1.0) > 0.001
             || Math.Abs(config.Stamina.JumpCostMultiplier - 1.0) > 0.001
+            || Math.Abs(config.Stamina.WeightLimitMultiplier - 1.0) > 0.001
+            || config.Health.InstantOutOfRaidHealing
+            || Math.Abs(config.Loot.LooseLootMultiplier - 1.0) > 0.001
+            || Math.Abs(config.Loot.ContainerLootMultiplier - 1.0) > 0.001
+            || Math.Abs(config.Raid.RaidTimeMultiplier - 1.0) > 0.001
+            || Math.Abs(config.Raid.BossSpawnMultiplier - 1.0) > 0.001
+            || config.Airdrop.AirdropDuration.HasValue
+            || config.Airdrop.FlareWaitSeconds.HasValue
+            || config.Airdrop.PlaneSpeed.HasValue
             || Math.Abs(config.Traders.GlobalLoyaltyRequirementMultiplier - 1.0) > 0.001
             || config.Traders.FleaMarketLevel.HasValue;
     }
@@ -195,6 +243,12 @@ public class ProgressionControlService(
         _snapSkillFreshPoints = cfg.SkillFreshPoints;
         _snapSkillPointsBeforeFatigue = cfg.SkillPointsBeforeFatigue;
         _snapSkillFatigueReset = cfg.SkillFatigueReset;
+
+        // Strength/Endurance DependentSkillRatios (deep copy)
+        _snapEnduranceDependentRatios = cfg.SkillsSettings.Endurance.DependentSkillRatios?
+            .Select(r => new DependentSkillRatio { Ratio = r.Ratio, SkillId = r.SkillId }).ToList() ?? [];
+        _snapStrengthDependentRatios = cfg.SkillsSettings.Strength.DependentSkillRatios?
+            .Select(r => new DependentSkillRatio { Ratio = r.Ratio, SkillId = r.SkillId }).ToList() ?? [];
 
         // Hideout
         var hideoutConfig = configServer.GetConfig<HideoutConfig>();
@@ -260,6 +314,40 @@ public class ProgressionControlService(
         _snapStaminaSprintDrain = stamina.SprintDrainRate;
         _snapStaminaJumpConsumption = stamina.JumpConsumption;
 
+        // Weight limits
+        _snapBaseOverweightLimits = (stamina.BaseOverweightLimits?.X, stamina.BaseOverweightLimits?.Y);
+        _snapWalkOverweightLimits = (stamina.WalkOverweightLimits?.X, stamina.WalkOverweightLimits?.Y);
+        _snapSprintOverweightLimits = (stamina.SprintOverweightLimits?.X, stamina.SprintOverweightLimits?.Y);
+        _snapWalkSpeedOverweightLimits = (stamina.WalkSpeedOverweightLimits?.X, stamina.WalkSpeedOverweightLimits?.Y);
+
+        // Locations (loot, boss, raid time)
+        foreach (var locId in PlayableLocationIds)
+        {
+            var loc = databaseService.GetLocation(locId);
+            if (loc?.Base == null) continue;
+
+            _snapLocationLootModifiers[locId] = (loc.Base.GlobalLootChanceModifier, loc.Base.GlobalContainerChanceModifier);
+            _snapLocationEscapeTimes[locId] = loc.Base.EscapeTimeLimit;
+
+            if (loc.Base.BossLocationSpawn != null)
+            {
+                var bossList = new List<(int index, double? chance)>();
+                for (int i = 0; i < loc.Base.BossLocationSpawn.Count; i++)
+                {
+                    var boss = loc.Base.BossLocationSpawn[i];
+                    if (boss.BossName != null && BossNames.Contains(boss.BossName))
+                        bossList.Add((i, boss.BossChance));
+                }
+                _snapLocationBossChances[locId] = bossList;
+            }
+        }
+
+        // Airdrop globals
+        var airdrop = cfg.Airdrop;
+        _snapAirdropDuration = airdrop.PlaneAirdropDuration;
+        _snapAirdropFlareWait = airdrop.PlaneAirdropFlareWait;
+        _snapAirdropPlaneSpeed = airdrop.PlaneSpeed;
+
         // Traders
         _snapRagfairMinUserLevel = cfg.RagFair.MinUserLevel;
         var traders = databaseService.GetTables().Traders;
@@ -299,6 +387,10 @@ public class ProgressionControlService(
                 modified += ApplyScavSettings(config.Scav);
                 modified += ApplyHealthSettings(config.Health);
                 modified += ApplyStaminaSettings(config.Stamina);
+                modified += ApplyWeightLimits(config.Stamina);
+                modified += ApplyLootSettings(config.Loot);
+                modified += ApplyRaidSettings(config.Raid);
+                modified += ApplyAirdropSettings(config.Airdrop);
                 modified += ApplyTraderSettings(config.Traders);
             }
             catch (Exception ex)
@@ -407,6 +499,29 @@ public class ProgressionControlService(
         // is primarily controlled through SkillProgressRate globally.
         // Per-skill multipliers noted in config for future deeper implementation.
         if (skills.PerSkillMultipliers.Count > 0) count += skills.PerSkillMultipliers.Count;
+
+        // Simultaneous Strength/Endurance leveling via DependentSkillRatios cross-linking
+        // Restore originals first
+        cfg.SkillsSettings.Endurance.DependentSkillRatios = _snapEnduranceDependentRatios
+            .Select(r => new DependentSkillRatio { Ratio = r.Ratio, SkillId = r.SkillId }).ToList();
+        cfg.SkillsSettings.Strength.DependentSkillRatios = _snapStrengthDependentRatios
+            .Select(r => new DependentSkillRatio { Ratio = r.Ratio, SkillId = r.SkillId }).ToList();
+
+        if (skills.SimultaneousStrengthEndurance)
+        {
+            // Add cross-references: Endurance→Strength and Strength→Endurance
+            var endList = cfg.SkillsSettings.Endurance.DependentSkillRatios.ToList();
+            if (!endList.Any(r => r.SkillId == "Strength"))
+                endList.Add(new DependentSkillRatio { Ratio = 1.0, SkillId = "Strength" });
+            cfg.SkillsSettings.Endurance.DependentSkillRatios = endList;
+
+            var strList = cfg.SkillsSettings.Strength.DependentSkillRatios.ToList();
+            if (!strList.Any(r => r.SkillId == "Endurance"))
+                strList.Add(new DependentSkillRatio { Ratio = 1.0, SkillId = "Endurance" });
+            cfg.SkillsSettings.Strength.DependentSkillRatios = strList;
+
+            count++;
+        }
 
         return count;
     }
@@ -651,7 +766,9 @@ public class ProgressionControlService(
 
         // Out-of-raid healing speed — affects regen between raids
         // Tracked as config value — effective via Health.Regeneration settings
-        if (Math.Abs(health.OutOfRaidHealingSpeedMultiplier - 1.0) > 0.001) count++;
+        var effectiveHealMult = health.InstantOutOfRaidHealing ? 100.0 : health.OutOfRaidHealingSpeedMultiplier;
+        if (Math.Abs(effectiveHealMult - 1.0) > 0.001) count++;
+        if (health.InstantOutOfRaidHealing) count++;
 
         return count;
     }
@@ -677,6 +794,174 @@ public class ProgressionControlService(
 
         stam.JumpConsumption = _snapStaminaJumpConsumption * stamina.JumpCostMultiplier;
         if (Math.Abs(stamina.JumpCostMultiplier - 1.0) > 0.001) count++;
+
+        return count;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  WEIGHT LIMIT SETTINGS
+    // ═══════════════════════════════════════════════════════════════
+
+    private int ApplyWeightLimits(StaminaQuickConfig stamina)
+    {
+        var stam = databaseService.GetGlobals().Configuration.Stamina;
+        int count = 0;
+        var mult = stamina.WeightLimitMultiplier;
+
+        // Restore from snapshot first, then multiply
+        if (stam.BaseOverweightLimits != null)
+        {
+            stam.BaseOverweightLimits.X = _snapBaseOverweightLimits.x * mult;
+            stam.BaseOverweightLimits.Y = _snapBaseOverweightLimits.y * mult;
+        }
+        if (stam.WalkOverweightLimits != null)
+        {
+            stam.WalkOverweightLimits.X = _snapWalkOverweightLimits.x * mult;
+            stam.WalkOverweightLimits.Y = _snapWalkOverweightLimits.y * mult;
+        }
+        if (stam.SprintOverweightLimits != null)
+        {
+            stam.SprintOverweightLimits.X = _snapSprintOverweightLimits.x * mult;
+            stam.SprintOverweightLimits.Y = _snapSprintOverweightLimits.y * mult;
+        }
+        if (stam.WalkSpeedOverweightLimits != null)
+        {
+            stam.WalkSpeedOverweightLimits.X = _snapWalkSpeedOverweightLimits.x * mult;
+            stam.WalkSpeedOverweightLimits.Y = _snapWalkSpeedOverweightLimits.y * mult;
+        }
+
+        if (Math.Abs(mult - 1.0) > 0.001) count += 4;
+        return count;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  LOOT SETTINGS
+    // ═══════════════════════════════════════════════════════════════
+
+    private int ApplyLootSettings(LootQuickConfig loot)
+    {
+        int count = 0;
+
+        foreach (var locId in PlayableLocationIds)
+        {
+            var loc = databaseService.GetLocation(locId);
+            if (loc?.Base == null) continue;
+            if (!_snapLocationLootModifiers.TryGetValue(locId, out var snap)) continue;
+
+            // Restore from snapshot, then multiply
+            if (Math.Abs(loot.LooseLootMultiplier - 1.0) > 0.001)
+            {
+                loc.Base.GlobalLootChanceModifier = (snap.looseLoot ?? 0) * loot.LooseLootMultiplier;
+                count++;
+            }
+            else
+            {
+                loc.Base.GlobalLootChanceModifier = snap.looseLoot;
+            }
+
+            if (Math.Abs(loot.ContainerLootMultiplier - 1.0) > 0.001)
+            {
+                loc.Base.GlobalContainerChanceModifier = (snap.containerLoot ?? 0) * loot.ContainerLootMultiplier;
+                count++;
+            }
+            else
+            {
+                loc.Base.GlobalContainerChanceModifier = snap.containerLoot;
+            }
+        }
+
+        return count;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  RAID SETTINGS (raid time + boss spawn)
+    // ═══════════════════════════════════════════════════════════════
+
+    private int ApplyRaidSettings(RaidConfig raid)
+    {
+        int count = 0;
+
+        foreach (var locId in PlayableLocationIds)
+        {
+            var loc = databaseService.GetLocation(locId);
+            if (loc?.Base == null) continue;
+
+            // Raid time
+            if (_snapLocationEscapeTimes.TryGetValue(locId, out var snapTime))
+            {
+                if (Math.Abs(raid.RaidTimeMultiplier - 1.0) > 0.001)
+                {
+                    loc.Base.EscapeTimeLimit = Math.Max(1, (snapTime ?? 0) * raid.RaidTimeMultiplier);
+                    count++;
+                }
+                else
+                {
+                    loc.Base.EscapeTimeLimit = snapTime;
+                }
+            }
+
+            // Boss spawn chance
+            if (_snapLocationBossChances.TryGetValue(locId, out var bossSnaps) && loc.Base.BossLocationSpawn != null)
+            {
+                foreach (var (index, snapChance) in bossSnaps)
+                {
+                    if (index >= loc.Base.BossLocationSpawn.Count) continue;
+                    var boss = loc.Base.BossLocationSpawn[index];
+
+                    if (Math.Abs(raid.BossSpawnMultiplier - 1.0) > 0.001)
+                    {
+                        boss.BossChance = Math.Clamp((snapChance ?? 0) * raid.BossSpawnMultiplier, 0, 100);
+                        count++;
+                    }
+                    else
+                    {
+                        boss.BossChance = snapChance;
+                    }
+                }
+            }
+        }
+
+        return count;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  AIRDROP SETTINGS
+    // ═══════════════════════════════════════════════════════════════
+
+    private int ApplyAirdropSettings(AirdropQuickConfig airdrop)
+    {
+        var cfg = databaseService.GetGlobals().Configuration.Airdrop;
+        int count = 0;
+
+        if (airdrop.AirdropDuration.HasValue)
+        {
+            cfg.PlaneAirdropDuration = airdrop.AirdropDuration.Value;
+            count++;
+        }
+        else
+        {
+            cfg.PlaneAirdropDuration = _snapAirdropDuration;
+        }
+
+        if (airdrop.FlareWaitSeconds.HasValue)
+        {
+            cfg.PlaneAirdropFlareWait = airdrop.FlareWaitSeconds.Value;
+            count++;
+        }
+        else
+        {
+            cfg.PlaneAirdropFlareWait = _snapAirdropFlareWait;
+        }
+
+        if (airdrop.PlaneSpeed.HasValue)
+        {
+            cfg.PlaneSpeed = airdrop.PlaneSpeed.Value;
+            count++;
+        }
+        else
+        {
+            cfg.PlaneSpeed = _snapAirdropPlaneSpeed;
+        }
 
         return count;
     }
@@ -775,6 +1060,7 @@ public class ProgressionControlService(
             config.Xp.GlobalXpMultiplier = 3.0;
             config.Skills.GlobalSkillSpeedMultiplier = 3.0;
             config.Skills.SkillFatigueMultiplier = 0.3;
+            config.Skills.SimultaneousStrengthEndurance = true;
             config.Hideout.BuildTimeMultiplier = 0.1;
             config.Hideout.CraftTimeMultiplier = 0.1;
             config.Insurance.CostMultiplier = 0.0;
@@ -782,6 +1068,11 @@ public class ProgressionControlService(
             config.Insurance.ReturnChanceMultiplier = 2.0;
             config.Repair.CostMultiplier = 0.25;
             config.Scav.CooldownSeconds = 60;
+            config.Stamina.WeightLimitMultiplier = 1.5;
+            config.Health.InstantOutOfRaidHealing = true;
+            config.Loot.LooseLootMultiplier = 2.0;
+            config.Raid.RaidTimeMultiplier = 1.5;
+            config.Raid.BossSpawnMultiplier = 1.5;
             config.Traders.FleaMarketLevel = 1;
             config.Traders.GlobalLoyaltyRequirementMultiplier = 0.5;
         }),
@@ -805,12 +1096,19 @@ public class ProgressionControlService(
             config.Xp.GlobalXpMultiplier = 100.0;
             config.Skills.GlobalSkillSpeedMultiplier = 100.0;
             config.Skills.SkillFatigueMultiplier = 0.0;
+            config.Skills.SimultaneousStrengthEndurance = true;
             config.Hideout.BuildTimeOverrideSeconds = 1;
             config.Hideout.CraftTimeOverrideSeconds = 1;
             config.Insurance.CostMultiplier = 0.0;
             config.Insurance.ReturnTimeOverrideHours = 0.01;
             config.Repair.CostMultiplier = 0.0;
             config.Scav.CooldownSeconds = 1;
+            config.Stamina.WeightLimitMultiplier = 5.0;
+            config.Health.InstantOutOfRaidHealing = true;
+            config.Loot.LooseLootMultiplier = 10.0;
+            config.Raid.RaidTimeMultiplier = 3.0;
+            config.Raid.BossSpawnMultiplier = 3.0;
+            config.Airdrop.AirdropDuration = 10;
             config.Traders.FleaMarketLevel = 1;
             config.Traders.GlobalLoyaltyRequirementMultiplier = 0.01;
         })
@@ -818,31 +1116,85 @@ public class ProgressionControlService(
 
     public List<ProgressionPresetInfo> GetPresets()
     {
-        return BuiltInPresets.Select(kvp => new ProgressionPresetInfo
+        var list = BuiltInPresets.Select(kvp => new ProgressionPresetInfo
         {
             Name = kvp.Key,
-            Description = kvp.Value.Description
+            Description = kvp.Value.Description,
+            IsBuiltIn = true
         }).ToList();
+
+        // Add custom presets
+        foreach (var (name, entry) in configService.GetConfig().ProgressionPresets)
+        {
+            list.Add(new ProgressionPresetInfo
+            {
+                Name = name,
+                Description = entry.Description,
+                IsBuiltIn = false
+            });
+        }
+
+        return list;
     }
 
     public ProgressionApplyResult ApplyPreset(string presetName)
     {
-        if (!BuiltInPresets.TryGetValue(presetName, out var preset))
+        var config = configService.GetConfig();
+
+        // Check built-in presets first
+        if (BuiltInPresets.TryGetValue(presetName, out var preset))
         {
-            return new ProgressionApplyResult
-            {
-                Success = false,
-                Message = $"Unknown preset: {presetName}"
-            };
+            config.Progression = new ProgressionConfig();
+            preset.Apply(config.Progression);
+            configService.SaveConfig();
+            _activePreset = presetName;
+            return ApplyConfig();
         }
 
-        var config = configService.GetConfig();
-        config.Progression = new ProgressionConfig();
-        preset.Apply(config.Progression);
-        configService.SaveConfig();
-        _activePreset = presetName;
+        // Check custom presets
+        if (config.ProgressionPresets.TryGetValue(presetName, out var custom))
+        {
+            config.Progression = System.Text.Json.JsonSerializer.Deserialize<ProgressionConfig>(
+                System.Text.Json.JsonSerializer.Serialize(custom.Config))!;
+            configService.SaveConfig();
+            _activePreset = presetName;
+            return ApplyConfig();
+        }
 
-        return ApplyConfig();
+        return new ProgressionApplyResult
+        {
+            Success = false,
+            Message = $"Unknown preset: {presetName}"
+        };
+    }
+
+    public bool SaveCustomPreset(string name, string description)
+    {
+        if (BuiltInPresets.ContainsKey(name)) return false; // can't overwrite built-in
+
+        var config = configService.GetConfig();
+        var currentJson = System.Text.Json.JsonSerializer.Serialize(config.Progression);
+        var copy = System.Text.Json.JsonSerializer.Deserialize<ProgressionConfig>(currentJson)!;
+
+        config.ProgressionPresets[name] = new ProgressionPresetEntry
+        {
+            Description = description,
+            Config = copy
+        };
+        configService.SaveConfig();
+        return true;
+    }
+
+    public bool DeleteCustomPreset(string name)
+    {
+        var config = configService.GetConfig();
+        if (!config.ProgressionPresets.ContainsKey(name)) return false;
+
+        config.ProgressionPresets.Remove(name);
+        configService.SaveConfig();
+
+        if (_activePreset == name) _activePreset = null;
+        return true;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -878,6 +1230,7 @@ public class ProgressionControlService(
         if (Math.Abs(config.Skills.GlobalSkillSpeedMultiplier - 1.0) > 0.001) count++;
         if (Math.Abs(config.Skills.SkillFatigueMultiplier - 1.0) > 0.001) count++;
         count += config.Skills.PerSkillMultipliers.Count(kvp => Math.Abs(kvp.Value - 1.0) > 0.001);
+        if (config.Skills.SimultaneousStrengthEndurance) count++;
         if (Math.Abs(config.Hideout.BuildTimeMultiplier - 1.0) > 0.001) count++;
         if (config.Hideout.BuildTimeOverrideSeconds.HasValue) count++;
         if (Math.Abs(config.Hideout.CraftTimeMultiplier - 1.0) > 0.001) count++;
@@ -899,6 +1252,15 @@ public class ProgressionControlService(
         if (Math.Abs(config.Stamina.RecoveryMultiplier - 1.0) > 0.001) count++;
         if (Math.Abs(config.Stamina.SprintDrainMultiplier - 1.0) > 0.001) count++;
         if (Math.Abs(config.Stamina.JumpCostMultiplier - 1.0) > 0.001) count++;
+        if (Math.Abs(config.Stamina.WeightLimitMultiplier - 1.0) > 0.001) count++;
+        if (config.Health.InstantOutOfRaidHealing) count++;
+        if (Math.Abs(config.Loot.LooseLootMultiplier - 1.0) > 0.001) count++;
+        if (Math.Abs(config.Loot.ContainerLootMultiplier - 1.0) > 0.001) count++;
+        if (Math.Abs(config.Raid.RaidTimeMultiplier - 1.0) > 0.001) count++;
+        if (Math.Abs(config.Raid.BossSpawnMultiplier - 1.0) > 0.001) count++;
+        if (config.Airdrop.AirdropDuration.HasValue) count++;
+        if (config.Airdrop.FlareWaitSeconds.HasValue) count++;
+        if (config.Airdrop.PlaneSpeed.HasValue) count++;
         if (Math.Abs(config.Traders.GlobalLoyaltyRequirementMultiplier - 1.0) > 0.001) count++;
         if (config.Traders.FleaMarketLevel.HasValue) count++;
         return count;

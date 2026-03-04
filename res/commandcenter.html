@@ -6197,11 +6197,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     </div>
 
     <!-- Preset buttons -->
-    <div class="prog-presets" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-      <span style="color:var(--text-dim);font-size:13px;align-self:center;margin-right:4px">Presets:</span>
+    <div class="prog-presets" style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <span style="color:var(--text-dim);font-size:13px;margin-right:4px">Built-in:</span>
       <button class="btn btn-ghost btn-sm prog-preset-btn" data-preset="Casual" onclick="progApplyPreset('Casual')">Casual</button>
       <button class="btn btn-ghost btn-sm prog-preset-btn" data-preset="Hardcore" onclick="progApplyPreset('Hardcore')">Hardcore</button>
       <button class="btn btn-ghost btn-sm prog-preset-btn" data-preset="Testing" onclick="progApplyPreset('Testing')">Testing</button>
+    </div>
+    <div class="prog-custom-presets" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;font-size:13px">
+      <span style="color:var(--text-dim);margin-right:2px">Custom:</span>
+      <select id="progCustomPresetSelect" style="background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-primary);font-size:12px;min-width:150px">
+        <option value="">— select preset —</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="progLoadCustomPreset()" style="font-size:12px;padding:3px 10px">Load</button>
+      <button class="btn btn-ghost btn-sm" onclick="progDeleteCustomPreset()" style="font-size:12px;padding:3px 10px;color:var(--error-bright)">Delete</button>
+      <div style="width:1px;height:18px;background:var(--border);margin:0 2px"></div>
+      <input type="text" id="progCustomPresetName" placeholder="Preset name..." style="background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-primary);font-size:12px;min-width:120px" />
+      <button class="btn btn-ghost btn-sm" onclick="progSaveCustomPreset()" style="font-size:12px;padding:3px 10px;color:var(--accent);border-color:rgba(200,170,110,0.3)">Save Current</button>
     </div>
 
     <!-- Experience Panel -->
@@ -6238,6 +6249,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <div style="margin-top:8px;font-size:12px;color:var(--text-dim)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           Fatigue 0 = no diminishing returns (very fast leveling). Lower = easier.
+        </div>
+        <div style="margin-top:12px;padding:10px 12px;background:var(--bg-base);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;gap:10px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary);margin:0">
+            <input type="checkbox" id="progSimulStrEndur" onchange="progUpdateDirty()" style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer" />
+            Level Strength &amp; Endurance simultaneously
+          </label>
+          <span style="font-size:11px;color:var(--text-dim);margin-left:auto">Normally only one levels based on weight</span>
         </div>
 
         <!-- Per-Skill Multiplier Grid (collapsible) -->
@@ -6373,6 +6391,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <div class="prog-panel-body" id="progBodyHealth">
         <div class="prog-slider-row" data-key="health.energyDrainMultiplier"><label>Energy Drain</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
         <div class="prog-slider-row" data-key="health.hydrationDrainMultiplier"><label>Hydration Drain</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-check-row" style="display:flex;align-items:center;gap:8px;padding:6px 0"><input type="checkbox" id="progInstantHealing" onchange="progInstantHealingToggle(this)" style="accent-color:#c8aa6e;width:16px;height:16px" /><label for="progInstantHealing" style="color:var(--text-secondary);font-size:13px;cursor:pointer">Instant Out-of-Raid Healing</label></div>
         <div class="prog-slider-row" data-key="health.outOfRaidHealingSpeedMultiplier"><label>Out-of-Raid Healing</label><input type="range" min="0" max="100" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="100" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
       </div>
     </div>
@@ -6391,6 +6410,57 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <div class="prog-slider-row" data-key="stamina.recoveryMultiplier"><label>Recovery</label><input type="range" min="0.1" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.1" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
         <div class="prog-slider-row" data-key="stamina.sprintDrainMultiplier"><label>Sprint Drain</label><input type="range" min="0.1" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.1" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
         <div class="prog-slider-row" data-key="stamina.jumpCostMultiplier"><label>Jump Cost</label><input type="range" min="0.1" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.1" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="stamina.weightLimitMultiplier"><label>Weight Limit</label><input type="range" min="0.5" max="5" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.5" max="5" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <p class="prog-info" style="margin:4px 0 0;font-size:11px;color:var(--text-dim)">Weight Limit increases overweight/sprint thresholds</p>
+      </div>
+    </div>
+
+    <!-- Loot Panel -->
+    <div class="panel prog-panel" id="progPanelLoot">
+      <div class="panel-header" onclick="progTogglePanel('Loot')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          Loot
+        </h3>
+        <svg class="prog-chevron" id="progChevronLoot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodyLoot">
+        <div class="prog-slider-row" data-key="loot.looseLootMultiplier"><label>Loose Loot</label><input type="range" min="0.1" max="20" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.1" max="20" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="loot.containerLootMultiplier"><label>Container Loot</label><input type="range" min="0.1" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.1" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <p class="prog-info" style="margin:4px 0 0;font-size:11px;color:var(--text-dim)">Multiplies base spawn chances across all maps</p>
+      </div>
+    </div>
+
+    <!-- Raids Panel -->
+    <div class="panel prog-panel" id="progPanelRaids">
+      <div class="panel-header" onclick="progTogglePanel('Raids')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Raids
+        </h3>
+        <svg class="prog-chevron" id="progChevronRaids" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodyRaids">
+        <div class="prog-slider-row" data-key="raid.raidTimeMultiplier"><label>Raid Time</label><input type="range" min="0.5" max="5" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0.5" max="5" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div class="prog-slider-row" data-key="raid.bossSpawnMultiplier"><label>Boss Spawn Chance</label><input type="range" min="0" max="3" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="3" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <p class="prog-info" style="margin:4px 0 0;font-size:11px;color:var(--text-dim)">Boss multiplier &gt;1 can exceed 100% (guaranteed spawn)</p>
+      </div>
+    </div>
+
+    <!-- Airdrop Panel -->
+    <div class="panel prog-panel" id="progPanelAirdrop">
+      <div class="panel-header" onclick="progTogglePanel('Airdrop')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:15px;color:var(--text-primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8aa6e" stroke-width="2" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Airdrop
+        </h3>
+        <svg class="prog-chevron" id="progChevronAirdrop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="prog-panel-body" id="progBodyAirdrop">
+        <div class="prog-override-row" data-key="airdrop.airdropDuration"><label>Duration</label><input type="number" min="1" max="600" step="1" value="" placeholder="seconds (blank = default)" class="prog-override" oninput="progOverrideSync(this)" /><span class="prog-unit">sec</span></div>
+        <div class="prog-override-row" data-key="airdrop.flareWaitSeconds"><label>Flare Wait</label><input type="number" min="0" max="600" step="1" value="" placeholder="seconds (blank = default)" class="prog-override" oninput="progOverrideSync(this)" /><span class="prog-unit">sec</span></div>
+        <div class="prog-override-row" data-key="airdrop.planeSpeed"><label>Plane Speed</label><input type="number" min="1" max="1000" step="1" value="" placeholder="speed (blank = default)" class="prog-override" oninput="progOverrideSync(this)" /><span class="prog-unit"></span></div>
+        <p class="prog-info" style="margin:4px 0 0;font-size:11px;color:var(--text-dim)">Leave blank for defaults</p>
       </div>
     </div>
 
@@ -14635,6 +14705,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (progressionLoaded) return;
     progressionLoaded = true;
     progLoadConfig();
+    progLoadCustomPresetList();
   }
   window.progressionInit = progressionInit;
 
@@ -14684,12 +14755,27 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     // Grey out sliders when override is set
     progUpdateOverrideDisable();
+
+    // Simultaneous Strength/Endurance checkbox
+    var cb = document.getElementById('progSimulStrEndur');
+    if (cb) cb.checked = !!(config.skills && config.skills.simultaneousStrengthEndurance);
+
+    // Instant healing checkbox
+    var ihCb = document.getElementById('progInstantHealing');
+    if (ihCb) ihCb.checked = !!(config.health && config.health.instantOutOfRaidHealing);
+    progUpdateInstantHealingDisable();
+
+    // Per-skill multipliers from config
+    if (config.skills && config.skills.perSkillMultipliers) {
+      window._perSkillOverrides = Object.assign({}, config.skills.perSkillMultipliers);
+    }
   }
 
   function progBuildConfig() {
     var config = {
       xp: {}, skills: { perSkillMultipliers: {} }, hideout: {},
-      insurance: {}, repair: {}, scav: {}, health: {}, stamina: {}, traders: {}
+      insurance: {}, repair: {}, scav: {}, health: {}, stamina: {}, traders: {},
+      loot: {}, raid: {}, airdrop: {}
     };
 
     document.querySelectorAll('#main-progression .prog-slider-row').forEach(function(row) {
@@ -14715,6 +14801,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (window._perSkillOverrides) {
       config.skills.perSkillMultipliers = Object.assign({}, window._perSkillOverrides);
     }
+
+    // Include simultaneous Strength/Endurance toggle
+    var cb = document.getElementById('progSimulStrEndur');
+    config.skills.simultaneousStrengthEndurance = cb ? cb.checked : false;
+
+    // Include instant healing toggle
+    var ihCb = document.getElementById('progInstantHealing');
+    config.health.instantOutOfRaidHealing = ihCb ? ihCb.checked : false;
 
     return config;
   }
@@ -14782,6 +14876,24 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     });
   }
 
+  window.progInstantHealingToggle = function(cb) {
+    progUpdateInstantHealingDisable();
+    _progActivePreset = null;
+    progUpdatePresetButtons();
+    progUpdateDirty();
+  };
+
+  function progUpdateInstantHealingDisable() {
+    var cb = document.getElementById('progInstantHealing');
+    var sliderRow = document.querySelector('.prog-slider-row[data-key="health.outOfRaidHealingSpeedMultiplier"]');
+    if (!cb || !sliderRow) return;
+    if (cb.checked) {
+      sliderRow.classList.add('disabled');
+    } else {
+      sliderRow.classList.remove('disabled');
+    }
+  }
+
   function progUpdateDirty() {
     var current = JSON.stringify(progBuildConfig());
     var isDirty = current !== _progSavedJson;
@@ -14796,6 +14908,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     check(xp.globalXpMultiplier, 1); check(xp.raidXpMultiplier, 1); check(xp.questXpMultiplier, 1);
     check(xp.craftXpMultiplier, 1); check(xp.healXpMultiplier, 1); check(xp.examineXpMultiplier, 1);
     check(config.skills.globalSkillSpeedMultiplier, 1); check(config.skills.skillFatigueMultiplier, 1);
+    if (config.skills.simultaneousStrengthEndurance) count++;
     check(config.hideout.buildTimeMultiplier, 1); check(config.hideout.buildTimeOverrideSeconds, null);
     check(config.hideout.craftTimeMultiplier, 1); check(config.hideout.craftTimeOverrideSeconds, null);
     check(config.hideout.fuelConsumptionMultiplier, 1);
@@ -14806,6 +14919,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     check(config.health.energyDrainMultiplier, 1); check(config.health.hydrationDrainMultiplier, 1); check(config.health.outOfRaidHealingSpeedMultiplier, 1);
     check(config.stamina.capacityMultiplier, 1); check(config.stamina.recoveryMultiplier, 1);
     check(config.stamina.sprintDrainMultiplier, 1); check(config.stamina.jumpCostMultiplier, 1);
+    check(config.stamina.weightLimitMultiplier, 1);
+    if (config.health.instantOutOfRaidHealing) count++;
+    check(config.loot.looseLootMultiplier, 1); check(config.loot.containerLootMultiplier, 1);
+    check(config.raid.raidTimeMultiplier, 1); check(config.raid.bossSpawnMultiplier, 1);
+    check(config.airdrop.airdropDuration, null); check(config.airdrop.flareWaitSeconds, null); check(config.airdrop.planeSpeed, null);
     check(config.traders.globalLoyaltyRequirementMultiplier, 1); check(config.traders.fleaMarketLevel, null);
 
     var status = document.getElementById('progStatus');
@@ -14819,6 +14937,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.querySelectorAll('.prog-preset-btn').forEach(function(btn) {
       btn.classList.toggle('active', btn.dataset.preset === _progActivePreset);
     });
+    // Highlight custom preset dropdown if active
+    var sel = document.getElementById('progCustomPresetSelect');
+    if (sel) {
+      var isCustomActive = _progActivePreset && !['Casual','Hardcore','Testing'].includes(_progActivePreset);
+      sel.value = isCustomActive ? _progActivePreset : '';
+    }
   }
 
   function progUpdateStatus(data) {
@@ -14874,6 +14998,72 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         toast('Applied "' + name + '" preset (' + result.settingsModified + ' settings)');
       } else {
         toast('Failed to apply preset: ' + (result && result.message || 'Unknown error'), 'error');
+      }
+    });
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // PROGRESSION — Custom Presets
+  // ═══════════════════════════════════════════════════════
+
+  function progLoadCustomPresetList() {
+    api('progression/presets').then(function(data) {
+      var sel = document.getElementById('progCustomPresetSelect');
+      sel.innerHTML = '<option value="">— select preset —</option>';
+      (data.presets || []).forEach(function(p) {
+        if (p.isBuiltIn) return; // skip built-in, those have buttons
+        var opt = document.createElement('option');
+        opt.value = p.name;
+        opt.textContent = p.name + (p.description ? ' — ' + p.description : '');
+        sel.appendChild(opt);
+      });
+      progUpdatePresetButtons();
+    });
+  }
+
+  window.progLoadCustomPreset = function() {
+    var sel = document.getElementById('progCustomPresetSelect');
+    var name = sel.value;
+    if (!name) { toast('Select a custom preset first', 'error'); return; }
+    progApplyPreset(name);
+  };
+
+  window.progSaveCustomPreset = function() {
+    var nameEl = document.getElementById('progCustomPresetName');
+    var name = nameEl.value.trim();
+    if (!name) { toast('Enter a preset name', 'error'); return; }
+    // Save current slider state first, then save as preset
+    var config = progBuildConfig();
+    api('progression', 'POST', config).then(function(result) {
+      if (!result || !result.success) {
+        toast('Failed to apply current settings before saving', 'error');
+        return;
+      }
+      _progSavedJson = JSON.stringify(config);
+      progUpdateDirty();
+      return api('progression/presets/save', 'POST', { name: name, description: '' });
+    }).then(function(r) {
+      if (r && r.success) {
+        toast('Saved preset "' + name + '"', 'success');
+        nameEl.value = '';
+        progLoadCustomPresetList();
+      } else if (r) {
+        toast(r.error || 'Failed to save preset', 'error');
+      }
+    });
+  };
+
+  window.progDeleteCustomPreset = function() {
+    var sel = document.getElementById('progCustomPresetSelect');
+    var name = sel.value;
+    if (!name) { toast('Select a custom preset first', 'error'); return; }
+    if (!confirm('Delete preset "' + name + '"?')) return;
+    api('progression/presets/' + encodeURIComponent(name), 'DELETE').then(function(r) {
+      if (r && r.success) {
+        toast('Deleted preset "' + name + '"', 'success');
+        progLoadCustomPresetList();
+      } else {
+        toast('Failed to delete preset', 'error');
       }
     });
   };

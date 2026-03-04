@@ -2772,9 +2772,30 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, 200, new { presets });
                 break;
             }
+            case "presets/save" when method == "POST":
+            {
+                var body = await ReadBody<Dictionary<string, string>>(context);
+                var name = body?.GetValueOrDefault("name")?.Trim();
+                var desc = body?.GetValueOrDefault("description")?.Trim() ?? "";
+                if (string.IsNullOrEmpty(name))
+                {
+                    await WriteJson(context, 400, new { error = "Missing preset name" });
+                    break;
+                }
+                var saved = progressionControlService.SaveCustomPreset(name, desc);
+                if (saved)
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Progression: saved custom preset '{name}'");
+                await WriteJson(context, saved ? 200 : 400, new
+                {
+                    success = saved,
+                    error = saved ? null : "Cannot overwrite built-in preset"
+                });
+                break;
+            }
             default:
             {
-                // POST progression/presets/{name}
+                // POST progression/presets/{name} — apply preset
                 if (method == "POST" && subPath.StartsWith("presets/"))
                 {
                     var presetName = Uri.UnescapeDataString(subPath["presets/".Length..]);
@@ -2791,6 +2812,18 @@ public class CommandCenterHttpListener(
                             $"Progression: applied '{presetName}' preset — {result.SettingsModified} settings");
                     }
                     await WriteJson(context, result.Success ? 200 : 400, result);
+                    break;
+                }
+
+                // DELETE progression/presets/{name} — delete custom preset
+                if (method == "DELETE" && subPath.StartsWith("presets/"))
+                {
+                    var presetName = Uri.UnescapeDataString(subPath["presets/".Length..]);
+                    var deleted = progressionControlService.DeleteCustomPreset(presetName);
+                    if (deleted)
+                        activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                            $"Progression: deleted custom preset '{presetName}'");
+                    await WriteJson(context, deleted ? 200 : 404, new { success = deleted });
                     break;
                 }
 

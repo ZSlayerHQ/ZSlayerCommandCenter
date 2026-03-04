@@ -34,6 +34,15 @@ public record ProgressionConfig
 
     [JsonPropertyName("traders")]
     public TraderQuickConfig Traders { get; set; } = new();
+
+    [JsonPropertyName("loot")]
+    public LootQuickConfig Loot { get; set; } = new();
+
+    [JsonPropertyName("raid")]
+    public RaidConfig Raid { get; set; } = new();
+
+    [JsonPropertyName("airdrop")]
+    public AirdropQuickConfig Airdrop { get; set; } = new();
 }
 
 public record XpConfig
@@ -64,6 +73,9 @@ public record SkillsConfig
 
     [JsonPropertyName("skillFatigueMultiplier")]
     public double SkillFatigueMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("simultaneousStrengthEndurance")]
+    public bool SimultaneousStrengthEndurance { get; set; }
 
     [JsonPropertyName("perSkillMultipliers")]
     public Dictionary<string, double> PerSkillMultipliers { get; set; } = new();
@@ -133,6 +145,9 @@ public record HealthQuickConfig
 
     [JsonPropertyName("outOfRaidHealingSpeedMultiplier")]
     public double OutOfRaidHealingSpeedMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("instantOutOfRaidHealing")]
+    public bool InstantOutOfRaidHealing { get; set; }
 }
 
 public record StaminaQuickConfig
@@ -148,6 +163,9 @@ public record StaminaQuickConfig
 
     [JsonPropertyName("jumpCostMultiplier")]
     public double JumpCostMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("weightLimitMultiplier")]
+    public double WeightLimitMultiplier { get; set; } = 1.0;
 }
 
 public record TraderQuickConfig
@@ -157,6 +175,36 @@ public record TraderQuickConfig
 
     [JsonPropertyName("fleaMarketLevel")]
     public int? FleaMarketLevel { get; set; }
+}
+
+public record LootQuickConfig
+{
+    [JsonPropertyName("looseLootMultiplier")]
+    public double LooseLootMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("containerLootMultiplier")]
+    public double ContainerLootMultiplier { get; set; } = 1.0;
+}
+
+public record RaidConfig
+{
+    [JsonPropertyName("raidTimeMultiplier")]
+    public double RaidTimeMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("bossSpawnMultiplier")]
+    public double BossSpawnMultiplier { get; set; } = 1.0;
+}
+
+public record AirdropQuickConfig
+{
+    [JsonPropertyName("airdropDuration")]
+    public double? AirdropDuration { get; set; }
+
+    [JsonPropertyName("flareWaitSeconds")]
+    public double? FlareWaitSeconds { get; set; }
+
+    [JsonPropertyName("planeSpeed")]
+    public double? PlaneSpeed { get; set; }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -200,4 +248,16 @@ public record ProgressionPresetInfo
 
     [JsonPropertyName("description")]
     public string Description { get; set; } = "";
+
+    [JsonPropertyName("isBuiltIn")]
+    public bool IsBuiltIn { get; set; }
+}
+
+public record ProgressionPresetEntry
+{
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = "";
+
+    [JsonPropertyName("config")]
+    public ProgressionConfig Config { get; set; } = new();
 }
