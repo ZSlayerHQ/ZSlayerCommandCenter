@@ -39,6 +39,7 @@ public class CommandCenterHttpListener(
     TraderDiscoveryService traderDiscoveryService,
     PlayerBuildService playerBuildService,
     ProgressionControlService progressionControlService,
+    SkillEditorService skillEditorService,
     DatabaseService databaseService,
     ConfigServer configServer,
     SaveServer saveServer,
@@ -175,6 +176,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("progression/") || path == "progression")
             {
                 await HandleProgressionRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle skill editing routes
+            if (path.StartsWith("skills/") || path == "skills")
+            {
+                await HandleSkillsRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -2530,6 +2538,170 @@ public class CommandCenterHttpListener(
                     var result = traderApplyService.GetTraderItems(traderId, search, ll, limit, offset);
                     await WriteJson(context, 200, result);
                     break;
+                }
+
+                await WriteJson(context, 404, new { error = "Not found" });
+                break;
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  SKILLS ROUTES
+    // ═══════════════════════════════════════════════════════════════
+
+    private async Task HandleSkillsRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        var subPath = path == "skills" ? "" : path["skills/".Length..];
+
+        switch (subPath)
+        {
+            case "list" when method == "GET":
+            {
+                var result = skillEditorService.GetSkillList();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "settings" when method == "GET":
+            {
+                var result = skillEditorService.GetAllBonusConfigs();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "settings" when method == "POST":
+            {
+                var body = await ReadBody<SkillBonusUpdateRequest>(context);
+                if (body == null || string.IsNullOrEmpty(body.SkillName))
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var success = skillEditorService.UpdateBonusValues(body);
+                if (success)
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Skills: updated bonus fields for {body.SkillName}");
+                await WriteJson(context, 200, new { success, skillName = body.SkillName });
+                break;
+            }
+            case "settings/reset" when method == "POST":
+            {
+                var body = await ReadBody<Dictionary<string, string>>(context);
+                var skillName = body?.GetValueOrDefault("skillName");
+                var restored = skillEditorService.ResetBonusValues(skillName);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    skillName != null ? $"Skills: reset bonus fields for {skillName}" : "Skills: reset all bonus fields");
+                await WriteJson(context, 200, new { success = true, restored });
+                break;
+            }
+            case "defaults" when method == "GET":
+            {
+                var defaults = skillEditorService.GetDefaults();
+                await WriteJson(context, 200, new { defaults });
+                break;
+            }
+            case "rates" when method == "GET":
+            {
+                var config = configService.GetConfig().Progression.Skills;
+                await WriteJson(context, 200, new
+                {
+                    globalSkillSpeedMultiplier = config.GlobalSkillSpeedMultiplier,
+                    skillFatigueMultiplier = config.SkillFatigueMultiplier,
+                    perSkillMultipliers = config.PerSkillMultipliers
+                });
+                break;
+            }
+            case "rates" when method == "POST":
+            {
+                var body = await ReadBody<SkillsConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var config = configService.GetConfig();
+                config.Progression.Skills = body;
+                configService.SaveConfig();
+                progressionControlService.ClearActivePreset();
+                var result = progressionControlService.ApplyConfig();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Skills: updated rate multipliers");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            default:
+            {
+                // GET/POST skills/player/{sid}
+                if (subPath.StartsWith("player/"))
+                {
+                    var sid = subPath["player/".Length..];
+                    if (string.IsNullOrEmpty(sid))
+                    {
+                        await WriteJson(context, 400, new { error = "Missing session ID" });
+                        break;
+                    }
+
+                    if (method == "GET")
+                    {
+                        var skills = skillEditorService.GetPlayerSkills(sid);
+                        if (skills == null)
+                        {
+                            await WriteJson(context, 404, new { error = "Player not found" });
+                            break;
+                        }
+                        await WriteJson(context, 200, skills);
+                        break;
+                    }
+
+                    if (method == "POST")
+                    {
+                        // Check for bulk action query param
+                        var action = context.Request.Query["action"].FirstOrDefault();
+                        if (action == "max")
+                        {
+                            var count = skillEditorService.SetAllPlayerSkills(sid, 51);
+                            activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                                $"Skills: maxed all skills for player {sid}");
+                            await WriteJson(context, 200, new { success = true, skillsUpdated = count });
+                            break;
+                        }
+                        if (action == "reset")
+                        {
+                            var count = skillEditorService.SetAllPlayerSkills(sid, 0);
+                            activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                                $"Skills: reset all skills for player {sid}");
+                            await WriteJson(context, 200, new { success = true, skillsUpdated = count });
+                            break;
+                        }
+                        if (action == "setall")
+                        {
+                            var body = await ReadBody<PlayerSkillBulkRequest>(context);
+                            if (body == null)
+                            {
+                                await WriteJson(context, 400, new { error = "Invalid request body" });
+                                break;
+                            }
+                            var count = skillEditorService.SetAllPlayerSkills(sid, body.Level);
+                            activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                                $"Skills: set all skills to level {body.Level} for player {sid}");
+                            await WriteJson(context, 200, new { success = true, skillsUpdated = count });
+                            break;
+                        }
+
+                        // Default: individual skill updates
+                        var updateBody = await ReadBody<PlayerSkillUpdateRequest>(context);
+                        if (updateBody == null)
+                        {
+                            await WriteJson(context, 400, new { error = "Invalid request body" });
+                            break;
+                        }
+                        var success = skillEditorService.SetPlayerSkills(sid, updateBody);
+                        activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                            $"Skills: updated {updateBody.Skills.Count} skill levels for player {sid}");
+                        await WriteJson(context, 200, new { success });
+                        break;
+                    }
                 }
 
                 await WriteJson(context, 404, new { error = "Not found" });

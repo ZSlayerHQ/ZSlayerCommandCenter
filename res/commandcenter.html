@@ -4219,6 +4219,31 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .prog-preset-btn:hover { border-color: var(--accent); color: var(--accent); }
 .prog-preset-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(200,170,110,0.1); }
 
+/* Per-skill compact slider rows */
+.skill-mini-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+.skill-mini-row label { min-width: 100px; font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-mini-row .prog-slider { flex: 1; height: 4px; }
+.skill-mini-row .prog-num { width: 56px; font-size: 12px; padding: 2px 6px; }
+.skill-mini-row .prog-unit { font-size: 11px; }
+
+/* Skill bonus table */
+.skill-bonus-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.skill-bonus-row:last-child { border-bottom: none; }
+.skill-bonus-row .sb-name { min-width: 160px; font-size: 12px; color: var(--text-secondary); }
+.skill-bonus-row .sb-default { min-width: 70px; font-size: 12px; color: var(--text-dim); text-align: right; }
+.skill-bonus-row .sb-input { width: 80px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; color: var(--text-primary); font-size: 12px; text-align: right; }
+.skill-bonus-row .sb-input:focus { border-color: var(--accent); outline: none; }
+.skill-bonus-row .sb-reset { cursor: pointer; color: var(--text-dim); font-size: 11px; opacity: 0.5; }
+.skill-bonus-row .sb-reset:hover { opacity: 1; color: var(--accent); }
+.skill-bonus-row.sb-modified .sb-input { border-color: var(--accent); }
+
+/* Player skill grid */
+.skill-player-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.skill-player-row label { min-width: 110px; font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-player-row .sp-level { width: 50px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; color: var(--text-primary); font-size: 12px; text-align: center; }
+.skill-player-row .sp-level:focus { border-color: var(--accent); outline: none; }
+.skill-player-row .sp-elite { font-size: 10px; color: #c8aa6e; font-weight: 600; }
+
 </style>
 </head>
 <body>
@@ -6212,7 +6237,60 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <div class="prog-slider-row" data-key="skills.skillFatigueMultiplier"><label>Skill Fatigue</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
         <div style="margin-top:8px;font-size:12px;color:var(--text-dim)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          Fatigue 0 = no diminishing returns (very fast leveling). Lower = easier. Per-skill overrides coming in Phase 6B.
+          Fatigue 0 = no diminishing returns (very fast leveling). Lower = easier.
+        </div>
+
+        <!-- Per-Skill Multiplier Grid (collapsible) -->
+        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+          <div onclick="skillTogglePerSkill()" style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary)">
+            <svg id="skillPerSkillChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="transition:transform .2s;transform:rotate(-90deg)"><polyline points="6 9 12 15 18 9"/></svg>
+            Per-Skill Multipliers
+            <span style="font-size:11px;color:var(--text-dim);margin-left:auto" id="skillPerSkillCount"></span>
+          </div>
+          <div id="skillPerSkillGrid" style="display:none;margin-top:10px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px" id="skillPerSkillRows"></div>
+            <div id="skillModdedGroup" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+              <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">Modded Skills</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px" id="skillModdedRows"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skill Bonus Editor (collapsible) -->
+        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+          <div onclick="skillToggleBonusEditor()" style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary)">
+            <svg id="skillBonusChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="transition:transform .2s;transform:rotate(-90deg)"><polyline points="6 9 12 15 18 9"/></svg>
+            Skill Bonus Value Editor
+          </div>
+          <div id="skillBonusEditor" style="display:none;margin-top:10px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <select id="skillBonusSelect" onchange="skillLoadBonusFields()" style="flex:1;background:var(--bg-base);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:13px">
+                <option value="">Select a skill...</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" onclick="skillResetBonusField()" title="Reset selected skill">Reset Skill</button>
+              <button class="btn btn-ghost btn-sm" onclick="skillResetAllBonuses()" title="Reset all skills">Reset All</button>
+            </div>
+            <div id="skillBonusTable" style="font-size:13px"></div>
+          </div>
+        </div>
+
+        <!-- Player Skill Editor (collapsible) -->
+        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+          <div onclick="skillTogglePlayerEditor()" style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary)">
+            <svg id="skillPlayerChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="transition:transform .2s;transform:rotate(-90deg)"><polyline points="6 9 12 15 18 9"/></svg>
+            Player Skill Editor
+          </div>
+          <div id="skillPlayerEditor" style="display:none;margin-top:10px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+              <select id="skillPlayerSelect" onchange="skillLoadPlayerSkills()" style="flex:1;min-width:180px;background:var(--bg-base);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:13px">
+                <option value="">Select a player...</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" onclick="skillPlayerMaxAll()">Max All</button>
+              <button class="btn btn-ghost btn-sm" onclick="skillPlayerResetAll()">Reset All</button>
+              <button class="btn btn-ghost btn-sm" onclick="skillPlayerSetAll()">Set All to...</button>
+            </div>
+            <div id="skillPlayerGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:13px"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -14633,6 +14711,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       }
     });
 
+    // Include per-skill multiplier overrides
+    if (window._perSkillOverrides) {
+      config.skills.perSkillMultipliers = Object.assign({}, window._perSkillOverrides);
+    }
+
     return config;
   }
 
@@ -14792,6 +14875,252 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       } else {
         toast('Failed to apply preset: ' + (result && result.message || 'Unknown error'), 'error');
       }
+    });
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // SKILL EDITOR — Per-Skill Multipliers
+  // ═══════════════════════════════════════════════════════
+  var _skillListCache = null;
+  var _skillBonusCache = null;
+
+  function skillLoadPerSkillGrid() {
+    api('skills/list').then(function(data) {
+      _skillListCache = data;
+      var grid = document.getElementById('skillPerSkillRows');
+      var moddedGrid = document.getElementById('skillModdedRows');
+      var moddedGroup = document.getElementById('skillModdedGroup');
+      grid.innerHTML = '';
+      moddedGrid.innerHTML = '';
+      var moddedCount = 0;
+
+      data.skills.forEach(function(skill) {
+        var html = '<div class="skill-mini-row" data-skill="' + skill.internalName + '">' +
+          '<label title="' + skill.internalName + '">' + skill.name + '</label>' +
+          '<input type="range" min="0.1" max="50" step="0.1" value="' + (skill.hasOverride ? skill.effectiveMultiplier / data.globalMultiplier : 1) + '" class="prog-slider" oninput="skillPerSliderSync(this)" />' +
+          '<input type="number" min="0.1" max="50" step="0.1" value="' + (skill.hasOverride ? (skill.effectiveMultiplier / data.globalMultiplier).toFixed(1) : '1.0') + '" class="prog-num" oninput="skillPerNumSync(this)" />' +
+          '<span class="prog-unit">x</span></div>';
+        if (skill.isModded) {
+          moddedGrid.innerHTML += html;
+          moddedCount++;
+        } else {
+          grid.innerHTML += html;
+        }
+      });
+
+      moddedGroup.style.display = moddedCount > 0 ? 'block' : 'none';
+      var countEl = document.getElementById('skillPerSkillCount');
+      var overrideCount = data.skills.filter(function(s) { return s.hasOverride; }).length;
+      countEl.textContent = overrideCount > 0 ? overrideCount + ' override' + (overrideCount !== 1 ? 's' : '') : '';
+
+      // Color all sliders
+      grid.querySelectorAll('.prog-slider').forEach(function(s) { progColorSlider(s, parseFloat(s.value)); });
+      moddedGrid.querySelectorAll('.prog-slider').forEach(function(s) { progColorSlider(s, parseFloat(s.value)); });
+    });
+  }
+
+  window.skillPerSliderSync = function(slider) {
+    var row = slider.closest('.skill-mini-row');
+    var num = row.querySelector('.prog-num');
+    num.value = parseFloat(slider.value).toFixed(1);
+    progColorSlider(slider, parseFloat(slider.value));
+    skillSavePerSkillMultiplier(row);
+  };
+
+  window.skillPerNumSync = function(num) {
+    var row = num.closest('.skill-mini-row');
+    var slider = row.querySelector('.prog-slider');
+    var val = parseFloat(num.value);
+    if (!isNaN(val)) slider.value = Math.max(0.1, Math.min(50, val));
+    progColorSlider(slider, val);
+    skillSavePerSkillMultiplier(row);
+  };
+
+  function skillSavePerSkillMultiplier(row) {
+    var name = row.dataset.skill;
+    var val = parseFloat(row.querySelector('.prog-num').value) || 1;
+    // Update local config — will be sent on Apply
+    var config = configService ? null : null; // not auto-applying; tracked in progBuildConfig
+    // Store in a hidden data structure that progBuildConfig reads
+    if (!window._perSkillOverrides) window._perSkillOverrides = {};
+    if (Math.abs(val - 1.0) > 0.001) {
+      window._perSkillOverrides[name] = val;
+    } else {
+      delete window._perSkillOverrides[name];
+    }
+    _progActivePreset = null;
+    progUpdatePresetButtons();
+    progUpdateDirty();
+  }
+
+  window.skillTogglePerSkill = function() {
+    var grid = document.getElementById('skillPerSkillGrid');
+    var chevron = document.getElementById('skillPerSkillChevron');
+    var isHidden = grid.style.display === 'none';
+    grid.style.display = isHidden ? 'block' : 'none';
+    chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+    if (isHidden && !_skillListCache) skillLoadPerSkillGrid();
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // SKILL EDITOR — Bonus Value Editor
+  // ═══════════════════════════════════════════════════════
+  window.skillToggleBonusEditor = function() {
+    var editor = document.getElementById('skillBonusEditor');
+    var chevron = document.getElementById('skillBonusChevron');
+    var isHidden = editor.style.display === 'none';
+    editor.style.display = isHidden ? 'block' : 'none';
+    chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+    if (isHidden && !_skillBonusCache) skillLoadBonusList();
+  };
+
+  function skillLoadBonusList() {
+    api('skills/settings').then(function(data) {
+      _skillBonusCache = data;
+      var select = document.getElementById('skillBonusSelect');
+      select.innerHTML = '<option value="">Select a skill...</option>';
+      data.skills.forEach(function(skill) {
+        var opt = document.createElement('option');
+        opt.value = skill.skillName;
+        opt.textContent = skill.skillName + ' (' + skill.fields.length + ' fields)';
+        select.appendChild(opt);
+      });
+    });
+  }
+
+  window.skillLoadBonusFields = function() {
+    var select = document.getElementById('skillBonusSelect');
+    var skillName = select.value;
+    var table = document.getElementById('skillBonusTable');
+    if (!skillName || !_skillBonusCache) { table.innerHTML = ''; return; }
+
+    var skill = _skillBonusCache.skills.find(function(s) { return s.skillName === skillName; });
+    if (!skill) { table.innerHTML = '<div style="color:var(--text-dim)">No bonus fields found</div>'; return; }
+
+    var html = '<div style="display:flex;gap:8px;padding:4px 0;font-size:11px;color:var(--text-dim);border-bottom:1px solid var(--border)">' +
+      '<span style="min-width:160px">Field</span><span style="min-width:70px;text-align:right">Default</span>' +
+      '<span style="width:80px;text-align:right">Current</span><span style="width:30px"></span></div>';
+
+    skill.fields.forEach(function(f) {
+      var modified = Math.abs(f.currentValue - f.defaultValue) > 0.0001;
+      html += '<div class="skill-bonus-row' + (modified ? ' sb-modified' : '') + '" data-field="' + f.fieldName + '" data-default="' + f.defaultValue + '">' +
+        '<span class="sb-name" title="' + f.fieldName + '">' + f.displayName + '</span>' +
+        '<span class="sb-default">' + f.defaultValue.toFixed(4) + '</span>' +
+        '<input type="number" step="0.0001" value="' + f.currentValue.toFixed(4) + '" class="sb-input" onchange="skillUpdateBonusField(\'' + skillName + '\', \'' + f.fieldName + '\', this.value)" />' +
+        '<span class="sb-reset" onclick="skillResetSingleBonusField(\'' + skillName + '\', \'' + f.fieldName + '\', ' + f.defaultValue + ', this)" title="Reset to default">↺</span></div>';
+    });
+
+    table.innerHTML = html;
+  };
+
+  window.skillUpdateBonusField = function(skillName, fieldName, value) {
+    var fields = {};
+    fields[fieldName] = parseFloat(value);
+    api('skills/settings', 'POST', { skillName: skillName, fields: fields }).then(function(r) {
+      if (r.success) toast(fieldName + ' updated', 'success');
+    });
+  };
+
+  window.skillResetSingleBonusField = function(skillName, fieldName, defaultVal, el) {
+    var row = el.closest('.skill-bonus-row');
+    var input = row.querySelector('.sb-input');
+    input.value = defaultVal.toFixed(4);
+    row.classList.remove('sb-modified');
+    skillUpdateBonusField(skillName, fieldName, defaultVal);
+  };
+
+  window.skillResetBonusField = function() {
+    var skillName = document.getElementById('skillBonusSelect').value;
+    if (!skillName) return;
+    api('skills/settings/reset', 'POST', { skillName: skillName }).then(function(r) {
+      if (r.success) { toast('Reset ' + r.restored + ' fields for ' + skillName, 'success'); _skillBonusCache = null; skillLoadBonusList(); }
+    });
+  };
+
+  window.skillResetAllBonuses = function() {
+    if (!confirm('Reset ALL skill bonus values to defaults?')) return;
+    api('skills/settings/reset', 'POST', {}).then(function(r) {
+      if (r.success) { toast('Reset ' + r.restored + ' bonus fields', 'success'); _skillBonusCache = null; skillLoadBonusList(); }
+    });
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // SKILL EDITOR — Player Skill Editor
+  // ═══════════════════════════════════════════════════════
+  window.skillTogglePlayerEditor = function() {
+    var editor = document.getElementById('skillPlayerEditor');
+    var chevron = document.getElementById('skillPlayerChevron');
+    var isHidden = editor.style.display === 'none';
+    editor.style.display = isHidden ? 'block' : 'none';
+    chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+    if (isHidden) skillLoadPlayerList();
+  };
+
+  function skillLoadPlayerList() {
+    api('profiles').then(function(data) {
+      var select = document.getElementById('skillPlayerSelect');
+      select.innerHTML = '<option value="">Select a player...</option>';
+      (data.profiles || []).forEach(function(p) {
+        var opt = document.createElement('option');
+        opt.value = p.sessionId;
+        opt.textContent = p.nickname + ' (Lv.' + p.level + ')';
+        select.appendChild(opt);
+      });
+    });
+  }
+
+  window.skillLoadPlayerSkills = function() {
+    var sid = document.getElementById('skillPlayerSelect').value;
+    var grid = document.getElementById('skillPlayerGrid');
+    if (!sid) { grid.innerHTML = ''; return; }
+
+    api('skills/player/' + sid).then(function(data) {
+      var html = '';
+      data.skills.forEach(function(s) {
+        html += '<div class="skill-player-row" data-skillid="' + s.skillId + '">' +
+          '<label title="' + s.skillId + '">' + s.displayName + '</label>' +
+          '<input type="number" min="0" max="51" step="1" value="' + s.level + '" class="sp-level" onchange="skillUpdatePlayerSkill(\'' + sid + '\', \'' + s.skillId + '\', this.value)" />' +
+          (s.isElite ? '<span class="sp-elite">ELITE</span>' : '') +
+          (s.isModded ? '<span style="font-size:10px;color:var(--text-dim)">[MOD]</span>' : '') +
+          '</div>';
+      });
+      grid.innerHTML = html;
+    }).catch(function() { grid.innerHTML = '<div style="color:var(--text-dim)">Failed to load skills</div>'; });
+  };
+
+  window.skillUpdatePlayerSkill = function(sid, skillId, level) {
+    api('skills/player/' + sid, 'POST', { skills: [{ skillId: skillId, level: parseInt(level) || 0 }] }).then(function(r) {
+      if (r.success) toast(skillId + ' set to level ' + level, 'success');
+    });
+  };
+
+  window.skillPlayerMaxAll = function() {
+    var sid = document.getElementById('skillPlayerSelect').value;
+    if (!sid) return;
+    if (!confirm('Max all skills to 51 (Elite)?')) return;
+    api('skills/player/' + sid + '?action=max', 'POST').then(function(r) {
+      if (r.success) { toast('All skills maxed (' + r.skillsUpdated + ')', 'success'); skillLoadPlayerSkills(); }
+    });
+  };
+
+  window.skillPlayerResetAll = function() {
+    var sid = document.getElementById('skillPlayerSelect').value;
+    if (!sid) return;
+    if (!confirm('Reset all skills to 0?')) return;
+    api('skills/player/' + sid + '?action=reset', 'POST').then(function(r) {
+      if (r.success) { toast('All skills reset (' + r.skillsUpdated + ')', 'success'); skillLoadPlayerSkills(); }
+    });
+  };
+
+  window.skillPlayerSetAll = function() {
+    var sid = document.getElementById('skillPlayerSelect').value;
+    if (!sid) return;
+    var level = prompt('Set all skills to level (0-51):');
+    if (level === null) return;
+    var lvl = parseInt(level);
+    if (isNaN(lvl) || lvl < 0 || lvl > 51) { toast('Invalid level (0-51)', 'error'); return; }
+    api('skills/player/' + sid + '?action=setall', 'POST', { level: lvl }).then(function(r) {
+      if (r.success) { toast('All skills set to ' + lvl + ' (' + r.skillsUpdated + ')', 'success'); skillLoadPlayerSkills(); }
     });
   };
 
