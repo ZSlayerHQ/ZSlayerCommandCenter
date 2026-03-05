@@ -2640,7 +2640,10 @@ public class CommandCenterHttpListener(
                 // Scan for default game icons
                 if (Directory.Exists(iconDir))
                 {
-                    foreach (var file in Directory.GetFiles(iconDir, "*.png"))
+                    foreach (var file in Directory.GetFiles(iconDir, "*.*")
+                        .Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                                 || f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                                 || f.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)))
                     {
                         var filename = Path.GetFileNameWithoutExtension(file);
                         // Skip custom_ prefixed files — they're only used via config overrides
@@ -2726,8 +2729,16 @@ public class CommandCenterHttpListener(
                     if (File.Exists(oldPath)) File.Delete(oldPath);
                 }
 
+                // Sanitize skill name to prevent path traversal
+                var safeName = SanitizeFileName(body.SkillName);
+                if (string.IsNullOrEmpty(safeName))
+                {
+                    await WriteJson(context, 400, new { error = "Invalid skill name" });
+                    break;
+                }
+
                 var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                var filename = $"custom_{body.SkillName}_{timestamp}{ext}";
+                var filename = $"custom_{safeName}_{timestamp}{ext}";
                 await File.WriteAllBytesAsync(Path.Combine(iconDirUpload, filename), imageBytes);
 
                 config2.SkillIcons[body.SkillName] = filename;
@@ -2743,10 +2754,10 @@ public class CommandCenterHttpListener(
                 // DELETE skills/icons/{skillName}
                 if (method == "DELETE" && subPath.StartsWith("icons/"))
                 {
-                    var skillName = subPath["icons/".Length..];
+                    var skillName = SanitizeFileName(subPath["icons/".Length..]);
                     if (string.IsNullOrEmpty(skillName))
                     {
-                        await WriteJson(context, 400, new { error = "Missing skill name" });
+                        await WriteJson(context, 400, new { error = "Missing or invalid skill name" });
                         break;
                     }
 
@@ -3007,6 +3018,16 @@ public class CommandCenterHttpListener(
         [".woff"] = "font/woff",
     };
 
+    private static string SanitizeFileName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "";
+        // Strip path separators and traversal
+        var safe = name.Replace("/", "").Replace("\\", "").Replace("..", "");
+        // Only allow alphanumeric, underscore, hyphen
+        safe = new string(safe.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
+        return safe;
+    }
+
     private static bool IsStaticFile(string path)
     {
         var ext = Path.GetExtension(path);
@@ -3036,10 +3057,12 @@ public class CommandCenterHttpListener(
 
         context.Response.StatusCode = 200;
         context.Response.ContentType = contentType;
-        // Cache images/fonts for 1hr, HTML/JS/CSS should revalidate each time for live deploys
+        // Cache images/fonts for 1hr, skill-icons no-cache (custom upload swaps), HTML/JS/CSS revalidate
         context.Response.Headers["Cache-Control"] = ext is ".html" or ".js" or ".css"
             ? "no-cache"
-            : "public, max-age=3600";
+            : relativePath.StartsWith("skill-icons/")
+                ? "no-cache"
+                : "public, max-age=3600";
         var bytes = await File.ReadAllBytesAsync(filePath);
         await context.Response.Body.WriteAsync(bytes);
         await context.Response.StartAsync();

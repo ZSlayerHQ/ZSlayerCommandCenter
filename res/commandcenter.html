@@ -15143,14 +15143,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var lookupName = _skillIconAliases[internalName] || internalName;
     var url = _skillIconUrls && (_skillIconUrls[internalName] || _skillIconUrls[lookupName]);
     var isCustom = _skillIconUrls && !!_skillIconUrls[internalName] && _skillIconUrls[internalName].indexOf('custom_') !== -1;
+    var safeInternal = escA(internalName);
+    var safeDisplay = escH(displayName || internalName);
     if (url) {
-      return '<img class="skill-icon' + (isCustom ? ' skill-icon-custom' : '') + '" src="' + url + '" alt="' + (displayName || internalName) + '" data-skill-icon="' + internalName + '" onclick="skillIconClick(this)" oncontextmenu="skillIconRightClick(event, this)" />';
+      return '<img class="skill-icon' + (isCustom ? ' skill-icon-custom' : '') + '" src="' + escH(url) + '" alt="' + safeDisplay + '" data-skill-icon="' + safeInternal + '" onclick="skillIconClick(this)" oncontextmenu="skillIconRightClick(event, this)" />';
     }
     // Fallback: category-colored letter circle
     var cat = isModded ? 'modded' : (_skillCategories[internalName] || 'practical');
     var color = _skillCategoryColors[cat] || '#c8aa6e';
-    var letter = (displayName || internalName).charAt(0).toUpperCase();
-    return '<span class="skill-icon-fallback" style="background:' + color + '" data-skill-icon="' + internalName + '" title="' + (displayName || internalName) + '" onclick="skillIconClick(this)" oncontextmenu="skillIconRightClick(event, this)">' + letter + '</span>';
+    var letter = escH((displayName || internalName).charAt(0).toUpperCase());
+    return '<span class="skill-icon-fallback" style="background:' + color + '" data-skill-icon="' + safeInternal + '" title="' + safeDisplay + '" onclick="skillIconClick(this)" oncontextmenu="skillIconRightClick(event, this)">' + letter + '</span>';
   }
 
   // Hidden file input for icon upload
