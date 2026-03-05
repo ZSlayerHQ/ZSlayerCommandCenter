@@ -39,6 +39,9 @@ public record CommandCenterConfig
 
     [JsonPropertyName("profileAvatars")]
     public Dictionary<string, string> ProfileAvatars { get; set; } = new();
+
+    [JsonPropertyName("skillIcons")]
+    public Dictionary<string, string> SkillIcons { get; set; } = new();
 }
 
 public record HeadlessConfig

@@ -2630,8 +2630,142 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, 200, result);
                 break;
             }
+            case "icons/list" when method == "GET":
+            {
+                var modPath = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
+                var iconDir = Path.Combine(modPath, "res", "skill-icons");
+                var config = configService.GetConfig();
+                var icons = new Dictionary<string, string>();
+
+                // Scan for default game icons
+                if (Directory.Exists(iconDir))
+                {
+                    foreach (var file in Directory.GetFiles(iconDir, "*.png"))
+                    {
+                        var filename = Path.GetFileNameWithoutExtension(file);
+                        // Skip custom_ prefixed files — they're only used via config overrides
+                        if (filename.StartsWith("custom_")) continue;
+                        icons[filename] = $"skill-icons/{Path.GetFileName(file)}";
+                    }
+                }
+
+                // Apply custom overrides from config
+                foreach (var (skillName, customFile) in config.SkillIcons)
+                {
+                    var customPath = Path.Combine(iconDir, customFile);
+                    if (File.Exists(customPath))
+                        icons[skillName] = $"skill-icons/{customFile}";
+                }
+
+                await WriteJson(context, 200, new { icons });
+                break;
+            }
+            case "icons/upload" when method == "POST":
+            {
+                var body = await ReadBody<SkillIconUploadRequest>(context);
+                if (body == null || string.IsNullOrEmpty(body.SkillName) || string.IsNullOrEmpty(body.ImageBase64))
+                {
+                    await WriteJson(context, 400, new { error = "skillName and imageBase64 required" });
+                    break;
+                }
+
+                // Parse data URL or raw base64
+                var base64 = body.ImageBase64;
+                string ext;
+                if (base64.StartsWith("data:"))
+                {
+                    var commaIdx = base64.IndexOf(',');
+                    if (commaIdx < 0)
+                    {
+                        await WriteJson(context, 400, new { error = "Invalid data URL format" });
+                        break;
+                    }
+                    var mime = base64[5..base64.IndexOf(';')].ToLowerInvariant();
+                    ext = mime switch
+                    {
+                        "image/png" => ".png",
+                        "image/jpeg" => ".jpg",
+                        "image/webp" => ".webp",
+                        _ => ""
+                    };
+                    if (ext == "")
+                    {
+                        await WriteJson(context, 400, new { error = "Unsupported image type. Use PNG, JPG, or WebP." });
+                        break;
+                    }
+                    base64 = base64[(commaIdx + 1)..];
+                }
+                else
+                {
+                    ext = ".png";
+                }
+
+                byte[] imageBytes;
+                try { imageBytes = Convert.FromBase64String(base64); }
+                catch
+                {
+                    await WriteJson(context, 400, new { error = "Invalid base64 data" });
+                    break;
+                }
+
+                if (imageBytes.Length > 2 * 1024 * 1024)
+                {
+                    await WriteJson(context, 400, new { error = "Image too large (max 2MB)" });
+                    break;
+                }
+
+                var modPathUpload = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
+                var iconDirUpload = Path.Combine(modPathUpload, "res", "skill-icons");
+                Directory.CreateDirectory(iconDirUpload);
+
+                // Delete old custom icon if exists
+                var config2 = configService.GetConfig();
+                if (config2.SkillIcons.TryGetValue(body.SkillName, out var oldFile))
+                {
+                    var oldPath = Path.Combine(iconDirUpload, oldFile);
+                    if (File.Exists(oldPath)) File.Delete(oldPath);
+                }
+
+                var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var filename = $"custom_{body.SkillName}_{timestamp}{ext}";
+                await File.WriteAllBytesAsync(Path.Combine(iconDirUpload, filename), imageBytes);
+
+                config2.SkillIcons[body.SkillName] = filename;
+                configService.SaveConfig();
+
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Skills: custom icon uploaded for {body.SkillName}");
+                await WriteJson(context, 200, new { success = true, filename, url = $"skill-icons/{filename}" });
+                break;
+            }
             default:
             {
+                // DELETE skills/icons/{skillName}
+                if (method == "DELETE" && subPath.StartsWith("icons/"))
+                {
+                    var skillName = subPath["icons/".Length..];
+                    if (string.IsNullOrEmpty(skillName))
+                    {
+                        await WriteJson(context, 400, new { error = "Missing skill name" });
+                        break;
+                    }
+
+                    var config3 = configService.GetConfig();
+                    if (config3.SkillIcons.TryGetValue(skillName, out var customFile))
+                    {
+                        var modPath3 = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
+                        var filePath = Path.Combine(modPath3, "res", "skill-icons", customFile);
+                        if (File.Exists(filePath)) File.Delete(filePath);
+                        config3.SkillIcons.Remove(skillName);
+                        configService.SaveConfig();
+                    }
+
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Skills: custom icon removed for {skillName}");
+                    await WriteJson(context, 200, new { success = true });
+                    break;
+                }
+
                 // GET/POST skills/player/{sid}
                 if (subPath.StartsWith("player/"))
                 {

@@ -4219,9 +4219,19 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .prog-preset-btn:hover { border-color: var(--accent); color: var(--accent); }
 .prog-preset-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(200,170,110,0.1); }
 
+/* Skill icons */
+.skill-icon { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; flex-shrink: 0; cursor: pointer; transition: opacity 0.15s; }
+.skill-icon:hover { opacity: 0.8; }
+.skill-icon-fallback { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; cursor: pointer; transition: opacity 0.15s; }
+.skill-icon-fallback:hover { opacity: 0.8; }
+.skill-icon-custom { outline: 2px solid var(--accent); outline-offset: 1px; }
+.skill-icon-ctx { position: fixed; z-index: 9999; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 4px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+.skill-icon-ctx button { display: block; width: 100%; padding: 6px 16px; background: none; border: none; color: var(--text-primary); font-size: 12px; cursor: pointer; text-align: left; }
+.skill-icon-ctx button:hover { background: rgba(200,170,110,0.15); color: var(--accent); }
+
 /* Per-skill compact slider rows */
 .skill-mini-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
-.skill-mini-row label { min-width: 100px; font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-mini-row label { min-width: 100px; font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
 .skill-mini-row .prog-slider { flex: 1; height: 4px; }
 .skill-mini-row .prog-num { width: 56px; font-size: 12px; padding: 2px 6px; }
 .skill-mini-row .prog-unit { font-size: 11px; }
@@ -4239,7 +4249,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 /* Player skill grid */
 .skill-player-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
-.skill-player-row label { min-width: 110px; font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-player-row label { min-width: 110px; font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
 .skill-player-row .sp-level { width: 50px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; color: var(--text-primary); font-size: 12px; text-align: center; }
 .skill-player-row .sp-level:focus { border-color: var(--accent); outline: none; }
 .skill-player-row .sp-elite { font-size: 10px; color: #c8aa6e; font-weight: 600; }
@@ -15069,44 +15079,199 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   };
 
   // ═══════════════════════════════════════════════════════
+  // SKILL ICONS
+  // ═══════════════════════════════════════════════════════
+  var _skillIconUrls = null;
+  var _skillIconsLoading = null;
+
+  // Map SPT internal skill IDs to icon filenames (for SkillsExtended naming mismatches)
+  var _skillIconAliases = {
+    'UsecArsystems': 'NatoRifle',
+    'BearAksystems': 'EasternRifle',
+    'Shadowconnections': 'ShadowConnections',
+    'BearRawpower': 'BearRawPower',
+    'UsecNegotiations': 'UsecNegotiations'
+  };
+
+  // Category colors for fallback circles
+  var _skillCategoryColors = {
+    physical: '#4a9',
+    mental: '#5af',
+    practical: '#c8aa6e',
+    weapon: '#e55',
+    modded: '#a7a'
+  };
+
+  var _skillCategories = {
+    'Endurance': 'physical', 'Strength': 'physical', 'Vitality': 'physical',
+    'Health': 'physical', 'Metabolism': 'physical', 'StressResistance': 'physical',
+    'Immunity': 'physical', 'ProneMovement': 'physical',
+    'Perception': 'mental', 'Intellect': 'mental', 'Attention': 'mental',
+    'Charisma': 'mental', 'Memory': 'mental',
+    'Surgery': 'practical', 'CovertMovement': 'practical', 'Search': 'practical',
+    'MagDrills': 'practical', 'HideoutManagement': 'practical', 'Crafting': 'practical',
+    'Throwing': 'practical', 'RecoilControl': 'practical', 'WeaponTreatment': 'practical',
+    'AimDrills': 'practical', 'TroubleShooting': 'practical',
+    'LightVests': 'practical', 'HeavyVests': 'practical',
+    'FirstAid': 'practical', 'FieldMedicine': 'practical',
+    'SilentOps': 'practical', 'Lockpicking': 'practical',
+    'Pistol': 'weapon', 'Revolver': 'weapon', 'Assault': 'weapon',
+    'Shotgun': 'weapon', 'Sniper': 'weapon', 'DMR': 'weapon', 'Melee': 'weapon',
+    'NatoRifle': 'weapon', 'EasternRifle': 'weapon',
+    'UsecArsystems': 'weapon', 'BearAksystems': 'weapon',
+    'ShadowConnections': 'practical', 'Shadowconnections': 'practical',
+    'BearRawPower': 'practical', 'BearRawpower': 'practical',
+    'UsecNegotiations': 'practical'
+  };
+
+  function skillLoadIconUrls() {
+    if (_skillIconUrls) return Promise.resolve(_skillIconUrls);
+    if (_skillIconsLoading) return _skillIconsLoading;
+    _skillIconsLoading = api('skills/icons/list').then(function(data) {
+      _skillIconUrls = data.icons || {};
+      _skillIconsLoading = null;
+      return _skillIconUrls;
+    }).catch(function() {
+      _skillIconUrls = {};
+      _skillIconsLoading = null;
+      return _skillIconUrls;
+    });
+    return _skillIconsLoading;
+  }
+
+  function skillIconHtml(internalName, displayName, isModded) {
+    var lookupName = _skillIconAliases[internalName] || internalName;
+    var url = _skillIconUrls && (_skillIconUrls[internalName] || _skillIconUrls[lookupName]);
+    var isCustom = _skillIconUrls && !!_skillIconUrls[internalName] && _skillIconUrls[internalName].indexOf('custom_') !== -1;
+    if (url) {
+      return '<img class="skill-icon' + (isCustom ? ' skill-icon-custom' : '') + '" src="' + url + '" alt="' + (displayName || internalName) + '" data-skill-icon="' + internalName + '" onclick="skillIconClick(this)" oncontextmenu="skillIconRightClick(event, this)" />';
+    }
+    // Fallback: category-colored letter circle
+    var cat = isModded ? 'modded' : (_skillCategories[internalName] || 'practical');
+    var color = _skillCategoryColors[cat] || '#c8aa6e';
+    var letter = (displayName || internalName).charAt(0).toUpperCase();
+    return '<span class="skill-icon-fallback" style="background:' + color + '" data-skill-icon="' + internalName + '" title="' + (displayName || internalName) + '" onclick="skillIconClick(this)" oncontextmenu="skillIconRightClick(event, this)">' + letter + '</span>';
+  }
+
+  // Hidden file input for icon upload
+  var _skillIconFileInput = document.createElement('input');
+  _skillIconFileInput.type = 'file';
+  _skillIconFileInput.accept = 'image/png,image/jpeg,image/webp';
+  _skillIconFileInput.style.display = 'none';
+  document.body.appendChild(_skillIconFileInput);
+  var _skillIconTarget = null;
+
+  _skillIconFileInput.addEventListener('change', function() {
+    if (!_skillIconFileInput.files.length || !_skillIconTarget) return;
+    var skillName = _skillIconTarget;
+    var file = _skillIconFileInput.files[0];
+    if (file.size > 2 * 1024 * 1024) { toast('Image too large (max 2MB)', 'error'); return; }
+    var reader = new FileReader();
+    reader.onload = function() {
+      api('skills/icons/upload', 'POST', { skillName: skillName, imageBase64: reader.result }).then(function(r) {
+        if (r.success) {
+          toast('Custom icon uploaded for ' + skillName, 'success');
+          _skillIconUrls[skillName] = r.url;
+          skillRefreshIcons();
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+    _skillIconFileInput.value = '';
+  });
+
+  window.skillIconClick = function(el) {
+    _skillIconTarget = el.getAttribute('data-skill-icon');
+    _skillIconFileInput.click();
+  };
+
+  window.skillIconRightClick = function(e, el) {
+    e.preventDefault();
+    var skillName = el.getAttribute('data-skill-icon');
+    // Only show reset if there's a custom icon
+    var url = _skillIconUrls && _skillIconUrls[skillName];
+    if (!url || url.indexOf('custom_') === -1) return;
+    // Remove existing context menu
+    var old = document.querySelector('.skill-icon-ctx');
+    if (old) old.remove();
+    var menu = document.createElement('div');
+    menu.className = 'skill-icon-ctx';
+    menu.style.left = e.clientX + 'px';
+    menu.style.top = e.clientY + 'px';
+    menu.innerHTML = '<button onclick="skillIconReset(\'' + skillName + '\')">Reset to default</button>';
+    document.body.appendChild(menu);
+    var close = function() { menu.remove(); document.removeEventListener('click', close); };
+    setTimeout(function() { document.addEventListener('click', close); }, 0);
+  };
+
+  window.skillIconReset = function(skillName) {
+    var old = document.querySelector('.skill-icon-ctx');
+    if (old) old.remove();
+    api('skills/icons/' + skillName, 'DELETE').then(function(r) {
+      if (r.success) {
+        toast('Icon reset for ' + skillName, 'success');
+        delete _skillIconUrls[skillName];
+        // Re-fetch to get default icon URL
+        _skillIconUrls = null;
+        skillLoadIconUrls().then(function() { skillRefreshIcons(); });
+      }
+    });
+  };
+
+  function skillRefreshIcons() {
+    // Re-render any visible skill grids
+    if (_skillListCache) skillRenderPerSkillGrid(_skillListCache);
+    var sid = document.getElementById('skillPlayerSelect') && document.getElementById('skillPlayerSelect').value;
+    if (sid) skillLoadPlayerSkills();
+  }
+
+  // ═══════════════════════════════════════════════════════
   // SKILL EDITOR — Per-Skill Multipliers
   // ═══════════════════════════════════════════════════════
   var _skillListCache = null;
   var _skillBonusCache = null;
 
   function skillLoadPerSkillGrid() {
-    api('skills/list').then(function(data) {
-      _skillListCache = data;
-      var grid = document.getElementById('skillPerSkillRows');
-      var moddedGrid = document.getElementById('skillModdedRows');
-      var moddedGroup = document.getElementById('skillModdedGroup');
-      grid.innerHTML = '';
-      moddedGrid.innerHTML = '';
-      var moddedCount = 0;
-
-      data.skills.forEach(function(skill) {
-        var html = '<div class="skill-mini-row" data-skill="' + skill.internalName + '">' +
-          '<label title="' + skill.internalName + '">' + skill.name + '</label>' +
-          '<input type="range" min="0.1" max="50" step="0.1" value="' + (skill.hasOverride ? skill.effectiveMultiplier / data.globalMultiplier : 1) + '" class="prog-slider" oninput="skillPerSliderSync(this)" />' +
-          '<input type="number" min="0.1" max="50" step="0.1" value="' + (skill.hasOverride ? (skill.effectiveMultiplier / data.globalMultiplier).toFixed(1) : '1.0') + '" class="prog-num" oninput="skillPerNumSync(this)" />' +
-          '<span class="prog-unit">x</span></div>';
-        if (skill.isModded) {
-          moddedGrid.innerHTML += html;
-          moddedCount++;
-        } else {
-          grid.innerHTML += html;
-        }
+    skillLoadIconUrls().then(function() {
+      api('skills/list').then(function(data) {
+        _skillListCache = data;
+        skillRenderPerSkillGrid(data);
       });
-
-      moddedGroup.style.display = moddedCount > 0 ? 'block' : 'none';
-      var countEl = document.getElementById('skillPerSkillCount');
-      var overrideCount = data.skills.filter(function(s) { return s.hasOverride; }).length;
-      countEl.textContent = overrideCount > 0 ? overrideCount + ' override' + (overrideCount !== 1 ? 's' : '') : '';
-
-      // Color all sliders
-      grid.querySelectorAll('.prog-slider').forEach(function(s) { progColorSlider(s, parseFloat(s.value)); });
-      moddedGrid.querySelectorAll('.prog-slider').forEach(function(s) { progColorSlider(s, parseFloat(s.value)); });
     });
+  }
+
+  function skillRenderPerSkillGrid(data) {
+    var grid = document.getElementById('skillPerSkillRows');
+    var moddedGrid = document.getElementById('skillModdedRows');
+    var moddedGroup = document.getElementById('skillModdedGroup');
+    grid.innerHTML = '';
+    moddedGrid.innerHTML = '';
+    var moddedCount = 0;
+
+    data.skills.forEach(function(skill) {
+      var icon = skillIconHtml(skill.internalName, skill.name, skill.isModded);
+      var html = '<div class="skill-mini-row" data-skill="' + skill.internalName + '">' +
+        icon +
+        '<label title="' + skill.internalName + '">' + skill.name + '</label>' +
+        '<input type="range" min="0.1" max="50" step="0.1" value="' + (skill.hasOverride ? skill.effectiveMultiplier / data.globalMultiplier : 1) + '" class="prog-slider" oninput="skillPerSliderSync(this)" />' +
+        '<input type="number" min="0.1" max="50" step="0.1" value="' + (skill.hasOverride ? (skill.effectiveMultiplier / data.globalMultiplier).toFixed(1) : '1.0') + '" class="prog-num" oninput="skillPerNumSync(this)" />' +
+        '<span class="prog-unit">x</span></div>';
+      if (skill.isModded) {
+        moddedGrid.innerHTML += html;
+        moddedCount++;
+      } else {
+        grid.innerHTML += html;
+      }
+    });
+
+    moddedGroup.style.display = moddedCount > 0 ? 'block' : 'none';
+    var countEl = document.getElementById('skillPerSkillCount');
+    var overrideCount = data.skills.filter(function(s) { return s.hasOverride; }).length;
+    countEl.textContent = overrideCount > 0 ? overrideCount + ' override' + (overrideCount !== 1 ? 's' : '') : '';
+
+    // Color all sliders
+    grid.querySelectorAll('.prog-slider').forEach(function(s) { progColorSlider(s, parseFloat(s.value)); });
+    moddedGrid.querySelectorAll('.prog-slider').forEach(function(s) { progColorSlider(s, parseFloat(s.value)); });
   }
 
   window.skillPerSliderSync = function(slider) {
@@ -15264,18 +15429,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var grid = document.getElementById('skillPlayerGrid');
     if (!sid) { grid.innerHTML = ''; return; }
 
-    api('skills/player/' + sid).then(function(data) {
-      var html = '';
-      data.skills.forEach(function(s) {
-        html += '<div class="skill-player-row" data-skillid="' + s.skillId + '">' +
-          '<label title="' + s.skillId + '">' + s.displayName + '</label>' +
-          '<input type="number" min="0" max="51" step="1" value="' + s.level + '" class="sp-level" onchange="skillUpdatePlayerSkill(\'' + sid + '\', \'' + s.skillId + '\', this.value)" />' +
-          (s.isElite ? '<span class="sp-elite">ELITE</span>' : '') +
-          (s.isModded ? '<span style="font-size:10px;color:var(--text-dim)">[MOD]</span>' : '') +
-          '</div>';
-      });
-      grid.innerHTML = html;
-    }).catch(function() { grid.innerHTML = '<div style="color:var(--text-dim)">Failed to load skills</div>'; });
+    skillLoadIconUrls().then(function() {
+      api('skills/player/' + sid).then(function(data) {
+        var html = '';
+        data.skills.forEach(function(s) {
+          var icon = skillIconHtml(s.skillId, s.displayName, s.isModded);
+          html += '<div class="skill-player-row" data-skillid="' + s.skillId + '">' +
+            icon +
+            '<label title="' + s.skillId + '">' + s.displayName + '</label>' +
+            '<input type="number" min="0" max="51" step="1" value="' + s.level + '" class="sp-level" onchange="skillUpdatePlayerSkill(\'' + sid + '\', \'' + s.skillId + '\', this.value)" />' +
+            (s.isElite ? '<span class="sp-elite">ELITE</span>' : '') +
+            (s.isModded ? '<span style="font-size:10px;color:var(--text-dim)">[MOD]</span>' : '') +
+            '</div>';
+        });
+        grid.innerHTML = html;
+      }).catch(function() { grid.innerHTML = '<div style="color:var(--text-dim)">Failed to load skills</div>'; });
+    });
   };
 
   window.skillUpdatePlayerSkill = function(sid, skillId, level) {

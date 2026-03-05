@@ -142,3 +142,12 @@ public record PlayerSkillBulkRequest
     [JsonPropertyName("level")]
     public int Level { get; set; }
 }
+
+public record SkillIconUploadRequest
+{
+    [JsonPropertyName("skillName")]
+    public string SkillName { get; set; } = "";
+
+    [JsonPropertyName("imageBase64")]
+    public string ImageBase64 { get; set; } = "";
+}
