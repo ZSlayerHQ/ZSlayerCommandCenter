@@ -6369,6 +6369,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <!-- Preset buttons -->
     <div class="prog-presets" style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <span style="color:var(--text-dim);font-size:13px;margin-right:4px">Built-in:</span>
+      <button class="btn btn-ghost btn-sm prog-preset-btn" data-preset="Default" onclick="progApplyDefaultPreset()">Default</button>
       <button class="btn btn-ghost btn-sm prog-preset-btn" data-preset="Casual" onclick="progApplyPreset('Casual')">Casual</button>
       <button class="btn btn-ghost btn-sm prog-preset-btn" data-preset="Hardcore" onclick="progApplyPreset('Hardcore')">Hardcore</button>
       <button class="btn btn-ghost btn-sm prog-preset-btn" data-preset="Testing" onclick="progApplyPreset('Testing')">Testing</button>
@@ -15408,7 +15409,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     // Highlight custom preset dropdown if active
     var sel = document.getElementById('progCustomPresetSelect');
     if (sel) {
-      var isCustomActive = _progActivePreset && !['Casual','Hardcore','Testing'].includes(_progActivePreset);
+      var isCustomActive = _progActivePreset && !['Default','Casual','Hardcore','Testing'].includes(_progActivePreset);
       sel.value = isCustomActive ? _progActivePreset : '';
     }
   }
@@ -15450,8 +15451,24 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (!confirm('Reset all progression settings to defaults?')) return;
     api('progression/reset', 'POST').then(function(result) {
       if (result && result.success) {
+        _progActivePreset = null;
         progLoadConfig();
+        progUpdatePresetButtons();
         toast('All progression settings reset to defaults');
+      } else {
+        toast('Failed to reset: ' + (result && result.message || 'Unknown error'), 'error');
+      }
+    });
+  };
+
+  window.progApplyDefaultPreset = function() {
+    if (!confirm('Reset all progression settings to defaults?')) return;
+    api('progression/reset', 'POST').then(function(result) {
+      if (result && result.success) {
+        _progActivePreset = 'Default';
+        progLoadConfig();
+        progUpdatePresetButtons();
+        toast('Applied "Default" preset — all settings reset');
       } else {
         toast('Failed to reset: ' + (result && result.message || 'Unknown error'), 'error');
       }
