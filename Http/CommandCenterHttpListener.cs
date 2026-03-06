@@ -309,6 +309,12 @@ public class CommandCenterHttpListener(
                 case "headless-console" when method == "GET":
                     await HandleHeadlessConsole(context, headerSessionId);
                     break;
+                case "headless-console/sources" when method == "GET":
+                {
+                    if (!await ValidateAccess(context, headerSessionId)) break;
+                    await WriteJson(context, 200, new { sources = headlessLogService.GetSources() });
+                    break;
+                }
                 // Quest editor routes
                 case "quests" when method == "GET":
                     await HandleQuestList(context, headerSessionId);
@@ -619,6 +625,8 @@ public class CommandCenterHttpListener(
         var headlessUptime = headlessWatchdogs
             .FirstOrDefault(w => w.HeadlessClient?.Running == true)?.HeadlessClient?.Uptime ?? "";
 
+        var headlessInstances = watchdogManager.GetHeadlessInstances();
+
         await WriteJson(context, 200, new
         {
             playersOnline = online,
@@ -627,7 +635,8 @@ public class CommandCenterHttpListener(
             onlinePlayers = playerList,
             serverUptime = status.Uptime,
             headlessRunning,
-            headlessUptime
+            headlessUptime,
+            headlessInstances
         });
     }
 
@@ -903,10 +912,11 @@ public class CommandCenterHttpListener(
         var query = context.Request.Query;
         var sinceStr = query["since"].FirstOrDefault();
         var linesStr = query["lines"].FirstOrDefault();
+        var sourceFilter = query["source"].FirstOrDefault();
 
         if (!string.IsNullOrEmpty(linesStr) && int.TryParse(linesStr, out var lines))
         {
-            var entries = headlessLogService.GetHistory(Math.Clamp(lines, 1, 500));
+            var entries = headlessLogService.GetHistory(Math.Clamp(lines, 1, 500), sourceFilter);
             await WriteJson(context, 200, new ConsoleResponse
             {
                 Entries = entries,
@@ -923,7 +933,7 @@ public class CommandCenterHttpListener(
                 since = parsed;
             }
 
-            var entries = headlessLogService.GetEntriesSince(since);
+            var entries = headlessLogService.GetEntriesSince(since, sourceFilter);
             await WriteJson(context, 200, new ConsoleResponse
             {
                 Entries = entries,
@@ -1457,6 +1467,8 @@ public class CommandCenterHttpListener(
                     var body = await ReadBody<TelemetryHelloPayload>(context);
                     if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
                     telemetryService.UpdateHello(body);
+                    if (!string.IsNullOrEmpty(body.SourceId))
+                        watchdogManager.BroadcastHeadlessHello(body.SourceId, body.Hostname ?? "");
                     await WriteJson(context, 200, new { ok = true });
                     break;
                 }
@@ -1556,6 +1568,22 @@ public class CommandCenterHttpListener(
                     await WriteJson(context, 200, new { ok = true, intervalSec = telemetryService.GetMapRefreshRate() });
                     break;
                 }
+                case "telemetry/console":
+                {
+                    var body = await ReadBody<TelemetryConsolePayload>(context);
+                    if (body == null) { await WriteJson(context, 400, new { error = "Invalid body" }); return; }
+                    var entries = body.Entries.Select(e => new ConsoleEntry
+                    {
+                        Timestamp = DateTime.UtcNow,
+                        Level = e.Level,
+                        Source = e.Source,
+                        Message = e.Message,
+                        SourceId = body.SourceId
+                    }).ToList();
+                    headlessLogService.AddStreamedEntries(body.SourceId, body.SourceId, entries);
+                    await WriteJson(context, 200, new { ok = true });
+                    break;
+                }
                 default:
                     await WriteJson(context, 404, new { error = "Not found" });
                     break;
@@ -1568,26 +1596,31 @@ public class CommandCenterHttpListener(
         {
             if (!await ValidateAccess(context, headerSessionId)) return;
 
+            var sourceFilter = context.Request.Query["source"].FirstOrDefault();
+
             switch (path)
             {
                 case "telemetry/current":
-                    await WriteJson(context, 200, telemetryService.GetCurrent());
+                    await WriteJson(context, 200, telemetryService.GetCurrent(sourceFilter));
                     break;
                 case "telemetry/kill-feed":
                 {
                     var limitStr = context.Request.Query["limit"].FirstOrDefault();
                     var limit = int.TryParse(limitStr, out var lv) ? Math.Clamp(lv, 1, 100) : 50;
-                    await WriteJson(context, 200, telemetryService.GetKillFeed(limit));
+                    await WriteJson(context, 200, telemetryService.GetKillFeed(limit, sourceFilter));
                     break;
                 }
                 case "telemetry/raid-history":
-                    await WriteJson(context, 200, telemetryService.GetRaidHistory());
+                    await WriteJson(context, 200, telemetryService.GetRaidHistory(sourceFilter));
                     break;
                 case "telemetry/lifetime-stats":
                     await WriteJson(context, 200, telemetryService.GetLifetimeStats());
                     break;
                 case "telemetry/performance-history":
-                    await WriteJson(context, 200, telemetryService.GetPerformanceHistory());
+                    await WriteJson(context, 200, telemetryService.GetPerformanceHistory(sourceFilter));
+                    break;
+                case "telemetry/sources":
+                    await WriteJson(context, 200, new TelemetrySourcesResponse { Sources = telemetryService.GetSources() });
                     break;
                 case "telemetry/alerts":
                 {
@@ -1602,7 +1635,7 @@ public class CommandCenterHttpListener(
                     break;
                 }
                 case "telemetry/positions":
-                    await WriteJson(context, 200, telemetryService.GetCurrent().Positions);
+                    await WriteJson(context, 200, telemetryService.GetCurrent(sourceFilter).Positions);
                     break;
                 case "telemetry/map-refresh-rate":
                     await WriteJson(context, 200, new { intervalSec = telemetryService.GetMapRefreshRate() });
@@ -1689,24 +1722,27 @@ public class CommandCenterHttpListener(
             }
             case "start" when method == "POST":
             {
+                var wdId = context.Request.Query["watchdogId"].FirstOrDefault();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Watchdog: start sptServer");
-                var (sent, message) = await watchdogManager.SendCommandToTarget("sptServer", "start");
+                var (sent, message) = await watchdogManager.SendCommandToTargetOrId("sptServer", "start", wdId);
                 var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
                 await WriteJson(context, status, new { success = sent, message });
                 break;
             }
             case "stop" when method == "POST":
             {
+                var wdId = context.Request.Query["watchdogId"].FirstOrDefault();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Watchdog: stop sptServer");
-                var (sent, message) = await watchdogManager.SendCommandToTarget("sptServer", "stop");
+                var (sent, message) = await watchdogManager.SendCommandToTargetOrId("sptServer", "stop", wdId);
                 var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
                 await WriteJson(context, status, new { success = sent, message });
                 break;
             }
             case "restart" when method == "POST":
             {
+                var wdId = context.Request.Query["watchdogId"].FirstOrDefault();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Watchdog: restart sptServer");
-                var (sent, message) = await watchdogManager.SendCommandToTarget("sptServer", "restart");
+                var (sent, message) = await watchdogManager.SendCommandToTargetOrId("sptServer", "restart", wdId);
                 var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
                 await WriteJson(context, status, new { success = sent, message });
                 break;
@@ -1750,24 +1786,27 @@ public class CommandCenterHttpListener(
             }
             case "headless/start" when method == "POST":
             {
+                var wdId = context.Request.Query["watchdogId"].FirstOrDefault();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: started");
-                var (sent, message) = await watchdogManager.SendCommandToTarget("headlessClient", "start");
+                var (sent, message) = await watchdogManager.SendCommandToTargetOrId("headlessClient", "start", wdId);
                 var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
                 await WriteJson(context, status, new { success = sent, message });
                 break;
             }
             case "headless/stop" when method == "POST":
             {
+                var wdId = context.Request.Query["watchdogId"].FirstOrDefault();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: stopped");
-                var (sent, message) = await watchdogManager.SendCommandToTarget("headlessClient", "stop");
+                var (sent, message) = await watchdogManager.SendCommandToTargetOrId("headlessClient", "stop", wdId);
                 var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
                 await WriteJson(context, status, new { success = sent, message });
                 break;
             }
             case "headless/restart" when method == "POST":
             {
+                var wdId = context.Request.Query["watchdogId"].FirstOrDefault();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: restarted");
-                var (sent, message) = await watchdogManager.SendCommandToTarget("headlessClient", "restart");
+                var (sent, message) = await watchdogManager.SendCommandToTargetOrId("headlessClient", "restart", wdId);
                 var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
                 await WriteJson(context, status, new { success = sent, message });
                 break;

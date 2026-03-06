@@ -5,6 +5,7 @@ using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Utils;
+using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Services;
 using ZSlayerCommandCenter.Models;
 
@@ -16,26 +17,24 @@ public class TelemetryService(
     LocaleService localeService,
     HandbookHelper handbookHelper,
     WatchdogManager watchdogManager,
+    SaveServer saveServer,
     ISptLogger<TelemetryService> logger)
 {
     private readonly object _lock = new();
 
-    // Headless version info (from hello handshake)
+    // Headless version info (from hello handshake) — global, last reported
     private string _headlessTelemetryVersion = "";
     private string _headlessFikaVersion = "";
 
-    // Current state (overwritten each update)
-    private RaidStatePayload? _currentRaidState;
-    private PerformancePayload? _currentPerformance;
-    private PlayerStatusPayload? _currentPlayers;
-    private BotCountPayload? _currentBots;
-    private DamageStatsPayload? _currentDamageStats;
+    // Multi-source state
+    private readonly Dictionary<string, TelemetrySource> _sources = new();
+    private static readonly TimeSpan StaleTimeout = TimeSpan.FromMinutes(30);
 
-    // Kill feed — ring buffer, max 100
+    // Kill feed — ring buffer, max 100 (global, entries already contain context)
     private readonly List<KillFeedEntry> _killFeed = new();
     private const int MaxKillFeed = 100;
 
-    // Current raid kills (archived to history on raid end)
+    // Current raid kills (archived to history on raid end) — global
     private readonly List<KillFeedEntry> _currentRaidKills = new();
     private readonly List<ExtractPayload> _currentRaidExtracts = new();
     private string _currentRaidId = "";
@@ -71,7 +70,6 @@ public class TelemetryService(
     {
         if (string.IsNullOrEmpty(templateId)) return "";
         var locales = GetLocales();
-        // Prefer ShortName for weapons (e.g. "AK-74M" instead of full verbose name)
         if (locales.TryGetValue($"{templateId} ShortName", out var shortName) && !string.IsNullOrEmpty(shortName))
             return shortName;
         if (locales.TryGetValue($"{templateId} Name", out var name) && !string.IsNullOrEmpty(name))
@@ -104,14 +102,12 @@ public class TelemetryService(
         return char.ToUpper(locationId[0]) + locationId[1..];
     }
 
-    /// <summary>Strip Unity rich text tags like &lt;b&gt;, &lt;color=#fff&gt;, etc.</summary>
     private static string StripUnityTags(string? input)
     {
         if (string.IsNullOrEmpty(input)) return "";
         return UnityTagRegex.Replace(input, "").Trim();
     }
 
-    /// <summary>For AI actors, replace individual names with type labels.</summary>
     private static string CleanActorName(string name, string type)
     {
         var clean = StripUnityTags(name);
@@ -122,19 +118,18 @@ public class TelemetryService(
                 "raider" => "Raider",
                 "rogue" => "Rogue",
                 "follower" => "Follower",
-                "boss" => clean, // keep boss names
+                "boss" => clean,
                 _ => clean
             };
 
-        // For AI types (not pmc, not boss), use the type label instead of Russian names
         return type switch
         {
             "scav" => "Scav",
             "raider" => "Raider",
             "rogue" => "Rogue",
             "follower" => "Follower",
-            "boss" => clean, // keep resolved boss name
-            "pmc" => clean,  // keep PMC names
+            "boss" => clean,
+            "pmc" => clean,
             _ => clean
         };
     }
@@ -145,18 +140,72 @@ public class TelemetryService(
         return name[..(MaxWeaponNameLength - 3)] + "...";
     }
 
+    private string NormalizeSourceId(string? sourceId)
+    {
+        return string.IsNullOrWhiteSpace(sourceId) ? "default" : sourceId;
+    }
+
+    private TelemetrySource GetOrCreateSource(string sourceId)
+    {
+        if (_sources.TryGetValue(sourceId, out var existing))
+            return existing;
+
+        var displayName = ResolveSourceDisplayName(sourceId);
+        var source = new TelemetrySource
+        {
+            SourceId = sourceId,
+            DisplayName = displayName,
+            FirstSeen = DateTime.UtcNow,
+            LastSeen = DateTime.UtcNow
+        };
+        _sources[sourceId] = source;
+        return source;
+    }
+
+    private string ResolveSourceDisplayName(string sourceId)
+    {
+        if (sourceId == "default") return "Headless";
+
+        try
+        {
+            var profiles = saveServer.GetProfiles();
+            foreach (var (sid, profile) in profiles)
+            {
+                if (sid.ToString() == sourceId)
+                {
+                    var info = profile?.CharacterData?.PmcData?.Info;
+                    if (info != null && !string.IsNullOrEmpty(info.Nickname))
+                        return info.Nickname;
+                }
+            }
+        }
+        catch { /* best effort */ }
+
+        return sourceId.Length > 8 ? sourceId[..8] : sourceId;
+    }
+
     // ══════════════════════════════════════════════════════════════
     //  UPDATE methods (called from POST endpoints)
     // ══════════════════════════════════════════════════════════════
 
     public void UpdateHello(TelemetryHelloPayload payload)
     {
+        var sourceId = NormalizeSourceId(payload.SourceId);
         lock (_lock)
         {
             _headlessTelemetryVersion = payload.TelemetryVersion;
             _headlessFikaVersion = payload.FikaClientVersion;
+
+            var source = GetOrCreateSource(sourceId);
+            source.LastSeen = DateTime.UtcNow;
+            if (!string.IsNullOrEmpty(payload.Hostname))
+                source.Hostname = payload.Hostname;
+            if (!string.IsNullOrEmpty(payload.Ip))
+                source.Ip = payload.Ip;
+            if (!string.IsNullOrEmpty(payload.Hostname))
+                source.DisplayName = payload.Hostname;
         }
-        logger.Info($"Headless connected — Telemetry: {payload.TelemetryVersion}, Fika.Core: {payload.FikaClientVersion}");
+        logger.Info($"Headless connected — Telemetry: {payload.TelemetryVersion}, Fika.Core: {payload.FikaClientVersion}, Source: {sourceId}");
     }
 
     public (string TelemetryVersion, string FikaClientVersion) GetHeadlessVersions()
@@ -166,16 +215,19 @@ public class TelemetryService(
 
     public void UpdateRaidState(RaidStatePayload payload)
     {
+        var sourceId = NormalizeSourceId(payload.SourceId);
         bool wasActive;
         bool wasIdle;
 
         lock (_lock)
         {
-            wasActive = _currentRaidState != null && _currentRaidState.Status != "idle";
-            wasIdle = _currentRaidState == null || _currentRaidState.Status == "idle";
-            _currentRaidState = payload;
+            var source = GetOrCreateSource(sourceId);
+            source.LastSeen = DateTime.UtcNow;
 
-            // Start a new raid tracking session
+            wasActive = source.RaidState != null && source.RaidState.Status != "idle";
+            wasIdle = source.RaidState == null || source.RaidState.Status == "idle";
+            source.RaidState = payload;
+
             if (payload.Status is "loading" or "deploying" && string.IsNullOrEmpty(_currentRaidId))
             {
                 _currentRaidId = Guid.NewGuid().ToString("N")[..12];
@@ -184,26 +236,23 @@ public class TelemetryService(
                 _currentRaidExtracts.Clear();
             }
 
-            // Clear kill feed when entering a new raid so stale data doesn't show
             if (payload.Status == "in-raid" && wasIdle)
             {
                 _killFeed.Clear();
                 _currentRaidKills.Clear();
             }
 
-            // Clear stale data when going idle
             if (payload.Status == "idle" && wasActive)
             {
-                _currentPerformance = null;
-                _currentPlayers = null;
-                _currentBots = null;
-                _currentDamageStats = null;
-                _currentPositions = [];
+                source.Performance = null;
+                source.Players = null;
+                source.Bots = null;
+                source.DamageStats = null;
+                source.Positions = [];
                 _currentRaidId = "";
             }
         }
 
-        // Generate alerts on status transitions
         if (payload.Status is "loading" or "deploying" && wasIdle)
             AddAlert("raid-start", $"Raid starting on {payload.Map}", payload.Map, "rocket");
         if (payload.Status == "idle" && wasActive)
@@ -212,46 +261,47 @@ public class TelemetryService(
             watchdogManager.BroadcastRaidEnd(payload.Map ?? "");
         }
 
-        logger.Info($"[Telemetry] Raid state → {payload.Status}, map: {payload.Map}, timer: {payload.RaidTimer}s");
+        logger.Info($"[Telemetry] Raid state → {payload.Status}, map: {payload.Map}, timer: {payload.RaidTimer}s, source: {sourceId}");
     }
 
     public void UpdatePerformance(PerformancePayload payload)
     {
+        var sourceId = NormalizeSourceId(payload.SourceId);
         lock (_lock)
         {
-            _currentPerformance = payload;
+            var source = GetOrCreateSource(sourceId);
+            source.LastSeen = DateTime.UtcNow;
+            source.Performance = payload;
         }
-        RecordPerformanceHistory(payload);
+        RecordPerformanceHistory(payload, sourceId);
     }
 
     public void AddKill(KillPayload payload)
     {
-        // Clean actor names: strip Unity tags, replace AI names with type labels
+        var sourceId = NormalizeSourceId(payload.SourceId);
         var killerName = CleanActorName(payload.Killer.Name, payload.Killer.Type);
         var victimName = CleanActorName(payload.Victim.Name, payload.Victim.Type);
 
-        // Resolve weapon name (use ShortName from locale, truncate if needed)
         var weaponName = StripUnityTags(ResolveItemShortName(payload.Weapon));
         var ammoName = StripUnityTags(ResolveItemName(payload.Ammo));
 
-        // Clean body part — filter out "None", "Unknown", "Common"
         var bodyPart = StripUnityTags(payload.BodyPart);
         if (bodyPart is "None" or "Unknown" or "Common" or "")
             bodyPart = "";
 
-        // Handle unknown/environmental deaths
         var isEnvironmentalDeath = string.IsNullOrEmpty(killerName) || killerName == "Unknown";
         var isUnknownWeapon = string.IsNullOrEmpty(weaponName) || weaponName == "Unknown";
 
         if (isEnvironmentalDeath && isUnknownWeapon)
         {
-            killerName = ""; // Will display as "KIA" in dashboard
+            killerName = "";
             weaponName = "";
         }
 
         var entry = new KillFeedEntry
         {
             Id = $"k{Interlocked.Increment(ref _killCounter)}",
+            SourceId = sourceId,
             Timestamp = payload.Timestamp,
             RaidTime = payload.RaidTime,
             Map = payload.Map,
@@ -276,6 +326,9 @@ public class TelemetryService(
 
         lock (_lock)
         {
+            var source = GetOrCreateSource(sourceId);
+            source.LastSeen = DateTime.UtcNow;
+
             _killFeed.Add(entry);
             if (_killFeed.Count > MaxKillFeed)
                 _killFeed.RemoveRange(0, _killFeed.Count - MaxKillFeed);
@@ -283,7 +336,6 @@ public class TelemetryService(
             _currentRaidKills.Add(entry);
         }
 
-        // Generate alerts for notable kills
         if (payload.Victim.Type == "pmc")
             AddAlert("pmc-kill", $"{killerName} killed {victimName}", payload.Map, "skull");
         if (payload.IsHeadshot)
@@ -294,40 +346,52 @@ public class TelemetryService(
 
     public void UpdatePlayers(PlayerStatusPayload payload)
     {
+        var sourceId = NormalizeSourceId(payload.SourceId);
         lock (_lock)
         {
-            _currentPlayers = payload;
+            var source = GetOrCreateSource(sourceId);
+            source.LastSeen = DateTime.UtcNow;
+            source.Players = payload;
         }
     }
 
     public void UpdateBots(BotCountPayload payload)
     {
+        var sourceId = NormalizeSourceId(payload.SourceId);
         lock (_lock)
         {
-            _currentBots = payload;
+            var source = GetOrCreateSource(sourceId);
+            source.LastSeen = DateTime.UtcNow;
+            source.Bots = payload;
         }
     }
 
     public void UpdateDamageStats(DamageStatsPayload payload)
     {
+        var sourceId = NormalizeSourceId(payload.SourceId);
         lock (_lock)
         {
-            _currentDamageStats = payload;
+            var source = GetOrCreateSource(sourceId);
+            source.LastSeen = DateTime.UtcNow;
+            source.DamageStats = payload;
         }
     }
 
     public void AddBossSpawn(BossSpawnPayload payload)
     {
+        var sourceId = NormalizeSourceId(payload.SourceId);
         lock (_lock)
         {
-            // Merge into current bots state if available
-            if (_currentBots != null)
+            var source = GetOrCreateSource(sourceId);
+            source.LastSeen = DateTime.UtcNow;
+
+            if (source.Bots != null)
             {
-                var existing = _currentBots.Bosses.FirstOrDefault(b =>
+                var existing = source.Bots.Bosses.FirstOrDefault(b =>
                     b.Name.Equals(payload.Boss, StringComparison.OrdinalIgnoreCase));
                 if (existing == null)
                 {
-                    _currentBots.Bosses.Add(new BossStateEntry
+                    source.Bots.Bosses.Add(new BossStateEntry
                     {
                         Name = payload.Boss,
                         Alive = true
@@ -352,19 +416,17 @@ public class TelemetryService(
 
     public void FinishRaid(RaidSummaryPayload payload)
     {
+        var sourceId = NormalizeSourceId(payload.SourceId);
+
         logger.Info($"[Telemetry] FinishRaid received — map: {payload.Map}, duration: {payload.RaidDuration}s, " +
                      $"players: {payload.Players.Count}, kills: {payload.TotalKills}, deaths: {payload.TotalDeaths}, " +
-                     $"bosses: {payload.Bosses.Count}, currentRaidKills: {_currentRaidKills.Count}");
+                     $"bosses: {payload.Bosses.Count}, currentRaidKills: {_currentRaidKills.Count}, source: {sourceId}");
 
         lock (_lock)
         {
-            // Use server-tracked kill count if plugin reported 0
             var actualKills = payload.TotalKills > 0 ? payload.TotalKills : _currentRaidKills.Count;
 
-            // Derive per-player kill counts from kill feed as fallback
             EnrichPlayerKillCounts(payload.Players);
-
-            // Calculate inventory values and raid profit
             CalculateRaidProfit(payload.Players);
 
             var record = new RaidHistoryRecord
@@ -374,6 +436,7 @@ public class TelemetryService(
                     Id = string.IsNullOrEmpty(_currentRaidId)
                         ? Guid.NewGuid().ToString("N")[..12]
                         : _currentRaidId,
+                    SourceId = sourceId,
                     Map = payload.Map,
                     MapName = ResolveMapName(payload.Map),
                     Timestamp = _currentRaidStart != default ? _currentRaidStart : DateTime.UtcNow,
@@ -388,15 +451,14 @@ public class TelemetryService(
                 Players = payload.Players,
                 Kills = new List<KillFeedEntry>(_currentRaidKills),
                 Extracts = new List<ExtractPayload>(_currentRaidExtracts),
-                DamageStats = _currentDamageStats
+                DamageStats = _sources.TryGetValue(sourceId, out var src) ? src.DamageStats : null
             };
 
             _raidHistory.Insert(0, record);
 
-            // Clear current raid state
             _currentRaidKills.Clear();
             _currentRaidExtracts.Clear();
-            _currentDamageStats = null;
+            if (src != null) src.DamageStats = null;
             _currentRaidId = "";
         }
 
@@ -405,29 +467,19 @@ public class TelemetryService(
         logger.Success($"[Telemetry] Raid archived — {payload.Map}, {payload.Players.Count} players, raidHistory now has {_raidHistory.Count} entries");
     }
 
-    /// <summary>
-    /// Enrich player stats from the server-tracked kill feed.
-    /// SessionCounters are only available for the local headless player;
-    /// remote players always get zeros from the plugin. This backfills
-    /// kills, kill types, headshots, longest kill, and kill streak from
-    /// the kill feed which IS tracked server-side for all players.
-    /// </summary>
     private void EnrichPlayerKillCounts(List<RaidSummaryPlayer> players)
     {
         foreach (var player in players)
         {
-            // Find kills where this player is the killer (match by cleaned name)
             var playerKills = _currentRaidKills
                 .Where(k => k.Killer.Name.Equals(player.Name, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             if (playerKills.Count == 0) continue;
 
-            // Derive total kills if plugin sent 0
             if (player.Kills == 0)
                 player.Kills = playerKills.Count;
 
-            // Derive kill types if plugin sent all zeros
             if (player.KilledPmc == 0 && player.KilledScav == 0 && player.KilledBoss == 0)
             {
                 player.KilledPmc = playerKills.Count(k => k.Victim.Type == "pmc");
@@ -435,25 +487,17 @@ public class TelemetryService(
                 player.KilledBoss = playerKills.Count(k => k.Victim.Type == "boss");
             }
 
-            // Derive headshots from kill feed
             if (player.Headshots == 0)
                 player.Headshots = playerKills.Count(k => k.IsHeadshot);
 
-            // Derive longest kill distance from kill feed
             if (player.LongestKill == 0)
                 player.LongestKill = Math.Round(playerKills.Max(k => k.Distance), 1);
 
-            // Derive kill streak (best consecutive run in chronological order)
             if (player.KillStreak == 0)
                 player.KillStreak = playerKills.Count;
         }
     }
 
-    /// <summary>
-    /// Calculate inventory values and raid profit for each player.
-    /// Uses handbook prices to value inventoryBefore/After item lists,
-    /// then clears the raw lists to save storage.
-    /// </summary>
     private void CalculateRaidProfit(List<RaidSummaryPlayer> players)
     {
         foreach (var player in players)
@@ -472,7 +516,6 @@ public class TelemetryService(
                 logger.Warning($"[Telemetry] Profit calc error for {player.Name}: {ex.Message}");
             }
 
-            // Clear raw inventory lists — not needed after pricing
             player.InventoryBefore = null;
             player.InventoryAfter = null;
         }
@@ -499,13 +542,11 @@ public class TelemetryService(
     //  GET methods (called from dashboard GET endpoints)
     // ══════════════════════════════════════════════════════════════
 
-    // Late-bound season service (injected after construction to avoid DI ordering issues)
     private SeasonalEventService? _seasonService;
     public void SetSeasonService(SeasonalEventService svc) => _seasonService = svc;
 
-    public TelemetryCurrentDto GetCurrent()
+    public TelemetryCurrentDto GetCurrent(string? sourceId = null)
     {
-        // Get season from server-side SeasonalEventService (not plugin)
         var season = "";
         try
         {
@@ -532,43 +573,63 @@ public class TelemetryService(
 
         lock (_lock)
         {
-            var isActive = _currentRaidState != null && _currentRaidState.Status != "idle";
+            var src = ResolveSource(sourceId);
+            if (src == null)
+            {
+                return new TelemetryCurrentDto
+                {
+                    RaidActive = false,
+                    Season = season
+                };
+            }
+
+            var isActive = src.RaidState != null && src.RaidState.Status != "idle";
             return new TelemetryCurrentDto
             {
                 RaidActive = isActive,
-                RaidState = _currentRaidState,
-                Performance = _currentPerformance,
-                Players = _currentPlayers?.Players ?? [],
-                Bots = _currentBots,
-                DamageStats = _currentDamageStats,
-                Positions = isActive ? _currentPositions : [],
+                RaidState = src.RaidState,
+                Performance = src.Performance,
+                Players = src.Players?.Players ?? [],
+                Bots = src.Bots,
+                DamageStats = src.DamageStats,
+                Positions = isActive ? src.Positions : [],
                 Season = season
             };
         }
     }
 
-    public KillFeedResponse GetKillFeed(int limit = 50)
+    public KillFeedResponse GetKillFeed(int limit = 50, string? sourceId = null)
     {
         lock (_lock)
         {
-            var isLive = _currentRaidState != null && _currentRaidState.Status != "idle";
-            var kills = _killFeed.TakeLast(Math.Min(limit, MaxKillFeed)).Reverse().ToList();
+            var src = ResolveSource(sourceId);
+            var isLive = src?.RaidState != null && src.RaidState.Status != "idle";
+
+            IEnumerable<KillFeedEntry> kills = _killFeed;
+            if (!string.IsNullOrEmpty(sourceId))
+                kills = kills.Where(k => k.SourceId == sourceId);
+
+            var result = kills.TakeLast(Math.Min(limit, MaxKillFeed)).Reverse().ToList();
             return new KillFeedResponse
             {
-                Kills = kills,
+                Kills = result,
                 IsLive = isLive,
-                RaidMap = isLive ? "" : (_currentRaidState?.Map ?? "")
+                RaidMap = isLive ? "" : (src?.RaidState?.Map ?? "")
             };
         }
     }
 
-    public RaidHistoryResponse GetRaidHistory()
+    public RaidHistoryResponse GetRaidHistory(string? sourceId = null)
     {
         lock (_lock)
         {
+            IEnumerable<RaidHistoryRecord> raids = _raidHistory;
+            if (!string.IsNullOrEmpty(sourceId))
+                raids = raids.Where(r => r.Summary.SourceId == sourceId);
+
             return new RaidHistoryResponse
             {
-                Raids = _raidHistory.Select(r => r.Summary).ToList()
+                Raids = raids.Select(r => r.Summary).ToList()
             };
         }
     }
@@ -591,14 +652,25 @@ public class TelemetryService(
         }
     }
 
+    private TelemetrySource? ResolveSource(string? sourceId)
+    {
+        if (!string.IsNullOrEmpty(sourceId))
+        {
+            _sources.TryGetValue(sourceId, out var exact);
+            return exact;
+        }
+
+        // Default: return the most recently active source
+        return _sources.Values
+            .OrderByDescending(s => s.LastSeen)
+            .FirstOrDefault();
+    }
+
     // ══════════════════════════════════════════════════════════════
     //  Positions (for live minimap)
     // ══════════════════════════════════════════════════════════════
 
-    private List<PlayerPositionEntry> _currentPositions = [];
-
-    // Map refresh rate (configurable via frontend slider)
-    private float _mapRefreshRate = 1.0f; // seconds
+    private float _mapRefreshRate = 1.0f;
 
     public float GetMapRefreshRate() => _mapRefreshRate;
     public void SetMapRefreshRate(float rate)
@@ -609,9 +681,12 @@ public class TelemetryService(
 
     public void UpdatePositions(PositionPayload payload)
     {
+        var sourceId = NormalizeSourceId(payload.SourceId);
         lock (_lock)
         {
-            _currentPositions = payload.Positions ?? [];
+            var source = GetOrCreateSource(sourceId);
+            source.LastSeen = DateTime.UtcNow;
+            source.Positions = payload.Positions ?? [];
         }
     }
 
@@ -619,8 +694,7 @@ public class TelemetryService(
     //  Performance history buffer (rolling 5 minutes)
     // ══════════════════════════════════════════════════════════════
 
-    private readonly List<PerformanceHistoryEntry> _perfHistory = new();
-    private const int MaxPerfHistory = 60; // 5 min at 5s intervals
+    private const int MaxPerfHistory = 60;
 
     // Server process CPU tracking (delta-based)
     private TimeSpan _lastServerCpuTime;
@@ -658,21 +732,22 @@ public class TelemetryService(
         }
     }
 
-    public void RecordPerformanceHistory(PerformancePayload payload)
+    public void RecordPerformanceHistory(PerformancePayload payload, string sourceId)
     {
         var (serverCpu, serverRam) = GetServerProcessStats();
 
         lock (_lock)
         {
+            var source = GetOrCreateSource(sourceId);
+
             var ramTotalMb = payload.SystemInfo?.TotalRamMb ?? 0;
             var processRamPercent = ramTotalMb > 0 ? Math.Round((double)payload.MemoryMb / ramTotalMb * 100, 1) : 0;
             var systemRamPercent = ramTotalMb > 0 ? Math.Round((double)payload.SystemRamUsedMb / ramTotalMb * 100, 1) : 0;
 
-            // Use system values as primary, fallback to process if system not available
             var useSysCpu = payload.SystemCpuPercent > 0;
             var useSysRam = payload.SystemRamUsedMb > 0;
 
-            _perfHistory.Add(new PerformanceHistoryEntry
+            var entry = new PerformanceHistoryEntry
             {
                 Timestamp = DateTime.UtcNow,
                 CpuPercent = useSysCpu ? payload.SystemCpuPercent : payload.CpuUsage,
@@ -685,17 +760,30 @@ public class TelemetryService(
                 ProcessRamUsedMb = payload.MemoryMb,
                 ServerCpuPercent = serverCpu,
                 ServerRamUsedMb = serverRam
-            });
-            if (_perfHistory.Count > MaxPerfHistory)
-                _perfHistory.RemoveRange(0, _perfHistory.Count - MaxPerfHistory);
+            };
+
+            source.PerformanceHistory.Add(entry);
+            if (source.PerformanceHistory.Count > MaxPerfHistory)
+                source.PerformanceHistory.RemoveRange(0, source.PerformanceHistory.Count - MaxPerfHistory);
         }
     }
 
-    public List<PerformanceHistoryEntry> GetPerformanceHistory()
+    public List<PerformanceHistoryEntry> GetPerformanceHistory(string? sourceId = null)
     {
         lock (_lock)
         {
-            return [.. _perfHistory];
+            if (!string.IsNullOrEmpty(sourceId))
+            {
+                if (_sources.TryGetValue(sourceId, out var src))
+                    return [.. src.PerformanceHistory];
+                return [];
+            }
+
+            // Default: return from most recently active source
+            var active = _sources.Values
+                .OrderByDescending(s => s.LastSeen)
+                .FirstOrDefault();
+            return active != null ? [.. active.PerformanceHistory] : [];
         }
     }
 
@@ -729,12 +817,10 @@ public class TelemetryService(
             {
                 totalDurationSec += raid.Summary.Duration;
 
-                // Map counts
                 var mapName = !string.IsNullOrEmpty(raid.Summary.MapName) ? raid.Summary.MapName : raid.Summary.Map;
                 if (!string.IsNullOrEmpty(mapName))
                     raidsByMap[mapName] = raidsByMap.GetValueOrDefault(mapName) + 1;
 
-                // Player stats
                 foreach (var p in raid.Players)
                 {
                     totalKills += p.Kills;
@@ -745,18 +831,15 @@ public class TelemetryService(
                     totalXp += p.XpEarned;
                 }
 
-                // Kill feed stats
                 foreach (var k in raid.Kills)
                 {
                     if (k.IsHeadshot) totalHeadshots++;
                     if (k.Distance > longestShot) longestShot = k.Distance;
 
-                    // Weapon kill counts
                     var weapon = !string.IsNullOrEmpty(k.WeaponName) ? k.WeaponName : "Unknown";
                     killsByWeapon[weapon] = killsByWeapon.GetValueOrDefault(weapon) + 1;
                 }
 
-                // Damage stats
                 if (raid.DamageStats != null)
                 {
                     if (raid.DamageStats.LongestShot > longestShot)
@@ -764,18 +847,15 @@ public class TelemetryService(
                 }
             }
 
-            // Top 10 weapons
             var topWeapons = killsByWeapon
                 .OrderByDescending(kv => kv.Value)
                 .Take(10)
                 .ToDictionary(kv => kv.Key, kv => kv.Value);
 
-            // Favorite map
             var favoriteMap = raidsByMap.Count > 0
                 ? raidsByMap.OrderByDescending(kv => kv.Value).First().Key
                 : "";
 
-            // Recent trend (last 20 raids)
             var trend = _raidHistory.Take(20).Select(r => new RaidTrendEntry
             {
                 Timestamp = r.Summary.Timestamp,
@@ -852,6 +932,43 @@ public class TelemetryService(
     }
 
     // ══════════════════════════════════════════════════════════════
+    //  Sources
+    // ══════════════════════════════════════════════════════════════
+
+    public List<TelemetrySourceDto> GetSources()
+    {
+        lock (_lock)
+        {
+            CleanupStaleSources();
+            return _sources.Values.Select(s => new TelemetrySourceDto
+            {
+                SourceId = s.SourceId,
+                DisplayName = s.DisplayName,
+                Hostname = s.Hostname,
+                Ip = s.Ip,
+                LastSeen = s.LastSeen,
+                RaidStatus = s.RaidState?.Status ?? "idle",
+                Map = s.RaidState?.Map ?? ""
+            }).ToList();
+        }
+    }
+
+    private void CleanupStaleSources()
+    {
+        var now = DateTime.UtcNow;
+        var stale = _sources
+            .Where(kv => (now - kv.Value.LastSeen) > StaleTimeout)
+            .Select(kv => kv.Key)
+            .ToList();
+
+        foreach (var key in stale)
+        {
+            _sources.Remove(key);
+            logger.Info($"[Telemetry] Removed stale source: {key}");
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
     //  Raid history persistence
     // ══════════════════════════════════════════════════════════════
 
@@ -864,7 +981,6 @@ public class TelemetryService(
     private string GetRaidHistoryPath() =>
         Path.Combine(configService.ModPath, "data", "raid-history.json");
 
-    /// <summary>Load persisted raid history from disk. Call once from OnLoad.</summary>
     public void Initialize()
     {
         var path = GetRaidHistoryPath();
@@ -912,5 +1028,27 @@ public class TelemetryService(
         {
             logger.Error($"[Telemetry] Failed to save raid history: {ex.Message}");
         }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  Inner class: per-source telemetry state
+    // ══════════════════════════════════════════════════════════════
+
+    private class TelemetrySource
+    {
+        public string SourceId { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+        public string Hostname { get; set; } = "";
+        public string Ip { get; set; } = "";
+        public DateTime FirstSeen { get; set; }
+        public DateTime LastSeen { get; set; }
+
+        public RaidStatePayload? RaidState { get; set; }
+        public PerformancePayload? Performance { get; set; }
+        public PlayerStatusPayload? Players { get; set; }
+        public BotCountPayload? Bots { get; set; }
+        public DamageStatsPayload? DamageStats { get; set; }
+        public List<PlayerPositionEntry> Positions { get; set; } = [];
+        public List<PerformanceHistoryEntry> PerformanceHistory { get; } = new();
     }
 }

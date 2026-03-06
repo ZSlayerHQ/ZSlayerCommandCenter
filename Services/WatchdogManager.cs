@@ -252,10 +252,75 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
         return (true, "");
     }
 
-    /// <summary>
-    /// Broadcast a raidEnd event to all Watchdogs managing the headless client.
-    /// Each watchdog decides locally whether RAR is enabled.
-    /// </summary>
+    public void BroadcastHeadlessHello(string sourceId, string hostname)
+    {
+        var targets = GetWatchdogsForTarget("headlessClient");
+        if (targets.Count == 0) return;
+
+        var msg = new { type = "headless-hello", sourceId, hostname };
+        var json = JsonSerializer.Serialize(msg, JsonOptions);
+        var bytes = Encoding.UTF8.GetBytes(json);
+
+        logger.Info($"[ZSlayerHQ] Broadcasting headless-hello to {targets.Count} watchdog(s) (source: {sourceId}, host: {hostname})");
+
+        foreach (var wd in targets)
+        {
+            try
+            {
+                _ = wd.Socket.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                logger.Warning($"[ZSlayerHQ] Failed to send headless-hello to {wd.Name}: {ex.Message}");
+            }
+        }
+    }
+
+    public List<HeadlessInstanceDto> GetHeadlessInstances()
+    {
+        var result = new List<HeadlessInstanceDto>();
+        using (_lock.EnterScope())
+        {
+            foreach (var wd in _watchdogs.Values)
+            {
+                if (!wd.Manages.HeadlessClient) continue;
+
+                var hc = wd.HeadlessClient;
+                result.Add(new HeadlessInstanceDto
+                {
+                    WatchdogId = wd.WatchdogId,
+                    Name = wd.Name,
+                    Hostname = wd.Hostname,
+                    Running = hc?.Running ?? false,
+                    Uptime = hc?.Uptime ?? "",
+                    UptimeSeconds = 0,
+                    Profile = hc?.Profile ?? "",
+                    ProfileId = "",
+                    Mode = "",
+                    Manages = wd.Manages,
+                    System = wd.System
+                });
+            }
+        }
+        return result;
+    }
+
+    public async Task<(bool Sent, string Message)> SendCommandToTargetOrId(string target, string action, string? watchdogId)
+    {
+        if (!string.IsNullOrEmpty(watchdogId))
+        {
+            var (allowed, rateLimitMsg) = CheckRateLimit(watchdogId, target);
+            if (!allowed)
+            {
+                logger.Warning($"[ZSlayerHQ] {rateLimitMsg}");
+                return (false, rateLimitMsg);
+            }
+            return await SendCommand(watchdogId, target, action);
+        }
+
+        return await SendCommandToTarget(target, action);
+    }
+
     public void BroadcastRaidEnd(string map)
     {
         var targets = GetWatchdogsForTarget("headlessClient");

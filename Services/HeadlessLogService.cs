@@ -8,16 +8,27 @@ namespace ZSlayerCommandCenter.Services;
 [Injectable(InjectionType.Singleton)]
 public partial class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
 {
+    private readonly object _lock = new();
+    private readonly Dictionary<string, SourceBuffer> _sources = new();
+    private const int MaxBuffer = 500;
+    private static readonly TimeSpan StaleTimeout = TimeSpan.FromMinutes(30);
+
+    // File-based polling state (for "local" source)
     private string _logFilePath = "";
     private long _lastReadPosition;
-    private readonly List<ConsoleEntry> _buffer = new();
-    private const int MaxBuffer = 500;
 
-    public bool IsConfigured => !string.IsNullOrEmpty(_logFilePath);
+    public bool IsConfigured
+    {
+        get
+        {
+            lock (_lock)
+            {
+                if (!string.IsNullOrEmpty(_logFilePath)) return true;
+                return _sources.Count > 0;
+            }
+        }
+    }
 
-    /// <summary>
-    /// Configure with an explicit log file path, or auto-detect BepInEx/LogOutput.log from modPath.
-    /// </summary>
     public void Configure(string explicitPath, string modPath)
     {
         var path = explicitPath?.Trim() ?? "";
@@ -29,7 +40,6 @@ public partial class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
             return;
         }
 
-        // Auto-detect: modPath = {game_root}/SPT/user/mods/ZSlayerCommandCenter → up 4 levels
         if (!string.IsNullOrEmpty(modPath))
         {
             var gameRoot = Path.GetFullPath(Path.Combine(modPath, "..", "..", "..", ".."));
@@ -43,9 +53,6 @@ public partial class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
         }
     }
 
-    /// <summary>
-    /// Set (or change) the log file to poll.
-    /// </summary>
     public void SetLogFile(string path)
     {
         if (string.IsNullOrEmpty(path)) return;
@@ -53,48 +60,138 @@ public partial class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
         logger.Info($"HeadlessLogService: watching — {_logFilePath}");
     }
 
-    /// <summary>
-    /// Reset read position to start of file and clear buffer.
-    /// Call when the headless process (re)starts so we read the fresh log from the top.
-    /// </summary>
     public void Reset()
     {
         _lastReadPosition = 0;
-        lock (_buffer)
+        lock (_lock)
         {
-            _buffer.Clear();
+            if (_sources.TryGetValue("local", out var local))
+                local.Entries.Clear();
         }
     }
 
-    public List<ConsoleEntry> GetEntriesSince(DateTime since)
+    public void AddStreamedEntries(string sourceId, string hostname, List<ConsoleEntry> entries)
     {
-        PollNewEntries();
-        lock (_buffer)
+        if (string.IsNullOrEmpty(sourceId) || entries.Count == 0) return;
+
+        lock (_lock)
         {
-            return _buffer.Where(e => e.Timestamp > since).ToList();
+            if (!_sources.TryGetValue(sourceId, out var buf))
+            {
+                buf = new SourceBuffer
+                {
+                    SourceId = sourceId,
+                    DisplayName = hostname,
+                    Hostname = hostname,
+                    IsStreaming = true,
+                    FirstSeen = DateTime.UtcNow
+                };
+                _sources[sourceId] = buf;
+                logger.Info($"HeadlessLogService: new streaming source — {sourceId} ({hostname})");
+            }
+
+            buf.LastSeen = DateTime.UtcNow;
+            buf.Hostname = hostname;
+            if (!string.IsNullOrEmpty(hostname))
+                buf.DisplayName = hostname;
+
+            foreach (var entry in entries)
+            {
+                entry.SourceId = sourceId;
+                buf.Entries.Add(entry);
+            }
+
+            if (buf.Entries.Count > MaxBuffer)
+                buf.Entries.RemoveRange(0, buf.Entries.Count - MaxBuffer);
         }
     }
 
-    public List<ConsoleEntry> GetHistory(int lines)
+    public List<ConsoleEntry> GetEntriesSince(DateTime since, string? sourceId = null)
     {
         PollNewEntries();
-        lock (_buffer)
+        lock (_lock)
         {
-            return _buffer.TakeLast(lines).ToList();
+            CleanupStaleSources();
+
+            if (!string.IsNullOrEmpty(sourceId))
+            {
+                if (_sources.TryGetValue(sourceId, out var buf))
+                    return buf.Entries.Where(e => e.Timestamp > since).ToList();
+                return [];
+            }
+
+            return _sources.Values
+                .SelectMany(s => s.Entries)
+                .Where(e => e.Timestamp > since)
+                .OrderBy(e => e.Timestamp)
+                .ToList();
+        }
+    }
+
+    public List<ConsoleEntry> GetHistory(int lines, string? sourceId = null)
+    {
+        PollNewEntries();
+        lock (_lock)
+        {
+            CleanupStaleSources();
+
+            if (!string.IsNullOrEmpty(sourceId))
+            {
+                if (_sources.TryGetValue(sourceId, out var buf))
+                    return buf.Entries.TakeLast(lines).ToList();
+                return [];
+            }
+
+            return _sources.Values
+                .SelectMany(s => s.Entries)
+                .OrderBy(e => e.Timestamp)
+                .TakeLast(lines)
+                .ToList();
+        }
+    }
+
+    public List<ConsoleSourceDto> GetSources()
+    {
+        PollNewEntries();
+        lock (_lock)
+        {
+            CleanupStaleSources();
+            return _sources.Values.Select(s => new ConsoleSourceDto
+            {
+                SourceId = s.SourceId,
+                DisplayName = s.DisplayName,
+                Hostname = s.Hostname,
+                LastSeen = s.LastSeen,
+                EntryCount = s.Entries.Count,
+                IsStreaming = s.IsStreaming
+            }).ToList();
+        }
+    }
+
+    private void CleanupStaleSources()
+    {
+        var now = DateTime.UtcNow;
+        var stale = _sources
+            .Where(kv => kv.Value.IsStreaming && (now - kv.Value.LastSeen) > StaleTimeout)
+            .Select(kv => kv.Key)
+            .ToList();
+
+        foreach (var key in stale)
+        {
+            _sources.Remove(key);
+            logger.Info($"HeadlessLogService: removed stale streaming source — {key}");
         }
     }
 
     private void PollNewEntries()
     {
-        if (!IsConfigured) return;
+        if (string.IsNullOrEmpty(_logFilePath)) return;
         if (!File.Exists(_logFilePath)) return;
 
         try
         {
             using var fs = new FileStream(_logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-            // BepInEx overwrites LogOutput.log on each game launch — if file is shorter
-            // than our last position, the client restarted and we should read from the top.
             if (fs.Length < _lastReadPosition)
                 _lastReadPosition = 0;
 
@@ -106,17 +203,35 @@ public partial class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
             _lastReadPosition = fs.Position;
 
             var lines = newContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            lock (_buffer)
+            lock (_lock)
             {
+                if (!_sources.TryGetValue("local", out var local))
+                {
+                    local = new SourceBuffer
+                    {
+                        SourceId = "local",
+                        DisplayName = "Local Headless",
+                        Hostname = Environment.MachineName,
+                        IsStreaming = false,
+                        FirstSeen = DateTime.UtcNow
+                    };
+                    _sources["local"] = local;
+                }
+
                 foreach (var l in lines)
                 {
                     var entry = ParseLine(l.TrimEnd('\r'));
                     if (entry != null)
-                        _buffer.Add(entry);
+                    {
+                        entry.SourceId = "local";
+                        local.Entries.Add(entry);
+                    }
                 }
 
-                if (_buffer.Count > MaxBuffer)
-                    _buffer.RemoveRange(0, _buffer.Count - MaxBuffer);
+                local.LastSeen = DateTime.UtcNow;
+
+                if (local.Entries.Count > MaxBuffer)
+                    local.Entries.RemoveRange(0, local.Entries.Count - MaxBuffer);
             }
         }
         catch
@@ -126,7 +241,6 @@ public partial class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
     }
 
     // BepInEx format: [Level   : Source] Message
-    // Level is right-padded, Source is right-padded
     [GeneratedRegex(@"^\[(\w+)\s*:\s*([^\]]*?)\s*\]\s*(.*)$")]
     private static partial Regex BepInExPattern();
 
@@ -138,7 +252,6 @@ public partial class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
         if (m.Success)
         {
             var level = m.Groups[1].Value.ToLowerInvariant();
-            // Normalize BepInEx levels
             if (level == "message") level = "info";
             if (level == "warn") level = "warning";
             if (level == "fatal") level = "error";
@@ -152,7 +265,6 @@ public partial class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
             };
         }
 
-        // Fallback for unstructured lines (stack traces, etc.)
         var inferredLevel = "info";
         if (line.Contains("error", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("exception", StringComparison.OrdinalIgnoreCase))
@@ -167,5 +279,16 @@ public partial class HeadlessLogService(ISptLogger<HeadlessLogService> logger)
             Source = "",
             Message = line
         };
+    }
+
+    private class SourceBuffer
+    {
+        public string SourceId { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+        public string Hostname { get; set; } = "";
+        public bool IsStreaming { get; set; }
+        public DateTime FirstSeen { get; set; }
+        public DateTime LastSeen { get; set; }
+        public List<ConsoleEntry> Entries { get; } = new();
     }
 }

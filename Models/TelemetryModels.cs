@@ -8,6 +8,15 @@ namespace ZSlayerCommandCenter.Models;
 
 public record TelemetryHelloPayload
 {
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
+    [JsonPropertyName("hostname")]
+    public string Hostname { get; set; } = "";
+
+    [JsonPropertyName("ip")]
+    public string Ip { get; set; } = "";
+
     [JsonPropertyName("telemetryVersion")]
     public string TelemetryVersion { get; set; } = "";
 
@@ -17,6 +26,9 @@ public record TelemetryHelloPayload
 
 public record RaidStatePayload
 {
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
     [JsonPropertyName("status")]
     public string Status { get; set; } = "idle"; // idle | loading | deploying | in-raid | extracting | post-raid
 
@@ -56,6 +68,9 @@ public record RaidPlayerCounts
 
 public record PerformancePayload
 {
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
     [JsonPropertyName("fps")]
     public int Fps { get; set; }
 
@@ -113,6 +128,9 @@ public record SystemInfoPayload
 
 public record KillPayload
 {
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
     [JsonPropertyName("timestamp")]
     public DateTime Timestamp { get; set; }
 
@@ -158,6 +176,9 @@ public record KillActorPayload
 
 public record PlayerStatusPayload
 {
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
     [JsonPropertyName("map")]
     public string Map { get; set; } = "";
 
@@ -194,6 +215,9 @@ public record PlayerStatusEntry
 
 public record BotCountPayload
 {
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
     [JsonPropertyName("map")]
     public string Map { get; set; } = "";
 
@@ -239,6 +263,9 @@ public record BossStateEntry
 
 public record BossSpawnPayload
 {
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
     [JsonPropertyName("map")]
     public string Map { get; set; } = "";
 
@@ -257,6 +284,9 @@ public record BossSpawnPayload
 
 public record ExtractPayload
 {
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
     [JsonPropertyName("timestamp")]
     public DateTime Timestamp { get; set; }
 
@@ -302,6 +332,9 @@ public record ExtractPlayerInfo
 
 public record RaidSummaryPayload
 {
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
     [JsonPropertyName("map")]
     public string Map { get; set; } = "";
 
@@ -443,6 +476,9 @@ public record RaidSummaryPlayer
 
 public record DamageStatsPayload
 {
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
     [JsonPropertyName("totalHits")]
     public int TotalHits { get; set; }
 
@@ -516,6 +552,27 @@ public record RaidSummaryPayloadV2 : RaidSummaryPayload
     public DamageStatsPayload? DamageStats { get; set; }
 }
 
+public record TelemetryConsolePayload
+{
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
+    [JsonPropertyName("entries")]
+    public List<TelemetryConsoleEntry> Entries { get; set; } = [];
+}
+
+public record TelemetryConsoleEntry
+{
+    [JsonPropertyName("level")]
+    public string Level { get; set; } = "info";
+
+    [JsonPropertyName("source")]
+    public string Source { get; set; } = "";
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = "";
+}
+
 // ══════════════════════════════════════════════════════════════════════
 //  OUTBOUND — Served to the dashboard via GET endpoints
 // ══════════════════════════════════════════════════════════════════════
@@ -551,6 +608,9 @@ public record KillFeedEntry
 {
     [JsonPropertyName("id")]
     public string Id { get; set; } = "";
+
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
 
     [JsonPropertyName("timestamp")]
     public DateTime Timestamp { get; set; }
@@ -599,6 +659,9 @@ public record RaidHistorySummary
 {
     [JsonPropertyName("id")]
     public string Id { get; set; } = "";
+
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
 
     [JsonPropertyName("map")]
     public string Map { get; set; } = "";
@@ -682,6 +745,9 @@ public record RaidHistoryRecord
 
 public record PositionPayload
 {
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
     [JsonPropertyName("map")]
     public string Map { get; set; } = "";
 
@@ -982,4 +1048,38 @@ public record PerformanceHistoryEntry
 
     [JsonPropertyName("serverRamUsedMb")]
     public long ServerRamUsedMb { get; set; }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  TELEMETRY SOURCES — Multi-headless source tracking
+// ══════════════════════════════════════════════════════════════════════
+
+public record TelemetrySourceDto
+{
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
+    [JsonPropertyName("displayName")]
+    public string DisplayName { get; set; } = "";
+
+    [JsonPropertyName("hostname")]
+    public string Hostname { get; set; } = "";
+
+    [JsonPropertyName("ip")]
+    public string Ip { get; set; } = "";
+
+    [JsonPropertyName("lastSeen")]
+    public DateTime LastSeen { get; set; }
+
+    [JsonPropertyName("raidStatus")]
+    public string RaidStatus { get; set; } = "idle";
+
+    [JsonPropertyName("map")]
+    public string Map { get; set; } = "";
+}
+
+public record TelemetrySourcesResponse
+{
+    [JsonPropertyName("sources")]
+    public List<TelemetrySourceDto> Sources { get; set; } = [];
 }

@@ -238,6 +238,10 @@ public record ConsoleEntry
 
     [JsonPropertyName("message")]
     public string Message { get; set; } = "";
+
+    [JsonPropertyName("sourceId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SourceId { get; set; }
 }
 
 public record ConsoleResponse
@@ -251,6 +255,10 @@ public record ConsoleResponse
     [JsonPropertyName("configured")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Configured { get; set; }
+
+    [JsonPropertyName("sources")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<ConsoleSourceDto>? Sources { get; set; }
 }
 
 // ── Dashboard Config (returned to UI) ──
@@ -346,6 +354,66 @@ public record HeadlessConfigUpdateRequest
 
     [JsonPropertyName("profileId")]
     public string? ProfileId { get; set; }
+}
+
+// ── Action Types ──
+
+public record ConsoleSourceDto
+{
+    [JsonPropertyName("sourceId")]
+    public string SourceId { get; set; } = "";
+
+    [JsonPropertyName("displayName")]
+    public string DisplayName { get; set; } = "";
+
+    [JsonPropertyName("hostname")]
+    public string Hostname { get; set; } = "";
+
+    [JsonPropertyName("lastSeen")]
+    public DateTime LastSeen { get; set; }
+
+    [JsonPropertyName("entryCount")]
+    public int EntryCount { get; set; }
+
+    [JsonPropertyName("isStreaming")]
+    public bool IsStreaming { get; set; }
+}
+
+public record HeadlessInstanceDto
+{
+    [JsonPropertyName("watchdogId")]
+    public string WatchdogId { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("hostname")]
+    public string Hostname { get; set; } = "";
+
+    [JsonPropertyName("running")]
+    public bool Running { get; set; }
+
+    [JsonPropertyName("uptime")]
+    public string Uptime { get; set; } = "";
+
+    [JsonPropertyName("uptimeSeconds")]
+    public long UptimeSeconds { get; set; }
+
+    [JsonPropertyName("profile")]
+    public string Profile { get; set; } = "";
+
+    [JsonPropertyName("profileId")]
+    public string ProfileId { get; set; } = "";
+
+    [JsonPropertyName("mode")]
+    public string Mode { get; set; } = "";
+
+    [JsonPropertyName("manages")]
+    public WatchdogManages Manages { get; set; } = new();
+
+    [JsonPropertyName("system")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public WatchdogSystemStats? System { get; set; }
 }
 
 // ── Action Types ──
