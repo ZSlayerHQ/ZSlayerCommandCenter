@@ -2318,6 +2318,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   color: var(--text);
 }
 
+/* Source selector pills (Raid Info tab) */
+.source-selector { display:flex; gap:6px; padding:6px 12px; border-bottom:1px solid var(--border-subtle); background:var(--bg-panel); flex-wrap:wrap; align-items:center; }
+.source-selector .source-label { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-right:4px; }
+.source-pill { font-size:11px; padding:2px 10px; border-radius:12px; border:1px solid var(--border-subtle); background:transparent; color:var(--text-muted); cursor:pointer; transition:all 0.15s; }
+.source-pill:hover { border-color:var(--text-muted); color:var(--text-bright); }
+.source-pill.active { border-color:#c8aa6e; color:#c8aa6e; background:rgba(200,170,110,0.08); }
+
+/* Console source tabs */
+.console-source-tabs { display:flex; gap:0; border-bottom:1px solid var(--border-subtle); background:var(--bg-panel); padding:0 8px; }
+.console-source-tab { font-size:11px; padding:6px 14px; cursor:pointer; color:var(--text-muted); border-bottom:2px solid transparent; transition:all 0.15s; }
+.console-source-tab:hover { color:var(--text-bright); }
+.console-source-tab.active { color:#c8aa6e; border-bottom-color:#c8aa6e; }
+
+/* Source tags on kill feed / raid history */
+.source-tag { font-size:9px; padding:1px 6px; border-radius:8px; background:rgba(200,170,110,0.1); color:#c8aa6e; margin-right:6px; white-space:nowrap; }
+
 /* Broadcast modal */
 .modal-overlay {
   display: none;
@@ -4446,6 +4462,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <span class="system-info-item" id="sysInfoOs"></span>
     </div>
 
+    <!-- Source Selector (multi-headless) -->
+    <div id="telemetrySourceSelector" class="source-selector" style="display:none"></div>
+
     <!-- System Gauges (CPU/RAM) -->
     <div class="system-gauges-panel" id="systemGaugesPanel" style="display:none">
       <details id="perfDetails" open>
@@ -5089,6 +5108,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <span id="headlessToggleIcon" style="color:var(--text-muted);font-size:12px">&#x25BC;</span>
         </div>
       </div>
+      <div id="consoleSourceTabs" class="console-source-tabs" style="display:none"></div>
       <div class="console-search" id="headlessSearchWrap">
         <input type="text" id="headlessSearchInput" placeholder="Search headless..." oninput="filterHeadless()">
       </div>
@@ -6709,13 +6729,23 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         document.getElementById('ssServerInfo').innerHTML =
           '<span class="ss-dot green"></span><span class="ss-label online">Server</span>';
 
-        // Headless service
-        if (d.headlessRunning) {
-          document.getElementById('ssHeadlessInfo').innerHTML =
-            '<span class="ss-dot green"></span><span class="ss-label online">Headless</span>';
+        // Headless service — multi-instance aware
+        var hlEl = document.getElementById('ssHeadlessInfo');
+        var instances = d.headlessInstances || [];
+        if (instances.length > 0) {
+          var runCount = instances.filter(function(h) { return h.raidStatus === 'active' || h.lastSeen; }).length;
+          var dots = '';
+          instances.forEach(function(h) {
+            var color = h.raidStatus === 'active' ? 'green' : 'green';
+            var title = (h.displayName || h.sourceId || 'Headless');
+            if (h.map) title += ' — ' + h.map;
+            dots += '<span class="ss-dot ' + color + '" title="' + escH(title) + '" style="margin-right:2px"></span>';
+          });
+          hlEl.innerHTML = dots + '<span class="ss-label online">Headless' + (instances.length > 1 ? ' (' + instances.length + ')' : '') + '</span>';
+        } else if (d.headlessRunning) {
+          hlEl.innerHTML = '<span class="ss-dot green"></span><span class="ss-label online">Headless</span>';
         } else {
-          document.getElementById('ssHeadlessInfo').innerHTML =
-            '<span class="ss-dot red"></span><span class="ss-label offline">Headless</span>';
+          hlEl.innerHTML = '<span class="ss-dot red"></span><span class="ss-label offline">Headless</span>';
         }
 
         // Uptime
@@ -7487,6 +7517,40 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var raidInfoLoaded = false;
   var raidInfoTimer = null;
 
+  // Multi-source state
+  var telemetrySources = [];
+  var consoleSources = [];
+  var selectedTelemetrySource = null;  // null = combined, string = sourceId
+  var selectedConsoleSource = null;    // null = all, string = sourceId
+  var sourceRefreshTimer = null;       // 15s interval
+  var multiSourceMode = false;         // true when >1 telemetry source
+  var multiConsoleMode = false;        // true when >1 console source
+  var consoleBuffers = {};             // per-source: { entries: [], since: '' }
+  var consoleBufferAll = { entries: [], since: new Date().toISOString() };
+
+  function sourceQueryParam(base) {
+    if (!selectedTelemetrySource) return base;
+    var sep = base.indexOf('?') >= 0 ? '&' : '?';
+    return base + sep + 'source=' + encodeURIComponent(selectedTelemetrySource);
+  }
+
+  function consoleSourceParam(base) {
+    if (!selectedConsoleSource) return base;
+    var sep = base.indexOf('?') >= 0 ? '&' : '?';
+    return base + sep + 'source=' + encodeURIComponent(selectedConsoleSource);
+  }
+
+  function resolveSourceName(sourceId) {
+    if (!sourceId) return '';
+    for (var i = 0; i < telemetrySources.length; i++) {
+      if (telemetrySources[i].sourceId === sourceId) return telemetrySources[i].displayName || sourceId;
+    }
+    for (var i = 0; i < consoleSources.length; i++) {
+      if (consoleSources[i].sourceId === sourceId) return consoleSources[i].displayName || sourceId;
+    }
+    return sourceId;
+  }
+
   function initDashboard() {
     // Fetch config first, then load data
     api('dashboard/config').then(function(cfg) {
@@ -7799,8 +7863,111 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   // TELEMETRY — Live Raid, Kill Feed, Raid History
   // ═══════════════════════════════════════════════════════
 
+  // ── Multi-Source Fetching ──
+
+  function fetchTelemetrySources() {
+    api('telemetry/sources').then(function(d) {
+      telemetrySources = d.sources || [];
+      var prev = multiSourceMode;
+      multiSourceMode = telemetrySources.length > 1;
+      if (!multiSourceMode) selectedTelemetrySource = null;
+      renderSourceSelector();
+    }).catch(function(){});
+  }
+
+  function fetchConsoleSources() {
+    api('headless-console/sources').then(function(d) {
+      consoleSources = d.sources || [];
+      var prev = multiConsoleMode;
+      multiConsoleMode = consoleSources.length > 1;
+      if (!multiConsoleMode) selectedConsoleSource = null;
+      renderConsoleSourceTabs();
+    }).catch(function(){});
+  }
+
+  function startSourcePolling() {
+    stopSourcePolling();
+    sourceRefreshTimer = setInterval(function() {
+      fetchTelemetrySources();
+      fetchConsoleSources();
+    }, 15000);
+  }
+
+  function stopSourcePolling() {
+    if (sourceRefreshTimer) { clearInterval(sourceRefreshTimer); sourceRefreshTimer = null; }
+  }
+
+  // ── Telemetry Source Selector (Raid Info tab) ──
+
+  function renderSourceSelector() {
+    var el = document.getElementById('telemetrySourceSelector');
+    if (!el) return;
+    if (!multiSourceMode) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'flex';
+    var html = '<span class="source-label">Source</span>';
+    html += '<span class="source-pill' + (selectedTelemetrySource === null ? ' active' : '') + '" onclick="selectTelemetrySource(null)">All</span>';
+    telemetrySources.forEach(function(s) {
+      var active = selectedTelemetrySource === s.sourceId ? ' active' : '';
+      var statusDot = s.raidStatus === 'active' ? ' \u{1F7E2}' : '';
+      html += '<span class="source-pill' + active + '" onclick="selectTelemetrySource(\'' + escH(s.sourceId) + '\')">' + escH(s.displayName || s.sourceId) + statusDot + '</span>';
+    });
+    el.innerHTML = html;
+  }
+
+  window.selectTelemetrySource = function(sourceId) {
+    selectedTelemetrySource = sourceId;
+    renderSourceSelector();
+    loadTelemetry();
+    loadRaidHistory();
+    loadMapPositions();
+    loadPerformanceHistory();
+  };
+
+  // ── Console Source Tabs ──
+
+  function renderConsoleSourceTabs() {
+    var el = document.getElementById('consoleSourceTabs');
+    if (!el) return;
+    if (!multiConsoleMode) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'flex';
+    var html = '<span class="console-source-tab' + (selectedConsoleSource === null ? ' active' : '') + '" onclick="selectConsoleSource(null)">All</span>';
+    consoleSources.forEach(function(s) {
+      var active = selectedConsoleSource === s.sourceId ? ' active' : '';
+      html += '<span class="console-source-tab' + active + '" onclick="selectConsoleSource(\'' + escH(s.sourceId) + '\')">' + escH(s.displayName || s.sourceId) + ' <span style="font-size:9px;color:var(--text-dim)">(' + (s.entryCount || 0) + ')</span></span>';
+    });
+    el.innerHTML = html;
+  }
+
+  window.selectConsoleSource = function(sourceId) {
+    selectedConsoleSource = sourceId;
+    renderConsoleSourceTabs();
+    // Switch to the selected source's buffer
+    var buf = getActiveConsoleBuffer();
+    allHeadlessEntries = buf.entries;
+    headlessSince = buf.since;
+    renderHeadless();
+    document.getElementById('headlessCount').textContent = '(' + allHeadlessEntries.length + ')';
+  };
+
+  function getActiveConsoleBuffer() {
+    if (!selectedConsoleSource) return consoleBufferAll;
+    if (!consoleBuffers[selectedConsoleSource]) {
+      consoleBuffers[selectedConsoleSource] = { entries: [], since: new Date().toISOString() };
+    }
+    return consoleBuffers[selectedConsoleSource];
+  }
+
   function raidInfoInit() {
     raidInfoLoaded = true;
+    fetchTelemetrySources();
+    fetchConsoleSources();
+    startSourcePolling();
     loadTelemetry();
     loadRaidHistory();
     startRaidInfoPolling();
@@ -7813,6 +7980,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function stopRaidInfoPolling() {
     if (raidInfoTimer) { clearInterval(raidInfoTimer); raidInfoTimer = null; }
+    stopSourcePolling();
   }
 
   function loadTelemetry() {
@@ -7919,7 +8087,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   function loadTelemetryCurrent() {
-    api('telemetry/current').then(function(d) {
+    api(sourceQueryParam('telemetry/current')).then(function(d) {
       var idleMsg = document.getElementById('raidInfoIdleMsg');
       var rs = d.raidState || {};
       var perf = d.performance || {};
@@ -8082,7 +8250,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   function loadKillFeed() {
-    api('telemetry/kill-feed').then(function(d) {
+    api(sourceQueryParam('telemetry/kill-feed')).then(function(d) {
       var kills = d.kills || [];
       _cachedKillFeed = kills; // Cache for player kill count derivation
       var isLive = d.isLive;
@@ -8132,7 +8300,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         if (bodyPart) metaParts.push(bodyPart);
         var metaHtml = metaParts.length > 0 ? ' <span class="telem-kill-meta">(' + metaParts.join(', ') + ')</span>' : '';
 
+        var srcTag = (multiSourceMode && k.sourceId) ? '<span class="source-tag">' + escH(resolveSourceName(k.sourceId)) + '</span>' : '';
+
         html += '<div class="telem-kill-entry' + borderCls + '">' +
+          srcTag +
           '<span class="telem-kill-time">' + timeStr + '</span>' +
           '<span class="telem-kill-detail">' +
             killerHtml +
@@ -8151,13 +8322,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   function loadRaidHistory() {
-    api('telemetry/raid-history').then(function(d) {
+    api(sourceQueryParam('telemetry/raid-history')).then(function(d) {
       var raids = d.raids || [];
       var countEl = document.getElementById('telemHistoryCount');
       countEl.textContent = raids.length > 0 ? raids.length + ' raids' : '';
+      var colCount = multiSourceMode ? 9 : 8;
+
+      // Update table header dynamically for source column
+      var thead = document.querySelector('#telemHistoryTable thead tr');
+      if (thead) {
+        var baseHeaders = '<th>Map</th><th>Date</th><th>Duration</th><th>Players</th><th>Survived</th><th>Kills</th><th>Deaths</th><th>Bosses</th>';
+        thead.innerHTML = multiSourceMode ? '<th>Source</th>' + baseHeaders : baseHeaders;
+      }
+
       var body = document.getElementById('telemHistoryBody');
       if (raids.length === 0) {
-        body.innerHTML = '<tr><td colspan="8" class="telem-no-data">No raid history yet</td></tr>';
+        body.innerHTML = '<tr><td colspan="' + colCount + '" class="telem-no-data">No raid history yet</td></tr>';
         return;
       }
       var html = '';
@@ -8170,7 +8350,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           bossHtml += '<span class="telem-boss-tag ' + cls + '" style="font-size:9px;padding:1px 5px">' + escH(b.name) + '</span> ';
         });
         if (!bossHtml) bossHtml = '<span style="color:var(--text-muted)">--</span>';
+        var srcCol = multiSourceMode ? '<td><span class="source-tag">' + escH(resolveSourceName(r.sourceId)) + '</span></td>' : '';
         html += '<tr onclick="toggleRaidDetail(\'' + escH(r.id) + '\', this)" data-raid-id="' + escH(r.id) + '">' +
+          srcCol +
           '<td style="color:var(--accent)">' + escH(mapDisplayName(r.mapName || r.map)) + '</td>' +
           '<td style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim)">' + dateStr + '</td>' +
           '<td>' + formatSeconds(r.duration) + '</td>' +
@@ -8179,7 +8361,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           '<td>' + r.totalKills + '</td>' +
           '<td style="color:var(--error-bright)">' + (r.totalDeaths || 0) + '</td>' +
           '<td>' + bossHtml + '</td></tr>' +
-          '<tr class="telem-history-detail-row" style="display:none"><td colspan="8"><div class="telem-history-detail" id="raidDetail-' + escH(r.id) + '"><div class="telem-no-data">Loading...</div></div></td></tr>';
+          '<tr class="telem-history-detail-row" style="display:none"><td colspan="' + colCount + '"><div class="telem-history-detail" id="raidDetail-' + escH(r.id) + '"><div class="telem-no-data">Loading...</div></div></td></tr>';
       });
       body.innerHTML = html;
     }).catch(function(e) {
@@ -9457,7 +9639,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   function pollHeadless() {
     if (headlessCollapsed) return;
     if (headlessConfigured === false) return;
-    api('headless-console?since=' + encodeURIComponent(headlessSince)).then(function(d) {
+    var buf = getActiveConsoleBuffer();
+    var url = 'headless-console?since=' + encodeURIComponent(buf.since);
+    url = consoleSourceParam(url);
+    api(url).then(function(d) {
       if (d.configured === false) {
         headlessConfigured = false;
         document.getElementById('headlessBody').innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted)">Headless log path not configured &mdash; set <code>headlessLogPath</code> in config.json</div>';
@@ -9466,17 +9651,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       }
       headlessConfigured = true;
       if (d.entries && d.entries.length > 0) {
-        allHeadlessEntries = allHeadlessEntries.concat(d.entries);
-        if (allHeadlessEntries.length > 1000) allHeadlessEntries = allHeadlessEntries.slice(-500);
-        headlessSince = d.entries[d.entries.length - 1].timestamp;
+        buf.entries = buf.entries.concat(d.entries);
+        if (buf.entries.length > 1000) buf.entries = buf.entries.slice(-500);
+        buf.since = d.entries[d.entries.length - 1].timestamp;
+        allHeadlessEntries = buf.entries;
+        headlessSince = buf.since;
         renderHeadless();
       }
-      document.getElementById('headlessCount').textContent = '(' + allHeadlessEntries.length + ')';
+      document.getElementById('headlessCount').textContent = '(' + buf.entries.length + ')';
     }).catch(function(){});
   }
 
   function loadHeadlessHistory() {
-    api('headless-console?lines=200').then(function(d) {
+    var buf = getActiveConsoleBuffer();
+    var url = 'headless-console?lines=200';
+    url = consoleSourceParam(url);
+    api(url).then(function(d) {
       if (d.configured === false) {
         headlessConfigured = false;
         document.getElementById('headlessBody').innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted)">Headless log path not configured &mdash; set <code>headlessLogPath</code> in config.json</div>';
@@ -9485,10 +9675,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       }
       headlessConfigured = true;
       if (d.entries && d.entries.length > 0) {
-        allHeadlessEntries = d.entries;
-        headlessSince = d.entries[d.entries.length - 1].timestamp;
+        buf.entries = d.entries;
+        buf.since = d.entries[d.entries.length - 1].timestamp;
+        allHeadlessEntries = buf.entries;
+        headlessSince = buf.since;
         renderHeadless();
-        document.getElementById('headlessCount').textContent = '(' + allHeadlessEntries.length + ')';
+        document.getElementById('headlessCount').textContent = '(' + buf.entries.length + ')';
       }
     }).catch(function(){});
   }
@@ -9496,6 +9688,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   function renderHeadless() {
     var body = document.getElementById('headlessBody');
     var q = headlessSearchQuery.toLowerCase();
+    var showSourcePrefix = multiConsoleMode && !selectedConsoleSource;
     var html = '';
     for (var i = 0; i < allHeadlessEntries.length; i++) {
       var e = allHeadlessEntries[i];
@@ -9505,7 +9698,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       if (q && msg.toLowerCase().indexOf(q) === -1 && (e.source || '').toLowerCase().indexOf(q) === -1) continue;
       var ts = new Date(e.timestamp);
       var timeStr = ts.toLocaleTimeString();
+      var srcPrefix = showSourcePrefix && e.sourceId ? '<span class="source-tag">' + escH(resolveSourceName(e.sourceId)) + '</span>' : '';
       html += '<div class="console-line level-' + lvl + '">' +
+        srcPrefix +
         '<span class="ts">' + timeStr + '</span>' +
         (e.source ? '<span class="src">[' + escH(e.source) + ']</span>' : '') +
         '<span class="msg">' + escH(msg) + '</span></div>';
@@ -9847,7 +10042,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   function loadPerformanceHistory() {
-    api('telemetry/performance-history').then(function(data) {
+    api(sourceQueryParam('telemetry/performance-history')).then(function(data) {
       if (!Array.isArray(data)) return;
       _perfHistory = data;
       renderPerfGauges(data);
@@ -10114,7 +10309,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   function loadMapPositions() {
-    api('telemetry/positions').then(function(positions) {
+    api(sourceQueryParam('telemetry/positions')).then(function(positions) {
       _mapPositions = positions || [];
       console.log('[CC Map]', _mapPositions.length, 'entities');
       drawMap();
