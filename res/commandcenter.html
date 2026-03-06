@@ -4263,6 +4263,74 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .skill-bonus-row .sb-reset:hover { opacity: 1; color: var(--accent); }
 .skill-bonus-row.sb-modified .sb-input { border-color: var(--accent); }
 
+/* ═══════ ADMIN TAB REDESIGN ═══════ */
+.admin-metrics-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+@media (max-width: 860px) { .admin-metrics-strip { grid-template-columns: 1fr 1fr; } }
+
+.admin-metric-card {
+  background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+  padding: 16px; display: flex; align-items: center; gap: 14px;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  animation: adminCardFadeIn 0.4s ease both;
+}
+.admin-metric-card:nth-child(2) { animation-delay: 0.08s; }
+.admin-metric-card:nth-child(3) { animation-delay: 0.16s; }
+.admin-metric-card:nth-child(4) { animation-delay: 0.24s; }
+.admin-metric-card:hover { border-color: rgba(200,170,110,0.35); box-shadow: 0 0 12px rgba(200,170,110,0.08); }
+
+.admin-metric-info { display: flex; flex-direction: column; min-width: 0; }
+.admin-metric-value { font-size: 20px; font-weight: 700; color: var(--text-bright); line-height: 1.2; }
+.admin-metric-label { font-size: 9px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-top: 2px; }
+.admin-metric-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+.admin-mini-gauge { width: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+
+.admin-glass {
+  background: var(--glass-bg) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border) !important;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.admin-glass:hover { border-color: rgba(200,170,110,0.35); box-shadow: 0 0 12px rgba(200,170,110,0.08); }
+
+.admin-toolbar {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px; margin-bottom: 16px;
+  background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+}
+.admin-toolbar-actions { display: flex; gap: 8px; align-items: center; }
+.admin-toolbar-search { margin-left: auto; position: relative; display: flex; align-items: center; }
+.admin-toolbar-search svg { position: absolute; left: 8px; width: 14px; height: 14px; color: var(--text-muted); pointer-events: none; }
+.admin-toolbar-search input {
+  padding: 5px 10px 5px 28px; font-size: 12px; font-family: var(--font-mono);
+  background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: var(--radius);
+  color: var(--text); width: 200px; transition: border-color 0.2s;
+}
+.admin-toolbar-search input:focus { border-color: var(--accent); outline: none; }
+.admin-toolbar-search input::placeholder { color: var(--text-muted); }
+
+.admin-process-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 860px) { .admin-process-grid { grid-template-columns: 1fr; } }
+
+.admin-section-divider {
+  display: flex; align-items: center; gap: 12px; margin: 20px 0 12px;
+  font-size: 10px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-muted); font-weight: 600;
+}
+.admin-section-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(to right, var(--glass-border), transparent);
+}
+
+.coming-soon-badge {
+  display: inline-block; font-size: 9px; font-family: var(--font-mono); text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 2px 6px; border-radius: 3px; margin-left: 6px;
+  background: rgba(200,170,110,0.1); border: 1px solid rgba(200,170,110,0.2); color: var(--accent-dim);
+}
+
+@keyframes adminCardFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.admin-fade-in { animation: adminCardFadeIn 0.4s ease both; }
+
 /* Player skill grid */
 .skill-player-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
 .skill-player-row label { min-width: 110px; font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
@@ -4868,16 +4936,75 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   <!-- ═══════ ADMIN TAB ═══════ -->
   <div class="main-tab-panel" id="main-admin">
 
-    <!-- Admin Quick Actions -->
-    <div class="dash-actions">
-      <button class="btn btn-accent btn-sm" onclick="openBroadcastModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Broadcast</button>
-      <button class="btn btn-sm" onclick="sendUrlsToPlayers()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> Send URLs to Players</button>
-      <button class="btn btn-sm" onclick="refreshDashboard(); loadActivity()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh Data</button>
-      <button class="btn btn-sm" onclick="openLogPopout()" title="Open logs in popout window"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Popout Logs</button>
+    <!-- ZONE 1: Metrics Strip -->
+    <div class="admin-metrics-strip">
+      <div class="admin-metric-card">
+        <div class="admin-mini-gauge">
+          <svg viewBox="0 0 60 35" width="56" height="33">
+            <path d="M5 30 A25 25 0 0 1 55 30" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="5" stroke-linecap="round"/>
+            <path id="adminGaugeArc_instances" d="M5 30 A25 25 0 0 1 55 30" fill="none" stroke="#4a7c59" stroke-width="5" stroke-linecap="round" stroke-dasharray="78.54" stroke-dashoffset="78.54"/>
+          </svg>
+        </div>
+        <div class="admin-metric-info">
+          <span class="admin-metric-value" id="adminMetricInstancesVal">--</span>
+          <span class="admin-metric-label">Active Instances</span>
+          <span class="admin-metric-sub" id="adminMetricInstancesSub">--</span>
+        </div>
+      </div>
+      <div class="admin-metric-card">
+        <div class="admin-mini-gauge">
+          <svg viewBox="0 0 60 35" width="56" height="33">
+            <path d="M5 30 A25 25 0 0 1 55 30" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="5" stroke-linecap="round"/>
+            <path id="adminGaugeArc_players" d="M5 30 A25 25 0 0 1 55 30" fill="none" stroke="#4a7c59" stroke-width="5" stroke-linecap="round" stroke-dasharray="78.54" stroke-dashoffset="78.54"/>
+          </svg>
+        </div>
+        <div class="admin-metric-info">
+          <span class="admin-metric-value" id="adminMetricPlayersVal">--</span>
+          <span class="admin-metric-label">Connected Players</span>
+          <span class="admin-metric-sub" id="adminMetricPlayersSub">--</span>
+        </div>
+      </div>
+      <div class="admin-metric-card">
+        <div class="admin-mini-gauge">
+          <svg viewBox="0 0 60 35" width="56" height="33">
+            <path d="M5 30 A25 25 0 0 1 55 30" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="5" stroke-linecap="round"/>
+            <path id="adminGaugeArc_health" d="M5 30 A25 25 0 0 1 55 30" fill="none" stroke="#4a7c59" stroke-width="5" stroke-linecap="round" stroke-dasharray="78.54" stroke-dashoffset="78.54"/>
+          </svg>
+        </div>
+        <div class="admin-metric-info">
+          <span class="admin-metric-value" id="adminMetricHealthVal">--<span class="coming-soon-badge">Beta</span></span>
+          <span class="admin-metric-label">System Health</span>
+          <span class="admin-metric-sub" id="adminMetricHealthSub">--</span>
+        </div>
+      </div>
+      <div class="admin-metric-card">
+        <div class="admin-mini-gauge" style="display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" width="32" height="32"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="admin-metric-info">
+          <span class="admin-metric-value" id="adminMetricUptimeVal">--</span>
+          <span class="admin-metric-label">Server Uptime</span>
+          <span class="admin-metric-sub" id="adminMetricUptimeSub">--</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Activity Log -->
-    <div class="dash-widget full-width" style="margin-bottom:16px">
+    <!-- ZONE 2: Toolbar -->
+    <div class="admin-toolbar">
+      <div class="admin-toolbar-actions">
+        <button class="btn btn-accent btn-sm" onclick="openBroadcastModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Broadcast</button>
+        <button class="btn btn-sm" onclick="sendUrlsToPlayers()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> Send URLs</button>
+        <button class="btn btn-sm" onclick="refreshDashboard(); loadActivity()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh</button>
+        <button class="btn btn-sm" onclick="openLogPopout()" title="Open logs in popout window"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Popout</button>
+      </div>
+      <div class="admin-toolbar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="adminSearchInput" type="text" placeholder="Search activity & consoles..." oninput="adminGlobalSearch()">
+      </div>
+    </div>
+
+    <!-- ZONE 3: Activity Log -->
+    <div class="dash-widget full-width admin-glass admin-fade-in" style="margin-bottom:16px">
       <div class="dash-widget-header">
         <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Activity Log</span>
         <select id="activityTypeFilter" style="font-size:11px;font-family:var(--font-mono);background:var(--bg-input);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:3px 8px" onchange="loadActivity()">
@@ -4905,8 +5032,190 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       </div>
     </div>
 
-    <!-- Server Console -->
-    <div class="console-panel" id="consolePanel">
+    <!-- ZONE 4: Process Management -->
+    <div class="admin-section-divider">Process Management</div>
+    <div class="admin-process-grid">
+      <!-- Left column -->
+      <div>
+        <div class="dash-widget admin-glass" id="watchdogCard" style="margin-bottom:12px">
+          <div class="dash-widget-header">
+            <span class="dash-widget-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              SPT Server <span id="wdServerLabel" class="wd-name-label"></span>
+            </span>
+            <span id="watchdogStatusBadge" class="hl-status-pill pill-unavailable">Unknown</span>
+          </div>
+          <div class="dash-widget-body">
+            <div class="dash-stat-row">
+              <div class="dash-stat"><div class="dash-stat-label">Uptime</div><div class="dash-stat-value sm" id="wdUptimeVal">--</div></div>
+              <div class="dash-stat"><div class="dash-stat-label">PID</div><div class="dash-stat-value sm" id="wdPidVal">--</div></div>
+              <div class="dash-stat"><div class="dash-stat-label">Auto-Restart</div><div class="dash-stat-value sm" id="wdAutoRestart">--</div></div>
+              <div class="dash-stat"><div class="dash-stat-label">Delay</div><div class="dash-stat-value sm" id="wdRestartDelay">--</div></div>
+            </div>
+            <div id="wdSessionTimeoutSection" style="display:none;margin-bottom:12px">
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                <span style="color:var(--text-dim);white-space:nowrap">Session Timeout:</span>
+                <input type="range" id="fikaSessionTimeout" min="1" max="60" value="5" oninput="document.getElementById('fikaSessionTimeoutVal').textContent=this.value+' min'" onchange="saveFikaConfig()" style="flex:1;accent-color:var(--accent)">
+                <span id="fikaSessionTimeoutVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:45px">5 min</span>
+              </div>
+            </div>
+            <div class="dash-stat-row">
+              <div class="dash-stat"><div class="dash-stat-label">Crashes Today</div><div class="dash-stat-value sm" id="wdCrashCount" style="color:var(--text-dim)">0</div></div>
+            </div>
+            <div id="watchdogCrashInfo" style="display:none;font-size:11px;color:var(--error-bright);margin-top:4px;font-family:var(--font-mono)"></div>
+            <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
+              <button class="btn btn-sm" id="btnWdStart" onclick="wdStart()">Start</button>
+              <button class="btn btn-sm" id="btnWdStop" onclick="wdStop()" disabled>Stop</button>
+              <button class="btn btn-sm" id="btnWdRestart" onclick="wdRestart()" disabled>Restart</button>
+            </div>
+          </div>
+        </div>
+        <div class="dash-widget admin-glass" id="connectedWatchdogsSection" style="margin-bottom:12px;display:none">
+          <div class="dash-widget-header">
+            <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Connected Watchdogs</span>
+          </div>
+          <div class="dash-widget-body" id="connectedWatchdogsBody"></div>
+        </div>
+        <div class="dash-widget admin-glass" id="securitySettingsCard" style="margin-bottom:12px">
+          <div class="card-header">
+            <span class="card-title" title="Auth token for the WebSocket connection between the CC server and Watchdog apps. Generate a token here, then paste it into each Watchdog's config. Both sides must match or connections will be rejected."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Watchdog Security</span>
+          </div>
+          <div class="card-body" style="padding:16px">
+            <p style="color:var(--text-dim);font-size:12px;margin:0 0 12px">Auth token for Watchdog WebSocket connections. Copy this token into each Watchdog's <code>watchdog-config.json</code> file.</p>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="password" id="wdTokenInput" readonly style="flex:1;background:var(--bg-input);border:1px solid var(--border-subtle);color:var(--text-main);padding:8px 10px;border-radius:6px;font-family:monospace;font-size:13px">
+              <button class="btn btn-sm" onclick="toggleWdToken()" id="wdTokenToggleBtn" style="padding:5px 10px;font-size:11px;min-width:52px">Show</button>
+              <button class="btn btn-sm" onclick="copyWdToken()" style="padding:5px 10px;font-size:11px">Copy</button>
+              <button class="btn btn-sm" onclick="regenWdToken()" style="padding:5px 10px;font-size:11px;background:#c87a3e;border-color:#c87a3e;color:#fff">Regenerate</button>
+            </div>
+            <div id="wdTokenStatus" style="margin-top:10px;font-size:11px"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Right column -->
+      <div>
+        <div class="dash-widget admin-glass" id="headlessManagerCard" style="margin-bottom:12px">
+          <div class="dash-widget-header">
+            <span class="dash-widget-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              Headless Client <span id="hlManagerLabel" class="wd-name-label"></span>
+            </span>
+            <span id="headlessStatusBadge" class="hl-status-pill pill-unavailable">Unknown</span>
+          </div>
+          <div class="dash-widget-body" id="headlessCardBody">
+            <div style="text-align:center;color:var(--text-muted);padding:8px;font-size:12px">No Watchdog connected</div>
+          </div>
+        </div>
+        <div class="dash-widget admin-glass" id="headlessSettingsCard" style="margin-bottom:12px;display:none">
+          <div class="dash-widget-header">
+            <span class="dash-widget-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+              Headless Settings
+            </span>
+          </div>
+          <div class="dash-widget-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px;margin-bottom:12px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="hlAutoStart" onchange="saveHeadlessConfig()"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Auto-start with server</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="hlAutoRestart" onchange="saveHeadlessConfig()"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Auto-restart on crash</span>
+              </label>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:12px">
+              <span style="color:var(--text-dim);white-space:nowrap">Auto-start delay:</span>
+              <input type="range" id="hlDelay" min="1" max="300" value="30" oninput="document.getElementById('hlDelayVal').textContent=this.value+'s'" onchange="saveHeadlessConfig()" style="flex:1;accent-color:var(--accent)">
+              <span id="hlDelayVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:35px">30s</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px">
+              <span style="color:var(--text-dim);white-space:nowrap">Profile ID:</span>
+              <input type="text" id="hlProfileId" placeholder="Enter profile ID" style="flex:1;padding:3px 8px;font-size:11px;font-family:var(--font-mono);background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:var(--radius);color:var(--text)">
+              <button class="btn btn-sm" onclick="saveHeadlessConfig()" style="padding:3px 10px">Save</button>
+            </div>
+            <div id="hlProfileWarning" style="display:none;font-size:11px;color:var(--warning);margin-bottom:8px">Profile ID required — enter the session ID of the headless profile to enable start.</div>
+            <div id="hlRestartAfterRaidsSection" style="display:none;margin-bottom:12px">
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                <span style="color:var(--text-dim);white-space:nowrap">Restart After Raids:</span>
+                <input type="range" id="fikaHlRestartRaids" min="0" max="50" value="0" oninput="document.getElementById('fikaHlRestartRaidsVal').textContent=this.value==0?'Off':this.value" onchange="saveFikaConfig()" style="flex:1;accent-color:var(--accent)">
+                <span id="fikaHlRestartRaidsVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:28px">Off</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:12px">
+              <button class="btn btn-sm" onclick="saveHeadlessConfig()" style="padding:5px 14px;font-size:12px">Save Headless Settings</button>
+            </div>
+          </div>
+        </div>
+        <div class="dash-widget admin-glass" id="fikaSettingsCard" style="margin-bottom:12px;display:none">
+          <div class="dash-widget-header">
+            <span class="dash-widget-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+              FIKA Settings
+            </span>
+          </div>
+          <div class="dash-widget-body">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600;border-left:2px solid var(--accent-dim);padding-left:8px">Gameplay</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="fikaFriendlyFire"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Friendly Fire</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="fikaInertia"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Inertia</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="fikaSharedQuests"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Shared Quests</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="fikaDynVExfil"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Dynamic V-Exfils</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="fikaTransits"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Map Transits</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="fikaAnyoneStart"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Anyone Can Start Raid</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="fikaHlSyncLevel"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Sync Level to Lobby Average</span>
+              </label>
+            </div>
+            <div style="border-top:1px solid var(--border-subtle);margin-top:14px;padding-top:12px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600;border-left:2px solid var(--accent-dim);padding-left:8px">Server</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                  <label class="cc-toggle"><input type="checkbox" id="fikaAllowSending"><span class="cc-toggle-slider"></span></label>
+                  <span style="color:var(--text-dim)">Allow Item Sending</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                  <label class="cc-toggle"><input type="checkbox" id="fikaLoseFIR"><span class="cc-toggle-slider"></span></label>
+                  <span style="color:var(--text-dim)">Sent Items Lose FIR</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;grid-column:span 2">
+                  <label class="cc-toggle"><input type="checkbox" id="fikaAllProfiles"><span class="cc-toggle-slider"></span></label>
+                  <span style="color:var(--text-dim)">All Profiles in Launcher</span>
+                </label>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;border-top:1px solid var(--border-subtle);padding-top:12px">
+              <span style="font-size:11px;color:var(--warning)">Server restart required for changes to take effect</span>
+              <button class="btn btn-sm" onclick="saveFikaConfig()" style="padding:5px 14px;font-size:12px">Save FIKA Settings</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZONE 5: Consoles -->
+    <div class="admin-section-divider">Console Output</div>
+
+    <div class="console-panel admin-fade-in" id="consolePanel">
       <div class="console-header" onclick="toggleConsole()">
         <span class="console-header-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg> Server Console <span id="consoleCount" style="color:var(--text-muted)"></span></span>
         <div style="display:flex;align-items:center;gap:8px">
@@ -4926,194 +5235,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <div class="console-jump" id="consoleJump"><button onclick="scrollConsoleBottom()">Jump to bottom</button></div>
     </div>
 
-    <!-- Connected Watchdogs -->
-    <div class="dash-widget" id="connectedWatchdogsSection" style="margin-top:16px;display:none">
-      <div class="dash-widget-header">
-        <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Connected Watchdogs</span>
-      </div>
-      <div class="dash-widget-body" id="connectedWatchdogsBody"></div>
-    </div>
-
-    <!-- Status Cards — top row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
-      <!-- SPT Server (top-left) -->
-      <div class="dash-widget" id="watchdogCard">
-        <div class="dash-widget-header">
-          <span class="dash-widget-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            SPT Server <span id="wdServerLabel" class="wd-name-label"></span>
-          </span>
-          <span id="watchdogStatusBadge" class="hl-status-pill pill-unavailable">Unknown</span>
-        </div>
-        <div class="dash-widget-body">
-          <div class="dash-stat-row">
-            <div class="dash-stat"><div class="dash-stat-label">Uptime</div><div class="dash-stat-value sm" id="wdUptimeVal">--</div></div>
-            <div class="dash-stat"><div class="dash-stat-label">PID</div><div class="dash-stat-value sm" id="wdPidVal">--</div></div>
-            <div class="dash-stat"><div class="dash-stat-label">Auto-Restart</div><div class="dash-stat-value sm" id="wdAutoRestart">--</div></div>
-            <div class="dash-stat"><div class="dash-stat-label">Delay</div><div class="dash-stat-value sm" id="wdRestartDelay">--</div></div>
-          </div>
-          <div id="wdSessionTimeoutSection" style="display:none;margin-bottom:12px">
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
-              <span style="color:var(--text-dim);white-space:nowrap">Session Timeout:</span>
-              <input type="range" id="fikaSessionTimeout" min="1" max="60" value="5" oninput="document.getElementById('fikaSessionTimeoutVal').textContent=this.value+' min'" onchange="saveFikaConfig()" style="flex:1;accent-color:var(--accent)">
-              <span id="fikaSessionTimeoutVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:45px">5 min</span>
-            </div>
-          </div>
-          <div class="dash-stat-row">
-            <div class="dash-stat"><div class="dash-stat-label">Crashes Today</div><div class="dash-stat-value sm" id="wdCrashCount" style="color:var(--text-dim)">0</div></div>
-          </div>
-          <div id="watchdogCrashInfo" style="display:none;font-size:11px;color:var(--error-bright);margin-top:4px;font-family:var(--font-mono)"></div>
-          <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
-            <button class="btn btn-sm" id="btnWdStart" onclick="wdStart()">Start</button>
-            <button class="btn btn-sm" id="btnWdStop" onclick="wdStop()" disabled>Stop</button>
-            <button class="btn btn-sm" id="btnWdRestart" onclick="wdRestart()" disabled>Restart</button>
-          </div>
-        </div>
-      </div>
-      <!-- Headless Client (top-right) -->
-      <div class="dash-widget" id="headlessManagerCard">
-        <div class="dash-widget-header">
-          <span class="dash-widget-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            Headless Client <span id="hlManagerLabel" class="wd-name-label"></span>
-          </span>
-          <span id="headlessStatusBadge" class="hl-status-pill pill-unavailable">Unknown</span>
-        </div>
-        <div class="dash-widget-body" id="headlessCardBody">
-          <div style="text-align:center;color:var(--text-muted);padding:8px;font-size:12px">No Watchdog connected</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Settings Cards — bottom row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-      <!-- Headless Settings (bottom-left) -->
-      <div class="dash-widget" id="headlessSettingsCard" style="display:none">
-        <div class="dash-widget-header">
-          <span class="dash-widget-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-            Headless Settings
-          </span>
-        </div>
-        <div class="dash-widget-body">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px;margin-bottom:12px">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <label class="cc-toggle"><input type="checkbox" id="hlAutoStart" onchange="saveHeadlessConfig()"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">Auto-start with server</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <label class="cc-toggle"><input type="checkbox" id="hlAutoRestart" onchange="saveHeadlessConfig()"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">Auto-restart on crash</span>
-            </label>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:12px">
-            <span style="color:var(--text-dim);white-space:nowrap">Auto-start delay:</span>
-            <input type="range" id="hlDelay" min="1" max="300" value="30" oninput="document.getElementById('hlDelayVal').textContent=this.value+'s'" onchange="saveHeadlessConfig()" style="flex:1;accent-color:var(--accent)">
-            <span id="hlDelayVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:35px">30s</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px">
-            <span style="color:var(--text-dim);white-space:nowrap">Profile ID:</span>
-            <input type="text" id="hlProfileId" placeholder="Enter profile ID" style="flex:1;padding:3px 8px;font-size:11px;font-family:var(--font-mono);background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:var(--radius);color:var(--text)">
-            <button class="btn btn-sm" onclick="saveHeadlessConfig()" style="padding:3px 10px">Save</button>
-          </div>
-          <div id="hlProfileWarning" style="display:none;font-size:11px;color:var(--warning);margin-bottom:8px">Profile ID required — enter the session ID of the headless profile to enable start.</div>
-          <div id="hlRestartAfterRaidsSection" style="display:none;margin-bottom:12px">
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px">
-              <span style="color:var(--text-dim);white-space:nowrap">Restart After Raids:</span>
-              <input type="range" id="fikaHlRestartRaids" min="0" max="50" value="0" oninput="document.getElementById('fikaHlRestartRaidsVal').textContent=this.value==0?'Off':this.value" onchange="saveFikaConfig()" style="flex:1;accent-color:var(--accent)">
-              <span id="fikaHlRestartRaidsVal" style="font-family:var(--font-mono);color:var(--text-dim);min-width:28px">Off</span>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:flex-end;margin-top:12px">
-            <button class="btn btn-sm" onclick="saveHeadlessConfig()" style="padding:5px 14px;font-size:12px">Save Headless Settings</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- FIKA Settings (bottom-right) -->
-      <div class="dash-widget" id="fikaSettingsCard" style="display:none">
-        <div class="dash-widget-header">
-          <span class="dash-widget-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-            FIKA Settings
-          </span>
-        </div>
-        <div class="dash-widget-body">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600;border-left:2px solid var(--accent-dim);padding-left:8px">Gameplay</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <label class="cc-toggle"><input type="checkbox" id="fikaFriendlyFire"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">Friendly Fire</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <label class="cc-toggle"><input type="checkbox" id="fikaInertia"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">Inertia</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <label class="cc-toggle"><input type="checkbox" id="fikaSharedQuests"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">Shared Quests</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <label class="cc-toggle"><input type="checkbox" id="fikaDynVExfil"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">Dynamic V-Exfils</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <label class="cc-toggle"><input type="checkbox" id="fikaTransits"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">Map Transits</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <label class="cc-toggle"><input type="checkbox" id="fikaAnyoneStart"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">Anyone Can Start Raid</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <label class="cc-toggle"><input type="checkbox" id="fikaHlSyncLevel"><span class="cc-toggle-slider"></span></label>
-              <span style="color:var(--text-dim)">Sync Level to Lobby Average</span>
-            </label>
-          </div>
-          <div style="border-top:1px solid var(--border-subtle);margin-top:14px;padding-top:12px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600;border-left:2px solid var(--accent-dim);padding-left:8px">Server</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:12px">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                <label class="cc-toggle"><input type="checkbox" id="fikaAllowSending"><span class="cc-toggle-slider"></span></label>
-                <span style="color:var(--text-dim)">Allow Item Sending</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                <label class="cc-toggle"><input type="checkbox" id="fikaLoseFIR"><span class="cc-toggle-slider"></span></label>
-                <span style="color:var(--text-dim)">Sent Items Lose FIR</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;grid-column:span 2">
-                <label class="cc-toggle"><input type="checkbox" id="fikaAllProfiles"><span class="cc-toggle-slider"></span></label>
-                <span style="color:var(--text-dim)">All Profiles in Launcher</span>
-              </label>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;border-top:1px solid var(--border-subtle);padding-top:12px">
-            <span style="font-size:11px;color:var(--warning)">Server restart required for changes to take effect</span>
-            <button class="btn btn-sm" onclick="saveFikaConfig()" style="padding:5px 14px;font-size:12px">Save FIKA Settings</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Watchdog Security Settings -->
-    <div class="dash-widget" id="securitySettingsCard" style="margin-top:16px">
-      <div class="card-header">
-        <span class="card-title" title="Auth token for the WebSocket connection between the CC server and Watchdog apps. Generate a token here, then paste it into each Watchdog's config. Both sides must match or connections will be rejected."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Watchdog Security</span>
-      </div>
-      <div class="card-body" style="padding:16px">
-        <p style="color:var(--text-dim);font-size:12px;margin:0 0 12px">Auth token for Watchdog WebSocket connections. Copy this token into each Watchdog's <code>watchdog-config.json</code> file.</p>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="password" id="wdTokenInput" readonly style="flex:1;background:var(--bg-input);border:1px solid var(--border-subtle);color:var(--text-main);padding:8px 10px;border-radius:6px;font-family:monospace;font-size:13px">
-          <button class="btn btn-sm" onclick="toggleWdToken()" id="wdTokenToggleBtn" style="padding:5px 10px;font-size:11px;min-width:52px">Show</button>
-          <button class="btn btn-sm" onclick="copyWdToken()" style="padding:5px 10px;font-size:11px">Copy</button>
-          <button class="btn btn-sm" onclick="regenWdToken()" style="padding:5px 10px;font-size:11px;background:#c87a3e;border-color:#c87a3e;color:#fff">Regenerate</button>
-        </div>
-        <div id="wdTokenStatus" style="margin-top:10px;font-size:11px"></div>
-      </div>
-    </div>
-
-    <!-- Headless Client Console -->
-    <div class="console-panel" id="headlessPanel" style="margin-top:16px">
+    <div class="console-panel admin-fade-in" id="headlessPanel" style="margin-top:12px">
       <div class="console-header" onclick="toggleHeadless()">
         <span class="console-header-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Headless Client <span id="headlessCount" style="color:var(--text-muted)"></span></span>
         <div style="display:flex;align-items:center;gap:8px">
@@ -7113,7 +7235,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     // Lazy-load tabs on first visit
     if (tab === 'admin' && !adminLoaded) adminInit();
-    if (tab === 'admin') loadActivity();
+    if (tab === 'admin') {
+      loadActivity();
+      updateAdminMetrics();
+      // Re-trigger fade-in animations
+      document.querySelectorAll('#main-admin .admin-fade-in, #main-admin .admin-metric-card').forEach(function(el) {
+        el.style.animation = 'none';
+        el.offsetHeight; // reflow
+        el.style.animation = '';
+      });
+    }
     if (tab === 'players' && !playersLoaded) loadPlayerRoster();
     if (tab === 'quests' && !questsLoaded) questsInit();
     if (tab === 'flea' && !fleaLoaded) fleaInit();
@@ -7536,10 +7667,108 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var dashConfig = { refreshIntervalSeconds: 30, consolePollingMs: 3000 };
   var raidInfoLoaded = false;
   var adminLoaded = false;
+  var ADMIN_GAUGE_ARC = 78.54;
+  var adminVitalsCache = null;
+  var adminStatusCache = null;
+  var adminPlayersCache = { total: 0, online: 0 };
+
+  function updateAdminMiniGauge(arcId, pct) {
+    var arc = document.getElementById(arcId);
+    if (!arc) return;
+    pct = Math.max(0, Math.min(100, pct));
+    arc.setAttribute('stroke-dashoffset', ADMIN_GAUGE_ARC * (1 - pct / 100));
+    arc.setAttribute('stroke', gaugeColor(100 - pct));
+  }
+
+  window.updateAdminMetrics = function() {
+    // Card 1: Active Instances
+    var wds = (watchdogData && watchdogData.watchdogs) ? watchdogData.watchdogs : [];
+    var totalInstances = 0, runningInstances = 0;
+    wds.forEach(function(wd) {
+      if (wd.manages) {
+        if (wd.manages.sptServer) { totalInstances++; if (wd.sptServer && wd.sptServer.running) runningInstances++; }
+        if (wd.manages.headlessClient) { totalInstances++; if (wd.headless && wd.headless.running) runningInstances++; }
+      }
+    });
+    var instEl = document.getElementById('adminMetricInstancesVal');
+    if (instEl) instEl.textContent = runningInstances + '/' + totalInstances;
+    var instSub = document.getElementById('adminMetricInstancesSub');
+    if (instSub) instSub.textContent = wds.length + ' watchdog' + (wds.length !== 1 ? 's' : '') + ' connected';
+    updateAdminMiniGauge('adminGaugeArc_instances', totalInstances > 0 ? (runningInstances / totalInstances * 100) : 0);
+
+    // Card 2: Connected Players
+    var online = adminPlayersCache.online || 0;
+    var total = adminPlayersCache.total || 0;
+    var plEl = document.getElementById('adminMetricPlayersVal');
+    if (plEl) plEl.textContent = online;
+    var plSub = document.getElementById('adminMetricPlayersSub');
+    if (plSub) plSub.textContent = total + ' total profile' + (total !== 1 ? 's' : '');
+    updateAdminMiniGauge('adminGaugeArc_players', total > 0 ? (online / total * 100) : 0);
+
+    // Card 3: System Health (weighted composite score)
+    var serverUp = true; // if we're seeing this page, server is up
+    var headlessUp = false;
+    var crashCount = 0;
+    wds.forEach(function(wd) {
+      if (wd.headless && wd.headless.running) headlessUp = true;
+      if (wd.sptServer && wd.sptServer.crashCount) crashCount += wd.sptServer.crashCount;
+      if (wd.headless && wd.headless.crashCount) crashCount += wd.headless.crashCount;
+    });
+    var score = 0;
+    score += serverUp ? 40 : 0;
+    score += headlessUp ? 30 : 0;
+    score += crashCount === 0 ? 20 : (crashCount <= 2 ? 10 : 0);
+    score += online > 0 ? 10 : 5;
+    var hEl = document.getElementById('adminMetricHealthVal');
+    if (hEl) {
+      var badge = hEl.querySelector('.coming-soon-badge');
+      hEl.textContent = score + '%';
+      if (badge) hEl.appendChild(badge);
+      else {
+        var b = document.createElement('span');
+        b.className = 'coming-soon-badge';
+        b.textContent = 'Beta';
+        hEl.appendChild(b);
+      }
+    }
+    var hSub = document.getElementById('adminMetricHealthSub');
+    if (hSub) hSub.textContent = crashCount === 0 ? 'No crashes today' : crashCount + ' crash' + (crashCount !== 1 ? 'es' : '') + ' today';
+    updateAdminMiniGauge('adminGaugeArc_health', score);
+
+    // Card 4: Server Uptime
+    var uEl = document.getElementById('adminMetricUptimeVal');
+    var uSub = document.getElementById('adminMetricUptimeSub');
+    if (adminStatusCache) {
+      if (uEl) uEl.textContent = adminStatusCache.uptime || '--';
+      if (uSub) uSub.textContent = 'SPT ' + (adminStatusCache.sptVersion || '--');
+    }
+  };
+
+  window.adminGlobalSearch = function() {
+    var input = document.getElementById('adminSearchInput');
+    var q = input ? input.value.toLowerCase().trim() : '';
+
+    // Filter activity table rows
+    var rows = document.querySelectorAll('#activityBody tr');
+    rows.forEach(function(row) {
+      if (!q) { row.style.display = ''; return; }
+      row.style.display = row.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+    });
+
+    // Filter console lines in both consoles
+    ['consoleBody', 'headlessBody'].forEach(function(id) {
+      var lines = document.querySelectorAll('#' + id + ' .console-line');
+      lines.forEach(function(line) {
+        if (!q) { line.style.display = ''; return; }
+        line.style.display = line.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+      });
+    });
+  };
 
   window.adminInit = function() {
     adminLoaded = true;
     loadActivity();
+    updateAdminMetrics();
   };
   var raidInfoTimer = null;
 
@@ -7621,6 +7850,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function loadServerStatus() {
     api('dashboard/status').then(function(d) {
+      adminStatusCache = d;
       document.getElementById('dashUptime').textContent = d.uptime;
       document.getElementById('dashSptVer').textContent = d.sptVersion || '--';
       document.getElementById('dashCcVer').textContent = d.ccVersion || '--';
@@ -7639,6 +7869,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           '<span style="color:var(--text-muted);padding-right:8px">' + escH(m.version) + '</span></div>';
       });
       document.getElementById('dashModList').innerHTML = modHtml || '<span style="color:var(--text-muted)">No mods</span>';
+      updateAdminMetrics();
     }).catch(function(e) { console.error('Status error:', e); });
   }
 
@@ -7755,6 +7986,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function loadPlayers() {
     api('dashboard/players').then(function(d) {
+      adminPlayersCache = { total: d.totalProfiles || 0, online: d.onlineCount || 0 };
       // Stats bar
       document.getElementById('dashTotalProfiles').textContent = d.totalProfiles;
       document.getElementById('dashOnlineCount').textContent = d.onlineCount;
@@ -9143,6 +9375,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       renderServerCard();
       renderHeadlessCard();
       renderHeadlessBadge();
+      updateAdminMetrics();
     }).catch(function() {
       watchdogPollFailures++;
       if (watchdogPollFailures >= 3) {
