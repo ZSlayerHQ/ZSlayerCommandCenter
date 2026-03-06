@@ -4320,6 +4320,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 <div class="nav-bar" id="navBar">
   <div class="nav-bar-inner">
     <button class="nav-btn active" data-nav="dashboard" onclick="switchMainTab('dashboard')">Dashboard</button>
+    <button class="nav-btn" data-nav="admin" onclick="switchMainTab('admin')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:2px">
+        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+        <line x1="6" y1="6" x2="6.01" y2="6"/>
+        <line x1="6" y1="18" x2="6.01" y2="18"/>
+      </svg>Admin
+    </button>
     <button class="nav-btn" data-nav="raidinfo" onclick="switchMainTab('raidinfo')">Raid Info</button>
     <button class="nav-btn" data-nav="items" onclick="switchMainTab('items')">Items</button>
     <button class="nav-btn" data-nav="players" onclick="switchMainTab('players')">Players</button>
@@ -4856,6 +4864,17 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <button class="btn btn-sm" onclick="refreshDashboard()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh Data</button>
       <button class="btn btn-sm" onclick="openLogPopout()" title="Open logs in popout window"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Popout Logs</button>
       <span style="margin-left:auto;font-size:10px;font-family:var(--font-mono);color:var(--text-muted)">Server Local Time: <span id="dashLiveClock"></span></span>
+    </div>
+
+  </div>
+
+  <!-- ═══════ ADMIN TAB ═══════ -->
+  <div class="main-tab-panel" id="main-admin">
+
+    <!-- Admin Quick Actions -->
+    <div class="dash-actions">
+      <button class="btn btn-accent btn-sm" onclick="openBroadcastModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Broadcast</button>
+      <button class="btn btn-sm" onclick="refreshDashboard(); loadActivity()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh Data</button>
     </div>
 
     <!-- Activity Log -->
@@ -7094,6 +7113,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     });
 
     // Lazy-load tabs on first visit
+    if (tab === 'admin' && !adminLoaded) adminInit();
+    if (tab === 'admin') loadActivity();
     if (tab === 'players' && !playersLoaded) loadPlayerRoster();
     if (tab === 'quests' && !questsLoaded) questsInit();
     if (tab === 'flea' && !fleaLoaded) fleaInit();
@@ -7515,6 +7536,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var ACTIVITY_PAGE = 20;
   var dashConfig = { refreshIntervalSeconds: 30, consolePollingMs: 3000 };
   var raidInfoLoaded = false;
+  var adminLoaded = false;
+
+  window.adminInit = function() {
+    adminLoaded = true;
+    loadActivity();
+  };
   var raidInfoTimer = null;
 
   // Multi-source state
@@ -7587,7 +7614,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     loadEconomy();
     loadRaidStats();
     loadMyRaidStats();
-    loadActivity();
     pollConsole();
     pollHeadless();
     loadFikaConfig();
@@ -9765,7 +9791,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   window.sendBroadcast = function() {
     var msg = document.getElementById('broadcastMessage').value.trim();
     if (!msg) { toast('Message cannot be empty', 'error'); return; }
-    api('dashboard/broadcast', { method: 'POST', body: JSON.stringify({ message: msg }) }).then(function(d) {
+    var fullMsg = profileName ? profileName + ': ' + msg : msg;
+    api('dashboard/broadcast', { method: 'POST', body: JSON.stringify({ message: fullMsg }) }).then(function(d) {
       if (d.success) {
         toast('Broadcast sent to ' + d.recipientCount + ' profiles', 'success');
         closeBroadcastModal();
