@@ -37,6 +37,9 @@ public record CommandCenterConfig
     [JsonPropertyName("progressionPresets")]
     public Dictionary<string, ProgressionPresetEntry> ProgressionPresets { get; set; } = new();
 
+    [JsonPropertyName("backup")]
+    public CcBackupConfig Backup { get; set; } = new();
+
     [JsonPropertyName("profileAvatars")]
     public Dictionary<string, string> ProfileAvatars { get; set; } = new();
 

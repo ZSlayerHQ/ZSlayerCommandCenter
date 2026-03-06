@@ -21,6 +21,7 @@ public class CommandCenterMod(
     TraderApplyService traderApplyService,
     QuestOverrideService questOverrideService,
     ProgressionControlService progressionControlService,
+    ProfileBackupService backupService,
     TelemetryService telemetryService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
@@ -123,6 +124,9 @@ public class CommandCenterMod(
         // Clean up old activity logs
         activityLogService.CleanupOldLogs();
         activityLogService.LogAction(ActionType.ServerStart, "", "Server started");
+
+        // Initialize backup service (auto-backup timer, startup backup, cleanup)
+        backupService.Initialize();
 
         // Detect bound IP and build URLs based on bind mode
         var httpCfg = configServer.GetConfig<HttpConfig>();

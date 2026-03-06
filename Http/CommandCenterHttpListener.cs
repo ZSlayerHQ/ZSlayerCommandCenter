@@ -44,6 +44,8 @@ public class CommandCenterHttpListener(
     ConfigServer configServer,
     SaveServer saveServer,
     ProfileActivityService profileActivityService,
+    ProfileBackupService backupService,
+    WipeService wipeService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -190,6 +192,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("fika/"))
             {
                 await HandleFikaRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle backup/wipe routes
+            if (path.StartsWith("backups/") || path == "backups" || path.StartsWith("wipe/"))
+            {
+                await HandleBackupRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -3166,6 +3175,115 @@ public class CommandCenterHttpListener(
         catch
         {
             return null;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // BACKUP & RESTORE ROUTES
+    // ═══════════════════════════════════════════════════════
+
+    private async Task HandleBackupRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        switch (path)
+        {
+            case "backups" when method == "GET":
+                await WriteJson(context, 200, backupService.ListBackups());
+                break;
+
+            case "backups/create" when method == "POST":
+            {
+                var req = await ReadBody<BackupCreateRequest>(context);
+                var type = req?.Type ?? "profile";
+                var notes = req?.Notes ?? "";
+                var entries = new List<BackupEntry>();
+
+                if (type is "profile" or "both")
+                    entries.Add(backupService.CreateProfileBackup(notes));
+                if (type is "config" or "both")
+                    entries.Add(backupService.CreateConfigBackup(notes));
+
+                activityLogService.LogAction(ActionType.ServerStart, headerSessionId, $"Manual backup created ({type})");
+                await WriteJson(context, 200, new { success = true, entries });
+                break;
+            }
+
+            case "backups/config" when method == "GET":
+                await WriteJson(context, 200, backupService.GetCcBackupConfig());
+                break;
+
+            case "backups/config" when method == "POST":
+            {
+                var cfg = await ReadBody<CcBackupConfig>(context);
+                if (cfg == null) { await WriteJson(context, 400, new { error = "Invalid config" }); break; }
+                backupService.SaveCcBackupConfig(cfg);
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+
+            case "wipe/full" when method == "POST":
+            {
+                var req = await ReadBody<WipeRequest>(context);
+                if (req == null) { await WriteJson(context, 400, new { error = "Invalid request" }); break; }
+                var (success, message) = wipeService.FullWipe(req.ConfirmText);
+                activityLogService.LogAction(ActionType.ServerStart, headerSessionId, $"Full wipe: {message}");
+                await WriteJson(context, success ? 200 : 400, new { success, message });
+                break;
+            }
+
+            case "wipe/selective" when method == "POST":
+            {
+                var req = await ReadBody<WipeRequest>(context);
+                if (req == null) { await WriteJson(context, 400, new { error = "Invalid request" }); break; }
+                var (success, message) = wipeService.SelectiveWipe(req.Categories, req.ConfirmText);
+                activityLogService.LogAction(ActionType.ServerStart, headerSessionId, $"Selective wipe: {message}");
+                await WriteJson(context, success ? 200 : 400, new { success, message });
+                break;
+            }
+
+            default:
+            {
+                // Parameterized routes: backups/{id}/...
+                if (path.StartsWith("backups/") && path.Contains('/'))
+                {
+                    var segments = path.Split('/');
+                    if (segments.Length >= 2)
+                    {
+                        var id = segments[1];
+
+                        if (segments.Length == 2 && method == "DELETE")
+                        {
+                            var deleted = backupService.DeleteBackup(id);
+                            await WriteJson(context, deleted ? 200 : 404, new { success = deleted });
+                            break;
+                        }
+
+                        if (segments.Length == 3 && segments[2] == "diff" && method == "GET")
+                        {
+                            var diff = backupService.GetBackupDiff(id);
+                            if (diff == null) { await WriteJson(context, 404, new { error = "Backup not found" }); break; }
+                            await WriteJson(context, 200, diff);
+                            break;
+                        }
+
+                        if (segments.Length == 3 && segments[2] == "restore" && method == "POST")
+                        {
+                            var isConfig = id.StartsWith("config-");
+                            var (success, message) = isConfig
+                                ? backupService.RestoreConfigBackup(id)
+                                : backupService.RestoreProfileBackup(id);
+                            if (success)
+                                activityLogService.LogAction(ActionType.ServerStart, headerSessionId, $"Backup restored: {id}");
+                            await WriteJson(context, success ? 200 : 400, new { success, message });
+                            break;
+                        }
+                    }
+                }
+
+                await WriteJson(context, 404, new { error = "Unknown backup route" });
+                break;
+            }
         }
     }
 }
