@@ -4859,10 +4859,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     <!-- Quick Actions -->
     <div class="dash-actions">
-      <button class="btn btn-accent btn-sm" onclick="openBroadcastModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Broadcast</button>
-      <button class="btn btn-sm" onclick="sendUrlsToPlayers()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> Send URLs to Players</button>
       <button class="btn btn-sm" onclick="refreshDashboard()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh Data</button>
-      <button class="btn btn-sm" onclick="openLogPopout()" title="Open logs in popout window"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Popout Logs</button>
       <span style="margin-left:auto;font-size:10px;font-family:var(--font-mono);color:var(--text-muted)">Server Local Time: <span id="dashLiveClock"></span></span>
     </div>
 
@@ -4874,7 +4871,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <!-- Admin Quick Actions -->
     <div class="dash-actions">
       <button class="btn btn-accent btn-sm" onclick="openBroadcastModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Broadcast</button>
+      <button class="btn btn-sm" onclick="sendUrlsToPlayers()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> Send URLs to Players</button>
       <button class="btn btn-sm" onclick="refreshDashboard(); loadActivity()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh Data</button>
+      <button class="btn btn-sm" onclick="openLogPopout()" title="Open logs in popout window"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Popout Logs</button>
     </div>
 
     <!-- Activity Log -->
