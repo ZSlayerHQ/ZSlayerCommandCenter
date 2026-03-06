@@ -5185,6 +5185,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
                 <label class="cc-toggle"><input type="checkbox" id="fikaHlSyncLevel"><span class="cc-toggle-slider"></span></label>
                 <span style="color:var(--text-dim)">Sync Level to Lobby Average</span>
               </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <label class="cc-toggle"><input type="checkbox" id="fikaCanEditRaid" checked onchange="document.getElementById('fikaHeadlessOnlyNote').style.display=this.checked?'none':'block'"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Players Can Host Raids</span>
+              </label>
+            </div>
+            <div style="padding:6px 10px;margin-top:8px;background:rgba(200,170,110,0.06);border:1px solid rgba(200,170,110,0.15);border-radius:var(--radius);font-size:10px;color:var(--text-muted);display:none" id="fikaHeadlessOnlyNote">
+              When disabled, players cannot self-host raids — only the headless client can host. Players must wait for headless to be available.
             </div>
             <div style="border-top:1px solid var(--border-subtle);margin-top:14px;padding-top:12px">
               <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600;border-left:2px solid var(--accent-dim);padding-left:8px">Server</div>
@@ -5202,6 +5209,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
                   <span style="color:var(--text-dim)">All Profiles in Launcher</span>
                 </label>
               </div>
+            </div>
+            <div style="border-top:1px solid var(--border-subtle);margin-top:14px;padding-top:12px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600;border-left:2px solid var(--accent-dim);padding-left:8px">Plugin Blacklist</div>
+              <p style="color:var(--text-dim);font-size:11px;margin:0 0 8px">Block clients from connecting if they have any of these BepInEx plugins loaded. Enter plugin GUIDs, one per line.</p>
+              <textarea id="fikaBlacklistedMods" placeholder="com.example.cheatmod&#10;com.someone.exploit" style="width:100%;min-height:60px;padding:6px 8px;font-size:11px;font-family:var(--font-mono);background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:var(--radius);color:var(--text);resize:vertical;box-sizing:border-box"></textarea>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;border-top:1px solid var(--border-subtle);padding-top:12px">
               <span style="font-size:11px;color:var(--warning)">Server restart required for changes to take effect</span>
@@ -10209,12 +10221,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       document.getElementById('fikaDynVExfil').checked = d.dynamicVExfils;
       document.getElementById('fikaTransits').checked = d.enableTransits;
       document.getElementById('fikaAnyoneStart').checked = d.anyoneCanStartRaid;
+      document.getElementById('fikaCanEditRaid').checked = d.canEditRaidSettings;
+      document.getElementById('fikaHeadlessOnlyNote').style.display = d.canEditRaidSettings ? 'none' : 'block';
       // FIKA card — server
       document.getElementById('fikaAllowSending').checked = d.allowItemSending;
       document.getElementById('fikaLoseFIR').checked = d.sentItemsLoseFIR;
       document.getElementById('fikaAllProfiles').checked = d.launcherListAllProfiles;
       document.getElementById('fikaSessionTimeout').value = d.sessionTimeout;
       document.getElementById('fikaSessionTimeoutVal').textContent = d.sessionTimeout + ' min';
+      // Plugin blacklist
+      document.getElementById('fikaBlacklistedMods').value = (d.blacklistedMods || []).join('\n');
     }).catch(function(){});
   };
 
@@ -10228,10 +10244,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       dynamicVExfils: document.getElementById('fikaDynVExfil').checked,
       enableTransits: document.getElementById('fikaTransits').checked,
       anyoneCanStartRaid: document.getElementById('fikaAnyoneStart').checked,
+      canEditRaidSettings: document.getElementById('fikaCanEditRaid').checked,
       sessionTimeout: parseInt(document.getElementById('fikaSessionTimeout').value),
       allowItemSending: document.getElementById('fikaAllowSending').checked,
       sentItemsLoseFIR: document.getElementById('fikaLoseFIR').checked,
-      launcherListAllProfiles: document.getElementById('fikaAllProfiles').checked
+      launcherListAllProfiles: document.getElementById('fikaAllProfiles').checked,
+      blacklistedMods: document.getElementById('fikaBlacklistedMods').value.split('\n').map(function(s){return s.trim()}).filter(function(s){return s.length > 0}),
+      requiredMods: [],
+      optionalMods: []
     };
     api('fika/config', { method: 'POST', body: JSON.stringify(body) }).then(function(d) {
       toast('FIKA settings saved', 'success');

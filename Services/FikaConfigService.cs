@@ -30,6 +30,17 @@ public class FikaConfigService(
             if (root is not JsonObject obj)
                 return new FikaConfigDto { Available = false };
 
+            // Parse mod lists
+            var requiredMods = new List<string>();
+            var optionalMods = new List<string>();
+            var blacklistedMods = new List<string>();
+            if (obj["client"]?["mods"]?["required"] is JsonArray reqArr)
+                foreach (var m in reqArr) { var s = m?.GetValue<string>(); if (!string.IsNullOrEmpty(s)) requiredMods.Add(s); }
+            if (obj["client"]?["mods"]?["optional"] is JsonArray optArr)
+                foreach (var m in optArr) { var s = m?.GetValue<string>(); if (!string.IsNullOrEmpty(s)) optionalMods.Add(s); }
+            if (obj["client"]?["mods"]?["blacklisted"] is JsonArray blkArr)
+                foreach (var m in blkArr) { var s = m?.GetValue<string>(); if (!string.IsNullOrEmpty(s)) blacklistedMods.Add(s); }
+
             return new FikaConfigDto
             {
                 Available = true,
@@ -43,11 +54,16 @@ public class FikaConfigService(
                 DynamicVExfils = obj["client"]?["dynamicVExfils"]?.GetValue<bool>() ?? false,
                 EnableTransits = obj["client"]?["enableTransits"]?.GetValue<bool>() ?? true,
                 AnyoneCanStartRaid = obj["client"]?["anyoneCanStartRaid"]?.GetValue<bool>() ?? false,
+                CanEditRaidSettings = obj["client"]?["canEditRaidSettings"]?.GetValue<bool>() ?? true,
                 // server
                 SessionTimeout = obj["server"]?["sessionTimeout"]?.GetValue<int>() ?? 5,
                 AllowItemSending = obj["server"]?["allowItemSending"]?.GetValue<bool>() ?? true,
                 SentItemsLoseFIR = obj["server"]?["sentItemsLoseFIR"]?.GetValue<bool>() ?? true,
-                LauncherListAllProfiles = obj["server"]?["launcherListAllProfiles"]?.GetValue<bool>() ?? false
+                LauncherListAllProfiles = obj["server"]?["launcherListAllProfiles"]?.GetValue<bool>() ?? false,
+                // mod lists
+                RequiredMods = requiredMods,
+                OptionalMods = optionalMods,
+                BlacklistedMods = blacklistedMods
             };
         }
         catch (Exception ex)
@@ -85,6 +101,14 @@ public class FikaConfigService(
             obj["client"]!["dynamicVExfils"] = dto.DynamicVExfils;
             obj["client"]!["enableTransits"] = dto.EnableTransits;
             obj["client"]!["anyoneCanStartRaid"] = dto.AnyoneCanStartRaid;
+            obj["client"]!["canEditRaidSettings"] = dto.CanEditRaidSettings;
+
+            // Mod lists
+            obj["client"]!["mods"] ??= new JsonObject();
+            var modsObj = obj["client"]!["mods"]!;
+            modsObj["required"] = new JsonArray(dto.RequiredMods.Select(m => JsonValue.Create(m)).ToArray<JsonNode?>());
+            modsObj["optional"] = new JsonArray(dto.OptionalMods.Select(m => JsonValue.Create(m)).ToArray<JsonNode?>());
+            modsObj["blacklisted"] = new JsonArray(dto.BlacklistedMods.Select(m => JsonValue.Create(m)).ToArray<JsonNode?>());
 
             // Server
             obj["server"]!["sessionTimeout"] = dto.SessionTimeout;

@@ -30,6 +30,9 @@ public record FikaConfigDto
     [JsonPropertyName("anyoneCanStartRaid")]
     public bool AnyoneCanStartRaid { get; set; }
 
+    [JsonPropertyName("canEditRaidSettings")]
+    public bool CanEditRaidSettings { get; set; } = true;
+
     // FIKA card — Server
     [JsonPropertyName("sessionTimeout")]
     public int SessionTimeout { get; set; }
@@ -42,6 +45,16 @@ public record FikaConfigDto
 
     [JsonPropertyName("launcherListAllProfiles")]
     public bool LauncherListAllProfiles { get; set; }
+
+    // Mod validation
+    [JsonPropertyName("requiredMods")]
+    public List<string> RequiredMods { get; set; } = [];
+
+    [JsonPropertyName("optionalMods")]
+    public List<string> OptionalMods { get; set; } = [];
+
+    [JsonPropertyName("blacklistedMods")]
+    public List<string> BlacklistedMods { get; set; } = [];
 
     // Response only
     [JsonPropertyName("available")]
