@@ -7744,25 +7744,26 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }
   };
 
+  var adminSearchDebounce = null;
   window.adminGlobalSearch = function() {
     var input = document.getElementById('adminSearchInput');
-    var q = input ? input.value.toLowerCase().trim() : '';
+    var q = input ? input.value.trim() : '';
 
-    // Filter activity table rows
-    var rows = document.querySelectorAll('#activityBody tr');
-    rows.forEach(function(row) {
-      if (!q) { row.style.display = ''; return; }
-      row.style.display = row.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
-    });
+    // Debounce activity API call (server-side search across all pages)
+    clearTimeout(adminSearchDebounce);
+    adminSearchDebounce = setTimeout(function() {
+      activityOffset = 0;
+      loadActivity();
+    }, 300);
 
-    // Filter console lines in both consoles
-    ['consoleBody', 'headlessBody'].forEach(function(id) {
-      var lines = document.querySelectorAll('#' + id + ' .console-line');
-      lines.forEach(function(line) {
-        if (!q) { line.style.display = ''; return; }
-        line.style.display = line.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
-      });
-    });
+    // Sync console search inputs and trigger re-render from full buffer
+    document.getElementById('consoleSearchInput').value = q;
+    consoleSearchQuery = q;
+    renderConsole();
+
+    document.getElementById('headlessSearchInput').value = q;
+    headlessSearchQuery = q;
+    renderHeadless();
   };
 
   window.adminInit = function() {
@@ -8788,10 +8789,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   window.loadActivity = function() {
     var typeFilter = document.getElementById('activityTypeFilter').value;
+    var searchInput = document.getElementById('adminSearchInput');
+    var searchQ = searchInput ? searchInput.value.trim() : '';
     var params = new URLSearchParams();
     params.set('limit', ACTIVITY_PAGE);
     params.set('offset', activityOffset);
     if (typeFilter) params.set('type', typeFilter);
+    if (searchQ) params.set('search', searchQ);
     api('dashboard/activity?' + params.toString()).then(function(d) {
       activityTotal = d.total;
       var body = document.getElementById('activityBody');

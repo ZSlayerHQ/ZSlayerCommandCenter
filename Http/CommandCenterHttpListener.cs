@@ -825,7 +825,8 @@ public class CommandCenterHttpListener(
         var limit = int.TryParse(query["limit"].FirstOrDefault(), out var l) ? Math.Clamp(l, 1, 200) : 50;
         var offset = int.TryParse(query["offset"].FirstOrDefault(), out var o) ? Math.Max(o, 0) : 0;
         var typeFilter = query["type"].FirstOrDefault();
-        var result = activityLogService.GetRecentActivity(limit, offset, typeFilter);
+        var search = query["search"].FirstOrDefault();
+        var result = activityLogService.GetRecentActivity(limit, offset, typeFilter, search);
         await WriteJson(context, 200, result);
     }
 

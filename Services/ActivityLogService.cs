@@ -53,12 +53,18 @@ public class ActivityLogService(
         }
     }
 
-    public ActivityResponse GetRecentActivity(int limit = 50, int offset = 0, string? typeFilter = null)
+    public ActivityResponse GetRecentActivity(int limit = 50, int offset = 0, string? typeFilter = null, string? search = null)
     {
         var allEntries = LoadRecentEntries();
 
         if (!string.IsNullOrEmpty(typeFilter))
             allEntries = allEntries.Where(e => e.Type.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        if (!string.IsNullOrEmpty(search))
+            allEntries = allEntries.Where(e =>
+                (e.Details ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                (e.AdminName ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                (e.Type ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
 
         var total = allEntries.Count;
         var entries = allEntries
