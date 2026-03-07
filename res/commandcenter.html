@@ -4404,7 +4404,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <button class="nav-btn" data-nav="quests" onclick="switchMainTab('quests')">Quests</button>
     <button class="nav-btn" data-nav="progression" onclick="switchMainTab('progression')">Progression</button>
     <button class="nav-btn disabled" data-nav="backups" onclick="switchMainTab('backups')">Backups <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
-    <button class="nav-btn disabled" data-nav="events" onclick="switchMainTab('events')">Events <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
+    <button class="nav-btn" data-nav="events" onclick="switchMainTab('events')">Events</button>
     <button class="nav-btn disabled" data-nav="gamevalues" onclick="switchMainTab('gamevalues')">Game Values <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="profiles" onclick="switchMainTab('profiles')">Profiles <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="loadouts" onclick="switchMainTab('loadouts')">Loadouts <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
@@ -5186,12 +5186,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
                 <span style="color:var(--text-dim)">Sync Level to Lobby Average</span>
               </label>
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                <label class="cc-toggle"><input type="checkbox" id="fikaCanEditRaid" checked onchange="document.getElementById('fikaHeadlessOnlyNote').style.display=this.checked?'none':'block'"><span class="cc-toggle-slider"></span></label>
-                <span style="color:var(--text-dim)">Players Can Host Raids</span>
+                <label class="cc-toggle"><input type="checkbox" id="fikaHeadlessOnly" onchange="document.getElementById('fikaHeadlessOnlyNote').style.display=this.checked?'block':'none'"><span class="cc-toggle-slider"></span></label>
+                <span style="color:var(--text-dim)">Headless Only Raids <span style="opacity:0.5;font-size:10px">(No Local Player Raids)</span></span>
               </label>
             </div>
             <div style="padding:6px 10px;margin-top:8px;background:rgba(200,170,110,0.06);border:1px solid rgba(200,170,110,0.15);border-radius:var(--radius);font-size:10px;color:var(--text-muted);display:none" id="fikaHeadlessOnlyNote">
-              When disabled, players cannot self-host raids — only the headless client can host. Players must wait for headless to be available.
+              When enabled, players cannot self-host raids — only the headless client can host. Players must wait for headless to be available.
             </div>
             <div style="border-top:1px solid var(--border-subtle);margin-top:14px;padding-top:12px">
               <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600;border-left:2px solid var(--accent-dim);padding-left:8px">Server</div>
@@ -6820,12 +6820,216 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   </div>
 
   <div class="main-tab-panel" id="main-events">
-    <div class="coming-soon">
-      <div class="coming-soon-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-      <h2>Scheduler & Events</h2>
-      <p>Schedule automated events, timed actions, and recurring server tasks.</p>
-      <span class="phase-badge">Phase 8</span>
+
+    <!-- Active Events Banner -->
+    <div id="evtActiveBanner" style="display:none;margin-bottom:16px;padding:12px 16px;background:rgba(200,170,110,0.08);border:1px solid rgba(200,170,110,0.25);border-radius:var(--radius-lg);font-size:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span style="font-weight:600;color:var(--accent)">Active Events</span>
+      </div>
+      <div id="evtActiveBannerList"></div>
     </div>
+
+    <!-- Toolbar -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="window.showEventCreateModal()" style="padding:6px 14px;font-size:12px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Event
+      </button>
+      <button class="btn btn-sm" onclick="window.showTaskCreateModal()" style="padding:6px 14px;font-size:12px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>New Task
+      </button>
+      <button class="btn btn-sm" onclick="window.loadScheduler()" style="padding:6px 14px;font-size:12px">Refresh</button>
+    </div>
+
+    <!-- Events List -->
+    <div class="dash-widget" style="margin-bottom:16px">
+      <div class="dash-widget-header">
+        <span class="dash-widget-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Events
+        </span>
+      </div>
+      <div class="dash-widget-body" style="padding:0">
+        <table class="data-table" style="width:100%">
+          <thead><tr>
+            <th style="width:28px">Status</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Multiplier</th>
+            <th>Schedule</th>
+            <th>Duration</th>
+            <th style="width:140px">Actions</th>
+          </tr></thead>
+          <tbody id="evtEventsBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Scheduled Tasks -->
+    <div class="dash-widget" style="margin-bottom:16px">
+      <div class="dash-widget-header">
+        <span class="dash-widget-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Scheduled Tasks
+        </span>
+      </div>
+      <div class="dash-widget-body" style="padding:0">
+        <table class="data-table" style="width:100%">
+          <thead><tr>
+            <th style="width:28px">On</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Schedule</th>
+            <th>Next Run</th>
+            <th>Last Run</th>
+            <th style="width:80px">Actions</th>
+          </tr></thead>
+          <tbody id="evtTasksBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Create Event Modal -->
+    <div id="evtCreateModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px)">
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;max-width:95vw;max-height:85vh;overflow-y:auto;background:var(--bg-panel);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="margin:0;color:var(--text-bright);font-size:15px" id="evtModalTitle">Create Event</h3>
+          <button onclick="document.getElementById('evtCreateModal').style.display='none'" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px">&times;</button>
+        </div>
+
+        <!-- Event Type -->
+        <div style="margin-bottom:14px">
+          <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);display:block;margin-bottom:6px">Event Type</label>
+          <div id="evtTypeButtons" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        </div>
+
+        <!-- Name -->
+        <div style="margin-bottom:14px">
+          <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);display:block;margin-bottom:6px">Event Name</label>
+          <input type="text" id="evtName" class="cc-input" placeholder="e.g. Weekend Double XP" style="width:100%">
+        </div>
+
+        <!-- Multiplier -->
+        <div style="margin-bottom:14px">
+          <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);display:block;margin-bottom:6px" id="evtMultLabel">Multiplier</label>
+          <input type="number" id="evtMultiplier" class="cc-input" value="2.0" step="0.1" min="0.1" max="100" style="width:120px">
+        </div>
+
+        <!-- Duration -->
+        <div style="margin-bottom:14px">
+          <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);display:block;margin-bottom:6px">Duration (minutes)</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="evtDuration" class="cc-input" value="60" min="1" style="width:100px">
+            <span style="font-size:11px;color:var(--text-dim)" id="evtDurationLabel">= 1h 0m</span>
+          </div>
+        </div>
+
+        <!-- Scheduling -->
+        <div style="margin-bottom:14px">
+          <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);display:block;margin-bottom:6px">Schedule</label>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button class="btn btn-sm evtSchedBtn active" data-sched="now" onclick="window.evtSetScheduleMode('now')" style="font-size:11px;padding:4px 10px">Start Now</button>
+            <button class="btn btn-sm evtSchedBtn" data-sched="datetime" onclick="window.evtSetScheduleMode('datetime')" style="font-size:11px;padding:4px 10px">Date/Time</button>
+            <button class="btn btn-sm evtSchedBtn" data-sched="cron" onclick="window.evtSetScheduleMode('cron')" style="font-size:11px;padding:4px 10px">Cron</button>
+          </div>
+          <div id="evtSchedDatetime" style="display:none">
+            <input type="datetime-local" id="evtStartTime" class="cc-input" style="width:220px">
+          </div>
+          <div id="evtSchedCron" style="display:none">
+            <input type="text" id="evtCronExpr" class="cc-input" placeholder="*/30 * * * *" style="width:220px" oninput="window.evtValidateCron()">
+            <div style="margin-top:4px;font-size:10px;color:var(--text-dim)" id="evtCronDesc"></div>
+            <!-- Cron helper -->
+            <div style="margin-top:8px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;font-size:9px;color:var(--text-muted)">
+              <div>minute<br><span style="color:var(--text-dim)">0-59</span></div>
+              <div>hour<br><span style="color:var(--text-dim)">0-23</span></div>
+              <div>day<br><span style="color:var(--text-dim)">1-31</span></div>
+              <div>month<br><span style="color:var(--text-dim)">1-12</span></div>
+              <div>weekday<br><span style="color:var(--text-dim)">0-6 SUN-SAT</span></div>
+            </div>
+            <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-sm" style="font-size:9px;padding:2px 6px" onclick="document.getElementById('evtCronExpr').value='0 */2 * * *';window.evtValidateCron()">Every 2h</button>
+              <button class="btn btn-sm" style="font-size:9px;padding:2px 6px" onclick="document.getElementById('evtCronExpr').value='0 18 * * 5';window.evtValidateCron()">Fri 6PM</button>
+              <button class="btn btn-sm" style="font-size:9px;padding:2px 6px" onclick="document.getElementById('evtCronExpr').value='0 0 * * *';window.evtValidateCron()">Daily midnight</button>
+              <button class="btn btn-sm" style="font-size:9px;padding:2px 6px" onclick="document.getElementById('evtCronExpr').value='0 12 * * 6';window.evtValidateCron()">Sat noon</button>
+              <button class="btn btn-sm" style="font-size:9px;padding:2px 6px" onclick="document.getElementById('evtCronExpr').value='0 0 1 * *';window.evtValidateCron()">1st of month</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Broadcast toggles -->
+        <div style="margin-bottom:14px;display:flex;gap:16px;font-size:12px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <label class="cc-toggle"><input type="checkbox" id="evtBroadcastStart" checked><span class="cc-toggle-slider"></span></label>
+            <span style="color:var(--text-dim)">Broadcast on start</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <label class="cc-toggle"><input type="checkbox" id="evtBroadcastEnd" checked><span class="cc-toggle-slider"></span></label>
+            <span style="color:var(--text-dim)">Broadcast on end</span>
+          </label>
+        </div>
+
+        <!-- Submit -->
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+          <button class="btn btn-sm" onclick="document.getElementById('evtCreateModal').style.display='none'" style="padding:6px 16px">Cancel</button>
+          <button class="btn btn-sm" onclick="window.evtSubmitEvent()" style="padding:6px 16px;background:var(--accent-dim);color:var(--bg-base)">Create Event</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Task Modal -->
+    <div id="evtTaskModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px)">
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:440px;max-width:95vw;max-height:85vh;overflow-y:auto;background:var(--bg-panel);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="margin:0;color:var(--text-bright);font-size:15px">Create Scheduled Task</h3>
+          <button onclick="document.getElementById('evtTaskModal').style.display='none'" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px">&times;</button>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);display:block;margin-bottom:6px">Task Type</label>
+          <select id="evtTaskType" class="cc-input" style="width:200px">
+            <option value="Broadcast">Broadcast Message</option>
+            <option value="Backup">Profile Backup</option>
+            <option value="ServerRestart">Server Restart</option>
+            <option value="HeadlessRestart">Headless Restart</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);display:block;margin-bottom:6px">Task Name</label>
+          <input type="text" id="evtTaskName" class="cc-input" placeholder="e.g. Hourly Backup" style="width:100%">
+        </div>
+
+        <div style="margin-bottom:14px" id="evtTaskMsgRow">
+          <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);display:block;margin-bottom:6px">Message</label>
+          <input type="text" id="evtTaskMessage" class="cc-input" placeholder="Broadcast message text" style="width:100%">
+        </div>
+
+        <div style="margin-bottom:14px">
+          <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);display:block;margin-bottom:6px">Schedule</label>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button class="btn btn-sm evtTaskSchedBtn active" data-sched="cron" onclick="window.evtSetTaskScheduleMode('cron')" style="font-size:11px;padding:4px 10px">Cron</button>
+            <button class="btn btn-sm evtTaskSchedBtn" data-sched="once" onclick="window.evtSetTaskScheduleMode('once')" style="font-size:11px;padding:4px 10px">One-time</button>
+          </div>
+          <div id="evtTaskCronRow">
+            <input type="text" id="evtTaskCron" class="cc-input" placeholder="0 */6 * * *" style="width:220px" oninput="window.evtValidateTaskCron()">
+            <div style="margin-top:4px;font-size:10px;color:var(--text-dim)" id="evtTaskCronDesc"></div>
+          </div>
+          <div id="evtTaskOnceRow" style="display:none">
+            <input type="datetime-local" id="evtTaskRunAt" class="cc-input" style="width:220px">
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+          <button class="btn btn-sm" onclick="document.getElementById('evtTaskModal').style.display='none'" style="padding:6px 16px">Cancel</button>
+          <button class="btn btn-sm" onclick="window.evtSubmitTask()" style="padding:6px 16px;background:var(--accent-dim);color:var(--bg-base)">Create Task</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div class="main-tab-panel" id="main-gamevalues">
@@ -7402,6 +7606,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'traders' && !tradersLoaded) tradersInit();
     if (tab === 'raidinfo' && !raidInfoLoaded) raidInfoInit();
     if (tab === 'progression' && !progressionLoaded) progressionInit();
+    if (tab === 'events' && !eventsLoaded) eventsInit();
 
     // Manage raid info polling — start when on tab, stop when leaving
     if (tab === 'raidinfo') {
@@ -10221,7 +10426,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       document.getElementById('fikaDynVExfil').checked = d.dynamicVExfils;
       document.getElementById('fikaTransits').checked = d.enableTransits;
       document.getElementById('fikaAnyoneStart').checked = d.anyoneCanStartRaid;
-      document.getElementById('fikaCanEditRaid').checked = d.canEditRaidSettings;
+      document.getElementById('fikaHeadlessOnly').checked = !d.canEditRaidSettings;
       document.getElementById('fikaHeadlessOnlyNote').style.display = d.canEditRaidSettings ? 'none' : 'block';
       // FIKA card — server
       document.getElementById('fikaAllowSending').checked = d.allowItemSending;
@@ -10244,7 +10449,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       dynamicVExfils: document.getElementById('fikaDynVExfil').checked,
       enableTransits: document.getElementById('fikaTransits').checked,
       anyoneCanStartRaid: document.getElementById('fikaAnyoneStart').checked,
-      canEditRaidSettings: document.getElementById('fikaCanEditRaid').checked,
+      canEditRaidSettings: !document.getElementById('fikaHeadlessOnly').checked,
       sessionTimeout: parseInt(document.getElementById('fikaSessionTimeout').value),
       allowItemSending: document.getElementById('fikaAllowSending').checked,
       sentItemsLoseFIR: document.getElementById('fikaLoseFIR').checked,
@@ -16318,6 +16523,345 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (isNaN(lvl) || lvl < 0 || lvl > 51) { toast('Invalid level (0-51)', 'error'); return; }
     api('skills/player/' + sid + '?action=setall', 'POST', { level: lvl }).then(function(r) {
       if (r.success) { toast('All skills set to ' + lvl + ' (' + r.skillsUpdated + ')', 'success'); skillLoadPlayerSkills(); }
+    });
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // SCHEDULER & EVENTS TAB
+  // ═══════════════════════════════════════════════════════
+
+  var eventsLoaded = false;
+  var evtData = null;
+  var evtScheduleMode = 'now';
+  var evtSelectedType = 'DoubleXP';
+  var evtTaskScheduleMode = 'cron';
+
+  function eventsInit() {
+    eventsLoaded = true;
+    loadScheduler();
+  }
+
+  window.loadScheduler = function() {
+    api('scheduler').then(function(d) {
+      evtData = d;
+      renderEvents(d.events || []);
+      renderTasks(d.tasks || []);
+      renderActiveBanner(d.activeEvents || []);
+    }).catch(function(e) {
+      document.getElementById('evtEventsBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--error-bright);padding:24px">Failed to load: ' + (e.message || e) + '</td></tr>';
+    });
+  };
+
+  function renderActiveBanner(active) {
+    var banner = document.getElementById('evtActiveBanner');
+    var list = document.getElementById('evtActiveBannerList');
+    if (!active.length) { banner.style.display = 'none'; return; }
+    banner.style.display = 'block';
+    list.innerHTML = active.map(function(e) {
+      var timeLeft = e.expiresAt ? formatTimeLeft(new Date(e.expiresAt)) : 'No expiry';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">' +
+        '<span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block"></span>' +
+        '<span style="color:var(--text-bright)">' + esc(e.name) + '</span>' +
+        '<span style="color:var(--text-muted);font-size:11px">' + evtTypeLabel(e.type) + ' &middot; ' + e.multiplier + 'x</span>' +
+        '<span style="margin-left:auto;font-size:10px;color:var(--text-dim)">' + timeLeft + '</span>' +
+        '</div>';
+    }).join('');
+  }
+
+  function formatTimeLeft(expiry) {
+    var diff = expiry.getTime() - Date.now();
+    if (diff <= 0) return 'Expiring...';
+    var mins = Math.floor(diff / 60000);
+    if (mins < 60) return mins + 'm left';
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ' + (mins % 60) + 'm left';
+    var days = Math.floor(hrs / 24);
+    return days + 'd ' + (hrs % 24) + 'h left';
+  }
+
+  function evtTypeLabel(type) {
+    var map = { DoubleXP: 'Double XP', TraderSale: 'Trader Sale', LootBoost: 'Loot Boost' };
+    return map[type] || type;
+  }
+
+  function evtTypeIcon(type) {
+    if (type === 'DoubleXP') return '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="width:14px;height:14px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
+    if (type === 'TraderSale') return '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="width:14px;height:14px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>';
+    if (type === 'LootBoost') return '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="width:14px;height:14px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>';
+    return '';
+  }
+
+  function evtStatusDot(status) {
+    var colors = { Active: '#4ade80', Scheduled: '#facc15', Draft: '#a1a1aa', Expired: '#6b7280', Cancelled: '#ef4444' };
+    return '<span style="width:10px;height:10px;border-radius:50%;display:inline-block;background:' + (colors[status] || '#6b7280') + '" title="' + status + '"></span>';
+  }
+
+  function renderEvents(events) {
+    var tbody = document.getElementById('evtEventsBody');
+    if (!events.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">No events yet. Click "New Event" to create one.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = events.map(function(e) {
+      var schedule = e.cronExpression ? '<span style="font-family:var(--font-mono);font-size:10px">' + esc(e.cronExpression) + '</span>' :
+        (e.startTime ? new Date(e.startTime).toLocaleString() : 'Manual');
+      var dur = evtFormatDuration(e.durationMinutes);
+      var actions = '';
+      if (e.status === 'Scheduled' || e.status === 'Draft')
+        actions += '<button class="btn btn-sm" onclick="window.evtActivate(\'' + e.id + '\')" style="font-size:10px;padding:2px 8px">Start</button> ';
+      if (e.status === 'Active')
+        actions += '<button class="btn btn-sm" onclick="window.evtDeactivate(\'' + e.id + '\')" style="font-size:10px;padding:2px 8px">Stop</button> ';
+      if (e.status !== 'Active')
+        actions += '<button class="btn btn-sm" onclick="window.evtDelete(\'' + e.id + '\')" style="font-size:10px;padding:2px 8px;color:var(--error-bright)">Delete</button>';
+      if (e.status === 'Active')
+        actions += '<button class="btn btn-sm" onclick="window.evtCancel(\'' + e.id + '\')" style="font-size:10px;padding:2px 8px;color:var(--error-bright)">Cancel</button>';
+
+      return '<tr>' +
+        '<td style="text-align:center">' + evtStatusDot(e.status) + '</td>' +
+        '<td style="color:var(--text-bright)">' + esc(e.name) + '</td>' +
+        '<td>' + evtTypeIcon(e.type) + ' <span style="font-size:11px">' + evtTypeLabel(e.type) + '</span></td>' +
+        '<td style="font-family:var(--font-mono);font-size:12px">' + e.multiplier + 'x</td>' +
+        '<td style="font-size:11px">' + schedule + '</td>' +
+        '<td style="font-size:11px">' + dur + '</td>' +
+        '<td>' + actions + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function renderTasks(tasks) {
+    var tbody = document.getElementById('evtTasksBody');
+    if (!tasks.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">No scheduled tasks. Click "New Task" to create one.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = tasks.map(function(t) {
+      var schedule = t.cronExpression ? '<span style="font-family:var(--font-mono);font-size:10px">' + esc(t.cronExpression) + '</span>' :
+        (t.runAt ? new Date(t.runAt).toLocaleString() : '—');
+      var nextRun = t.nextRun ? new Date(t.nextRun).toLocaleString() : '—';
+      var lastRun = t.lastRun ? new Date(t.lastRun).toLocaleString() : 'Never';
+      return '<tr>' +
+        '<td style="text-align:center"><label class="cc-toggle" style="transform:scale(0.75)"><input type="checkbox" ' + (t.enabled ? 'checked' : '') + ' onchange="window.evtToggleTask(\'' + t.id + '\',this.checked)"><span class="cc-toggle-slider"></span></label></td>' +
+        '<td style="color:var(--text-bright)">' + esc(t.name) + '</td>' +
+        '<td style="font-size:11px">' + t.type + '</td>' +
+        '<td style="font-size:11px">' + schedule + '</td>' +
+        '<td style="font-size:11px">' + nextRun + '</td>' +
+        '<td style="font-size:11px">' + lastRun + '</td>' +
+        '<td><button class="btn btn-sm" onclick="window.evtDeleteTask(\'' + t.id + '\')" style="font-size:10px;padding:2px 8px;color:var(--error-bright)">Delete</button></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function evtFormatDuration(mins) {
+    if (mins < 60) return mins + 'm';
+    if (mins < 1440) return Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm';
+    var d = Math.floor(mins / 1440), h = Math.floor((mins % 1440) / 60);
+    return d + 'd' + (h ? ' ' + h + 'h' : '');
+  }
+
+  // ── Event Create Modal ──
+
+  window.showEventCreateModal = function() {
+    evtSelectedType = 'DoubleXP';
+    document.getElementById('evtName').value = '';
+    document.getElementById('evtMultiplier').value = '2.0';
+    document.getElementById('evtDuration').value = '60';
+    document.getElementById('evtCronExpr').value = '';
+    document.getElementById('evtCronDesc').textContent = '';
+    document.getElementById('evtStartTime').value = '';
+    document.getElementById('evtBroadcastStart').checked = true;
+    document.getElementById('evtBroadcastEnd').checked = true;
+    evtSetScheduleMode('now');
+    evtBuildTypeButtons();
+    evtUpdateTypeUI();
+    evtUpdateDurationLabel();
+    document.getElementById('evtCreateModal').style.display = 'block';
+  };
+
+  function evtBuildTypeButtons() {
+    var templates = evtData && evtData.templates ? evtData.templates : [
+      { type: 'DoubleXP', name: 'Double XP' },
+      { type: 'TraderSale', name: 'Trader Sale' },
+      { type: 'LootBoost', name: 'Loot Boost' }
+    ];
+    document.getElementById('evtTypeButtons').innerHTML = templates.map(function(t) {
+      return '<button class="btn btn-sm evtTypeBtn' + (evtSelectedType === t.type ? ' active' : '') + '" data-type="' + t.type + '" onclick="window.evtSelectType(\'' + t.type + '\')" style="font-size:11px;padding:5px 12px">' + evtTypeIcon(t.type) + ' ' + esc(t.name) + '</button>';
+    }).join('');
+  }
+
+  window.evtSelectType = function(type) {
+    evtSelectedType = type;
+    document.querySelectorAll('.evtTypeBtn').forEach(function(b) { b.classList.toggle('active', b.dataset.type === type); });
+    evtUpdateTypeUI();
+  };
+
+  function evtUpdateTypeUI() {
+    var templates = evtData && evtData.templates ? evtData.templates : [];
+    var tmpl = templates.find(function(t) { return t.type === evtSelectedType; });
+    if (tmpl) {
+      document.getElementById('evtMultLabel').textContent = tmpl.multiplierLabel || 'Multiplier';
+      document.getElementById('evtMultiplier').value = tmpl.defaultMultiplier || 2.0;
+    }
+  }
+
+  window.evtSetScheduleMode = function(mode) {
+    evtScheduleMode = mode;
+    document.querySelectorAll('.evtSchedBtn').forEach(function(b) { b.classList.toggle('active', b.dataset.sched === mode); });
+    document.getElementById('evtSchedDatetime').style.display = mode === 'datetime' ? 'block' : 'none';
+    document.getElementById('evtSchedCron').style.display = mode === 'cron' ? 'block' : 'none';
+  };
+
+  document.getElementById('evtDuration').addEventListener('input', evtUpdateDurationLabel);
+  function evtUpdateDurationLabel() {
+    var v = parseInt(document.getElementById('evtDuration').value) || 0;
+    document.getElementById('evtDurationLabel').textContent = '= ' + evtFormatDuration(v);
+  }
+
+  window.evtValidateCron = function() {
+    var expr = document.getElementById('evtCronExpr').value.trim();
+    var desc = document.getElementById('evtCronDesc');
+    if (!expr) { desc.textContent = ''; return; }
+    api('scheduler/cron/validate', { method: 'POST', body: JSON.stringify({ expression: expr }) }).then(function(r) {
+      if (r.valid) {
+        desc.style.color = 'var(--text-dim)';
+        desc.textContent = r.description + (r.nextRun ? ' (next: ' + new Date(r.nextRun).toLocaleString() + ')' : '');
+      } else {
+        desc.style.color = 'var(--error-bright)';
+        desc.textContent = 'Invalid cron expression';
+      }
+    });
+  };
+
+  window.evtSubmitEvent = function() {
+    var body = {
+      type: evtSelectedType,
+      name: document.getElementById('evtName').value.trim(),
+      multiplier: parseFloat(document.getElementById('evtMultiplier').value) || 2.0,
+      durationMinutes: parseInt(document.getElementById('evtDuration').value) || 60,
+      broadcastOnStart: document.getElementById('evtBroadcastStart').checked,
+      broadcastOnEnd: document.getElementById('evtBroadcastEnd').checked,
+      activateNow: evtScheduleMode === 'now',
+      targetIds: []
+    };
+    if (evtScheduleMode === 'datetime') {
+      var dt = document.getElementById('evtStartTime').value;
+      if (dt) body.startTime = new Date(dt).toISOString();
+    }
+    if (evtScheduleMode === 'cron') {
+      body.cronExpression = document.getElementById('evtCronExpr').value.trim();
+      if (!body.cronExpression) { toast('Enter a cron expression', 'error'); return; }
+    }
+    api('scheduler/event', { method: 'POST', body: JSON.stringify(body) }).then(function(r) {
+      if (r.error) { toast(r.error, 'error'); return; }
+      toast('Event created: ' + r.name, 'success');
+      document.getElementById('evtCreateModal').style.display = 'none';
+      loadScheduler();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  // ── Event Actions ──
+
+  window.evtActivate = function(id) {
+    api('scheduler/event/' + id + '/activate', { method: 'POST' }).then(function(r) {
+      if (r.error) { toast(r.error, 'error'); return; }
+      toast('Event started: ' + r.name, 'success');
+      loadScheduler();
+    });
+  };
+
+  window.evtDeactivate = function(id) {
+    api('scheduler/event/' + id + '/deactivate', { method: 'POST' }).then(function(r) {
+      if (r.error) { toast(r.error, 'error'); return; }
+      toast('Event stopped: ' + r.name, 'success');
+      loadScheduler();
+    });
+  };
+
+  window.evtCancel = function(id) {
+    if (!confirm('Cancel this active event? Settings will be restored.')) return;
+    api('scheduler/event/' + id + '/cancel', { method: 'POST' }).then(function(r) {
+      if (r.error) { toast(r.error, 'error'); return; }
+      toast('Event cancelled: ' + r.name, 'success');
+      loadScheduler();
+    });
+  };
+
+  window.evtDelete = function(id) {
+    if (!confirm('Delete this event?')) return;
+    api('scheduler/event/' + id, { method: 'DELETE' }).then(function(r) {
+      toast('Event deleted', 'success');
+      loadScheduler();
+    });
+  };
+
+  // ── Task Create Modal ──
+
+  window.showTaskCreateModal = function() {
+    document.getElementById('evtTaskName').value = '';
+    document.getElementById('evtTaskMessage').value = '';
+    document.getElementById('evtTaskCron').value = '';
+    document.getElementById('evtTaskCronDesc').textContent = '';
+    document.getElementById('evtTaskRunAt').value = '';
+    document.getElementById('evtTaskType').value = 'Broadcast';
+    evtSetTaskScheduleMode('cron');
+    document.getElementById('evtTaskModal').style.display = 'block';
+  };
+
+  window.evtSetTaskScheduleMode = function(mode) {
+    evtTaskScheduleMode = mode;
+    document.querySelectorAll('.evtTaskSchedBtn').forEach(function(b) { b.classList.toggle('active', b.dataset.sched === mode); });
+    document.getElementById('evtTaskCronRow').style.display = mode === 'cron' ? 'block' : 'none';
+    document.getElementById('evtTaskOnceRow').style.display = mode === 'once' ? 'block' : 'none';
+  };
+
+  window.evtValidateTaskCron = function() {
+    var expr = document.getElementById('evtTaskCron').value.trim();
+    var desc = document.getElementById('evtTaskCronDesc');
+    if (!expr) { desc.textContent = ''; return; }
+    api('scheduler/cron/validate', { method: 'POST', body: JSON.stringify({ expression: expr }) }).then(function(r) {
+      if (r.valid) {
+        desc.style.color = 'var(--text-dim)';
+        desc.textContent = r.description + (r.nextRun ? ' (next: ' + new Date(r.nextRun).toLocaleString() + ')' : '');
+      } else {
+        desc.style.color = 'var(--error-bright)';
+        desc.textContent = 'Invalid cron expression';
+      }
+    });
+  };
+
+  window.evtSubmitTask = function() {
+    var body = {
+      type: document.getElementById('evtTaskType').value,
+      name: document.getElementById('evtTaskName').value.trim(),
+      message: document.getElementById('evtTaskMessage').value.trim()
+    };
+    if (evtTaskScheduleMode === 'cron') {
+      body.cronExpression = document.getElementById('evtTaskCron').value.trim();
+      if (!body.cronExpression) { toast('Enter a cron expression', 'error'); return; }
+    } else {
+      var dt = document.getElementById('evtTaskRunAt').value;
+      if (dt) body.runAt = new Date(dt).toISOString();
+      else { toast('Select a date/time', 'error'); return; }
+    }
+    api('scheduler/task', { method: 'POST', body: JSON.stringify(body) }).then(function(r) {
+      if (r.error) { toast(r.error, 'error'); return; }
+      toast('Task created: ' + r.name, 'success');
+      document.getElementById('evtTaskModal').style.display = 'none';
+      loadScheduler();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.evtToggleTask = function(id, enabled) {
+    api('scheduler/task/' + id + '/toggle', { method: 'POST', body: JSON.stringify({ enabled: enabled }) }).then(function(r) {
+      if (r.error) { toast(r.error, 'error'); loadScheduler(); return; }
+      toast('Task ' + (enabled ? 'enabled' : 'disabled'), 'success');
+    });
+  };
+
+  window.evtDeleteTask = function(id) {
+    if (!confirm('Delete this task?')) return;
+    api('scheduler/task/' + id, { method: 'DELETE' }).then(function(r) {
+      toast('Task deleted', 'success');
+      loadScheduler();
     });
   };
 

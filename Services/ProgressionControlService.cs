@@ -19,6 +19,10 @@ public class ProgressionControlService(
     private readonly object _lock = new();
     private bool _snapshotTaken;
 
+    // Event overlay factors (set by EventService, multiplicative on top of config)
+    private double _eventXpFactor = 1.0;
+    private double _eventLootFactor = 1.0;
+
     // ── XP snapshots ──
     private double _snapKillVictimLevelExp;
     private double _snapKillHeadShotMult;
@@ -131,6 +135,19 @@ public class ProgressionControlService(
     // ═══════════════════════════════════════════════════════════════
     //  INITIALIZATION
     // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Set event overlay factors (called by EventService). Triggers re-apply.
+    /// </summary>
+    public void SetEventFactors(double xpFactor, double lootFactor)
+    {
+        lock (_lock)
+        {
+            _eventXpFactor = xpFactor;
+            _eventLootFactor = lootFactor;
+            if (_snapshotTaken) ApplyConfig();
+        }
+    }
 
     public void Initialize()
     {
@@ -424,7 +441,7 @@ public class ProgressionControlService(
         var cfg = globals.Configuration;
         int count = 0;
 
-        var globalMult = xp.GlobalXpMultiplier;
+        var globalMult = xp.GlobalXpMultiplier * _eventXpFactor;
         var raidMult = xp.RaidXpMultiplier * globalMult;
 
         // Kill XP (raid)
@@ -481,9 +498,10 @@ public class ProgressionControlService(
         var cfg = globals.Configuration;
         int count = 0;
 
-        // Global skill progress rate
-        cfg.SkillsSettings.SkillProgressRate = _snapSkillProgressRate * skills.GlobalSkillSpeedMultiplier;
-        cfg.SkillsSettings.WeaponSkillProgressRate = _snapWeaponSkillProgressRate * skills.GlobalSkillSpeedMultiplier;
+        // Global skill progress rate (event factor applied to skill speed too)
+        var skillSpeedMult = skills.GlobalSkillSpeedMultiplier * _eventXpFactor;
+        cfg.SkillsSettings.SkillProgressRate = _snapSkillProgressRate * skillSpeedMult;
+        cfg.SkillsSettings.WeaponSkillProgressRate = _snapWeaponSkillProgressRate * skillSpeedMult;
         if (Math.Abs(skills.GlobalSkillSpeedMultiplier - 1.0) > 0.001) count += 2;
 
         // Fatigue — higher multiplier = more fatigue = harder
@@ -848,10 +866,13 @@ public class ProgressionControlService(
             if (loc?.Base == null) continue;
             if (!_snapLocationLootModifiers.TryGetValue(locId, out var snap)) continue;
 
-            // Restore from snapshot, then multiply
-            if (Math.Abs(loot.LooseLootMultiplier - 1.0) > 0.001)
+            // Restore from snapshot, then multiply (including event loot factor)
+            var looseMult = loot.LooseLootMultiplier * _eventLootFactor;
+            var containerMult = loot.ContainerLootMultiplier * _eventLootFactor;
+
+            if (Math.Abs(looseMult - 1.0) > 0.001)
             {
-                loc.Base.GlobalLootChanceModifier = (snap.looseLoot ?? 0) * loot.LooseLootMultiplier;
+                loc.Base.GlobalLootChanceModifier = (snap.looseLoot ?? 0) * looseMult;
                 count++;
             }
             else
@@ -859,9 +880,9 @@ public class ProgressionControlService(
                 loc.Base.GlobalLootChanceModifier = snap.looseLoot;
             }
 
-            if (Math.Abs(loot.ContainerLootMultiplier - 1.0) > 0.001)
+            if (Math.Abs(containerMult - 1.0) > 0.001)
             {
-                loc.Base.GlobalContainerChanceModifier = (snap.containerLoot ?? 0) * loot.ContainerLootMultiplier;
+                loc.Base.GlobalContainerChanceModifier = (snap.containerLoot ?? 0) * containerMult;
                 count++;
             }
             else

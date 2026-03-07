@@ -433,4 +433,8 @@ public static class ActionType
     public const string PlayerUnban = "PlayerUnban";
     public const string PlayerGiveAll = "PlayerGiveAll";
     public const string BroadcastMail = "BroadcastMail";
+    public const string EventStart = "EventStart";
+    public const string EventEnd = "EventEnd";
+    public const string EventCancel = "EventCancel";
+    public const string ScheduledTask = "ScheduledTask";
 }

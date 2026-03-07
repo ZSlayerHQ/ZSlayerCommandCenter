@@ -46,6 +46,7 @@ public class CommandCenterHttpListener(
     ProfileActivityService profileActivityService,
     ProfileBackupService backupService,
     WipeService wipeService,
+    EventService eventService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -199,6 +200,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("backups/") || path == "backups" || path.StartsWith("wipe/"))
             {
                 await HandleBackupRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle scheduler/event routes
+            if (path.StartsWith("scheduler/") || path == "scheduler")
+            {
+                await HandleSchedulerRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -3282,6 +3290,163 @@ public class CommandCenterHttpListener(
                 }
 
                 await WriteJson(context, 404, new { error = "Unknown backup route" });
+                break;
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  SCHEDULER & EVENTS ROUTES
+    // ═══════════════════════════════════════════════════════════════
+
+    private async Task HandleSchedulerRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        switch (path)
+        {
+            // GET /scheduler — full overview (events, tasks, active, templates)
+            case "scheduler" when method == "GET":
+                await WriteJson(context, 200, eventService.GetOverview());
+                break;
+
+            // GET /scheduler/active — currently active events only
+            case "scheduler/active" when method == "GET":
+                await WriteJson(context, 200, new { events = eventService.GetActiveEvents() });
+                break;
+
+            // POST /scheduler/event — create a new event
+            case "scheduler/event" when method == "POST":
+            {
+                var body = await ReadBody<CreateEventRequest>(context);
+                if (body == null) { await WriteJson(context, 400, new { error = "Invalid request body" }); break; }
+                try
+                {
+                    var evt = eventService.CreateEvent(body, headerSessionId);
+                    await WriteJson(context, 200, evt);
+                }
+                catch (ArgumentException ex)
+                {
+                    await WriteJson(context, 400, new { error = ex.Message });
+                }
+                break;
+            }
+
+            // POST /scheduler/task — create a new scheduled task
+            case "scheduler/task" when method == "POST":
+            {
+                var body = await ReadBody<CreateTaskRequest>(context);
+                if (body == null) { await WriteJson(context, 400, new { error = "Invalid request body" }); break; }
+                try
+                {
+                    var task = eventService.CreateTask(body);
+                    activityLogService.LogAction(ActionType.ScheduledTask, headerSessionId,
+                        $"Created scheduled task: '{task.Name}' ({task.Type})");
+                    await WriteJson(context, 200, task);
+                }
+                catch (ArgumentException ex)
+                {
+                    await WriteJson(context, 400, new { error = ex.Message });
+                }
+                break;
+            }
+
+            // POST /scheduler/cron/validate — validate a cron expression
+            case "scheduler/cron/validate" when method == "POST":
+            {
+                var body = await ReadBody<CronValidateRequest>(context);
+                if (body == null) { await WriteJson(context, 400, new { error = "Invalid request body" }); break; }
+                var valid = CronParser.IsValid(body.Expression ?? "");
+                string? description = null;
+                DateTime? nextRun = null;
+                if (valid)
+                {
+                    description = CronParser.Describe(body.Expression!);
+                    nextRun = CronParser.GetNextOccurrence(body.Expression!, DateTime.UtcNow);
+                }
+                await WriteJson(context, 200, new { valid, description, nextRun });
+                break;
+            }
+
+            default:
+            {
+                // Parameterized event routes: scheduler/event/{id}/{action}
+                if (path.StartsWith("scheduler/event/"))
+                {
+                    var parts = path["scheduler/event/".Length..].Split('/');
+                    var eventId = parts[0];
+
+                    if (parts.Length == 1 && method == "GET")
+                    {
+                        var evt = eventService.GetEvent(eventId);
+                        if (evt == null) { await WriteJson(context, 404, new { error = "Event not found" }); break; }
+                        await WriteJson(context, 200, evt);
+                        break;
+                    }
+
+                    if (parts.Length == 1 && method == "DELETE")
+                    {
+                        var deleted = eventService.DeleteEvent(eventId);
+                        await WriteJson(context, deleted ? 200 : 404, new { success = deleted });
+                        break;
+                    }
+
+                    if (parts.Length == 2)
+                    {
+                        var action = parts[1];
+                        switch (action)
+                        {
+                            case "activate" when method == "POST":
+                            {
+                                var evt = eventService.ActivateEvent(eventId, headerSessionId);
+                                if (evt == null) { await WriteJson(context, 404, new { error = "Event not found" }); break; }
+                                await WriteJson(context, 200, evt);
+                                break;
+                            }
+                            case "deactivate" when method == "POST":
+                            {
+                                var evt = eventService.DeactivateEvent(eventId, headerSessionId);
+                                if (evt == null) { await WriteJson(context, 404, new { error = "Event not found" }); break; }
+                                await WriteJson(context, 200, evt);
+                                break;
+                            }
+                            case "cancel" when method == "POST":
+                            {
+                                var evt = eventService.CancelEvent(eventId, headerSessionId);
+                                if (evt == null) { await WriteJson(context, 404, new { error = "Event not found" }); break; }
+                                await WriteJson(context, 200, evt);
+                                break;
+                            }
+                            default:
+                                await WriteJson(context, 404, new { error = "Unknown event action" });
+                                break;
+                        }
+                        break;
+                    }
+                }
+
+                // Parameterized task routes: scheduler/task/{id}/{action}
+                if (path.StartsWith("scheduler/task/"))
+                {
+                    var parts = path["scheduler/task/".Length..].Split('/');
+                    var taskId = parts[0];
+
+                    if (parts.Length == 1 && method == "DELETE")
+                    {
+                        var deleted = eventService.DeleteTask(taskId);
+                        await WriteJson(context, deleted ? 200 : 404, new { success = deleted });
+                        break;
+                    }
+
+                    if (parts.Length == 2 && parts[1] == "toggle" && method == "POST")
+                    {
+                        var body = await ReadBody<TaskToggleRequest>(context);
+                        var task = eventService.ToggleTask(taskId, body?.Enabled ?? true);
+                        if (task == null) { await WriteJson(context, 404, new { error = "Task not found" }); break; }
+                        await WriteJson(context, 200, task);
+                        break;
+                    }
+                }
+
+                await WriteJson(context, 404, new { error = "Unknown scheduler route" });
                 break;
             }
         }

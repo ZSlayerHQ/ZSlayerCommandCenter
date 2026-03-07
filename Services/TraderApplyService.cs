@@ -27,8 +27,28 @@ public class TraderApplyService(
     private bool _initialized;
     private long? _lastApplyTimeMs;
 
+    // Event overlay factor (set by EventService, multiplicative on buy prices)
+    private double _eventPriceFactor = 1.0;
+
     // Snapshot of original restock timers (traderId → min, max)
     private readonly Dictionary<string, (int min, int max)> _originalRestockTimers = new();
+
+    /// <summary>
+    /// Set event price factor (called by EventService). Triggers re-apply.
+    /// </summary>
+    public void SetEventPriceFactor(double factor)
+    {
+        lock (_lock)
+        {
+            _eventPriceFactor = factor;
+            if (_initialized) ApplyConfig();
+        }
+    }
+
+    /// <summary>
+    /// Get the current event price factor (for display purposes).
+    /// </summary>
+    public double EventPriceFactor => _eventPriceFactor;
 
     /// <summary>
     /// Initialize: discover traders, snapshot originals, apply config.
@@ -94,8 +114,8 @@ public class TraderApplyService(
                 // Step 1: Restore ALL traders from snapshots
                 var tradersAffected = RestoreAllTraders();
 
-                // Step 2: Apply buy price multipliers
-                var itemsModified = priceService.ApplyBuyMultipliers(config);
+                // Step 2: Apply buy price multipliers (with event overlay)
+                var itemsModified = priceService.ApplyBuyMultipliers(config, _eventPriceFactor);
 
                 // Step 3: Apply sell multipliers (modify buy_price_coef)
                 priceService.ApplySellMultipliers(config);

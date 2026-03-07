@@ -22,6 +22,7 @@ public class CommandCenterMod(
     QuestOverrideService questOverrideService,
     ProgressionControlService progressionControlService,
     ProfileBackupService backupService,
+    EventService eventService,
     TelemetryService telemetryService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
@@ -127,6 +128,9 @@ public class CommandCenterMod(
 
         // Initialize backup service (auto-backup timer, startup backup, cleanup)
         backupService.Initialize();
+
+        // Initialize scheduler & events (load state, re-apply active events, start timer)
+        eventService.Initialize();
 
         // Detect bound IP and build URLs based on bind mode
         var httpCfg = configServer.GetConfig<HttpConfig>();
