@@ -5,14 +5,15 @@
 **The ultimate browser-based admin toolkit for SPT 4.0 / FIKA**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-c8aa6e.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/v2.9.1-c8aa6e.svg)](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
+[![Version](https://img.shields.io/badge/v2.9.3-c8aa6e.svg)](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
+[![Phases](https://img.shields.io/badge/Phases_Complete-8%2F16-c8aa6e.svg)]()
 [![SPT](https://img.shields.io/badge/SPT-4.0.x-c8aa6e.svg)]()
 [![FIKA](https://img.shields.io/badge/FIKA-Compatible-4a7c59.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-9.0-512bd4.svg)]()
 
 ---
 
-A complete server administration platform for [SPT](https://www.sp-tarkov.com/) that gives you total control over your server from a single browser tab. Manage players, watch raids unfold in real time on a live minimap, reshape the entire economy, customize every trader's inventory down to individual items, and orchestrate headless clients — all without touching a config file or restarting your server.
+A complete server administration platform for [SPT](https://www.sp-tarkov.com/) that gives you total control over your server from a single browser tab. Manage players, watch raids unfold in real time on a live minimap, reshape the entire economy, customize every trader's inventory down to individual items, edit quests, control XP and progression rates, schedule automated events, back up and restore profiles, and orchestrate headless clients — all without touching a config file or restarting your server.
 
 **One mod. One URL. Full control.**
 
@@ -52,8 +53,13 @@ Running an SPT / FIKA server means juggling dozens of JSON config files, restart
 | **Live Raid Telemetry** | Watch raids in real time — player health, bot counts, kill feed, combat stats, performance metrics |
 | **Live Minimap** | Overhead map with color-coded entities, rotation arrows, multi-layer support, auto-follow, pop-out window |
 | **Player Management** | Full profile control — give items, set XP/skills/quests, send mail, browse 50+ stats across 5 categories |
+| **Quest Editor** | Global and per-quest overrides for objectives, rewards, FIR requirements, and level gating. Visual quest tree explorer |
+| **Progression & Skills** | XP multipliers, skill speed, loot rates, insurance, stamina, health regen — all adjustable in real time |
 | **Flea Market Control** | Global/category/per-item price multipliers, tax control, offer settings, NPC regeneration, live preview |
 | **Trader Control** | Auto-discovers all traders (vanilla + modded), per-trader buy/sell/stock multipliers, restock timers, loyalty shifts, currency override, disabled items, per-item price overrides, add custom items to any trader, custom avatars and display names, saveable presets |
+| **Scheduler & Events** | Cron-based scheduling for Double XP, Trader Sales, Loot Boost events with multiplicative stacking. Automated tasks for broadcasts, backups, and restarts |
+| **Backup & Restore** | Full profile backup system with timestamped snapshots, selective restore, and server wipe tools |
+| **Admin Panel** | Centralized server/headless management, watchdog monitoring, FIKA settings, security controls, system metrics |
 | **Headless Client Manager** | Auto-start, auto-restart on crash, Start/Stop/Restart from the browser, status + uptime monitoring |
 | **Access Control** | Whitelist, blacklist, and ban system with password protection and session-based authentication |
 | **Raid History** | Searchable archive of completed raids with full player scoreboards, kill timelines, and combat breakdowns |
@@ -241,6 +247,92 @@ Every admin action is tracked for accountability and auditing.
 
 ---
 
+### Quest Editor
+
+Full control over every quest in the game — objectives, rewards, prerequisites, and more.
+
+- **Global Multipliers** — scale all quest objective counts and reward amounts (XP, money, items) with a single multiplier. Make quests easier or harder server-wide
+- **FIR Removal** — globally remove Found-in-Raid requirements from all quest objectives. One toggle to end FIR frustration
+- **Level Shift** — shift all quest level requirements down by a configurable amount. Make endgame quests accessible earlier
+- **Per-Quest Overrides** — set exact multipliers for individual quest objectives and rewards. Pin a specific quest's difficulty without affecting others
+- **Quest Browser** — searchable list of all quests with trader, level, status filtering. Paginated for large modded quest pools
+- **Quest Detail Panel** — expand any quest to see all objectives (with current multiplied values), all rewards, and quest chain dependencies
+- **Quest Tree Explorer** — visual prerequisite tree showing quest chains and unlock paths
+- **Trader & Location Filters** — filter quests by issuing trader or required map
+- **Per-Player Quest State** — set any quest to locked/available/started/completed/failed for individual players from the player management panel
+- **Snapshot-and-Restore** — all modifications use the same snapshot pattern as other features. Original quest data is always recoverable
+
+---
+
+### Progression & Skills
+
+Control XP rates, skill leveling, loot generation, insurance, and survival mechanics — all adjustable in real time without server restart.
+
+- **XP Multiplier** — global experience multiplier applied to all XP gains (kill, loot, quest, explore). Works multiplicatively with active Double XP events
+- **Skill Speed Multiplier** — scale how fast all skills level up. Stacks with event XP factors
+- **Loot Multipliers** — independent multipliers for loose loot and container loot spawn rates. Stacks with Loot Boost events
+- **Insurance Settings** — control insurance return chance, min/max return time, and insurance cost multiplier
+- **Stamina & Health** — adjust stamina drain/recovery rates, out-of-raid health regeneration speed, and energy/hydration drain
+- **Preset Buttons** — one-click presets for common configurations (Hardcore, Relaxed, Default, etc.)
+- **Real-Time Apply** — all changes take effect immediately on the live server, no restart required
+
+---
+
+### Scheduler & Events
+
+Automate server events and recurring tasks with full 5-field cron scheduling.
+
+#### Events
+- **Double XP** — multiply all experience and skill gains for a set duration. Configurable multiplier (default 2x)
+- **Trader Sale** — reduce all trader buy prices for a set duration. Configurable discount multiplier
+- **Loot Boost** — increase loose and container loot spawn rates for a set duration. Configurable multiplier
+- **Multiplicative Stacking** — multiple concurrent events multiply together (e.g., 2x XP + 3x XP = 6x XP). No override conflicts
+- **Schedule Modes** — activate now, schedule for a specific date/time, or set a recurring cron schedule
+- **Broadcast Notifications** — optional in-game mail notifications to all players when events start and end, with customizable messages
+- **Active Event Banner** — live countdown timers showing all active events at the top of the Events tab
+
+#### Scheduled Tasks
+- **Broadcast** — send automated messages to all players on a schedule
+- **Backup** — trigger profile backups at regular intervals
+- **Server Restart** — schedule server restarts (daily maintenance windows, etc.)
+- **Headless Restart** — schedule headless client restarts independently
+- **Enable/Disable** — toggle individual tasks on or off without deleting them
+
+#### Cron Scheduling
+- **Full 5-field syntax** — `minute hour day-of-month month day-of-week`
+- **All standard features** — wildcards (`*`), ranges (`1-5`), steps (`*/15`), lists (`1,3,5`), day names (`SUN-SAT`), month names (`JAN-DEC`)
+- **Preset buttons** — quick-select common schedules (every hour, daily at midnight, weekends only, etc.)
+- **Validation** — real-time cron expression validation with human-readable description and next-run preview
+- **Restart-safe** — scheduler state persists to disk. Active events resume after server restart; missed tasks are caught up
+
+---
+
+### Backup & Restore
+
+Profile backup system with timestamped snapshots and server wipe tools, accessible from the Admin tab.
+
+- **Manual Backups** — create a named backup of all player profiles with one click
+- **Scheduled Backups** — automate backups via the Scheduler tab's cron-based task system
+- **Selective Restore** — browse backup history and restore individual profiles or the entire server
+- **Server Wipe** — full server wipe tool with confirmation safeguards
+- **Backup Management** — view, download, and delete backup files from the UI
+
+---
+
+### Admin Panel
+
+Centralized administration hub for server infrastructure, process management, and system settings.
+
+- **System Metrics** — at-a-glance cards showing active instances, connected players, system health score, and server uptime with mini gauges
+- **Process Management** — two-column layout with SPT Server controls (start/stop/restart, connected watchdogs, security settings) and Headless Client controls (start/stop/restart, headless settings, FIKA settings)
+- **FIKA Settings** — toggle headless-only raids (block players from self-hosting), manage client plugin blacklist by GUID
+- **Watchdog Integration** — real-time watchdog connection status, WebSocket-based communication for remote process control
+- **Security Settings** — security token management for watchdog authentication (show/copy/regenerate)
+- **Global Search** — filter activity log entries and console output by keyword
+- **Console Output** — server and headless consoles relocated to the admin panel for focused monitoring
+
+---
+
 ## Quick Start
 
 ### 1. Install the Server Mod
@@ -266,7 +358,7 @@ Start your SPT server. The startup banner displays your Command Center URLs:
 
 ```
 ╔════════════════════════════════════════════════════╗
-║           ZSLAYER COMMAND CENTER v2.6.0            ║
+║           ZSLAYER COMMAND CENTER v2.9.3            ║
 ║                                                    ║
 ║  Local:  https://127.0.0.1:6969/zslayer/cc/        ║
 ║  LAN:    https://192.168.x.x:6969/zslayer/cc/      ║
@@ -322,6 +414,9 @@ All settings are managed through the web UI. The config file at `config/config.j
 | `flea` | Global / category / item price multipliers, tax, offers, regen, barter settings |
 | `headless` | Auto-start, auto-restart, profile ID, EXE path, launch arguments |
 | `traders` | Global/per-trader multipliers, overrides, added items, display customizations, restock, loyalty |
+| `quests` | Global/per-quest objective & reward multipliers, FIR removal, level shift |
+| `progression` | XP multiplier, skill speed, loot rates, insurance, stamina, health regen |
+| `scheduler` | Persisted events and scheduled tasks (separate file: `config/scheduler/scheduler-state.json`) |
 
 </details>
 
@@ -333,7 +428,8 @@ All settings are managed through the web UI. The config file at `config/config.j
 ┌──────────────────────────────────────────────────────────────┐
 │                         BROWSER                              │
 │            commandcenter.html (single-file UI)               │
-│   Dashboard │ Raid Info │ Items │ Players │ Flea │ Traders   │
+│  Dashboard │ Raid │ Items │ Players │ Quests │ Progression │
+│        │ Flea │ Traders │ Events │ Admin                  │
 └──────────────────────┬───────────────────────────────────────┘
                        │  HTTPS (GET/POST/DELETE JSON)
                        │  Auth: X-Session-Id + X-Password
@@ -349,18 +445,28 @@ All settings are managed through the web UI. The config file at `config/config.j
 │       ├── PlayerStatsService       Player stats + economy    │
 │       ├── ConsoleBufferService     Server log capture        │
 │       ├── HeadlessLogService       Headless log tailing      │
-│       ├── HeadlessProcessService   Process lifecycle         │
 │       ├── ItemSearchService        Item database search      │
 │       ├── ItemGiveService          Mail-based item delivery  │
 │       ├── PlayerManagementService  Profile operations        │
 │       ├── PlayerMailService        In-game mail              │
-│       ├── QuestBrowserService      Quest browsing            │
+│       ├── PlayerBuildService       Gear presets / builds     │
 │       ├── FleaPriceService         Price multipliers         │
 │       ├── OfferRegenerationService NPC offer regeneration    │
 │       ├── TraderDiscoveryService   Trader auto-discovery     │
 │       ├── TraderPriceService       Buy/sell multipliers      │
 │       ├── TraderStockService       Stock, restock, loyalty   │
 │       ├── TraderApplyService       Orchestrator + presets    │
+│       ├── QuestDiscoveryService    Quest auto-discovery      │
+│       ├── QuestOverrideService     Quest multipliers + FIR   │
+│       ├── QuestLocaleService       Quest locale updates      │
+│       ├── ProgressionControlService XP, loot, insurance      │
+│       ├── SkillEditorService       Per-player skill editing  │
+│       ├── EventService             Scheduler + event engine  │
+│       ├── CronParser               5-field cron parsing      │
+│       ├── ProfileBackupService     Profile backup/restore    │
+│       ├── WipeService              Server wipe tools         │
+│       ├── FikaConfigService        FIKA server config        │
+│       ├── WatchdogManager          Watchdog WebSocket mgmt   │
 │       ├── RaidTrackingService      Raid data tracking        │
 │       ├── AccessControlService     Whitelist / blacklist     │
 │       ├── ProfileActivityService   Login/online tracking     │
@@ -578,6 +684,78 @@ All endpoints are prefixed with `/zslayer/cc/`. Authentication via `X-Session-Id
 
 </details>
 
+<details>
+<summary><strong>Quests</strong></summary>
+
+<br />
+
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| `GET` | `/quests/config` | Get quest override configuration |
+| `POST` | `/quests/config` | Update quest config + apply |
+| `POST` | `/quests/apply` | Force re-apply quest overrides |
+| `POST` | `/quests/reset` | Reset all quest overrides to defaults |
+| `GET` | `/quests/status` | Quest system status (counts, apply state) |
+| `GET` | `/quests/tree` | Quest prerequisite tree data |
+| `GET` | `/quests/traders` | List traders that issue quests |
+| `GET` | `/quests/locations` | List quest locations / maps |
+| `GET` | `/quests/{questId}` | Quest detail with objectives + rewards |
+
+</details>
+
+<details>
+<summary><strong>Progression & Skills</strong></summary>
+
+<br />
+
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| `GET` | `/progression/config` | Get progression configuration |
+| `POST` | `/progression/config` | Update progression config + apply |
+| `POST` | `/progression/reset` | Reset progression to defaults |
+
+</details>
+
+<details>
+<summary><strong>Scheduler & Events</strong></summary>
+
+<br />
+
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| `GET` | `/scheduler` | Full overview (events, tasks, active events, templates) |
+| `GET` | `/scheduler/active` | Currently active events only |
+| `POST` | `/scheduler/event` | Create a new event |
+| `GET` | `/scheduler/event/{id}` | Get event details |
+| `DELETE` | `/scheduler/event/{id}` | Delete an event |
+| `POST` | `/scheduler/event/{id}/activate` | Start an event now |
+| `POST` | `/scheduler/event/{id}/deactivate` | Stop an active event |
+| `POST` | `/scheduler/event/{id}/cancel` | Cancel a scheduled event |
+| `POST` | `/scheduler/task` | Create a new scheduled task |
+| `DELETE` | `/scheduler/task/{id}` | Delete a scheduled task |
+| `POST` | `/scheduler/task/{id}/toggle` | Enable/disable a task |
+| `POST` | `/scheduler/cron/validate` | Validate cron expression + get description |
+
+</details>
+
+<details>
+<summary><strong>Backup & Admin</strong></summary>
+
+<br />
+
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| `GET` | `/backups` | List available backups |
+| `POST` | `/backup` | Create a new backup |
+| `POST` | `/backup/restore` | Restore from a backup |
+| `DELETE` | `/backup/{name}` | Delete a backup |
+| `POST` | `/wipe` | Server wipe (with confirmation) |
+| `GET` | `/watchdog/status` | Watchdog connection status |
+| `GET` | `/fika/config` | Get FIKA settings |
+| `POST` | `/fika/config` | Update FIKA settings |
+
+</details>
+
 ---
 
 ## Roadmap
@@ -591,10 +769,10 @@ Development is organized into phases. Each phase is fully completed and tested b
 | **Done** | 2.5 | **Headless Telemetry** | Live raid monitoring, kill feed, combat stats, minimap, raid history |
 | **Done** | 3 | **Flea Market** | Price multipliers, tax, offers, regeneration, category controls |
 | **Done** | 4 | **Trader Control** | Full trader management — pricing, stock, restock, loyalty, item injection, presets, display customization |
-| | 5 | **Quest Editor** | Modify quest objectives, rewards, prerequisites |
-| | 6 | **Progression & Skills** | XP rates, skill leveling, hideout, insurance, stamina |
-| | 7 | **Backup & Restore** | Database snapshots, restore points, wipe tools |
-| | 8 | **Scheduler & Events** | Timed events, recurring actions, automation |
+| **Done** | 5 | **Quest Editor** | Global/per-quest objective & reward multipliers, FIR removal, level shift, quest tree explorer |
+| **Done** | 6 | **Progression & Skills** | XP rates, skill speed, loot multipliers, insurance, stamina, health regen |
+| **Done** | 7 | **Backup & Restore** | Profile backups, selective restore, server wipe tools |
+| **Done** | 8A | **Scheduler & Events** | Cron scheduling, Double XP / Trader Sale / Loot Boost events, automated tasks |
 | | 9 | **Game Values Editor** | Ammo, armor, weapons, health, bots, loot, airdrops |
 | | 10 | **Config Profiles** | Save / load / export / share config presets |
 | | 11 | **Gear Presets** | Loadout templates, weapon builds, kit distribution |
@@ -610,11 +788,11 @@ Development is organized into phases. Each phase is fully completed and tested b
 
 | Component | Technology |
 |:----------|:-----------|
-| **Server Mod** | C# 12 / .NET 9.0, SPTarkov DI (`[Injectable]`), custom `IHttpListener`, 33+ source files |
+| **Server Mod** | C# 12 / .NET 9.0, SPTarkov DI (`[Injectable]`), custom `IHttpListener`, 40+ source files |
 | **Telemetry Plugin** | C# / .NET Standard 2.1, BepInEx 5.x, Harmony patches, async HTTP queue |
-| **Watchdog** | C# / WPF, .NET 9.0, process monitoring with crash detection |
+| **Watchdog** | C# / WPF, .NET 9.0, process monitoring with crash detection, WebSocket communication |
 | **Frontend** | Single HTML file — inline CSS + JS, zero build tools, zero dependencies, zero frameworks |
-| **API** | RESTful JSON over HTTPS at `/zslayer/cc/`, 60+ endpoints |
+| **API** | RESTful JSON over HTTPS at `/zslayer/cc/`, 80+ endpoints |
 | **Serialization** | `System.Text.Json` (server) / `Newtonsoft.Json` (plugin) |
 | **Design** | Tarkov-inspired dark theme, gold accent `#c8aa6e`, monospace typography, responsive layout |
 
@@ -647,7 +825,7 @@ No. The command center is entirely server-side. Players don't need any client mo
 
 <br />
 
-Yes. Dashboard, Items, Players, Flea, and Traders tabs all work on vanilla SPT. Only the Headless Client Manager and Raid Info (live telemetry + minimap) require FIKA + a headless client.
+Yes. Dashboard, Items, Players, Quests, Progression, Flea, Traders, Events, and Admin tabs all work on vanilla SPT. Only the Headless Client Manager, Raid Info (live telemetry + minimap), and FIKA Settings require FIKA + a headless client.
 
 </details>
 
