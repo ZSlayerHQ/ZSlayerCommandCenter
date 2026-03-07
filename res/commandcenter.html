@@ -4403,7 +4403,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <button class="nav-btn" data-nav="traders" onclick="switchMainTab('traders')">Traders</button>
     <button class="nav-btn" data-nav="quests" onclick="switchMainTab('quests')">Quests</button>
     <button class="nav-btn" data-nav="progression" onclick="switchMainTab('progression')">Progression</button>
-    <button class="nav-btn disabled" data-nav="backups" onclick="switchMainTab('backups')">Backups <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn" data-nav="events" onclick="switchMainTab('events')">Events</button>
     <button class="nav-btn disabled" data-nav="gamevalues" onclick="switchMainTab('gamevalues')">Game Values <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="profiles" onclick="switchMainTab('profiles')">Profiles <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
@@ -16561,7 +16560,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var timeLeft = e.expiresAt ? formatTimeLeft(new Date(e.expiresAt)) : 'No expiry';
       return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">' +
         '<span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block"></span>' +
-        '<span style="color:var(--text-bright)">' + esc(e.name) + '</span>' +
+        '<span style="color:var(--text-bright)">' + escH(e.name) + '</span>' +
         '<span style="color:var(--text-muted);font-size:11px">' + evtTypeLabel(e.type) + ' &middot; ' + e.multiplier + 'x</span>' +
         '<span style="margin-left:auto;font-size:10px;color:var(--text-dim)">' + timeLeft + '</span>' +
         '</div>';
@@ -16603,7 +16602,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       return;
     }
     tbody.innerHTML = events.map(function(e) {
-      var schedule = e.cronExpression ? '<span style="font-family:var(--font-mono);font-size:10px">' + esc(e.cronExpression) + '</span>' :
+      var schedule = e.cronExpression ? '<span style="font-family:var(--font-mono);font-size:10px">' + escH(e.cronExpression) + '</span>' :
         (e.startTime ? new Date(e.startTime).toLocaleString() : 'Manual');
       var dur = evtFormatDuration(e.durationMinutes);
       var actions = '';
@@ -16618,7 +16617,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
       return '<tr>' +
         '<td style="text-align:center">' + evtStatusDot(e.status) + '</td>' +
-        '<td style="color:var(--text-bright)">' + esc(e.name) + '</td>' +
+        '<td style="color:var(--text-bright)">' + escH(e.name) + '</td>' +
         '<td>' + evtTypeIcon(e.type) + ' <span style="font-size:11px">' + evtTypeLabel(e.type) + '</span></td>' +
         '<td style="font-family:var(--font-mono);font-size:12px">' + e.multiplier + 'x</td>' +
         '<td style="font-size:11px">' + schedule + '</td>' +
@@ -16635,13 +16634,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       return;
     }
     tbody.innerHTML = tasks.map(function(t) {
-      var schedule = t.cronExpression ? '<span style="font-family:var(--font-mono);font-size:10px">' + esc(t.cronExpression) + '</span>' :
+      var schedule = t.cronExpression ? '<span style="font-family:var(--font-mono);font-size:10px">' + escH(t.cronExpression) + '</span>' :
         (t.runAt ? new Date(t.runAt).toLocaleString() : '—');
       var nextRun = t.nextRun ? new Date(t.nextRun).toLocaleString() : '—';
       var lastRun = t.lastRun ? new Date(t.lastRun).toLocaleString() : 'Never';
       return '<tr>' +
         '<td style="text-align:center"><label class="cc-toggle" style="transform:scale(0.75)"><input type="checkbox" ' + (t.enabled ? 'checked' : '') + ' onchange="window.evtToggleTask(\'' + t.id + '\',this.checked)"><span class="cc-toggle-slider"></span></label></td>' +
-        '<td style="color:var(--text-bright)">' + esc(t.name) + '</td>' +
+        '<td style="color:var(--text-bright)">' + escH(t.name) + '</td>' +
         '<td style="font-size:11px">' + t.type + '</td>' +
         '<td style="font-size:11px">' + schedule + '</td>' +
         '<td style="font-size:11px">' + nextRun + '</td>' +
@@ -16684,7 +16683,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       { type: 'LootBoost', name: 'Loot Boost' }
     ];
     document.getElementById('evtTypeButtons').innerHTML = templates.map(function(t) {
-      return '<button class="btn btn-sm evtTypeBtn' + (evtSelectedType === t.type ? ' active' : '') + '" data-type="' + t.type + '" onclick="window.evtSelectType(\'' + t.type + '\')" style="font-size:11px;padding:5px 12px">' + evtTypeIcon(t.type) + ' ' + esc(t.name) + '</button>';
+      return '<button class="btn btn-sm evtTypeBtn' + (evtSelectedType === t.type ? ' active' : '') + '" data-type="' + t.type + '" onclick="window.evtSelectType(\'' + t.type + '\')" style="font-size:11px;padding:5px 12px">' + evtTypeIcon(t.type) + ' ' + escH(t.name) + '</button>';
     }).join('');
   }
 
