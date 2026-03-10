@@ -45,6 +45,9 @@ public record CommandCenterConfig
 
     [JsonPropertyName("skillIcons")]
     public Dictionary<string, string> SkillIcons { get; set; } = new();
+
+    [JsonPropertyName("gameValues")]
+    public GameValuesConfig GameValues { get; set; } = new();
 }
 
 public record HeadlessConfig

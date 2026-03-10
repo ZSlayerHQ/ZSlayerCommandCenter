@@ -24,6 +24,7 @@ public class CommandCenterMod(
     ProfileBackupService backupService,
     EventService eventService,
     TelemetryService telemetryService,
+    GameValuesService gameValuesService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
     ISptLogger<CommandCenterMod> logger) : IOnLoad
@@ -131,6 +132,9 @@ public class CommandCenterMod(
 
         // Initialize scheduler & events (load state, re-apply active events, start timer)
         eventService.Initialize();
+
+        // Initialize game values editor (snapshot items DB, apply saved overrides)
+        gameValuesService.Initialize();
 
         // Detect bound IP and build URLs based on bind mode
         var httpCfg = configServer.GetConfig<HttpConfig>();

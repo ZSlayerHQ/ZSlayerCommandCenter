@@ -47,6 +47,7 @@ public class CommandCenterHttpListener(
     ProfileBackupService backupService,
     WipeService wipeService,
     EventService eventService,
+    GameValuesService gameValuesService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -207,6 +208,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("scheduler/") || path == "scheduler")
             {
                 await HandleSchedulerRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle game values routes
+            if (path.StartsWith("gamevalues/") || path == "gamevalues")
+            {
+                await HandleGameValuesRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -3027,6 +3035,242 @@ public class CommandCenterHttpListener(
                             $"Progression: deleted custom preset '{presetName}'");
                     await WriteJson(context, deleted ? 200 : 404, new { success = deleted });
                     break;
+                }
+
+                await WriteJson(context, 404, new { error = "Not found" });
+                break;
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // GAME VALUES ROUTES
+    // ═══════════════════════════════════════════════════════
+
+    private async Task HandleGameValuesRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        var subPath = path == "gamevalues" ? "" : path["gamevalues/".Length..];
+
+        switch (subPath)
+        {
+            // ── AMMO ──
+            case "ammo" when method == "GET":
+            {
+                var qs = context.Request.Query;
+                var search = qs["search"].FirstOrDefault();
+                var caliber = qs["caliber"].FirstOrDefault();
+                var result = gameValuesService.GetAmmo(search, caliber);
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "ammo" when method == "POST":
+            {
+                var body = await ReadBody<GameValuesUpdateRequest<AmmoOverride>>(context);
+                if (body?.Overrides == null || body.Overrides.Count == 0)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var result = gameValuesService.UpdateAmmo(body.Overrides);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Game Values: updated {body.Overrides.Count} ammo items");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "ammo/reset" when method == "POST":
+            {
+                var result = gameValuesService.ResetAmmo();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: reset all ammo to defaults");
+                await WriteJson(context, 200, result);
+                break;
+            }
+
+            // ── ARMOR ──
+            case "armor" when method == "GET":
+            {
+                var qs = context.Request.Query;
+                var search = qs["search"].FirstOrDefault();
+                var acStr = qs["armorClass"].FirstOrDefault();
+                int? armorClass = int.TryParse(acStr, out var ac) ? ac : null;
+                var material = qs["material"].FirstOrDefault();
+                var kind = qs["kind"].FirstOrDefault();
+                var result = gameValuesService.GetArmor(search, armorClass, material, kind);
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "armor" when method == "POST":
+            {
+                var body = await ReadBody<GameValuesUpdateRequest<ArmorOverride>>(context);
+                if (body?.Overrides == null || body.Overrides.Count == 0)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var result = gameValuesService.UpdateArmor(body.Overrides);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Game Values: updated {body.Overrides.Count} armor items");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "armor/reset" when method == "POST":
+            {
+                var result = gameValuesService.ResetArmor();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: reset all armor to defaults");
+                await WriteJson(context, 200, result);
+                break;
+            }
+
+            // ── WEAPONS ──
+            case "weapons" when method == "GET":
+            {
+                var qs = context.Request.Query;
+                var search = qs["search"].FirstOrDefault();
+                var weapClass = qs["weapClass"].FirstOrDefault();
+                var caliber = qs["caliber"].FirstOrDefault();
+                var result = gameValuesService.GetWeapons(search, weapClass, caliber);
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "weapons" when method == "POST":
+            {
+                var body = await ReadBody<GameValuesUpdateRequest<WeaponOverride>>(context);
+                if (body?.Overrides == null || body.Overrides.Count == 0)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var result = gameValuesService.UpdateWeapons(body.Overrides);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Game Values: updated {body.Overrides.Count} weapon items");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "weapons/reset" when method == "POST":
+            {
+                var result = gameValuesService.ResetWeapons();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: reset all weapons to defaults");
+                await WriteJson(context, 200, result);
+                break;
+            }
+
+            // ── PRESETS ──
+            case "presets" when method == "GET":
+            {
+                var presets = gameValuesService.GetPresets();
+                await WriteJson(context, 200, new { presets });
+                break;
+            }
+            case "presets/save" when method == "POST":
+            {
+                var body = await ReadBody<Dictionary<string, string>>(context);
+                var name = body?.GetValueOrDefault("name")?.Trim();
+                var desc = body?.GetValueOrDefault("description")?.Trim() ?? "";
+                var cat = body?.GetValueOrDefault("category")?.Trim() ?? "all";
+                if (string.IsNullOrEmpty(name))
+                {
+                    await WriteJson(context, 400, new { error = "Missing preset name" });
+                    break;
+                }
+                var result = gameValuesService.SavePreset(name, desc, cat);
+                if (result.Success)
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Game Values: saved preset '{name}'");
+                await WriteJson(context, result.Success ? 200 : 400, result);
+                break;
+            }
+            case "presets/load" when method == "POST":
+            {
+                var body = await ReadBody<Dictionary<string, string>>(context);
+                var name = body?.GetValueOrDefault("name")?.Trim();
+                if (string.IsNullOrEmpty(name))
+                {
+                    await WriteJson(context, 400, new { error = "Missing preset name" });
+                    break;
+                }
+                var result = gameValuesService.LoadPreset(name);
+                if (result.Success)
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Game Values: loaded preset '{name}' — {result.ItemsModified} overrides");
+                await WriteJson(context, result.Success ? 200 : 400, result);
+                break;
+            }
+            case "presets/import" when method == "POST":
+            {
+                var body = await ReadBody<Dictionary<string, JsonElement>>(context);
+                if (body == null || !body.ContainsKey("name") || !body.ContainsKey("preset"))
+                {
+                    await WriteJson(context, 400, new { error = "Missing name or preset data" });
+                    break;
+                }
+                var name = body["name"].GetString()?.Trim() ?? "";
+                var preset = JsonSerializer.Deserialize<GameValuesPresetEntry>(body["preset"].GetRawText(), JsonOptions);
+                if (string.IsNullOrEmpty(name) || preset == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid import data" });
+                    break;
+                }
+                var result = gameValuesService.ImportPreset(name, preset);
+                if (result.Success)
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Game Values: imported preset '{name}'");
+                await WriteJson(context, result.Success ? 200 : 400, result);
+                break;
+            }
+
+            default:
+            {
+                // Per-item reset: ammo/reset/{tpl}, armor/reset/{tpl}, weapons/reset/{tpl}
+                if (method == "POST" && subPath.StartsWith("ammo/reset/"))
+                {
+                    var tpl = subPath["ammo/reset/".Length..];
+                    var result = gameValuesService.ResetAmmoItem(tpl);
+                    await WriteJson(context, result.Success ? 200 : 404, result);
+                    break;
+                }
+                if (method == "POST" && subPath.StartsWith("armor/reset/"))
+                {
+                    var tpl = subPath["armor/reset/".Length..];
+                    var result = gameValuesService.ResetArmorItem(tpl);
+                    await WriteJson(context, result.Success ? 200 : 404, result);
+                    break;
+                }
+                if (method == "POST" && subPath.StartsWith("weapons/reset/"))
+                {
+                    var tpl = subPath["weapons/reset/".Length..];
+                    var result = gameValuesService.ResetWeaponItem(tpl);
+                    await WriteJson(context, result.Success ? 200 : 404, result);
+                    break;
+                }
+
+                // Preset export/delete: presets/{name}
+                if (subPath.StartsWith("presets/"))
+                {
+                    var presetName = Uri.UnescapeDataString(subPath["presets/".Length..]);
+                    if (method == "GET")
+                    {
+                        var preset = gameValuesService.ExportPreset(presetName);
+                        if (preset == null)
+                        {
+                            await WriteJson(context, 404, new { error = "Preset not found" });
+                            break;
+                        }
+                        await WriteJson(context, 200, new { name = presetName, preset });
+                        break;
+                    }
+                    if (method == "DELETE")
+                    {
+                        var result = gameValuesService.DeletePreset(presetName);
+                        if (result.Success)
+                            activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                                $"Game Values: deleted preset '{presetName}'");
+                        await WriteJson(context, result.Success ? 200 : 404, result);
+                        break;
+                    }
                 }
 
                 await WriteJson(context, 404, new { error = "Not found" });

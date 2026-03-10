@@ -268,6 +268,9 @@ body {
   vertical-align: middle;
 }
 .nav-btn .nav-lock svg { width: 10px; height: 10px; }
+.nav-icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 3px; opacity: 0.5; transition: opacity 0.15s, filter 0.15s; }
+.nav-btn:hover .nav-icon { opacity: 0.7; }
+.nav-btn.active .nav-icon { opacity: 1; filter: brightness(1.2) sepia(1) saturate(2) hue-rotate(10deg); }
 
 /* ── Buttons ── */
 .btn {
@@ -1291,6 +1294,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   gap: 8px;
 }
 .dash-widget-title svg { width: 14px; height: 14px; color: var(--accent-dim); }
+.dash-widget-title img.ui-icon { opacity: 0.7; }
 .dash-widget-body { padding: 16px; }
 
 .dash-stat-row {
@@ -1817,7 +1821,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 /* ── Outcome Badges ── */
 .outcome-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 1px 8px;
   border-radius: 10px;
   font-size: 10px;
@@ -4240,6 +4246,15 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .skill-icon:hover { opacity: 0.8; }
 .skill-icon-fallback { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; cursor: pointer; transition: opacity 0.15s; }
 .skill-icon-fallback:hover { opacity: 0.8; }
+
+/* ── UI Icons (game-extracted PNGs) ── */
+.ui-icon { display: inline-block; vertical-align: middle; object-fit: contain; }
+.ui-icon-xs { width: 10px; height: 10px; }
+.ui-icon-sm { width: 14px; height: 14px; }
+.ui-icon-md { width: 18px; height: 18px; }
+.ui-icon-lg { width: 24px; height: 24px; }
+.ui-icon-currency { width: 12px; height: 12px; margin-right: 2px; vertical-align: -1px; }
+
 .skill-icon-custom { outline: 2px solid var(--accent); outline-offset: 1px; }
 .skill-icon-ctx { position: fixed; z-index: 9999; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 4px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
 .skill-icon-ctx button { display: block; width: 100%; padding: 6px 16px; background: none; border: none; color: var(--text-primary); font-size: 12px; cursor: pointer; text-align: left; }
@@ -4338,6 +4353,133 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .skill-player-row .sp-level:focus { border-color: var(--accent); outline: none; }
 .skill-player-row .sp-elite { font-size: 10px; color: #c8aa6e; font-weight: 600; }
 
+/* ═══════════════════════════════════════════════════════ */
+/* GAME VALUES                                            */
+/* ═══════════════════════════════════════════════════════ */
+.gv-restart-banner {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+  background: rgba(200,170,110,0.08); border: 1px solid rgba(200,170,110,0.25);
+  border-radius: 6px; margin-bottom: 12px; font-size: 13px; color: var(--accent);
+}
+.gv-restart-banner svg { flex-shrink: 0; color: var(--accent); }
+.gv-sub-tabs {
+  display: flex; gap: 2px; margin-bottom: 12px; border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+.gv-sub-tab {
+  padding: 8px 18px; background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--text-muted); cursor: pointer; font-size: 13px; font-weight: 500;
+  transition: color 0.15s, border-color 0.15s;
+}
+.gv-sub-tab:hover { color: var(--text); }
+.gv-sub-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.gv-sub-tab:disabled { opacity: 0.4; cursor: not-allowed; }
+.gv-panel { display: none; }
+.gv-panel.active { display: block; }
+.gv-toolbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 10px; padding: 8px 0;
+}
+.gv-search { width: 220px; }
+.gv-input {
+  background: var(--bg-base); border: 1px solid var(--border); border-radius: 4px;
+  padding: 6px 10px; color: var(--text); font-size: 13px;
+}
+.gv-input:focus { border-color: var(--accent); outline: none; }
+.gv-select {
+  background: var(--bg-base); border: 1px solid var(--border); border-radius: 4px;
+  padding: 6px 8px; color: var(--text); font-size: 13px; cursor: pointer;
+}
+.gv-select:focus { border-color: var(--accent); outline: none; }
+.gv-checkbox-label {
+  display: flex; align-items: center; gap: 4px; font-size: 12px;
+  color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+}
+.gv-count { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+.gv-table-wrap { overflow-x: auto; max-height: calc(100vh - 280px); overflow-y: auto; }
+.gv-table { font-size: 13px; }
+.gv-table th { position: sticky; top: 0; z-index: 2; }
+.gv-modified { color: var(--accent) !important; font-weight: 600; }
+.gv-delta { font-size: 10px; color: var(--text-muted); margin-left: 3px; }
+.gv-delta.up { color: #4caf50; }
+.gv-delta.down { color: #f44336; }
+.gv-pen-1 { color: #f44336; } /* 0-10 */
+.gv-pen-2 { color: #ff9800; } /* 11-25 */
+.gv-pen-3 { color: #ffeb3b; } /* 26-40 */
+.gv-pen-4 { color: #4caf50; } /* 41-60 */
+.gv-pen-5 { color: #00bcd4; } /* 61+ */
+.gv-ac-1 { color: #4caf50; } /* class 1-2 */
+.gv-ac-2 { color: #ffeb3b; } /* class 3-4 */
+.gv-ac-3 { color: #f44336; } /* class 5-6 */
+.gv-ac-4 { color: #e040fb; } /* class 7+ */
+.gv-warn { color: #ff9800; font-size: 11px; margin-left: 2px; }
+.gv-plate-badge { display: inline-block; font-size: 9px; font-weight: 700; color: #00bcd4; background: rgba(0,188,212,0.12); border: 1px solid rgba(0,188,212,0.3); border-radius: 3px; padding: 0 4px; margin-left: 4px; vertical-align: middle; letter-spacing: 0.5px; }
+.gv-edit-row td { padding: 0 !important; background: var(--bg-panel) !important; }
+.gv-edit-form {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px 16px; padding: 12px 16px;
+}
+.gv-edit-field { display: flex; flex-direction: column; gap: 2px; }
+.gv-edit-field label {
+  font-size: 11px; color: var(--text-muted); display: flex;
+  justify-content: space-between; align-items: center;
+}
+.gv-edit-field label .gv-orig {
+  font-size: 10px; color: var(--text-dim); font-weight: 400;
+}
+.gv-edit-field input {
+  background: var(--bg-base); border: 1px solid var(--border); border-radius: 4px;
+  padding: 4px 8px; color: var(--text); font-size: 13px; width: 100%;
+  box-sizing: border-box;
+}
+.gv-edit-field input:focus { border-color: var(--accent); outline: none; }
+.gv-edit-field input.gv-field-modified { border-color: var(--accent); color: var(--accent); }
+.gv-edit-actions {
+  display: flex; gap: 8px; align-items: center; padding: 8px 16px 12px;
+  border-top: 1px solid var(--border);
+}
+.gv-compare-col { width: 30px; text-align: center; }
+.gv-presets-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 10px; padding: 6px 0; justify-content: space-between;
+}
+.gv-presets-left, .gv-presets-right {
+  display: flex; align-items: center; gap: 6px;
+}
+.gv-compare-bar {
+  display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+  background: rgba(0,188,212,0.08); border: 1px solid rgba(0,188,212,0.25);
+  border-radius: 6px; margin-bottom: 10px; font-size: 13px; color: #00bcd4;
+}
+.gv-compare-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7); z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+}
+.gv-compare-panel {
+  background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: 8px; width: 90vw; max-width: 1200px; max-height: 80vh;
+  overflow: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.gv-compare-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+}
+.gv-compare-header h3 { margin: 0; font-size: 15px; color: var(--text); }
+.gv-compare-body { padding: 16px; overflow-x: auto; }
+.gv-compare-body table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.gv-compare-body th, .gv-compare-body td {
+  padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: left;
+}
+.gv-compare-body th { color: var(--text-muted); font-weight: 500; white-space: nowrap; position: sticky; left: 0; background: var(--bg-panel); }
+.gv-compare-body .gv-best { color: #4caf50; font-weight: 600; }
+.gv-compare-body .gv-worst { color: #f44336; }
+.gv-row-clickable { cursor: pointer; }
+.gv-row-clickable:hover td { background: var(--bg-hover) !important; }
+.gv-row-expanded td { background: rgba(200,170,110,0.04) !important; border-bottom-color: transparent; }
+.btn-danger { background: rgba(244,67,54,0.15); color: #f44336; border: 1px solid rgba(244,67,54,0.3); }
+.btn-danger:hover { background: rgba(244,67,54,0.25); }
+
 </style>
 </head>
 <body>
@@ -4387,24 +4529,17 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 <!-- ═══════ NAVIGATION BAR ═══════ -->
 <div class="nav-bar" id="navBar">
   <div class="nav-bar-inner">
-    <button class="nav-btn active" data-nav="dashboard" onclick="switchMainTab('dashboard')">Dashboard</button>
-    <button class="nav-btn" data-nav="admin" onclick="switchMainTab('admin')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:2px">
-        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
-        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
-        <line x1="6" y1="6" x2="6.01" y2="6"/>
-        <line x1="6" y1="18" x2="6.01" y2="18"/>
-      </svg>Admin
-    </button>
-    <button class="nav-btn" data-nav="raidinfo" onclick="switchMainTab('raidinfo')">Raid Info</button>
-    <button class="nav-btn" data-nav="items" onclick="switchMainTab('items')">Items</button>
-    <button class="nav-btn" data-nav="players" onclick="switchMainTab('players')">Players</button>
-    <button class="nav-btn" data-nav="flea" onclick="switchMainTab('flea')">Flea Market</button>
-    <button class="nav-btn" data-nav="traders" onclick="switchMainTab('traders')">Traders</button>
-    <button class="nav-btn" data-nav="quests" onclick="switchMainTab('quests')">Quests</button>
-    <button class="nav-btn" data-nav="progression" onclick="switchMainTab('progression')">Progression</button>
-    <button class="nav-btn" data-nav="events" onclick="switchMainTab('events')">Events</button>
-    <button class="nav-btn disabled" data-nav="gamevalues" onclick="switchMainTab('gamevalues')">Game Values <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
+    <button class="nav-btn active" data-nav="dashboard" onclick="switchMainTab('dashboard')"><img class="nav-icon" src="ui-icons/icon_gear.png" alt="">Dashboard</button>
+    <button class="nav-btn" data-nav="admin" onclick="switchMainTab('admin')"><img class="nav-icon" src="ui-icons/icon_attention.png" alt="">Admin</button>
+    <button class="nav-btn" data-nav="raidinfo" onclick="switchMainTab('raidinfo')"><img class="nav-icon" src="ui-icons/icon_difficulty.png" alt="">Raid Info</button>
+    <button class="nav-btn" data-nav="items" onclick="switchMainTab('items')"><img class="nav-icon" src="ui-icons/items_icon.png" alt="">Items</button>
+    <button class="nav-btn" data-nav="players" onclick="switchMainTab('players')"><img class="nav-icon" src="ui-icons/icon_players.png" alt="">Players</button>
+    <button class="nav-btn" data-nav="flea" onclick="switchMainTab('flea')"><img class="nav-icon" src="ui-icons/icon_exchange.png" alt="">Flea Market</button>
+    <button class="nav-btn" data-nav="traders" onclick="switchMainTab('traders')"><img class="nav-icon" src="ui-icons/icon_traders.png" alt="">Traders</button>
+    <button class="nav-btn" data-nav="quests" onclick="switchMainTab('quests')"><img class="nav-icon" src="ui-icons/icon_quest.png" alt="">Quests</button>
+    <button class="nav-btn" data-nav="progression" onclick="switchMainTab('progression')"><img class="nav-icon" src="ui-icons/icon_star.png" alt="">Progression</button>
+    <button class="nav-btn" data-nav="events" onclick="switchMainTab('events')"><img class="nav-icon" src="ui-icons/icon_time_big.png" alt="">Events</button>
+    <button class="nav-btn" data-nav="gamevalues" onclick="switchMainTab('gamevalues')"><img class="nav-icon" src="ui-icons/icon_edit.png" alt="">Game Values</button>
     <button class="nav-btn disabled" data-nav="profiles" onclick="switchMainTab('profiles')">Profiles <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="loadouts" onclick="switchMainTab('loadouts')">Loadouts <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="bounties" onclick="switchMainTab('bounties')">Bounties <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
@@ -4824,7 +4959,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <!-- Server Status -->
       <div class="dash-widget" id="widgetServerStatus">
         <div class="dash-widget-header">
-          <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Server Status</span>
+          <span class="dash-widget-title"><img class="ui-icon ui-icon-sm" src="ui-icons/icon_gear.png" alt=""> Server Status</span>
         </div>
         <div class="dash-widget-body">
           <div class="dash-stat-row">
@@ -4853,7 +4988,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <!-- Online Players -->
       <div class="dash-widget" id="widgetPlayers">
         <div class="dash-widget-header">
-          <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Players</span>
+          <span class="dash-widget-title"><img class="ui-icon ui-icon-sm" src="ui-icons/icon_players.png" alt=""> Players</span>
           <span style="display:flex;align-items:center;gap:12px"><button id="playerViewToggle" class="player-view-toggle" title="Switch to Detailed View" onclick="togglePlayerView()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><span id="dashHeadlessBadge" style="font-size:12px;font-family:var(--font-mono);font-weight:700;color:var(--text-muted);display:none"></span><span id="dashOnlineBadge" style="font-size:11px;font-family:var(--font-mono);color:var(--success-bright)"></span></span>
         </div>
         <div class="dash-widget-body">
@@ -4869,7 +5004,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <!-- Raid Stats (Server-wide) -->
       <div class="dash-widget" id="widgetRaids">
         <div class="dash-widget-header">
-          <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Raid Statistics</span>
+          <span class="dash-widget-title"><img class="ui-icon ui-icon-sm" src="ui-icons/icon_difficulty.png" alt=""> Raid Statistics</span>
         </div>
         <div class="dash-widget-body">
           <div class="dash-stat-row">
@@ -4890,7 +5025,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <!-- Your Raid Stats (Logged-in player) -->
       <div class="dash-widget" id="widgetMyRaids" style="display:none">
         <div class="dash-widget-header">
-          <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Your Raid Statistics</span>
+          <span class="dash-widget-title"><img class="ui-icon ui-icon-sm" src="ui-icons/icon_star.png" alt=""> Your Raid Statistics</span>
         </div>
         <div class="dash-widget-body">
           <div class="dash-stat-row">
@@ -4911,7 +5046,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <!-- Economy -->
       <div class="dash-widget" id="widgetEconomy">
         <div class="dash-widget-header">
-          <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg> Economy</span>
+          <span class="dash-widget-title"><img class="ui-icon ui-icon-sm" src="ui-icons/icon_info_money_roubles_big.png" alt=""> Economy</span>
         </div>
         <div class="dash-widget-body">
           <div class="dash-stat-row">
@@ -5005,7 +5140,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <!-- ZONE 3: Activity Log -->
     <div class="dash-widget full-width admin-glass admin-fade-in" style="margin-bottom:16px">
       <div class="dash-widget-header">
-        <span class="dash-widget-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Activity Log</span>
+        <span class="dash-widget-title"><img class="ui-icon ui-icon-sm" src="ui-icons/report_icon.png" alt=""> Activity Log</span>
         <select id="activityTypeFilter" style="font-size:11px;font-family:var(--font-mono);background:var(--bg-input);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:3px 8px" onchange="loadActivity()">
           <option value="">All Types</option>
           <option value="ItemGive">Item Give</option>
@@ -7032,12 +7167,150 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   </div>
 
   <div class="main-tab-panel" id="main-gamevalues">
-    <div class="coming-soon">
-      <div class="coming-soon-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
-      <h2>Game Values</h2>
-      <p>Edit ammo stats, armor values, weapon properties, bot spawns, and raid settings.</p>
-      <span class="phase-badge">Phase 9</span>
+
+    <!-- Client restart warning -->
+    <div class="gv-restart-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Changes to game values require a <strong>client restart</strong> to take effect
     </div>
+
+    <!-- Sub-tab bar -->
+    <div class="gv-sub-tabs">
+      <button class="gv-sub-tab active" data-gvtab="ammo" onclick="window.gvSwitchTab('ammo')">Ammo</button>
+      <button class="gv-sub-tab" data-gvtab="armor" onclick="window.gvSwitchTab('armor')">Armor</button>
+      <button class="gv-sub-tab" data-gvtab="weapons" onclick="window.gvSwitchTab('weapons')">Weapons</button>
+    </div>
+
+    <!-- Presets row -->
+    <div class="gv-presets-row">
+      <div class="gv-presets-left">
+        <select id="gvPresetSelect" class="gv-select" style="min-width:240px"><option value="">— Select Preset —</option></select>
+        <button class="btn btn-sm" onclick="window.gvLoadPreset()">Load</button>
+        <button class="btn btn-sm" onclick="window.gvDeletePreset()">Delete</button>
+      </div>
+      <div class="gv-presets-right">
+        <input id="gvPresetName" class="gv-input" placeholder="Preset name" style="width:150px">
+        <select id="gvPresetCategory" class="gv-select" title="Scope: which categories to include in this preset">
+          <option value="all">All Categories</option>
+          <option value="ammo">Ammo Only</option>
+          <option value="armor">Armor Only</option>
+          <option value="weapons">Weapons Only</option>
+        </select>
+        <button class="btn btn-sm" onclick="window.gvSavePreset()">Save</button>
+        <button class="btn btn-sm" onclick="window.gvExportPreset()">Export</button>
+        <button class="btn btn-sm" onclick="document.getElementById('gvImportFile').click()">Import</button>
+        <input type="file" id="gvImportFile" accept=".json" style="display:none" onchange="window.gvImportPreset(event)">
+      </div>
+    </div>
+
+    <!-- Compare bar (hidden until compare mode on) -->
+    <div class="gv-compare-bar" id="gvCompareBar" style="display:none">
+      <span id="gvCompareCount">0 selected</span>
+      <button class="btn btn-sm" onclick="window.gvOpenCompare()">Compare</button>
+      <button class="btn btn-sm" onclick="window.gvClearCompare()">Clear</button>
+    </div>
+
+    <!-- ═══ AMMO SUB-TAB ═══ -->
+    <div class="gv-panel active" id="gvPanel-ammo">
+      <div class="gv-toolbar">
+        <input type="text" class="gv-input gv-search" id="gvAmmoSearch" placeholder="Search ammo..." oninput="window.gvFilterAmmo()">
+        <select id="gvAmmoCaliber" class="gv-select" onchange="window.gvFilterAmmo()"><option value="">All Calibers</option></select>
+        <label class="gv-checkbox-label"><input type="checkbox" id="gvAmmoModifiedOnly" onchange="window.gvFilterAmmo()"> Modified only</label>
+        <label class="gv-checkbox-label"><input type="checkbox" id="gvAmmoCompareMode" onchange="window.gvToggleCompareMode()"> Compare</label>
+        <span class="gv-count" id="gvAmmoCount"></span>
+        <button class="btn btn-sm btn-danger" onclick="window.gvResetAllAmmo()">Reset All Ammo</button>
+      </div>
+      <div class="gv-table-wrap">
+        <table class="item-table gv-table" id="gvAmmoTable">
+          <thead><tr>
+            <th class="gv-compare-col" style="display:none"></th>
+            <th class="sortable" onclick="window.gvSortAmmo('name')">Name <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortAmmo('caliber')">Caliber <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortAmmo('damage')">DMG <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortAmmo('penetrationPower')">PEN <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortAmmo('armorDamage')">ARM <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortAmmo('initialSpeed')">SPD <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortAmmo('fragmentationChance')">FRAG% <span class="sort-arrow"></span></th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="gvAmmoBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ ARMOR SUB-TAB ═══ -->
+    <div class="gv-panel" id="gvPanel-armor">
+      <div class="gv-toolbar">
+        <input type="text" class="gv-input gv-search" id="gvArmorSearch" placeholder="Search armor..." oninput="window.gvFilterArmor()">
+        <select id="gvArmorKind" class="gv-select" onchange="window.gvFilterArmor()">
+          <option value="">All Types</option>
+          <option value="armor">Body Armor</option>
+          <option value="plate">Plates</option>
+        </select>
+        <select id="gvArmorClass" class="gv-select" onchange="window.gvFilterArmor()"><option value="">All Classes</option></select>
+        <select id="gvArmorMaterial" class="gv-select" onchange="window.gvFilterArmor()"><option value="">All Materials</option></select>
+        <label class="gv-checkbox-label"><input type="checkbox" id="gvArmorModifiedOnly" onchange="window.gvFilterArmor()"> Modified only</label>
+        <label class="gv-checkbox-label"><input type="checkbox" id="gvArmorCompareMode" onchange="window.gvToggleCompareMode()"> Compare</label>
+        <span class="gv-count" id="gvArmorCount"></span>
+        <button class="btn btn-sm btn-danger" onclick="window.gvResetAllArmor()">Reset All Armor</button>
+      </div>
+      <div class="gv-table-wrap">
+        <table class="item-table gv-table" id="gvArmorTable">
+          <thead><tr>
+            <th class="gv-compare-col" style="display:none"></th>
+            <th class="sortable" onclick="window.gvSortArmor('name')">Name <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortArmor('armorClass')">Class <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortArmor('durability')">Durability <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortArmor('bluntThroughput')">Blunt <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortArmor('armorMaterial')">Material <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortArmor('armorType')">Type <span class="sort-arrow"></span></th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="gvArmorBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ WEAPONS SUB-TAB ═══ -->
+    <div class="gv-panel" id="gvPanel-weapons">
+      <div class="gv-toolbar">
+        <input type="text" class="gv-input gv-search" id="gvWeaponSearch" placeholder="Search weapons..." oninput="window.gvFilterWeapons()">
+        <select id="gvWeaponClass" class="gv-select" onchange="window.gvFilterWeapons()"><option value="">All Classes</option></select>
+        <select id="gvWeaponCaliber" class="gv-select" onchange="window.gvFilterWeapons()"><option value="">All Calibers</option></select>
+        <label class="gv-checkbox-label"><input type="checkbox" id="gvWeaponModifiedOnly" onchange="window.gvFilterWeapons()"> Modified only</label>
+        <label class="gv-checkbox-label"><input type="checkbox" id="gvWeaponCompareMode" onchange="window.gvToggleCompareMode()"> Compare</label>
+        <span class="gv-count" id="gvWeaponCount"></span>
+        <button class="btn btn-sm btn-danger" onclick="window.gvResetAllWeapons()">Reset All Weapons</button>
+      </div>
+      <div class="gv-table-wrap">
+        <table class="item-table gv-table" id="gvWeaponTable">
+          <thead><tr>
+            <th class="gv-compare-col" style="display:none"></th>
+            <th class="sortable" onclick="window.gvSortWeapons('name')">Name <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortWeapons('weapClass')">Class <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortWeapons('ammoCaliber')">Caliber <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortWeapons('ergonomics')">Ergo <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortWeapons('recoilForceUp')">V.Recoil <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortWeapons('recoilForceBack')">H.Recoil <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortWeapons('bFirerate')">RPM <span class="sort-arrow"></span></th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="gvWeaponBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Compare overlay -->
+    <div class="gv-compare-overlay" id="gvCompareOverlay" style="display:none">
+      <div class="gv-compare-panel">
+        <div class="gv-compare-header">
+          <h3>Compare Items</h3>
+          <button class="btn btn-sm" onclick="document.getElementById('gvCompareOverlay').style.display='none'">Close</button>
+        </div>
+        <div class="gv-compare-body" id="gvCompareBody"></div>
+      </div>
+    </div>
+
   </div>
 
   <div class="main-tab-panel" id="main-profiles">
@@ -7606,6 +7879,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'raidinfo' && !raidInfoLoaded) raidInfoInit();
     if (tab === 'progression' && !progressionLoaded) progressionInit();
     if (tab === 'events' && !eventsLoaded) eventsInit();
+    if (tab === 'gamevalues' && !gamevaluesLoaded) gameValuesInit();
 
     // Manage raid info polling — start when on tab, stop when leaving
     if (tab === 'raidinfo') {
@@ -8618,7 +8892,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         html += '<div class="dash-player">' +
           '<span style="color:' + rankColor + ';font-family:var(--font-mono);font-size:11px;width:18px;font-weight:700">#' + (i+1) + '</span>' +
           '<span class="p-name">' + escH(p.nickname) + '</span>' +
-          '<span class="p-detail">' + formatRoubles(p.roubles) + '</span></div>';
+          '<span class="p-detail">' + formatRoublesHtml(p.roubles) + '</span></div>';
       });
       document.getElementById('dashTopPlayers').innerHTML = html;
     }).catch(function(e) { console.error('Economy error:', e); });
@@ -8893,13 +9167,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   function outcomeBadge(outcome) {
     var cls = 'kia';
     var label = outcome || 'Unknown';
+    var icon = 'exit_status_killed.png';
     switch ((outcome || '').toLowerCase()) {
-      case 'survived': cls = 'survived'; label = 'Survived'; break;
-      case 'killed': cls = 'kia'; label = 'KIA'; break;
-      case 'mia': cls = 'mia'; label = 'MIA'; break;
-      case 'run-through': case 'runthrough': case 'runner': cls = 'runthrough'; label = 'Run Through'; break;
+      case 'survived': cls = 'survived'; label = 'Survived'; icon = 'exit_status_survived.png'; break;
+      case 'killed': cls = 'kia'; label = 'KIA'; icon = 'exit_status_killed.png'; break;
+      case 'mia': cls = 'mia'; label = 'MIA'; icon = 'exit_status_missing.png'; break;
+      case 'run-through': case 'runthrough': case 'runner': cls = 'runthrough'; label = 'Run Through'; icon = 'exit_status_left.png'; break;
     }
-    return '<span class="outcome-badge ' + cls + '">' + label + '</span>';
+    return '<span class="outcome-badge ' + cls + '"><img class="ui-icon ui-icon-xs" src="ui-icons/' + icon + '" alt="">' + label + '</span>';
   }
 
   function loadTelemetryCurrent() {
@@ -10605,12 +10880,29 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
   };
 
+  function currencyIcon(type, sz) {
+    sz = sz || 'ui-icon-currency';
+    var file = type === 'USD' ? 'icon_info_money_dollars.png'
+             : type === 'EUR' ? 'icon_info_money_euros.png'
+             : 'icon_info_money_roubles.png';
+    return '<img class="ui-icon ' + sz + '" src="ui-icons/' + file + '" alt="">';
+  }
+
   function formatRoubles(n) {
     if (n == null) return '--';
     if (n >= 1000000000) return '₽' + (n / 1000000000).toFixed(1) + 'B';
     if (n >= 1000000) return '₽' + (n / 1000000).toFixed(1) + 'M';
     if (n >= 1000) return '₽' + (n / 1000).toFixed(0) + 'K';
     return '₽' + n.toLocaleString();
+  }
+
+  function formatRoublesHtml(n) {
+    if (n == null) return '--';
+    var icon = currencyIcon('RUB');
+    if (n >= 1000000000) return icon + (n / 1000000000).toFixed(1) + 'B';
+    if (n >= 1000000) return icon + (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return icon + (n / 1000).toFixed(0) + 'K';
+    return icon + n.toLocaleString();
   }
 
   function formatSeconds(s) {
@@ -11713,7 +12005,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '</td>';
       html += '<td>' + p.level + '</td>';
       html += '<td><span class="faction-badge ' + (p.side || '').toLowerCase() + '">' + escH(p.side) + '</span></td>';
-      html += '<td style="font-family:var(--font-mono);font-size:12px">' + formatRoubles(p.roubles) + '</td>';
+      html += '<td style="font-family:var(--font-mono);font-size:12px">' + formatRoublesHtml(p.roubles) + '</td>';
       html += '<td>' + (p.online ? '<span style="color:var(--success-bright);font-size:12px">Online</span>' : '<span style="color:var(--text-muted);font-size:12px">Offline</span>') + '</td>';
       html += '<td style="white-space:nowrap">';
       html += '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openMailModal(\'' + escA(p.sessionId) + '\',\'' + escA(p.nickname) + '\')" title="Mail">Mail</button> ';
@@ -11830,10 +12122,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     html += '<div class="profile-header">';
     html += statCard('Level', d.level, '<div class="xp-bar"><div class="xp-bar-fill" style="width:' + xpPct + '%"></div></div><div class="psc-sub">' + (d.experience || 0).toLocaleString() + ' XP (' + (d.experienceToNextLevel || 0).toLocaleString() + ' to next)</div>');
     html += statCard('Faction', '<span class="faction-badge ' + (d.side || '').toLowerCase() + '">' + escH(d.side) + '</span>');
-    html += statCard('Stash Value', formatRoubles(Math.round(d.stashValue || 0)), '', 'accent');
-    html += statCard('Roubles', formatRoubles(d.currencies ? d.currencies.roubles : 0));
-    html += statCard('Dollars', formatRoubles(d.currencies ? d.currencies.dollars : 0));
-    html += statCard('Euros', formatRoubles(d.currencies ? d.currencies.euros : 0));
+    html += statCard('Stash Value', formatRoublesHtml(Math.round(d.stashValue || 0)), '', 'accent');
+    html += statCard('Roubles', formatRoublesHtml(d.currencies ? d.currencies.roubles : 0));
+    html += statCard('Dollars', currencyIcon('USD') + (d.currencies ? d.currencies.dollars : 0).toLocaleString());
+    html += statCard('Euros', currencyIcon('EUR') + (d.currencies ? d.currencies.euros : 0).toLocaleString());
     html += '</div>';
     html += '<div class="profile-header">';
     html += statCard('Total Raids', d.totalRaids || 0);
@@ -11946,7 +12238,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         ['Looting XP', (s.lootingExperience || 0).toLocaleString()],
         ['Healing XP', (s.healingExperience || 0).toLocaleString()],
         ['Survival XP', (s.survivalExperience || 0).toLocaleString()],
-        ['Stash Value', formatRoubles(Math.round(s.stashValue || 0)), 'accent']
+        ['Stash Value', formatRoublesHtml(Math.round(s.stashValue || 0)), 'accent']
       ], false);
 
       // Health & Physical Condition
@@ -11966,9 +12258,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
       // Loot / Items Found
       html += statsSection('Loot / Items Found', [
-        ['USD Found', '$' + (s.usdFound || 0).toLocaleString()],
-        ['EUR Found', '\u20ac' + (s.eurFound || 0).toLocaleString()],
-        ['RUB Found', formatRoubles(s.rubFound || 0)],
+        ['USD Found', currencyIcon('USD') + '$' + (s.usdFound || 0).toLocaleString()],
+        ['EUR Found', currencyIcon('EUR') + '\u20ac' + (s.eurFound || 0).toLocaleString()],
+        ['RUB Found', formatRoublesHtml(s.rubFound || 0)],
         ['Bodies Looted', s.bodiesLooted || 0],
         ['Places Looted', s.placesLooted || 0],
         ['Safes Unlocked', s.safesUnlocked || 0],
@@ -12024,7 +12316,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     panel.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px">Loading stash...</div>';
     api('player/' + encodeURIComponent(sid) + '/stash?limit=50&offset=' + (offset || 0)).then(function(data) {
       stashCache[sid] = data;
-      var html = '<div style="margin-bottom:8px;font-size:12px;color:var(--text-dim)">' + (data.totalItems || 0) + ' items | Stash value: ' + formatRoubles(Math.round(data.stashValue || 0)) + '</div>';
+      var html = '<div style="margin-bottom:8px;font-size:12px;color:var(--text-dim)">' + (data.totalItems || 0) + ' items | Stash value: ' + formatRoublesHtml(Math.round(data.stashValue || 0)) + '</div>';
       if (data.items && data.items.length > 0) {
         html += '<table class="profile-mini-table"><thead><tr><th>Name</th><th>TPL</th><th>Qty</th></tr></thead><tbody>';
         for (var i = 0; i < data.items.length; i++) {
@@ -12172,7 +12464,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         }
         html += '</select></td>';
         html += '<td style="font-family:var(--font-mono)">' + (t.standing || 0).toFixed(2) + '</td>';
-        html += '<td style="font-family:var(--font-mono);font-size:12px">' + formatRoubles(t.salesSum || 0) + '</td></tr>';
+        html += '<td style="font-family:var(--font-mono);font-size:12px">' + formatRoublesHtml(t.salesSum || 0) + '</td></tr>';
       }
       html += '</tbody></table>';
     }
@@ -13598,7 +13890,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           valParts.push(valStr);
         }
         if (valParts.length > 0) html += '<span class="qhp-obj-val">' + valParts.join('') + '</span>';
-        if (obj.onlyFoundInRaid) html += '<span class="qhp-fir">FIR</span>';
+        if (obj.onlyFoundInRaid) html += '<span class="qhp-fir"><img class="ui-icon ui-icon-xs" src="ui-icons/icon_foundinraid_quest_small.png" alt="" style="vertical-align:-1px;margin-right:2px">FIR</span>';
         html += '</div>';
       });
     } else {
@@ -14868,7 +15160,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var pills = '';
       if (t.isModded) pills += '<span class="trader-pill trader-pill-modded">Modded</span>';
       if (hasOv) pills += '<span class="trader-pill trader-pill-custom">Custom</span>';
-      pills += '<span class="trader-pill trader-pill-currency">' + escH(currency) + '</span>';
+      pills += '<span class="trader-pill trader-pill-currency">' + currencyIcon(currency) + ' ' + escH(currency) + '</span>';
       pills += '<span class="trader-pill ' + traderGetLLPillClass(playerLL) + '">LL' + playerLL + '</span>';
 
       // Stat default classes
@@ -16862,6 +17154,834 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       toast('Task deleted', 'success');
       loadScheduler();
     });
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // GAME VALUES TAB
+  // ═══════════════════════════════════════════════════════
+  var gamevaluesLoaded = false;
+  var _gvAmmoData = [];
+  var _gvAmmoFiltered = [];
+  var _gvAmmoSort = { field: 'name', asc: true };
+  var _gvArmorData = [];
+  var _gvArmorFiltered = [];
+  var _gvArmorSort = { field: 'name', asc: true };
+  var _gvWeaponData = [];
+  var _gvWeaponFiltered = [];
+  var _gvWeaponSort = { field: 'name', asc: true };
+  var _gvCompareSelected = {};
+  var _gvCompareMode = false;
+  var _gvCurrentTab = 'ammo';
+  var _gvEditingTpl = null;
+
+  function gameValuesInit() {
+    gamevaluesLoaded = true;
+    gvLoadAmmo();
+    gvLoadPresets();
+  }
+
+  // ── Sub-tab switching ──
+  window.gvSwitchTab = function(tab) {
+    _gvCurrentTab = tab;
+    _gvEditingTpl = null;
+    document.querySelectorAll('.gv-sub-tab').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.gvtab === tab);
+    });
+    document.querySelectorAll('.gv-panel').forEach(function(p) {
+      p.classList.toggle('active', p.id === 'gvPanel-' + tab);
+    });
+    if (tab === 'ammo' && _gvAmmoData.length === 0) gvLoadAmmo();
+    if (tab === 'armor' && _gvArmorData.length === 0) gvLoadArmor();
+    if (tab === 'weapons' && _gvWeaponData.length === 0) gvLoadWeapons();
+  };
+
+  // ── Helper: penetration color class ──
+  function gvPenClass(v) {
+    if (v <= 10) return 'gv-pen-1';
+    if (v <= 25) return 'gv-pen-2';
+    if (v <= 40) return 'gv-pen-3';
+    if (v <= 60) return 'gv-pen-4';
+    return 'gv-pen-5';
+  }
+  function gvAcClass(v) {
+    if (v <= 2) return 'gv-ac-1';
+    if (v <= 4) return 'gv-ac-2';
+    if (v <= 6) return 'gv-ac-3';
+    return 'gv-ac-4';
+  }
+
+  // ── Helper: format value with modified indicator ──
+  function gvVal(current, original, decimals) {
+    decimals = decimals || 0;
+    var c = typeof current === 'number' ? current : 0;
+    var o = typeof original === 'number' ? original : 0;
+    var diff = c - o;
+    var formatted = decimals > 0 ? c.toFixed(decimals) : Math.round(c);
+    if (Math.abs(diff) > 0.001) {
+      var cls = diff > 0 ? 'up' : 'down';
+      var sign = diff > 0 ? '+' : '';
+      var dStr = decimals > 0 ? diff.toFixed(decimals) : Math.round(diff);
+      return '<span class="gv-modified">' + escH(String(formatted)) + '</span><span class="gv-delta ' + cls + '">' + sign + dStr + '</span>';
+    }
+    return escH(String(formatted));
+  }
+
+  // ── Helper: extreme value warning ──
+  function gvWarn(field, value) {
+    var limits = { damage: 200, penetrationPower: 60, armorDamage: 200, initialSpeed: 2000, bFirerate: 1500 };
+    if (limits[field] && value > limits[field]) return '<span class="gv-warn" title="Extreme value">!</span>';
+    return '';
+  }
+
+  // ═══ AMMO ═══
+  function gvLoadAmmo() {
+    api('gamevalues/ammo').then(function(r) {
+      _gvAmmoData = r.ammo || [];
+      // Populate caliber dropdown
+      var sel = document.getElementById('gvAmmoCaliber');
+      var cur = sel.value;
+      sel.innerHTML = '<option value="">All Calibers (' + _gvAmmoData.length + ')</option>';
+      (r.calibers || []).forEach(function(c) {
+        sel.innerHTML += '<option value="' + escH(c.key) + '">' + escH(c.display) + ' (' + c.count + ')</option>';
+      });
+      sel.value = cur;
+      gvFilterAmmo();
+    }).catch(function(e) { toast('Failed to load ammo: ' + e.message, 'error'); });
+  }
+
+  window.gvFilterAmmo = function() {
+    var search = (document.getElementById('gvAmmoSearch').value || '').toLowerCase();
+    var caliber = document.getElementById('gvAmmoCaliber').value;
+    var modOnly = document.getElementById('gvAmmoModifiedOnly').checked;
+    _gvAmmoFiltered = _gvAmmoData.filter(function(a) {
+      if (modOnly && !a.isModified) return false;
+      if (caliber && a.caliber !== caliber) return false;
+      if (search && a.fullName.toLowerCase().indexOf(search) === -1 &&
+          a.shortName.toLowerCase().indexOf(search) === -1 &&
+          a.tpl.toLowerCase().indexOf(search) === -1) return false;
+      return true;
+    });
+    gvSortAndRenderAmmo();
+  };
+
+  window.gvSortAmmo = function(field) {
+    if (_gvAmmoSort.field === field) _gvAmmoSort.asc = !_gvAmmoSort.asc;
+    else { _gvAmmoSort.field = field; _gvAmmoSort.asc = true; }
+    gvSortAndRenderAmmo();
+  };
+
+  function gvSortAndRenderAmmo() {
+    var f = _gvAmmoSort.field;
+    var asc = _gvAmmoSort.asc;
+    _gvAmmoFiltered.sort(function(a, b) {
+      var va, vb;
+      if (f === 'name') { va = a.shortName.toLowerCase(); vb = b.shortName.toLowerCase(); }
+      else if (f === 'caliber') { va = a.caliberDisplay.toLowerCase(); vb = b.caliberDisplay.toLowerCase(); }
+      else { va = a[f] || 0; vb = b[f] || 0; }
+      var cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return asc ? cmp : -cmp;
+    });
+    gvRenderAmmoTable();
+  }
+
+  function gvRenderAmmoTable() {
+    var body = document.getElementById('gvAmmoBody');
+    var showCmp = _gvCompareMode;
+    var html = '';
+    _gvAmmoFiltered.forEach(function(a) {
+      var isExp = _gvEditingTpl === a.tpl;
+      var rowCls = 'gv-row-clickable' + (isExp ? ' gv-row-expanded' : '') + (a.isModified ? ' gv-modified-row' : '');
+      html += '<tr class="' + rowCls + '" onclick="window.gvExpandAmmo(\'' + a.tpl + '\')">';
+      if (showCmp) html += '<td class="gv-compare-col"><input type="checkbox" ' + (_gvCompareSelected[a.tpl] ? 'checked' : '') + ' onclick="event.stopPropagation();window.gvToggleCompareItem(\'' + a.tpl + '\',this.checked)"></td>';
+      html += '<td title="' + escH(a.fullName) + '"><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(a.shortName) + '</div></td>';
+      html += '<td style="font-size:11px;white-space:nowrap">' + escH(a.caliberDisplay) + '</td>';
+      html += '<td>' + gvVal(a.damage, a.original.damage) + gvWarn('damage', a.damage) + '</td>';
+      html += '<td><span class="' + gvPenClass(a.penetrationPower) + '">' + gvVal(a.penetrationPower, a.original.penetrationPower) + '</span>' + gvWarn('penetrationPower', a.penetrationPower) + '</td>';
+      html += '<td>' + gvVal(a.armorDamage, a.original.armorDamage) + '</td>';
+      html += '<td>' + gvVal(a.initialSpeed, a.original.initialSpeed) + '</td>';
+      html += '<td>' + gvVal(a.fragmentationChance, a.original.fragmentationChance, 2) + '</td>';
+      html += '<td><button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetAmmoItem(\'' + a.tpl + '\')" ' + (a.isModified ? '' : 'disabled') + ' style="font-size:11px;padding:2px 8px">Reset</button></td>';
+      html += '</tr>';
+      if (isExp) html += gvBuildAmmoEditRow(a);
+    });
+    body.innerHTML = html;
+    document.getElementById('gvAmmoCount').textContent = _gvAmmoFiltered.length + ' items' + (_gvAmmoData.filter(function(a) { return a.isModified; }).length > 0 ? ' (' + _gvAmmoData.filter(function(a) { return a.isModified; }).length + ' modified)' : '');
+    // Update sort arrows
+    document.querySelectorAll('#gvAmmoTable th.sortable').forEach(function(th) {
+      var onclick = th.getAttribute('onclick') || '';
+      var m = onclick.match(/gvSortAmmo\('(\w+)'\)/);
+      if (m) {
+        th.classList.toggle('sort-active', _gvAmmoSort.field === m[1]);
+        var arrow = th.querySelector('.sort-arrow');
+        if (arrow) arrow.textContent = _gvAmmoSort.field === m[1] ? (_gvAmmoSort.asc ? '\u25B2' : '\u25BC') : '';
+      }
+    });
+    // Update compare col visibility
+    document.querySelectorAll('#gvAmmoTable .gv-compare-col').forEach(function(el) {
+      el.style.display = _gvCompareMode ? '' : 'none';
+    });
+  }
+
+  function gvBuildAmmoEditRow(a) {
+    var fields = [
+      { key: 'damage', label: 'Damage', orig: a.original.damage },
+      { key: 'penetrationPower', label: 'Penetration', orig: a.original.penetrationPower },
+      { key: 'armorDamage', label: 'Armor Damage', orig: a.original.armorDamage },
+      { key: 'initialSpeed', label: 'Speed (m/s)', orig: a.original.initialSpeed },
+      { key: 'fragmentationChance', label: 'Frag Chance', orig: a.original.fragmentationChance, step: '0.01' },
+      { key: 'ricochetChance', label: 'Ricochet Chance', orig: a.original.ricochetChance, step: '0.01' },
+      { key: 'projectileCount', label: 'Projectile Count', orig: a.original.projectileCount },
+      { key: 'bulletMassGram', label: 'Bullet Mass (g)', orig: a.original.bulletMassGram, step: '0.1' },
+      { key: 'ballisticCoeficient', label: 'Ballistic Coef', orig: a.original.ballisticCoeficient, step: '0.001' },
+      { key: 'misfireChance', label: 'Misfire Chance', orig: a.original.misfireChance, step: '0.01' },
+      { key: 'heatFactor', label: 'Heat Factor', orig: a.original.heatFactor, step: '0.01' },
+      { key: 'durabilityBurnModificator', label: 'Durability Burn', orig: a.original.durabilityBurnModificator, step: '0.1' },
+      { key: 'lightBleedingDelta', label: 'Light Bleed', orig: a.original.lightBleedingDelta, step: '0.01' },
+      { key: 'heavyBleedingDelta', label: 'Heavy Bleed', orig: a.original.heavyBleedingDelta, step: '0.01' },
+      { key: 'staminaBurnPerDamage', label: 'Stamina Burn', orig: a.original.staminaBurnPerDamage, step: '0.01' },
+      { key: 'ammoAccr', label: 'Accuracy Mod', orig: a.original.ammoAccr },
+      { key: 'ammoRec', label: 'Recoil Mod', orig: a.original.ammoRec },
+    ];
+    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 9 : 8) + '"><div class="gv-edit-form">';
+    fields.forEach(function(f) {
+      var val = a[f.key];
+      var isModified = Math.abs(val - f.orig) > 0.001;
+      html += '<div class="gv-edit-field">';
+      html += '<label>' + f.label + ' <span class="gv-orig">orig: ' + (f.step ? f.orig.toFixed(f.step.split('.')[1]?.length || 2) : f.orig) + '</span></label>';
+      html += '<input type="number" step="' + (f.step || '1') + '" value="' + val + '" id="gvAmmoEdit_' + a.tpl + '_' + f.key + '" class="' + (isModified ? 'gv-field-modified' : '') + '">';
+      html += '</div>';
+    });
+    html += '</div><div class="gv-edit-actions">';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvSaveAmmo(\'' + a.tpl + '\')" style="background:var(--accent-dim);color:var(--bg-base)">Save Changes</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetAmmoItem(\'' + a.tpl + '\')">Reset to Default</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvCollapseAmmo()">Cancel</button>';
+    html += '</div></td></tr>';
+    return html;
+  }
+
+  window.gvExpandAmmo = function(tpl) {
+    _gvEditingTpl = (_gvEditingTpl === tpl) ? null : tpl;
+    gvRenderAmmoTable();
+  };
+  window.gvCollapseAmmo = function() { _gvEditingTpl = null; gvRenderAmmoTable(); };
+
+  window.gvSaveAmmo = function(tpl) {
+    var a = _gvAmmoData.find(function(x) { return x.tpl === tpl; });
+    if (!a) return;
+    var fields = ['damage','penetrationPower','armorDamage','initialSpeed','fragmentationChance','ricochetChance','projectileCount','bulletMassGram','ballisticCoeficient','misfireChance','heatFactor','durabilityBurnModificator','lightBleedingDelta','heavyBleedingDelta','staminaBurnPerDamage','ammoAccr','ammoRec'];
+    var override = {};
+    var hasChanges = false;
+    fields.forEach(function(f) {
+      var el = document.getElementById('gvAmmoEdit_' + tpl + '_' + f);
+      if (!el) return;
+      var val = parseFloat(el.value);
+      if (isNaN(val)) return;
+      if (Math.abs(val - a.original[f]) > 0.001) {
+        override[f] = val;
+        hasChanges = true;
+      }
+    });
+    if (!hasChanges) { toast('No changes to save', 'info'); return; }
+    var body = { overrides: {} };
+    body.overrides[tpl] = override;
+    api('gamevalues/ammo', { method: 'POST', body: JSON.stringify(body) }).then(function(r) {
+      toast(r.message || 'Ammo updated', 'success');
+      _gvEditingTpl = null;
+      gvLoadAmmo();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvResetAmmoItem = function(tpl) {
+    api('gamevalues/ammo/reset/' + tpl, { method: 'POST' }).then(function(r) {
+      toast(r.message || 'Reset', 'success');
+      _gvEditingTpl = null;
+      gvLoadAmmo();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvResetAllAmmo = function() {
+    if (!confirm('Reset ALL ammo values to game defaults?')) return;
+    api('gamevalues/ammo/reset', { method: 'POST' }).then(function(r) {
+      toast(r.message || 'All ammo reset', 'success');
+      _gvEditingTpl = null;
+      gvLoadAmmo();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  // ═══ ARMOR ═══
+  function gvLoadArmor() {
+    api('gamevalues/armor').then(function(r) {
+      _gvArmorData = r.armor || [];
+      var sel = document.getElementById('gvArmorClass');
+      var cur = sel.value;
+      sel.innerHTML = '<option value="">All Classes (' + _gvArmorData.length + ')</option>';
+      (r.armorClasses || []).forEach(function(c) {
+        sel.innerHTML += '<option value="' + c.armorClass + '">Class ' + c.armorClass + ' (' + c.count + ')</option>';
+      });
+      sel.value = cur;
+      var matSel = document.getElementById('gvArmorMaterial');
+      var curMat = matSel.value;
+      matSel.innerHTML = '<option value="">All Materials</option>';
+      (r.materials || []).forEach(function(m) {
+        matSel.innerHTML += '<option value="' + escH(m) + '">' + escH(m) + '</option>';
+      });
+      matSel.value = curMat;
+      gvFilterArmor();
+    }).catch(function(e) { toast('Failed to load armor: ' + e.message, 'error'); });
+  }
+
+  window.gvFilterArmor = function() {
+    var search = (document.getElementById('gvArmorSearch').value || '').toLowerCase();
+    var ac = document.getElementById('gvArmorClass').value;
+    var mat = document.getElementById('gvArmorMaterial').value;
+    var kind = document.getElementById('gvArmorKind').value;
+    var modOnly = document.getElementById('gvArmorModifiedOnly').checked;
+    _gvArmorFiltered = _gvArmorData.filter(function(a) {
+      if (modOnly && !a.isModified) return false;
+      if (ac && a.armorClass !== parseInt(ac)) return false;
+      if (mat && a.armorMaterial !== mat) return false;
+      if (kind === 'plate' && !a.isPlate) return false;
+      if (kind === 'armor' && a.isPlate) return false;
+      if (search && a.fullName.toLowerCase().indexOf(search) === -1 &&
+          a.shortName.toLowerCase().indexOf(search) === -1) return false;
+      return true;
+    });
+    gvSortAndRenderArmor();
+  };
+
+  window.gvSortArmor = function(field) {
+    if (_gvArmorSort.field === field) _gvArmorSort.asc = !_gvArmorSort.asc;
+    else { _gvArmorSort.field = field; _gvArmorSort.asc = true; }
+    gvSortAndRenderArmor();
+  };
+
+  function gvSortAndRenderArmor() {
+    var f = _gvArmorSort.field;
+    var asc = _gvArmorSort.asc;
+    _gvArmorFiltered.sort(function(a, b) {
+      var va, vb;
+      if (f === 'name') { va = a.shortName.toLowerCase(); vb = b.shortName.toLowerCase(); }
+      else if (f === 'armorMaterial' || f === 'armorType') { va = (a[f] || '').toLowerCase(); vb = (b[f] || '').toLowerCase(); }
+      else { va = a[f] || 0; vb = b[f] || 0; }
+      var cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return asc ? cmp : -cmp;
+    });
+    gvRenderArmorTable();
+  }
+
+  function gvRenderArmorTable() {
+    var body = document.getElementById('gvArmorBody');
+    var showCmp = _gvCompareMode;
+    var html = '';
+    _gvArmorFiltered.forEach(function(a) {
+      var isExp = _gvEditingTpl === a.tpl;
+      var rowCls = 'gv-row-clickable' + (isExp ? ' gv-row-expanded' : '');
+      html += '<tr class="' + rowCls + '" onclick="window.gvExpandArmor(\'' + a.tpl + '\')">';
+      if (showCmp) html += '<td class="gv-compare-col"><input type="checkbox" ' + (_gvCompareSelected[a.tpl] ? 'checked' : '') + ' onclick="event.stopPropagation();window.gvToggleCompareItem(\'' + a.tpl + '\',this.checked)"></td>';
+      var plateBadge = a.isPlate ? '<span class="gv-plate-badge">PLATE</span>' : '';
+      html += '<td title="' + escH(a.fullName) + '"><div style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(a.shortName) + ' ' + plateBadge + '</div></td>';
+      html += '<td><span class="' + gvAcClass(a.armorClass) + '">' + gvVal(a.armorClass, a.original.armorClass) + '</span></td>';
+      html += '<td>' + gvVal(a.durability, a.original.durability, 1) + ' / ' + gvVal(a.maxDurability, a.original.maxDurability, 1) + '</td>';
+      html += '<td>' + gvVal(a.bluntThroughput, a.original.bluntThroughput, 3) + '</td>';
+      html += '<td style="font-size:11px">' + escH(a.armorMaterial) + '</td>';
+      html += '<td style="font-size:11px">' + escH(a.armorType) + '</td>';
+      html += '<td><button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetArmorItem(\'' + a.tpl + '\')" ' + (a.isModified ? '' : 'disabled') + ' style="font-size:11px;padding:2px 8px">Reset</button></td>';
+      html += '</tr>';
+      if (isExp) html += gvBuildArmorEditRow(a);
+    });
+    body.innerHTML = html;
+    document.getElementById('gvArmorCount').textContent = _gvArmorFiltered.length + ' items' + (_gvArmorData.filter(function(a) { return a.isModified; }).length > 0 ? ' (' + _gvArmorData.filter(function(a) { return a.isModified; }).length + ' modified)' : '');
+    document.querySelectorAll('#gvArmorTable th.sortable').forEach(function(th) {
+      var onclick = th.getAttribute('onclick') || '';
+      var m = onclick.match(/gvSortArmor\('(\w+)'\)/);
+      if (m) {
+        th.classList.toggle('sort-active', _gvArmorSort.field === m[1]);
+        var arrow = th.querySelector('.sort-arrow');
+        if (arrow) arrow.textContent = _gvArmorSort.field === m[1] ? (_gvArmorSort.asc ? '\u25B2' : '\u25BC') : '';
+      }
+    });
+    document.querySelectorAll('#gvArmorTable .gv-compare-col').forEach(function(el) {
+      el.style.display = _gvCompareMode ? '' : 'none';
+    });
+  }
+
+  function gvBuildArmorEditRow(a) {
+    var fields = [
+      { key: 'armorClass', label: 'Armor Class', orig: a.original.armorClass },
+      { key: 'durability', label: 'Durability', orig: a.original.durability, step: '0.1' },
+      { key: 'maxDurability', label: 'Max Durability', orig: a.original.maxDurability, step: '0.1' },
+      { key: 'bluntThroughput', label: 'Blunt Throughput', orig: a.original.bluntThroughput, step: '0.001' },
+      { key: 'speedPenaltyPercent', label: 'Speed Penalty %', orig: a.original.speedPenaltyPercent, step: '0.1' },
+      { key: 'mousePenalty', label: 'Mouse Penalty', orig: a.original.mousePenalty, step: '0.1' },
+      { key: 'weaponErgonomicPenalty', label: 'Ergo Penalty', orig: a.original.weaponErgonomicPenalty, step: '0.1' },
+    ];
+    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 9 : 8) + '"><div class="gv-edit-form">';
+    fields.forEach(function(f) {
+      var val = a[f.key];
+      var isModified = Math.abs(val - f.orig) > 0.001;
+      html += '<div class="gv-edit-field">';
+      html += '<label>' + f.label + ' <span class="gv-orig">orig: ' + (f.step ? f.orig.toFixed(f.step.split('.')[1]?.length || 1) : f.orig) + '</span></label>';
+      html += '<input type="number" step="' + (f.step || '1') + '" value="' + val + '" id="gvArmorEdit_' + a.tpl + '_' + f.key + '" class="' + (isModified ? 'gv-field-modified' : '') + '">';
+      html += '</div>';
+    });
+    html += '</div><div class="gv-edit-actions">';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvSaveArmor(\'' + a.tpl + '\')" style="background:var(--accent-dim);color:var(--bg-base)">Save Changes</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetArmorItem(\'' + a.tpl + '\')">Reset to Default</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvCollapseAmmo()">Cancel</button>';
+    html += '</div></td></tr>';
+    return html;
+  }
+
+  window.gvExpandArmor = function(tpl) {
+    _gvEditingTpl = (_gvEditingTpl === tpl) ? null : tpl;
+    gvRenderArmorTable();
+  };
+
+  window.gvSaveArmor = function(tpl) {
+    var a = _gvArmorData.find(function(x) { return x.tpl === tpl; });
+    if (!a) return;
+    var fields = ['armorClass','durability','maxDurability','bluntThroughput','speedPenaltyPercent','mousePenalty','weaponErgonomicPenalty'];
+    var override = {};
+    var hasChanges = false;
+    fields.forEach(function(f) {
+      var el = document.getElementById('gvArmorEdit_' + tpl + '_' + f);
+      if (!el) return;
+      var val = parseFloat(el.value);
+      if (isNaN(val)) return;
+      if (Math.abs(val - a.original[f]) > 0.001) {
+        override[f] = val;
+        hasChanges = true;
+      }
+    });
+    if (!hasChanges) { toast('No changes to save', 'info'); return; }
+    var body = { overrides: {} };
+    body.overrides[tpl] = override;
+    api('gamevalues/armor', { method: 'POST', body: JSON.stringify(body) }).then(function(r) {
+      toast(r.message || 'Armor updated', 'success');
+      _gvEditingTpl = null;
+      gvLoadArmor();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvResetArmorItem = function(tpl) {
+    api('gamevalues/armor/reset/' + tpl, { method: 'POST' }).then(function(r) {
+      toast(r.message || 'Reset', 'success');
+      _gvEditingTpl = null;
+      gvLoadArmor();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvResetAllArmor = function() {
+    if (!confirm('Reset ALL armor values to game defaults?')) return;
+    api('gamevalues/armor/reset', { method: 'POST' }).then(function(r) {
+      toast(r.message || 'All armor reset', 'success');
+      _gvEditingTpl = null;
+      gvLoadArmor();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  // ═══ WEAPONS ═══
+  function gvLoadWeapons() {
+    api('gamevalues/weapons').then(function(r) {
+      _gvWeaponData = r.weapons || [];
+      var sel = document.getElementById('gvWeaponClass');
+      var cur = sel.value;
+      sel.innerHTML = '<option value="">All Classes (' + _gvWeaponData.length + ')</option>';
+      (r.weaponClasses || []).forEach(function(c) {
+        sel.innerHTML += '<option value="' + escH(c.key) + '">' + escH(c.display) + ' (' + c.count + ')</option>';
+      });
+      sel.value = cur;
+      var calSel = document.getElementById('gvWeaponCaliber');
+      var curCal = calSel.value;
+      calSel.innerHTML = '<option value="">All Calibers</option>';
+      (r.calibers || []).forEach(function(c) {
+        calSel.innerHTML += '<option value="' + escH(c.key) + '">' + escH(c.display) + ' (' + c.count + ')</option>';
+      });
+      calSel.value = curCal;
+      gvFilterWeapons();
+    }).catch(function(e) { toast('Failed to load weapons: ' + e.message, 'error'); });
+  }
+
+  window.gvFilterWeapons = function() {
+    var search = (document.getElementById('gvWeaponSearch').value || '').toLowerCase();
+    var wc = document.getElementById('gvWeaponClass').value;
+    var cal = document.getElementById('gvWeaponCaliber').value;
+    var modOnly = document.getElementById('gvWeaponModifiedOnly').checked;
+    _gvWeaponFiltered = _gvWeaponData.filter(function(w) {
+      if (modOnly && !w.isModified) return false;
+      if (wc && w.weapClass !== wc) return false;
+      if (cal && w.ammoCaliber !== cal) return false;
+      if (search && w.fullName.toLowerCase().indexOf(search) === -1 &&
+          w.shortName.toLowerCase().indexOf(search) === -1) return false;
+      return true;
+    });
+    gvSortAndRenderWeapons();
+  };
+
+  window.gvSortWeapons = function(field) {
+    if (_gvWeaponSort.field === field) _gvWeaponSort.asc = !_gvWeaponSort.asc;
+    else { _gvWeaponSort.field = field; _gvWeaponSort.asc = true; }
+    gvSortAndRenderWeapons();
+  };
+
+  function gvSortAndRenderWeapons() {
+    var f = _gvWeaponSort.field;
+    var asc = _gvWeaponSort.asc;
+    _gvWeaponFiltered.sort(function(a, b) {
+      var va, vb;
+      if (f === 'name') { va = a.shortName.toLowerCase(); vb = b.shortName.toLowerCase(); }
+      else if (f === 'weapClass' || f === 'ammoCaliber') { va = (a[f + 'Display'] || a[f] || '').toLowerCase(); vb = (b[f + 'Display'] || b[f] || '').toLowerCase(); }
+      else { va = a[f] || 0; vb = b[f] || 0; }
+      var cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return asc ? cmp : -cmp;
+    });
+    gvRenderWeaponTable();
+  }
+
+  function gvRenderWeaponTable() {
+    var body = document.getElementById('gvWeaponBody');
+    var showCmp = _gvCompareMode;
+    var html = '';
+    _gvWeaponFiltered.forEach(function(w) {
+      var isExp = _gvEditingTpl === w.tpl;
+      var rowCls = 'gv-row-clickable' + (isExp ? ' gv-row-expanded' : '');
+      html += '<tr class="' + rowCls + '" onclick="window.gvExpandWeapon(\'' + w.tpl + '\')">';
+      if (showCmp) html += '<td class="gv-compare-col"><input type="checkbox" ' + (_gvCompareSelected[w.tpl] ? 'checked' : '') + ' onclick="event.stopPropagation();window.gvToggleCompareItem(\'' + w.tpl + '\',this.checked)"></td>';
+      html += '<td title="' + escH(w.fullName) + '"><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(w.shortName) + '</div></td>';
+      html += '<td style="font-size:11px">' + escH(w.weapClassDisplay) + '</td>';
+      html += '<td style="font-size:11px">' + escH(w.ammoCaliberDisplay) + '</td>';
+      html += '<td>' + gvVal(w.ergonomics, w.original.ergonomics) + '</td>';
+      html += '<td>' + gvVal(w.recoilForceUp, w.original.recoilForceUp) + '</td>';
+      html += '<td>' + gvVal(w.recoilForceBack, w.original.recoilForceBack) + '</td>';
+      html += '<td>' + gvVal(w.bFirerate, w.original.bFirerate) + gvWarn('bFirerate', w.bFirerate) + '</td>';
+      html += '<td><button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetWeaponItem(\'' + w.tpl + '\')" ' + (w.isModified ? '' : 'disabled') + ' style="font-size:11px;padding:2px 8px">Reset</button></td>';
+      html += '</tr>';
+      if (isExp) html += gvBuildWeaponEditRow(w);
+    });
+    body.innerHTML = html;
+    document.getElementById('gvWeaponCount').textContent = _gvWeaponFiltered.length + ' items' + (_gvWeaponData.filter(function(w) { return w.isModified; }).length > 0 ? ' (' + _gvWeaponData.filter(function(w) { return w.isModified; }).length + ' modified)' : '');
+    document.querySelectorAll('#gvWeaponTable th.sortable').forEach(function(th) {
+      var onclick = th.getAttribute('onclick') || '';
+      var m = onclick.match(/gvSortWeapons\('(\w+)'\)/);
+      if (m) {
+        th.classList.toggle('sort-active', _gvWeaponSort.field === m[1]);
+        var arrow = th.querySelector('.sort-arrow');
+        if (arrow) arrow.textContent = _gvWeaponSort.field === m[1] ? (_gvWeaponSort.asc ? '\u25B2' : '\u25BC') : '';
+      }
+    });
+    document.querySelectorAll('#gvWeaponTable .gv-compare-col').forEach(function(el) {
+      el.style.display = _gvCompareMode ? '' : 'none';
+    });
+  }
+
+  function gvBuildWeaponEditRow(w) {
+    var fields = [
+      { key: 'ergonomics', label: 'Ergonomics', orig: w.original.ergonomics },
+      { key: 'recoilForceUp', label: 'Vertical Recoil', orig: w.original.recoilForceUp },
+      { key: 'recoilForceBack', label: 'Horizontal Recoil', orig: w.original.recoilForceBack },
+      { key: 'recoilAngle', label: 'Recoil Angle', orig: w.original.recoilAngle },
+      { key: 'bFirerate', label: 'Fire Rate (RPM)', orig: w.original.bFirerate },
+      { key: 'centerOfImpact', label: 'Center of Impact', orig: w.original.centerOfImpact, step: '0.001' },
+      { key: 'sightingRange', label: 'Sighting Range', orig: w.original.sightingRange },
+      { key: 'durability', label: 'Durability', orig: w.original.durability, step: '0.1' },
+      { key: 'maxDurability', label: 'Max Durability', orig: w.original.maxDurability, step: '0.1' },
+      { key: 'heatFactorGun', label: 'Heat Factor', orig: w.original.heatFactorGun, step: '0.01' },
+      { key: 'coolFactorGun', label: 'Cool Factor', orig: w.original.coolFactorGun, step: '0.01' },
+      { key: 'baseMalfunctionChance', label: 'Malfunction Chance', orig: w.original.baseMalfunctionChance, step: '0.001' },
+      { key: 'velocity', label: 'Velocity', orig: w.original.velocity },
+      { key: 'deviationMax', label: 'Deviation Max', orig: w.original.deviationMax, step: '0.1' },
+    ];
+    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 10 : 9) + '"><div class="gv-edit-form">';
+    fields.forEach(function(f) {
+      var val = w[f.key];
+      var isModified = Math.abs(val - f.orig) > 0.001;
+      html += '<div class="gv-edit-field">';
+      html += '<label>' + f.label + ' <span class="gv-orig">orig: ' + (f.step ? f.orig.toFixed(f.step.split('.')[1]?.length || 1) : f.orig) + '</span></label>';
+      html += '<input type="number" step="' + (f.step || '1') + '" value="' + val + '" id="gvWeaponEdit_' + w.tpl + '_' + f.key + '" class="' + (isModified ? 'gv-field-modified' : '') + '">';
+      html += '</div>';
+    });
+    html += '</div><div class="gv-edit-actions">';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvSaveWeapon(\'' + w.tpl + '\')" style="background:var(--accent-dim);color:var(--bg-base)">Save Changes</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetWeaponItem(\'' + w.tpl + '\')">Reset to Default</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvCollapseAmmo()">Cancel</button>';
+    html += '</div></td></tr>';
+    return html;
+  }
+
+  window.gvExpandWeapon = function(tpl) {
+    _gvEditingTpl = (_gvEditingTpl === tpl) ? null : tpl;
+    gvRenderWeaponTable();
+  };
+
+  window.gvSaveWeapon = function(tpl) {
+    var w = _gvWeaponData.find(function(x) { return x.tpl === tpl; });
+    if (!w) return;
+    var fields = ['ergonomics','recoilForceUp','recoilForceBack','recoilAngle','bFirerate','centerOfImpact','sightingRange','durability','maxDurability','heatFactorGun','coolFactorGun','baseMalfunctionChance','velocity','deviationMax'];
+    var override = {};
+    var hasChanges = false;
+    fields.forEach(function(f) {
+      var el = document.getElementById('gvWeaponEdit_' + tpl + '_' + f);
+      if (!el) return;
+      var val = parseFloat(el.value);
+      if (isNaN(val)) return;
+      if (Math.abs(val - w.original[f]) > 0.001) {
+        override[f] = val;
+        hasChanges = true;
+      }
+    });
+    if (!hasChanges) { toast('No changes to save', 'info'); return; }
+    var body = { overrides: {} };
+    body.overrides[tpl] = override;
+    api('gamevalues/weapons', { method: 'POST', body: JSON.stringify(body) }).then(function(r) {
+      toast(r.message || 'Weapon updated', 'success');
+      _gvEditingTpl = null;
+      gvLoadWeapons();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvResetWeaponItem = function(tpl) {
+    api('gamevalues/weapons/reset/' + tpl, { method: 'POST' }).then(function(r) {
+      toast(r.message || 'Reset', 'success');
+      _gvEditingTpl = null;
+      gvLoadWeapons();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvResetAllWeapons = function() {
+    if (!confirm('Reset ALL weapon values to game defaults?')) return;
+    api('gamevalues/weapons/reset', { method: 'POST' }).then(function(r) {
+      toast(r.message || 'All weapons reset', 'success');
+      _gvEditingTpl = null;
+      gvLoadWeapons();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  // ═══ COMPARE MODE ═══
+  window.gvToggleCompareMode = function() {
+    _gvCompareMode = document.getElementById('gvAmmoCompareMode')?.checked ||
+                     document.getElementById('gvArmorCompareMode')?.checked ||
+                     document.getElementById('gvWeaponCompareMode')?.checked || false;
+    // Sync all checkboxes
+    ['gvAmmoCompareMode','gvArmorCompareMode','gvWeaponCompareMode'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.checked = _gvCompareMode;
+    });
+    document.getElementById('gvCompareBar').style.display = _gvCompareMode ? 'flex' : 'none';
+    if (!_gvCompareMode) _gvCompareSelected = {};
+    gvUpdateCompareCount();
+    if (_gvCurrentTab === 'ammo') gvRenderAmmoTable();
+    else if (_gvCurrentTab === 'armor') gvRenderArmorTable();
+    else if (_gvCurrentTab === 'weapons') gvRenderWeaponTable();
+  };
+
+  window.gvToggleCompareItem = function(tpl, checked) {
+    if (checked) _gvCompareSelected[tpl] = true;
+    else delete _gvCompareSelected[tpl];
+    gvUpdateCompareCount();
+  };
+
+  function gvUpdateCompareCount() {
+    var count = Object.keys(_gvCompareSelected).length;
+    document.getElementById('gvCompareCount').textContent = count + ' selected';
+  }
+
+  window.gvClearCompare = function() {
+    _gvCompareSelected = {};
+    gvUpdateCompareCount();
+    if (_gvCurrentTab === 'ammo') gvRenderAmmoTable();
+    else if (_gvCurrentTab === 'armor') gvRenderArmorTable();
+    else if (_gvCurrentTab === 'weapons') gvRenderWeaponTable();
+  };
+
+  window.gvOpenCompare = function() {
+    var tpls = Object.keys(_gvCompareSelected);
+    if (tpls.length < 2) { toast('Select at least 2 items to compare', 'info'); return; }
+    if (tpls.length > 8) { toast('Maximum 8 items for comparison', 'info'); return; }
+
+    // Gather items from current tab's data
+    var items = [];
+    var fields = [];
+    if (_gvCurrentTab === 'ammo') {
+      items = _gvAmmoData.filter(function(a) { return _gvCompareSelected[a.tpl]; });
+      fields = [
+        { key: 'damage', label: 'Damage', higher: true },
+        { key: 'penetrationPower', label: 'Penetration', higher: true },
+        { key: 'armorDamage', label: 'Armor Damage', higher: true },
+        { key: 'initialSpeed', label: 'Speed', higher: true },
+        { key: 'fragmentationChance', label: 'Frag %', higher: true },
+        { key: 'ricochetChance', label: 'Ricochet %', higher: true },
+        { key: 'projectileCount', label: 'Projectiles', higher: true },
+        { key: 'misfireChance', label: 'Misfire', higher: false },
+        { key: 'lightBleedingDelta', label: 'Light Bleed', higher: true },
+        { key: 'heavyBleedingDelta', label: 'Heavy Bleed', higher: true },
+        { key: 'ammoAccr', label: 'Accuracy', higher: true },
+        { key: 'ammoRec', label: 'Recoil', higher: false },
+      ];
+    } else if (_gvCurrentTab === 'armor') {
+      items = _gvArmorData.filter(function(a) { return _gvCompareSelected[a.tpl]; });
+      fields = [
+        { key: 'armorClass', label: 'Class', higher: true },
+        { key: 'durability', label: 'Durability', higher: true },
+        { key: 'maxDurability', label: 'Max Durability', higher: true },
+        { key: 'bluntThroughput', label: 'Blunt', higher: false },
+        { key: 'speedPenaltyPercent', label: 'Speed Pen %', higher: false },
+        { key: 'mousePenalty', label: 'Mouse Pen', higher: false },
+        { key: 'weaponErgonomicPenalty', label: 'Ergo Pen', higher: false },
+      ];
+    } else {
+      items = _gvWeaponData.filter(function(w) { return _gvCompareSelected[w.tpl]; });
+      fields = [
+        { key: 'ergonomics', label: 'Ergonomics', higher: true },
+        { key: 'recoilForceUp', label: 'V. Recoil', higher: false },
+        { key: 'recoilForceBack', label: 'H. Recoil', higher: false },
+        { key: 'bFirerate', label: 'Fire Rate', higher: true },
+        { key: 'centerOfImpact', label: 'COI', higher: false },
+        { key: 'sightingRange', label: 'Sight Range', higher: true },
+        { key: 'maxDurability', label: 'Max Durability', higher: true },
+        { key: 'baseMalfunctionChance', label: 'Malfunction', higher: false },
+        { key: 'velocity', label: 'Velocity', higher: true },
+      ];
+    }
+
+    if (items.length < 2) { toast('Items not found in current tab', 'info'); return; }
+
+    // Build compare table
+    var html = '<table><thead><tr><th>Stat</th>';
+    items.forEach(function(item) { html += '<th>' + escH(item.shortName) + '</th>'; });
+    html += '</tr></thead><tbody>';
+
+    fields.forEach(function(f) {
+      var vals = items.map(function(item) { return item[f.key] || 0; });
+      var best = f.higher ? Math.max.apply(null, vals) : Math.min.apply(null, vals);
+      var worst = f.higher ? Math.min.apply(null, vals) : Math.max.apply(null, vals);
+      html += '<tr><th>' + f.label + '</th>';
+      items.forEach(function(item, i) {
+        var v = vals[i];
+        var cls = '';
+        if (vals.filter(function(x) { return x !== vals[0]; }).length > 0) {
+          if (v === best) cls = 'gv-best';
+          else if (v === worst) cls = 'gv-worst';
+        }
+        var display = typeof v === 'number' ? (v % 1 !== 0 ? v.toFixed(3) : v) : v;
+        var origVal = item.original ? item.original[f.key] : null;
+        var origStr = '';
+        if (origVal != null && Math.abs(v - origVal) > 0.001) {
+          origStr = ' <span style="font-size:10px;color:var(--text-dim)">(was ' + (origVal % 1 !== 0 ? origVal.toFixed(3) : origVal) + ')</span>';
+        }
+        html += '<td class="' + cls + '">' + display + origStr + '</td>';
+      });
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('gvCompareBody').innerHTML = html;
+    document.getElementById('gvCompareOverlay').style.display = 'flex';
+  };
+
+  // ═══ PRESETS ═══
+  var _gvPresetsData = [];
+  var _gvCatLabels = { all: 'All', ammo: 'Ammo', armor: 'Armor', weapons: 'Weapons' };
+
+  function gvLoadPresets() {
+    api('gamevalues/presets').then(function(r) {
+      _gvPresetsData = r.presets || [];
+      var sel = document.getElementById('gvPresetSelect');
+      sel.innerHTML = '<option value="">— Select Preset —</option>';
+
+      // Group: built-in first, then custom
+      var builtIn = _gvPresetsData.filter(function(p) { return p.isBuiltIn; });
+      var custom = _gvPresetsData.filter(function(p) { return !p.isBuiltIn; });
+
+      if (builtIn.length) {
+        sel.innerHTML += '<optgroup label="Built-in Defaults">';
+        builtIn.forEach(function(p) {
+          sel.innerHTML += '<option value="' + escH(p.name) + '">' + escH(p.name) + '</option>';
+        });
+        sel.innerHTML += '</optgroup>';
+      }
+      if (custom.length) {
+        sel.innerHTML += '<optgroup label="Custom Presets">';
+        custom.forEach(function(p) {
+          var catTag = _gvCatLabels[p.category] || p.category;
+          var label = p.name + ' [' + catTag + ']' + (p.description ? ' — ' + p.description : '');
+          sel.innerHTML += '<option value="' + escH(p.name) + '">' + escH(label) + '</option>';
+        });
+        sel.innerHTML += '</optgroup>';
+      }
+    });
+  }
+
+  window.gvLoadPreset = function() {
+    var name = document.getElementById('gvPresetSelect').value;
+    if (!name) { toast('Select a preset first', 'info'); return; }
+    api('gamevalues/presets/load', { method: 'POST', body: JSON.stringify({ name: name }) }).then(function(r) {
+      if (!r.success) { toast(r.message || 'Failed', 'error'); return; }
+      toast(r.message || 'Preset loaded', 'success');
+      _gvEditingTpl = null;
+      // Find the preset's category to know which tabs to reload
+      var preset = _gvPresetsData.find(function(p) { return p.name === name; });
+      var cat = preset ? preset.category : 'all';
+      if (cat === 'all' || cat === 'ammo') gvLoadAmmo();
+      if (cat === 'all' || cat === 'armor') { if (_gvArmorData.length) gvLoadArmor(); }
+      if (cat === 'all' || cat === 'weapons') { if (_gvWeaponData.length) gvLoadWeapons(); }
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvSavePreset = function() {
+    var name = document.getElementById('gvPresetName').value.trim();
+    if (!name) { toast('Enter a preset name', 'info'); return; }
+    var category = document.getElementById('gvPresetCategory').value;
+    api('gamevalues/presets/save', { method: 'POST', body: JSON.stringify({ name: name, description: '', category: category }) }).then(function(r) {
+      if (!r.success) { toast(r.message || 'Failed', 'error'); return; }
+      var catLabel = _gvCatLabels[category] || category;
+      toast('Preset "' + name + '" saved [' + catLabel + ']', 'success');
+      document.getElementById('gvPresetName').value = '';
+      gvLoadPresets();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvDeletePreset = function() {
+    var name = document.getElementById('gvPresetSelect').value;
+    if (!name) { toast('Select a preset first', 'info'); return; }
+    if (!confirm('Delete preset "' + name + '"?')) return;
+    api('gamevalues/presets/' + encodeURIComponent(name), { method: 'DELETE' }).then(function(r) {
+      if (!r.success) { toast(r.message || 'Failed', 'error'); return; }
+      toast(r.message || 'Deleted', 'success');
+      gvLoadPresets();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvExportPreset = function() {
+    var name = document.getElementById('gvPresetSelect').value;
+    if (!name) { toast('Select a preset first', 'info'); return; }
+    api('gamevalues/presets/' + encodeURIComponent(name)).then(function(r) {
+      var blob = new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'gv-preset-' + name.replace(/[^a-z0-9]/gi, '_') + '.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('Exported preset: ' + name, 'success');
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvImportPreset = function(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var data = JSON.parse(e.target.result);
+        if (!data.name || !data.preset) { toast('Invalid preset file', 'error'); return; }
+        api('gamevalues/presets/import', { method: 'POST', body: JSON.stringify(data) }).then(function(r) {
+          if (!r.success) { toast(r.message || 'Failed', 'error'); return; }
+          toast(r.message || 'Imported', 'success');
+          gvLoadPresets();
+        }).catch(function(err) { toast('Failed: ' + err.message, 'error'); });
+      } catch (ex) { toast('Invalid JSON file', 'error'); }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
   };
 
   // ═══════════════════════════════════════════════════════
