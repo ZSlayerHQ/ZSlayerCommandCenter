@@ -3158,6 +3158,39 @@ public class CommandCenterHttpListener(
                 break;
             }
 
+            // ── MEDICAL ──
+            case "medical" when method == "GET":
+            {
+                var qs = context.Request.Query;
+                var search = qs["search"].FirstOrDefault();
+                var type = qs["type"].FirstOrDefault();
+                var result = gameValuesService.GetMedical(search, type);
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "medical" when method == "POST":
+            {
+                var body = await ReadBody<GameValuesUpdateRequest<MedicalOverride>>(context);
+                if (body?.Overrides == null || body.Overrides.Count == 0)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var result = gameValuesService.UpdateMedical(body.Overrides);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Game Values: updated {body.Overrides.Count} medical items");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "medical/reset" when method == "POST":
+            {
+                var result = gameValuesService.ResetMedical();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: reset all medical to defaults");
+                await WriteJson(context, 200, result);
+                break;
+            }
+
             // ── PRESETS ──
             case "presets" when method == "GET":
             {
@@ -3243,6 +3276,13 @@ public class CommandCenterHttpListener(
                 {
                     var tpl = subPath["weapons/reset/".Length..];
                     var result = gameValuesService.ResetWeaponItem(tpl);
+                    await WriteJson(context, result.Success ? 200 : 404, result);
+                    break;
+                }
+                if (method == "POST" && subPath.StartsWith("medical/reset/"))
+                {
+                    var tpl = subPath["medical/reset/".Length..];
+                    var result = gameValuesService.ResetMedicalItem(tpl);
                     await WriteJson(context, result.Success ? 200 : 404, result);
                     break;
                 }

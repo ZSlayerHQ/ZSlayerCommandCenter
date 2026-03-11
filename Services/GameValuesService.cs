@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Services;
 using ZSlayerCommandCenter.Models;
@@ -23,6 +24,7 @@ public class GameValuesService(
     private readonly Dictionary<string, AmmoSnapshot> _ammoSnapshots = new();
     private readonly Dictionary<string, ArmorSnapshot> _armorSnapshots = new();
     private readonly Dictionary<string, WeaponSnapshot> _weaponSnapshots = new();
+    private readonly Dictionary<string, MedicalSnapshot> _medicalSnapshots = new();
 
     private record AmmoSnapshot(
         double Damage, double PenetrationPower, double ArmorDamage,
@@ -45,6 +47,24 @@ public class GameValuesService(
         double HeatFactorGun, double CoolFactorGun, double BaseMalfunctionChance,
         double Velocity, double DeviationMax,
         string WeapClass, string AmmoCaliber, List<string> FireTypes, bool BoltAction);
+
+    private record MedicalSnapshot(
+        double MaxHpResource, double HpResourceRate, double MedUseTime,
+        double? LightBleedingCost, double? HeavyBleedingCost, double? FractureCost,
+        double? PainDuration, double? ContusionDuration,
+        double? EnergyChange, double? HydrationChange,
+        string MedType, string? StimBuffName, List<string> Treats);
+
+    // Parent IDs for medical/consumable item detection
+    private static readonly Dictionary<string, string> MedicalParentIds = new()
+    {
+        ["5448f39d4bdc2d0a728b4568"] = "Medkit",
+        ["5448f3ac4bdc2dce718b4569"] = "Medical",
+        ["5448f3a14bdc2d27728b4569"] = "Drug",
+        ["5448f3a64bdc2d60728b456a"] = "Stimulant",
+        ["5448e8d04bdc2ddf718b4569"] = "Food",
+        ["5448e8d64bdc2dce718b4568"] = "Drink",
+    };
 
     // ═══════════════════════════════════════════════════════
     // CALIBER DISPLAY NAMES
@@ -110,9 +130,9 @@ public class GameValuesService(
             EnsureSnapshot();
             ApplyAll();
             var config = configService.GetConfig().GameValues;
-            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count;
+            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count + config.MedicalOverrides.Count;
             if (total > 0)
-                logger.Success($"[ZSlayerHQ] Game Values: applied {total} overrides ({config.AmmoOverrides.Count} ammo, {config.ArmorOverrides.Count} armor, {config.WeaponOverrides.Count} weapons)");
+                logger.Success($"[ZSlayerHQ] Game Values: applied {total} overrides ({config.AmmoOverrides.Count} ammo, {config.ArmorOverrides.Count} armor, {config.WeaponOverrides.Count} weapons, {config.MedicalOverrides.Count} medical)");
             else
                 logger.Info("[ZSlayerHQ] Game Values: initialized (no overrides)");
         }
@@ -130,6 +150,7 @@ public class GameValuesService(
         var ammoCount = 0;
         var armorCount = 0;
         var weaponCount = 0;
+        var medicalCount = 0;
 
         foreach (var (id, template) in items)
         {
@@ -213,10 +234,61 @@ public class GameValuesService(
                 );
                 weaponCount++;
             }
+
+            // Medical / Food / Drink: check parent ID
+            var parentId = template.Parent.ToString();
+            if (MedicalParentIds.TryGetValue(parentId, out var medType))
+            {
+                var treats = new List<string>();
+
+                // Extract effects from EffectsDamage dict
+                double? lightBleedCost = null, heavyBleedCost = null, fractureCost = null;
+                double? painDur = null, contusionDur = null;
+                if (props.EffectsDamage != null)
+                {
+                    if (props.EffectsDamage.TryGetValue(DamageEffectType.LightBleeding, out var lb))
+                    { lightBleedCost = lb.Cost; treats.Add("LBleed"); }
+                    if (props.EffectsDamage.TryGetValue(DamageEffectType.HeavyBleeding, out var hb))
+                    { heavyBleedCost = hb.Cost; treats.Add("HBleed"); }
+                    if (props.EffectsDamage.TryGetValue(DamageEffectType.Fracture, out var fr))
+                    { fractureCost = fr.Cost; treats.Add("Fracture"); }
+                    if (props.EffectsDamage.TryGetValue(DamageEffectType.Pain, out var pn))
+                    { painDur = pn.Duration; treats.Add("Pain"); }
+                    if (props.EffectsDamage.TryGetValue(DamageEffectType.Contusion, out var cn))
+                    { contusionDur = cn.Duration; treats.Add("Contusion"); }
+                }
+
+                // Extract health effects
+                double? energyChange = null, hydrationChange = null;
+                if (props.EffectsHealth != null)
+                {
+                    if (props.EffectsHealth.TryGetValue(HealthFactor.Energy, out var en))
+                    { energyChange = en.Value; }
+                    if (props.EffectsHealth.TryGetValue(HealthFactor.Hydration, out var hy))
+                    { hydrationChange = hy.Value; }
+                }
+
+                _medicalSnapshots[tpl] = new MedicalSnapshot(
+                    MaxHpResource: props.MaxHpResource ?? 0,
+                    HpResourceRate: props.HpResourceRate ?? 0,
+                    MedUseTime: props.MedUseTime ?? 0,
+                    LightBleedingCost: lightBleedCost,
+                    HeavyBleedingCost: heavyBleedCost,
+                    FractureCost: fractureCost,
+                    PainDuration: painDur,
+                    ContusionDuration: contusionDur,
+                    EnergyChange: energyChange,
+                    HydrationChange: hydrationChange,
+                    MedType: medType,
+                    StimBuffName: props.StimulatorBuffs,
+                    Treats: treats
+                );
+                medicalCount++;
+            }
         }
 
         _snapshotTaken = true;
-        logger.Info($"[ZSlayerHQ] Game Values: snapshotted {ammoCount} ammo, {armorCount} armor, {weaponCount} weapons");
+        logger.Info($"[ZSlayerHQ] Game Values: snapshotted {ammoCount} ammo, {armorCount} armor, {weaponCount} weapons, {medicalCount} medical");
     }
 
     // ═══════════════════════════════════════════════════════
@@ -840,6 +912,204 @@ public class GameValuesService(
     }
 
     // ═══════════════════════════════════════════════════════
+    // GET MEDICAL
+    // ═══════════════════════════════════════════════════════
+
+    public MedicalListResponse GetMedical(string? search, string? type)
+    {
+        lock (_lock)
+        {
+            EnsureSnapshot();
+            var items = databaseService.GetItems();
+            var locales = localeService.GetLocaleDb("en");
+            var config = configService.GetConfig().GameValues;
+            var result = new List<MedicalDto>();
+            var typeCounts = new Dictionary<string, int>();
+
+            foreach (var (tpl, snap) in _medicalSnapshots)
+            {
+                if (!items.TryGetValue(tpl, out var template)) continue;
+                var props = template.Properties;
+                if (props == null) continue;
+
+                typeCounts.TryGetValue(snap.MedType, out var cnt);
+                typeCounts[snap.MedType] = cnt + 1;
+
+                // Type filter
+                if (!string.IsNullOrEmpty(type) && !snap.MedType.Equals(type, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Name lookup
+                locales.TryGetValue($"{tpl} ShortName", out var shortName);
+                locales.TryGetValue($"{tpl} Name", out var fullName);
+                if (string.IsNullOrEmpty(fullName)) fullName = template.Name ?? tpl;
+                if (string.IsNullOrEmpty(shortName)) shortName = fullName;
+
+                // Search filter
+                if (!string.IsNullOrEmpty(search))
+                {
+                    var q = search.ToLowerInvariant();
+                    if (!fullName.ToLowerInvariant().Contains(q) &&
+                        !shortName.ToLowerInvariant().Contains(q) &&
+                        !tpl.ToLowerInvariant().Contains(q))
+                        continue;
+                }
+
+                var isModified = config.MedicalOverrides.ContainsKey(tpl);
+
+                // Get current values from live props
+                double? curLightBleedCost = null, curHeavyBleedCost = null, curFractureCost = null;
+                double? curPainDur = null, curContusionDur = null;
+                double? curEnergyChange = null, curHydrationChange = null;
+                var curTreats = new List<string>();
+                if (props.EffectsDamage != null)
+                {
+                    if (props.EffectsDamage.TryGetValue(DamageEffectType.LightBleeding, out var lb))
+                    { curLightBleedCost = lb.Cost; curTreats.Add("LBleed"); }
+                    if (props.EffectsDamage.TryGetValue(DamageEffectType.HeavyBleeding, out var hb))
+                    { curHeavyBleedCost = hb.Cost; curTreats.Add("HBleed"); }
+                    if (props.EffectsDamage.TryGetValue(DamageEffectType.Fracture, out var fr))
+                    { curFractureCost = fr.Cost; curTreats.Add("Fracture"); }
+                    if (props.EffectsDamage.TryGetValue(DamageEffectType.Pain, out var pn))
+                    { curPainDur = pn.Duration; curTreats.Add("Pain"); }
+                    if (props.EffectsDamage.TryGetValue(DamageEffectType.Contusion, out var cn))
+                    { curContusionDur = cn.Duration; curTreats.Add("Contusion"); }
+                }
+                if (props.EffectsHealth != null)
+                {
+                    if (props.EffectsHealth.TryGetValue(HealthFactor.Energy, out var en))
+                        curEnergyChange = en.Value;
+                    if (props.EffectsHealth.TryGetValue(HealthFactor.Hydration, out var hy))
+                        curHydrationChange = hy.Value;
+                }
+
+                result.Add(new MedicalDto
+                {
+                    Tpl = tpl,
+                    ShortName = shortName,
+                    FullName = fullName,
+                    MedType = snap.MedType,
+                    StimBuffName = snap.StimBuffName,
+                    MaxHpResource = props.MaxHpResource ?? 0,
+                    HpResourceRate = props.HpResourceRate ?? 0,
+                    MedUseTime = props.MedUseTime ?? 0,
+                    LightBleedingCost = curLightBleedCost,
+                    HeavyBleedingCost = curHeavyBleedCost,
+                    FractureCost = curFractureCost,
+                    PainDuration = curPainDur,
+                    ContusionDuration = curContusionDur,
+                    EnergyChange = curEnergyChange,
+                    HydrationChange = curHydrationChange,
+                    Treats = curTreats,
+                    Original = new MedicalOriginalValues
+                    {
+                        MaxHpResource = snap.MaxHpResource,
+                        HpResourceRate = snap.HpResourceRate,
+                        MedUseTime = snap.MedUseTime,
+                        LightBleedingCost = snap.LightBleedingCost,
+                        HeavyBleedingCost = snap.HeavyBleedingCost,
+                        FractureCost = snap.FractureCost,
+                        PainDuration = snap.PainDuration,
+                        ContusionDuration = snap.ContusionDuration,
+                        EnergyChange = snap.EnergyChange,
+                        HydrationChange = snap.HydrationChange,
+                    },
+                    IsModified = isModified,
+                });
+            }
+
+            result.Sort((a, b) => string.Compare(a.ShortName, b.ShortName, StringComparison.OrdinalIgnoreCase));
+
+            return new MedicalListResponse
+            {
+                Medical = result,
+                Types = typeCounts
+                    .Select(kv => new MedicalTypeInfo { Key = kv.Key, Display = kv.Key, Count = kv.Value })
+                    .OrderBy(t => t.Display)
+                    .ToList(),
+                TotalModified = config.MedicalOverrides.Count,
+            };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // UPDATE MEDICAL
+    // ═══════════════════════════════════════════════════════
+
+    public GameValuesApplyResult UpdateMedical(Dictionary<string, MedicalOverride> overrides)
+    {
+        lock (_lock)
+        {
+            var sw = Stopwatch.StartNew();
+            EnsureSnapshot();
+            var config = configService.GetConfig().GameValues;
+
+            foreach (var (tpl, ov) in overrides)
+            {
+                if (!_medicalSnapshots.ContainsKey(tpl)) continue;
+
+                // Clamp values
+                if (ov.MaxHpResource.HasValue) ov.MaxHpResource = GameValuesClamps.ClampMedical("maxHpResource", ov.MaxHpResource.Value);
+                if (ov.HpResourceRate.HasValue) ov.HpResourceRate = GameValuesClamps.ClampMedical("hpResourceRate", ov.HpResourceRate.Value);
+                if (ov.MedUseTime.HasValue) ov.MedUseTime = GameValuesClamps.ClampMedical("medUseTime", ov.MedUseTime.Value);
+                if (ov.LightBleedingCost.HasValue) ov.LightBleedingCost = GameValuesClamps.ClampMedical("lightBleedingCost", ov.LightBleedingCost.Value);
+                if (ov.HeavyBleedingCost.HasValue) ov.HeavyBleedingCost = GameValuesClamps.ClampMedical("heavyBleedingCost", ov.HeavyBleedingCost.Value);
+                if (ov.FractureCost.HasValue) ov.FractureCost = GameValuesClamps.ClampMedical("fractureCost", ov.FractureCost.Value);
+                if (ov.PainDuration.HasValue) ov.PainDuration = GameValuesClamps.ClampMedical("painDuration", ov.PainDuration.Value);
+                if (ov.ContusionDuration.HasValue) ov.ContusionDuration = GameValuesClamps.ClampMedical("contusionDuration", ov.ContusionDuration.Value);
+                if (ov.EnergyChange.HasValue) ov.EnergyChange = GameValuesClamps.ClampMedical("energyChange", ov.EnergyChange.Value);
+                if (ov.HydrationChange.HasValue) ov.HydrationChange = GameValuesClamps.ClampMedical("hydrationChange", ov.HydrationChange.Value);
+
+                if (config.MedicalOverrides.TryGetValue(tpl, out var existing))
+                    config.MedicalOverrides[tpl] = MergeMedicalOverride(existing, ov);
+                else
+                    config.MedicalOverrides[tpl] = ov;
+
+                if (IsMedicalOverrideEmpty(config.MedicalOverrides[tpl]))
+                    config.MedicalOverrides.Remove(tpl);
+            }
+
+            var count = ApplyMedical();
+            configService.SaveConfig();
+            sw.Stop();
+
+            return new GameValuesApplyResult
+            {
+                Success = true,
+                ItemsModified = count,
+                ApplyTimeMs = sw.ElapsedMilliseconds,
+                Message = $"Applied {count} medical overrides",
+            };
+        }
+    }
+
+    public GameValuesApplyResult ResetMedical()
+    {
+        lock (_lock)
+        {
+            var sw = Stopwatch.StartNew();
+            configService.GetConfig().GameValues.MedicalOverrides.Clear();
+            ApplyMedical();
+            configService.SaveConfig();
+            sw.Stop();
+            return new GameValuesApplyResult { Success = true, ApplyTimeMs = sw.ElapsedMilliseconds, Message = "All medical values reset to defaults" };
+        }
+    }
+
+    public GameValuesApplyResult ResetMedicalItem(string tpl)
+    {
+        lock (_lock)
+        {
+            var sw = Stopwatch.StartNew();
+            var removed = configService.GetConfig().GameValues.MedicalOverrides.Remove(tpl);
+            ApplyMedical();
+            configService.SaveConfig();
+            sw.Stop();
+            return new GameValuesApplyResult { Success = removed, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Medical item reset to default" : "No override found" };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
     // PRESETS
     // ═══════════════════════════════════════════════════════
 
@@ -852,6 +1122,7 @@ public class GameValuesService(
             AmmoOverrides = new(),
             ArmorOverrides = new(),
             WeaponOverrides = new(),
+            MedicalOverrides = new(),
         },
         ["Defaults — Ammo"] = new GameValuesPresetEntry
         {
@@ -870,6 +1141,12 @@ public class GameValuesService(
             Description = "Reset weapon values to vanilla defaults",
             Category = "weapons",
             WeaponOverrides = new(),
+        },
+        ["Defaults — Medical"] = new GameValuesPresetEntry
+        {
+            Description = "Reset medical/food/drink values to vanilla defaults",
+            Category = "medical",
+            MedicalOverrides = new(),
         },
     };
 
@@ -923,6 +1200,8 @@ public class GameValuesService(
                 entry.ArmorOverrides = new Dictionary<string, ArmorOverride>(config.ArmorOverrides);
             if (category is "weapons" or "all")
                 entry.WeaponOverrides = new Dictionary<string, WeaponOverride>(config.WeaponOverrides);
+            if (category is "medical" or "all")
+                entry.MedicalOverrides = new Dictionary<string, MedicalOverride>(config.MedicalOverrides);
 
             config.Presets[name] = entry;
             configService.SaveConfig();
@@ -956,12 +1235,14 @@ public class GameValuesService(
                 config.ArmorOverrides = new Dictionary<string, ArmorOverride>(preset.ArmorOverrides);
             if (cat is "weapons" or "all" && preset.WeaponOverrides != null)
                 config.WeaponOverrides = new Dictionary<string, WeaponOverride>(preset.WeaponOverrides);
+            if (cat is "medical" or "all" && preset.MedicalOverrides != null)
+                config.MedicalOverrides = new Dictionary<string, MedicalOverride>(preset.MedicalOverrides);
 
             ApplyAll();
             configService.SaveConfig();
             sw.Stop();
 
-            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count;
+            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count + config.MedicalOverrides.Count;
             return new GameValuesApplyResult
             {
                 Success = true,
@@ -1013,6 +1294,7 @@ public class GameValuesService(
         ApplyAmmo();
         ApplyArmor();
         ApplyWeapons();
+        ApplyMedical();
     }
 
     private int ApplyAmmo()
@@ -1178,6 +1460,90 @@ public class GameValuesService(
         return count;
     }
 
+    private int ApplyMedical()
+    {
+        EnsureSnapshot();
+        var items = databaseService.GetItems();
+        var config = configService.GetConfig().GameValues;
+
+        // Step 1: Restore ALL medical items from snapshots
+        foreach (var (tpl, snap) in _medicalSnapshots)
+        {
+            if (!items.TryGetValue(tpl, out var template)) continue;
+            var props = template.Properties;
+            if (props == null) continue;
+
+            props.MaxHpResource = (int)snap.MaxHpResource;
+            props.HpResourceRate = snap.HpResourceRate;
+            props.MedUseTime = snap.MedUseTime;
+
+            // Restore EffectsDamage values (only if key existed in snapshot)
+            if (props.EffectsDamage != null)
+            {
+                if (snap.LightBleedingCost.HasValue && props.EffectsDamage.TryGetValue(DamageEffectType.LightBleeding, out var lb))
+                    lb.Cost = snap.LightBleedingCost.Value;
+                if (snap.HeavyBleedingCost.HasValue && props.EffectsDamage.TryGetValue(DamageEffectType.HeavyBleeding, out var hb))
+                    hb.Cost = snap.HeavyBleedingCost.Value;
+                if (snap.FractureCost.HasValue && props.EffectsDamage.TryGetValue(DamageEffectType.Fracture, out var fr))
+                    fr.Cost = snap.FractureCost.Value;
+                if (snap.PainDuration.HasValue && props.EffectsDamage.TryGetValue(DamageEffectType.Pain, out var pn))
+                    pn.Duration = snap.PainDuration.Value;
+                if (snap.ContusionDuration.HasValue && props.EffectsDamage.TryGetValue(DamageEffectType.Contusion, out var cn))
+                    cn.Duration = snap.ContusionDuration.Value;
+            }
+
+            // Restore EffectsHealth values
+            if (props.EffectsHealth != null)
+            {
+                if (snap.EnergyChange.HasValue && props.EffectsHealth.TryGetValue(HealthFactor.Energy, out var en))
+                    en.Value = snap.EnergyChange.Value;
+                if (snap.HydrationChange.HasValue && props.EffectsHealth.TryGetValue(HealthFactor.Hydration, out var hy))
+                    hy.Value = snap.HydrationChange.Value;
+            }
+        }
+
+        // Step 2: Apply overrides
+        var count = 0;
+        foreach (var (tpl, ov) in config.MedicalOverrides)
+        {
+            if (!items.TryGetValue(tpl, out var template)) continue;
+            var props = template.Properties;
+            if (props == null) continue;
+
+            if (ov.MaxHpResource.HasValue) props.MaxHpResource = (int)ov.MaxHpResource.Value;
+            if (ov.HpResourceRate.HasValue) props.HpResourceRate = ov.HpResourceRate.Value;
+            if (ov.MedUseTime.HasValue) props.MedUseTime = ov.MedUseTime.Value;
+
+            // Apply EffectsDamage overrides (only to existing dict keys)
+            if (props.EffectsDamage != null)
+            {
+                if (ov.LightBleedingCost.HasValue && props.EffectsDamage.TryGetValue(DamageEffectType.LightBleeding, out var lb))
+                    lb.Cost = ov.LightBleedingCost.Value;
+                if (ov.HeavyBleedingCost.HasValue && props.EffectsDamage.TryGetValue(DamageEffectType.HeavyBleeding, out var hb))
+                    hb.Cost = ov.HeavyBleedingCost.Value;
+                if (ov.FractureCost.HasValue && props.EffectsDamage.TryGetValue(DamageEffectType.Fracture, out var fr))
+                    fr.Cost = ov.FractureCost.Value;
+                if (ov.PainDuration.HasValue && props.EffectsDamage.TryGetValue(DamageEffectType.Pain, out var pn))
+                    pn.Duration = ov.PainDuration.Value;
+                if (ov.ContusionDuration.HasValue && props.EffectsDamage.TryGetValue(DamageEffectType.Contusion, out var cn))
+                    cn.Duration = ov.ContusionDuration.Value;
+            }
+
+            // Apply EffectsHealth overrides (only to existing dict keys)
+            if (props.EffectsHealth != null)
+            {
+                if (ov.EnergyChange.HasValue && props.EffectsHealth.TryGetValue(HealthFactor.Energy, out var en))
+                    en.Value = ov.EnergyChange.Value;
+                if (ov.HydrationChange.HasValue && props.EffectsHealth.TryGetValue(HealthFactor.Hydration, out var hy))
+                    hy.Value = ov.HydrationChange.Value;
+            }
+
+            count++;
+        }
+
+        return count;
+    }
+
     // ═══════════════════════════════════════════════════════
     // MERGE HELPERS (non-null fields from `incoming` override `existing`)
     // ═══════════════════════════════════════════════════════
@@ -1251,4 +1617,24 @@ public class GameValuesService(
         o.SightingRange == null && o.Durability == null && o.MaxDurability == null &&
         o.HeatFactorGun == null && o.CoolFactorGun == null && o.BaseMalfunctionChance == null &&
         o.Velocity == null && o.DeviationMax == null;
+
+    private static MedicalOverride MergeMedicalOverride(MedicalOverride existing, MedicalOverride incoming) => new()
+    {
+        MaxHpResource = incoming.MaxHpResource ?? existing.MaxHpResource,
+        HpResourceRate = incoming.HpResourceRate ?? existing.HpResourceRate,
+        MedUseTime = incoming.MedUseTime ?? existing.MedUseTime,
+        LightBleedingCost = incoming.LightBleedingCost ?? existing.LightBleedingCost,
+        HeavyBleedingCost = incoming.HeavyBleedingCost ?? existing.HeavyBleedingCost,
+        FractureCost = incoming.FractureCost ?? existing.FractureCost,
+        PainDuration = incoming.PainDuration ?? existing.PainDuration,
+        ContusionDuration = incoming.ContusionDuration ?? existing.ContusionDuration,
+        EnergyChange = incoming.EnergyChange ?? existing.EnergyChange,
+        HydrationChange = incoming.HydrationChange ?? existing.HydrationChange,
+    };
+
+    private static bool IsMedicalOverrideEmpty(MedicalOverride o) =>
+        o.MaxHpResource == null && o.HpResourceRate == null && o.MedUseTime == null &&
+        o.LightBleedingCost == null && o.HeavyBleedingCost == null && o.FractureCost == null &&
+        o.PainDuration == null && o.ContusionDuration == null &&
+        o.EnergyChange == null && o.HydrationChange == null;
 }

@@ -17,6 +17,9 @@ public record GameValuesConfig
     [JsonPropertyName("weaponOverrides")]
     public Dictionary<string, WeaponOverride> WeaponOverrides { get; set; } = new();
 
+    [JsonPropertyName("medicalOverrides")]
+    public Dictionary<string, MedicalOverride> MedicalOverrides { get; set; } = new();
+
     [JsonPropertyName("presets")]
     public Dictionary<string, GameValuesPresetEntry> Presets { get; set; } = new();
 }
@@ -81,6 +84,78 @@ public record WeaponOverride
     [JsonPropertyName("baseMalfunctionChance")] public double? BaseMalfunctionChance { get; set; }
     [JsonPropertyName("velocity")] public double? Velocity { get; set; }
     [JsonPropertyName("deviationMax")] public double? DeviationMax { get; set; }
+}
+
+// ═══════════════════════════════════════════════════════
+// MEDICAL
+// ═══════════════════════════════════════════════════════
+
+public record MedicalOverride
+{
+    [JsonPropertyName("maxHpResource")] public double? MaxHpResource { get; set; }
+    [JsonPropertyName("hpResourceRate")] public double? HpResourceRate { get; set; }
+    [JsonPropertyName("medUseTime")] public double? MedUseTime { get; set; }
+    [JsonPropertyName("lightBleedingCost")] public double? LightBleedingCost { get; set; }
+    [JsonPropertyName("heavyBleedingCost")] public double? HeavyBleedingCost { get; set; }
+    [JsonPropertyName("fractureCost")] public double? FractureCost { get; set; }
+    [JsonPropertyName("painDuration")] public double? PainDuration { get; set; }
+    [JsonPropertyName("contusionDuration")] public double? ContusionDuration { get; set; }
+    [JsonPropertyName("energyChange")] public double? EnergyChange { get; set; }
+    [JsonPropertyName("hydrationChange")] public double? HydrationChange { get; set; }
+}
+
+// ═══════════════════════════════════════════════════════
+// API DTOs — MEDICAL
+// ═══════════════════════════════════════════════════════
+
+public record MedicalDto
+{
+    [JsonPropertyName("tpl")] public string Tpl { get; set; } = "";
+    [JsonPropertyName("shortName")] public string ShortName { get; set; } = "";
+    [JsonPropertyName("fullName")] public string FullName { get; set; } = "";
+    [JsonPropertyName("medType")] public string MedType { get; set; } = "";
+    [JsonPropertyName("stimBuffName")] public string? StimBuffName { get; set; }
+    [JsonPropertyName("maxHpResource")] public double MaxHpResource { get; set; }
+    [JsonPropertyName("hpResourceRate")] public double HpResourceRate { get; set; }
+    [JsonPropertyName("medUseTime")] public double MedUseTime { get; set; }
+    [JsonPropertyName("lightBleedingCost")] public double? LightBleedingCost { get; set; }
+    [JsonPropertyName("heavyBleedingCost")] public double? HeavyBleedingCost { get; set; }
+    [JsonPropertyName("fractureCost")] public double? FractureCost { get; set; }
+    [JsonPropertyName("painDuration")] public double? PainDuration { get; set; }
+    [JsonPropertyName("contusionDuration")] public double? ContusionDuration { get; set; }
+    [JsonPropertyName("energyChange")] public double? EnergyChange { get; set; }
+    [JsonPropertyName("hydrationChange")] public double? HydrationChange { get; set; }
+    [JsonPropertyName("treats")] public List<string> Treats { get; set; } = [];
+    [JsonPropertyName("original")] public MedicalOriginalValues Original { get; set; } = new();
+    [JsonPropertyName("isModified")] public bool IsModified { get; set; }
+}
+
+public record MedicalOriginalValues
+{
+    [JsonPropertyName("maxHpResource")] public double MaxHpResource { get; set; }
+    [JsonPropertyName("hpResourceRate")] public double HpResourceRate { get; set; }
+    [JsonPropertyName("medUseTime")] public double MedUseTime { get; set; }
+    [JsonPropertyName("lightBleedingCost")] public double? LightBleedingCost { get; set; }
+    [JsonPropertyName("heavyBleedingCost")] public double? HeavyBleedingCost { get; set; }
+    [JsonPropertyName("fractureCost")] public double? FractureCost { get; set; }
+    [JsonPropertyName("painDuration")] public double? PainDuration { get; set; }
+    [JsonPropertyName("contusionDuration")] public double? ContusionDuration { get; set; }
+    [JsonPropertyName("energyChange")] public double? EnergyChange { get; set; }
+    [JsonPropertyName("hydrationChange")] public double? HydrationChange { get; set; }
+}
+
+public record MedicalListResponse
+{
+    [JsonPropertyName("medical")] public List<MedicalDto> Medical { get; set; } = [];
+    [JsonPropertyName("types")] public List<MedicalTypeInfo> Types { get; set; } = [];
+    [JsonPropertyName("totalModified")] public int TotalModified { get; set; }
+}
+
+public record MedicalTypeInfo
+{
+    [JsonPropertyName("key")] public string Key { get; set; } = "";
+    [JsonPropertyName("display")] public string Display { get; set; } = "";
+    [JsonPropertyName("count")] public int Count { get; set; }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -288,6 +363,7 @@ public record GameValuesPresetEntry
     [JsonPropertyName("ammoOverrides")] public Dictionary<string, AmmoOverride>? AmmoOverrides { get; set; }
     [JsonPropertyName("armorOverrides")] public Dictionary<string, ArmorOverride>? ArmorOverrides { get; set; }
     [JsonPropertyName("weaponOverrides")] public Dictionary<string, WeaponOverride>? WeaponOverrides { get; set; }
+    [JsonPropertyName("medicalOverrides")] public Dictionary<string, MedicalOverride>? MedicalOverrides { get; set; }
 }
 
 public record GameValuesPresetInfo
@@ -345,6 +421,30 @@ public static class GameValuesClamps
     public const double MalfunctionChanceMin = 0, MalfunctionChanceMax = 1;
     public const double VelocityMin = 0, VelocityMax = 5000;
     public const double DeviationMaxMin = 0, DeviationMaxMax = 100;
+
+    // Medical
+    public const double MaxHpResourceMin = 0, MaxHpResourceMax = 10000;
+    public const double HpResourceRateMin = 0, HpResourceRateMax = 500;
+    public const double MedUseTimeMin = 0.1, MedUseTimeMax = 60;
+    public const double BleedCostMin = 0, BleedCostMax = 2000;
+    public const double FractureCostMin = 0, FractureCostMax = 2000;
+    public const double EffectDurationMin = 0, EffectDurationMax = 3600;
+    public const double HealthChangeMin = -200, HealthChangeMax = 200;
+
+    public static double ClampMedical(string field, double value) => field switch
+    {
+        "maxHpResource" => Clamp(value, MaxHpResourceMin, MaxHpResourceMax),
+        "hpResourceRate" => Clamp(value, HpResourceRateMin, HpResourceRateMax),
+        "medUseTime" => Clamp(value, MedUseTimeMin, MedUseTimeMax),
+        "lightBleedingCost" => Clamp(value, BleedCostMin, BleedCostMax),
+        "heavyBleedingCost" => Clamp(value, BleedCostMin, BleedCostMax),
+        "fractureCost" => Clamp(value, FractureCostMin, FractureCostMax),
+        "painDuration" => Clamp(value, EffectDurationMin, EffectDurationMax),
+        "contusionDuration" => Clamp(value, EffectDurationMin, EffectDurationMax),
+        "energyChange" => Clamp(value, HealthChangeMin, HealthChangeMax),
+        "hydrationChange" => Clamp(value, HealthChangeMin, HealthChangeMax),
+        _ => value
+    };
 
     public static double ClampAmmo(string field, double value) => field switch
     {
