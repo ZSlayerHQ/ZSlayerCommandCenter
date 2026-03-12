@@ -3191,6 +3191,38 @@ public class CommandCenterHttpListener(
                 break;
             }
 
+            // ── BACKPACKS ──
+            case "backpacks" when method == "GET":
+            {
+                var qs = context.Request.Query;
+                var search = qs["search"].FirstOrDefault();
+                var result = gameValuesService.GetBackpacks(search);
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "backpacks" when method == "POST":
+            {
+                var body = await ReadBody<GameValuesUpdateRequest<BackpackOverride>>(context);
+                if (body?.Overrides == null || body.Overrides.Count == 0)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var result = gameValuesService.UpdateBackpacks(body.Overrides);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Game Values: updated {body.Overrides.Count} backpack items");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "backpacks/reset" when method == "POST":
+            {
+                var result = gameValuesService.ResetBackpacks();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: reset all backpacks to defaults");
+                await WriteJson(context, 200, result);
+                break;
+            }
+
             // ── PRESETS ──
             case "presets" when method == "GET":
             {
@@ -3283,6 +3315,13 @@ public class CommandCenterHttpListener(
                 {
                     var tpl = subPath["medical/reset/".Length..];
                     var result = gameValuesService.ResetMedicalItem(tpl);
+                    await WriteJson(context, result.Success ? 200 : 404, result);
+                    break;
+                }
+                if (method == "POST" && subPath.StartsWith("backpacks/reset/"))
+                {
+                    var tpl = subPath["backpacks/reset/".Length..];
+                    var result = gameValuesService.ResetBackpackItem(tpl);
                     await WriteJson(context, result.Success ? 200 : 404, result);
                     break;
                 }

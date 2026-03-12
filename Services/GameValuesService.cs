@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Services;
@@ -11,6 +12,7 @@ namespace ZSlayerCommandCenter.Services;
 public class GameValuesService(
     DatabaseService databaseService,
     LocaleService localeService,
+    HandbookHelper handbookHelper,
     ConfigService configService,
     ISptLogger<GameValuesService> logger)
 {
@@ -25,6 +27,7 @@ public class GameValuesService(
     private readonly Dictionary<string, ArmorSnapshot> _armorSnapshots = new();
     private readonly Dictionary<string, WeaponSnapshot> _weaponSnapshots = new();
     private readonly Dictionary<string, MedicalSnapshot> _medicalSnapshots = new();
+    private readonly Dictionary<string, BackpackSnapshot> _backpackSnapshots = new();
 
     private record AmmoSnapshot(
         double Damage, double PenetrationPower, double ArmorDamage,
@@ -54,6 +57,14 @@ public class GameValuesService(
         double? PainDuration, double? ContusionDuration,
         double? EnergyChange, double? HydrationChange,
         string MedType, string? StimBuffName, List<string> Treats);
+
+    private record BackpackSnapshot(
+        double Weight, double SpeedPenaltyPercent,
+        double WeaponErgonomicPenalty, double MousePenalty,
+        int GridWidth, int GridHeight, int TotalSlots,
+        bool IsMultiGrid, string GridLayout);
+
+    private const string BackpackParentId = "5448e53e4bdc2d60728b4567";
 
     // Parent IDs for medical/consumable item detection
     private static readonly Dictionary<string, string> MedicalParentIds = new()
@@ -128,11 +139,12 @@ public class GameValuesService(
         lock (_lock)
         {
             EnsureSnapshot();
+            GenerateBalancePresets();
             ApplyAll();
             var config = configService.GetConfig().GameValues;
-            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count + config.MedicalOverrides.Count;
+            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count + config.MedicalOverrides.Count + config.BackpackOverrides.Count;
             if (total > 0)
-                logger.Success($"[ZSlayerHQ] Game Values: applied {total} overrides ({config.AmmoOverrides.Count} ammo, {config.ArmorOverrides.Count} armor, {config.WeaponOverrides.Count} weapons, {config.MedicalOverrides.Count} medical)");
+                logger.Success($"[ZSlayerHQ] Game Values: applied {total} overrides ({config.AmmoOverrides.Count} ammo, {config.ArmorOverrides.Count} armor, {config.WeaponOverrides.Count} weapons, {config.MedicalOverrides.Count} medical, {config.BackpackOverrides.Count} backpacks)");
             else
                 logger.Info("[ZSlayerHQ] Game Values: initialized (no overrides)");
         }
@@ -151,6 +163,7 @@ public class GameValuesService(
         var armorCount = 0;
         var weaponCount = 0;
         var medicalCount = 0;
+        var backpackCount = 0;
 
         foreach (var (id, template) in items)
         {
@@ -285,10 +298,203 @@ public class GameValuesService(
                 );
                 medicalCount++;
             }
+
+            // Backpack: parent is BackpackParentId
+            if (template.Parent.ToString() == BackpackParentId)
+            {
+                var grids = props.Grids?.ToList() ?? [];
+                var totalSlots = 0;
+                var layoutParts = new List<string>();
+                var firstW = 0;
+                var firstH = 0;
+                for (var gi = 0; gi < grids.Count; gi++)
+                {
+                    var gp = grids[gi].Properties;
+                    var cw = gp?.CellsH ?? 0;
+                    var ch = gp?.CellsV ?? 0;
+                    totalSlots += cw * ch;
+                    layoutParts.Add($"{cw}\u00d7{ch}");
+                    if (gi == 0) { firstW = cw; firstH = ch; }
+                }
+                var isMultiGrid = grids.Count > 1;
+                _backpackSnapshots[tpl] = new BackpackSnapshot(
+                    Weight: props.Weight ?? 0,
+                    SpeedPenaltyPercent: props.SpeedPenaltyPercent ?? 0,
+                    WeaponErgonomicPenalty: props.WeaponErgonomicPenalty ?? 0,
+                    MousePenalty: props.MousePenalty ?? 0,
+                    GridWidth: firstW,
+                    GridHeight: firstH,
+                    TotalSlots: totalSlots,
+                    IsMultiGrid: isMultiGrid,
+                    GridLayout: string.Join("+", layoutParts)
+                );
+                backpackCount++;
+            }
         }
 
         _snapshotTaken = true;
-        logger.Info($"[ZSlayerHQ] Game Values: snapshotted {ammoCount} ammo, {armorCount} armor, {weaponCount} weapons, {medicalCount} medical");
+        logger.Info($"[ZSlayerHQ] Game Values: snapshotted {ammoCount} ammo, {armorCount} armor, {weaponCount} weapons, {medicalCount} medical, {backpackCount} backpacks");
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // BALANCE PRESETS (generated from snapshot data + prices)
+    // ═══════════════════════════════════════════════════════
+
+    private void GenerateBalancePresets()
+    {
+        try
+        {
+            // ── Balanced Economy: adjust outliers toward median value score ──
+            var balancedAmmo = new Dictionary<string, AmmoOverride>();
+            var balancedArmor = new Dictionary<string, ArmorOverride>();
+            var balancedWeapons = new Dictionary<string, WeaponOverride>();
+
+            // Ammo: value = (damage + pen) / price
+            var ammoScores = new List<(string tpl, double score, AmmoSnapshot snap)>();
+            foreach (var (tpl, snap) in _ammoSnapshots)
+            {
+                var price = handbookHelper.GetTemplatePrice(tpl);
+                if (price <= 0) continue;
+                ammoScores.Add((tpl, (snap.Damage + snap.PenetrationPower) / price, snap));
+            }
+            if (ammoScores.Count > 0)
+            {
+                ammoScores.Sort((a, b) => a.score.CompareTo(b.score));
+                var medianScore = ammoScores[ammoScores.Count / 2].score;
+                var lowThreshold = ammoScores[(int)(ammoScores.Count * 0.15)].score;
+                var highThreshold = ammoScores[(int)(ammoScores.Count * 0.85)].score;
+                foreach (var (tpl, score, snap) in ammoScores)
+                {
+                    if (score > highThreshold)
+                    {
+                        // Cheap but powerful: nerf damage by 10-20%
+                        var factor = 1.0 - (0.10 + 0.10 * ((score - highThreshold) / (ammoScores[^1].score - highThreshold + 0.001)));
+                        factor = Math.Max(factor, 0.75);
+                        balancedAmmo[tpl] = new AmmoOverride { Damage = Math.Round(snap.Damage * factor, 1) };
+                    }
+                    else if (score < lowThreshold)
+                    {
+                        // Expensive but weak: buff damage by 10-25%
+                        var factor = 1.0 + (0.10 + 0.15 * ((lowThreshold - score) / (lowThreshold - ammoScores[0].score + 0.001)));
+                        factor = Math.Min(factor, 1.25);
+                        balancedAmmo[tpl] = new AmmoOverride { Damage = Math.Round(snap.Damage * factor, 1) };
+                    }
+                }
+            }
+
+            // Armor: value = (class * durability) / price
+            var armorScores = new List<(string tpl, double score, ArmorSnapshot snap)>();
+            foreach (var (tpl, snap) in _armorSnapshots)
+            {
+                var price = handbookHelper.GetTemplatePrice(tpl);
+                if (price <= 0 || snap.ArmorClass <= 0) continue;
+                armorScores.Add((tpl, (snap.ArmorClass * snap.Durability) / price, snap));
+            }
+            if (armorScores.Count > 0)
+            {
+                armorScores.Sort((a, b) => a.score.CompareTo(b.score));
+                var highThreshold = armorScores[(int)(armorScores.Count * 0.85)].score;
+                var lowThreshold = armorScores[(int)(armorScores.Count * 0.15)].score;
+                foreach (var (tpl, score, snap) in armorScores)
+                {
+                    if (score > highThreshold)
+                    {
+                        var factor = Math.Max(0.80, 1.0 - 0.20 * ((score - highThreshold) / (armorScores[^1].score - highThreshold + 0.001)));
+                        balancedArmor[tpl] = new ArmorOverride { Durability = Math.Round(snap.Durability * factor, 1), MaxDurability = Math.Round(snap.MaxDurability * factor, 1) };
+                    }
+                    else if (score < lowThreshold)
+                    {
+                        var factor = Math.Min(1.20, 1.0 + 0.20 * ((lowThreshold - score) / (lowThreshold - armorScores[0].score + 0.001)));
+                        balancedArmor[tpl] = new ArmorOverride { Durability = Math.Round(snap.Durability * factor, 1), MaxDurability = Math.Round(snap.MaxDurability * factor, 1) };
+                    }
+                }
+            }
+
+            _dynamicPresets["Defaults — Balanced Economy"] = new GameValuesPresetEntry
+            {
+                Description = "Adjusts outlier items toward median value-per-ruble. Nerfs cheap OP items, buffs overpriced weak items",
+                Category = "all",
+                AmmoOverrides = balancedAmmo,
+                ArmorOverrides = balancedArmor,
+                WeaponOverrides = new(),
+                MedicalOverrides = new(),
+                BackpackOverrides = new(),
+            };
+
+            // ── Budget Friendly: buff lower-tier items ──
+            var budgetAmmo = new Dictionary<string, AmmoOverride>();
+            foreach (var (tpl, snap) in _ammoSnapshots)
+            {
+                var price = handbookHelper.GetTemplatePrice(tpl);
+                if (price <= 0) continue;
+                // Buff cheap ammo (bottom 50% by price) damage by 15%
+                if (price < 300)
+                    budgetAmmo[tpl] = new AmmoOverride { Damage = Math.Round(snap.Damage * 1.15, 1) };
+            }
+
+            var budgetArmor = new Dictionary<string, ArmorOverride>();
+            foreach (var (tpl, snap) in _armorSnapshots)
+            {
+                if (snap.ArmorClass <= 3)
+                    budgetArmor[tpl] = new ArmorOverride { Durability = Math.Round(snap.Durability * 1.20, 1), MaxDurability = Math.Round(snap.MaxDurability * 1.20, 1) };
+            }
+
+            _dynamicPresets["Defaults — Budget Friendly"] = new GameValuesPresetEntry
+            {
+                Description = "Buffs lower-tier items to be more competitive without touching top-tier",
+                Category = "all",
+                AmmoOverrides = budgetAmmo,
+                ArmorOverrides = budgetArmor,
+                WeaponOverrides = new(),
+                MedicalOverrides = new(),
+                BackpackOverrides = new(),
+            };
+
+            // ── Hardcore Realism: nerfs top-tier, increases penalties ──
+            var hardcoreAmmo = new Dictionary<string, AmmoOverride>();
+            foreach (var (tpl, snap) in _ammoSnapshots)
+            {
+                // High-pen rounds (pen > 40): reduce damage by 20%
+                if (snap.PenetrationPower > 40)
+                    hardcoreAmmo[tpl] = new AmmoOverride { Damage = Math.Round(snap.Damage * 0.80, 1) };
+            }
+
+            var hardcoreArmor = new Dictionary<string, ArmorOverride>();
+            foreach (var (tpl, snap) in _armorSnapshots)
+            {
+                // Top-tier armor (class 5+): reduce durability by 15%
+                if (snap.ArmorClass >= 5)
+                    hardcoreArmor[tpl] = new ArmorOverride { Durability = Math.Round(snap.Durability * 0.85, 1), MaxDurability = Math.Round(snap.MaxDurability * 0.85, 1) };
+            }
+
+            var hardcoreWeapons = new Dictionary<string, WeaponOverride>();
+            foreach (var (tpl, snap) in _weaponSnapshots)
+            {
+                // All weapons: +15% recoil
+                hardcoreWeapons[tpl] = new WeaponOverride
+                {
+                    RecoilForceUp = Math.Round(snap.RecoilForceUp * 1.15, 1),
+                    RecoilForceBack = Math.Round(snap.RecoilForceBack * 1.15, 1),
+                };
+            }
+
+            _dynamicPresets["Defaults — Hardcore Realism"] = new GameValuesPresetEntry
+            {
+                Description = "Nerfs high-pen ammo, reduces top-tier armor durability, increases all weapon recoil",
+                Category = "all",
+                AmmoOverrides = hardcoreAmmo,
+                ArmorOverrides = hardcoreArmor,
+                WeaponOverrides = hardcoreWeapons,
+                MedicalOverrides = new(),
+                BackpackOverrides = new(),
+            };
+
+            logger.Info($"[ZSlayerHQ] Game Values: generated 3 balance presets ({balancedAmmo.Count} balanced ammo, {budgetAmmo.Count} budget ammo, {hardcoreAmmo.Count} hardcore ammo)");
+        }
+        catch (Exception ex)
+        {
+            logger.Warning($"[ZSlayerHQ] Game Values: failed to generate balance presets: {ex.Message}");
+        }
     }
 
     // ═══════════════════════════════════════════════════════
@@ -363,6 +569,7 @@ public class GameValuesService(
                     StaminaBurnPerDamage = props.StaminaBurnPerDamage ?? 0,
                     AmmoAccr = props.AmmoAccr ?? 0,
                     AmmoRec = props.AmmoRec ?? 0,
+                    HandbookPrice = handbookHelper.GetTemplatePrice(tpl),
                     Original = new AmmoOriginalValues
                     {
                         Damage = snap.Damage,
@@ -594,6 +801,7 @@ public class GameValuesService(
                     ArmorMaterial = props.ArmorMaterial?.ToString() ?? snap.ArmorMaterial,
                     ArmorType = props.ArmorType ?? snap.ArmorType,
                     IsPlate = snap.IsPlate,
+                    HandbookPrice = handbookHelper.GetTemplatePrice(tpl),
                     Original = new ArmorOriginalValues
                     {
                         ArmorClass = snap.ArmorClass,
@@ -781,6 +989,7 @@ public class GameValuesService(
                     BaseMalfunctionChance = props.BaseMalfunctionChance ?? 0,
                     Velocity = props.Velocity ?? 0,
                     DeviationMax = props.DeviationMax ?? 0,
+                    HandbookPrice = handbookHelper.GetTemplatePrice(tpl),
                     Original = new WeaponOriginalValues
                     {
                         Ergonomics = snap.Ergonomics,
@@ -1001,6 +1210,7 @@ public class GameValuesService(
                     EnergyChange = curEnergyChange,
                     HydrationChange = curHydrationChange,
                     Treats = curTreats,
+                    HandbookPrice = handbookHelper.GetTemplatePrice(tpl),
                     Original = new MedicalOriginalValues
                     {
                         MaxHpResource = snap.MaxHpResource,
@@ -1110,8 +1320,184 @@ public class GameValuesService(
     }
 
     // ═══════════════════════════════════════════════════════
+    // GET BACKPACKS
+    // ═══════════════════════════════════════════════════════
+
+    public BackpackListResponse GetBackpacks(string? search)
+    {
+        lock (_lock)
+        {
+            EnsureSnapshot();
+            var items = databaseService.GetItems();
+            var locales = localeService.GetLocaleDb("en");
+            var config = configService.GetConfig().GameValues;
+            var result = new List<BackpackDto>();
+
+            foreach (var (tpl, snap) in _backpackSnapshots)
+            {
+                if (!items.TryGetValue(tpl, out var template)) continue;
+                var props = template.Properties;
+                if (props == null) continue;
+
+                // Name lookup
+                locales.TryGetValue($"{tpl} ShortName", out var shortName);
+                locales.TryGetValue($"{tpl} Name", out var fullName);
+                if (string.IsNullOrEmpty(fullName)) fullName = template.Name ?? tpl;
+                if (string.IsNullOrEmpty(shortName)) shortName = fullName;
+
+                // Search filter
+                if (!string.IsNullOrEmpty(search))
+                {
+                    var q = search.ToLowerInvariant();
+                    if (!fullName.ToLowerInvariant().Contains(q) &&
+                        !shortName.ToLowerInvariant().Contains(q) &&
+                        !tpl.ToLowerInvariant().Contains(q))
+                        continue;
+                }
+
+                var isModified = config.BackpackOverrides.ContainsKey(tpl);
+
+                // Current grid values
+                var grids = props.Grids?.ToList() ?? [];
+                var curTotalSlots = 0;
+                var curLayoutParts = new List<string>();
+                var curW = 0;
+                var curH = 0;
+                for (var gi = 0; gi < grids.Count; gi++)
+                {
+                    var gp = grids[gi].Properties;
+                    var cw = gp?.CellsH ?? 0;
+                    var ch = gp?.CellsV ?? 0;
+                    curTotalSlots += cw * ch;
+                    curLayoutParts.Add($"{cw}\u00d7{ch}");
+                    if (gi == 0) { curW = cw; curH = ch; }
+                }
+
+                result.Add(new BackpackDto
+                {
+                    Tpl = tpl,
+                    ShortName = shortName,
+                    FullName = fullName,
+                    Weight = props.Weight ?? 0,
+                    SpeedPenaltyPercent = props.SpeedPenaltyPercent ?? 0,
+                    WeaponErgonomicPenalty = props.WeaponErgonomicPenalty ?? 0,
+                    MousePenalty = props.MousePenalty ?? 0,
+                    GridWidth = curW,
+                    GridHeight = curH,
+                    TotalSlots = curTotalSlots,
+                    IsMultiGrid = snap.IsMultiGrid,
+                    GridLayout = string.Join("+", curLayoutParts),
+                    HandbookPrice = handbookHelper.GetTemplatePrice(tpl),
+                    Original = new BackpackOriginalValues
+                    {
+                        Weight = snap.Weight,
+                        SpeedPenaltyPercent = snap.SpeedPenaltyPercent,
+                        WeaponErgonomicPenalty = snap.WeaponErgonomicPenalty,
+                        MousePenalty = snap.MousePenalty,
+                        GridWidth = snap.GridWidth,
+                        GridHeight = snap.GridHeight,
+                        TotalSlots = snap.TotalSlots,
+                    },
+                    IsModified = isModified,
+                });
+            }
+
+            result.Sort((a, b) => string.Compare(a.ShortName, b.ShortName, StringComparison.OrdinalIgnoreCase));
+
+            return new BackpackListResponse
+            {
+                Backpacks = result,
+                TotalCount = _backpackSnapshots.Count,
+                TotalModified = config.BackpackOverrides.Count,
+            };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // UPDATE BACKPACKS
+    // ═══════════════════════════════════════════════════════
+
+    public GameValuesApplyResult UpdateBackpacks(Dictionary<string, BackpackOverride> overrides)
+    {
+        lock (_lock)
+        {
+            var sw = Stopwatch.StartNew();
+            EnsureSnapshot();
+            var config = configService.GetConfig().GameValues;
+
+            foreach (var (tpl, ov) in overrides)
+            {
+                if (!_backpackSnapshots.ContainsKey(tpl)) continue;
+
+                // Clamp values
+                if (ov.Weight.HasValue) ov.Weight = GameValuesClamps.ClampBackpack("weight", ov.Weight.Value);
+                if (ov.SpeedPenaltyPercent.HasValue) ov.SpeedPenaltyPercent = GameValuesClamps.ClampBackpack("speedPenaltyPercent", ov.SpeedPenaltyPercent.Value);
+                if (ov.WeaponErgonomicPenalty.HasValue) ov.WeaponErgonomicPenalty = GameValuesClamps.ClampBackpack("weaponErgonomicPenalty", ov.WeaponErgonomicPenalty.Value);
+                if (ov.MousePenalty.HasValue) ov.MousePenalty = GameValuesClamps.ClampBackpack("mousePenalty", ov.MousePenalty.Value);
+                if (ov.GridWidth.HasValue) ov.GridWidth = Math.Clamp(ov.GridWidth.Value, GameValuesClamps.BpGridMin, GameValuesClamps.BpGridMax);
+                if (ov.GridHeight.HasValue) ov.GridHeight = Math.Clamp(ov.GridHeight.Value, GameValuesClamps.BpGridMin, GameValuesClamps.BpGridMax);
+
+                // Multi-grid backpacks: strip grid overrides
+                if (_backpackSnapshots[tpl].IsMultiGrid)
+                {
+                    ov.GridWidth = null;
+                    ov.GridHeight = null;
+                }
+
+                if (config.BackpackOverrides.TryGetValue(tpl, out var existing))
+                    config.BackpackOverrides[tpl] = MergeBackpackOverride(existing, ov);
+                else
+                    config.BackpackOverrides[tpl] = ov;
+
+                if (IsBackpackOverrideEmpty(config.BackpackOverrides[tpl]))
+                    config.BackpackOverrides.Remove(tpl);
+            }
+
+            var count = ApplyBackpacks();
+            configService.SaveConfig();
+            sw.Stop();
+
+            return new GameValuesApplyResult
+            {
+                Success = true,
+                ItemsModified = count,
+                ApplyTimeMs = sw.ElapsedMilliseconds,
+                Message = $"Applied {count} backpack overrides",
+            };
+        }
+    }
+
+    public GameValuesApplyResult ResetBackpacks()
+    {
+        lock (_lock)
+        {
+            var sw = Stopwatch.StartNew();
+            configService.GetConfig().GameValues.BackpackOverrides.Clear();
+            ApplyBackpacks();
+            configService.SaveConfig();
+            sw.Stop();
+            return new GameValuesApplyResult { Success = true, ApplyTimeMs = sw.ElapsedMilliseconds, Message = "All backpack values reset to defaults" };
+        }
+    }
+
+    public GameValuesApplyResult ResetBackpackItem(string tpl)
+    {
+        lock (_lock)
+        {
+            var sw = Stopwatch.StartNew();
+            var removed = configService.GetConfig().GameValues.BackpackOverrides.Remove(tpl);
+            ApplyBackpacks();
+            configService.SaveConfig();
+            sw.Stop();
+            return new GameValuesApplyResult { Success = removed, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Backpack reset to default" : "No override found" };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
     // PRESETS
     // ═══════════════════════════════════════════════════════
+
+    private readonly Dictionary<string, GameValuesPresetEntry> _dynamicPresets = new();
 
     private static readonly Dictionary<string, GameValuesPresetEntry> BuiltInPresets = new()
     {
@@ -1123,6 +1509,7 @@ public class GameValuesService(
             ArmorOverrides = new(),
             WeaponOverrides = new(),
             MedicalOverrides = new(),
+            BackpackOverrides = new(),
         },
         ["Defaults — Ammo"] = new GameValuesPresetEntry
         {
@@ -1148,7 +1535,18 @@ public class GameValuesService(
             Category = "medical",
             MedicalOverrides = new(),
         },
+        ["Defaults — Backpacks"] = new GameValuesPresetEntry
+        {
+            Description = "Reset backpack values to vanilla defaults",
+            Category = "backpacks",
+            BackpackOverrides = new(),
+        },
     };
+
+    private bool IsBuiltIn(string name) => BuiltInPresets.ContainsKey(name) || _dynamicPresets.ContainsKey(name);
+
+    private GameValuesPresetEntry? FindBuiltIn(string name) =>
+        BuiltInPresets.GetValueOrDefault(name) ?? _dynamicPresets.GetValueOrDefault(name);
 
     public List<GameValuesPresetInfo> GetPresets()
     {
@@ -1156,6 +1554,17 @@ public class GameValuesService(
         var result = new List<GameValuesPresetInfo>();
 
         foreach (var (name, preset) in BuiltInPresets)
+        {
+            result.Add(new GameValuesPresetInfo
+            {
+                Name = name,
+                Description = preset.Description,
+                Category = preset.Category,
+                IsBuiltIn = true,
+            });
+        }
+
+        foreach (var (name, preset) in _dynamicPresets)
         {
             result.Add(new GameValuesPresetInfo
             {
@@ -1184,7 +1593,7 @@ public class GameValuesService(
     {
         lock (_lock)
         {
-            if (BuiltInPresets.ContainsKey(name))
+            if (IsBuiltIn(name))
                 return new GameValuesApplyResult { Success = false, Message = "Cannot overwrite built-in preset" };
 
             var config = configService.GetConfig().GameValues;
@@ -1202,6 +1611,8 @@ public class GameValuesService(
                 entry.WeaponOverrides = new Dictionary<string, WeaponOverride>(config.WeaponOverrides);
             if (category is "medical" or "all")
                 entry.MedicalOverrides = new Dictionary<string, MedicalOverride>(config.MedicalOverrides);
+            if (category is "backpacks" or "all")
+                entry.BackpackOverrides = new Dictionary<string, BackpackOverride>(config.BackpackOverrides);
 
             config.Presets[name] = entry;
             configService.SaveConfig();
@@ -1217,9 +1628,9 @@ public class GameValuesService(
             var sw = Stopwatch.StartNew();
             var config = configService.GetConfig().GameValues;
 
-            // Check built-in presets first, then custom
-            if (!BuiltInPresets.TryGetValue(name, out var preset) &&
-                !config.Presets.TryGetValue(name, out preset))
+            // Check built-in presets (static + dynamic) first, then custom
+            var preset = FindBuiltIn(name);
+            if (preset == null && !config.Presets.TryGetValue(name, out preset))
             {
                 return new GameValuesApplyResult { Success = false, Message = "Preset not found" };
             }
@@ -1237,12 +1648,14 @@ public class GameValuesService(
                 config.WeaponOverrides = new Dictionary<string, WeaponOverride>(preset.WeaponOverrides);
             if (cat is "medical" or "all" && preset.MedicalOverrides != null)
                 config.MedicalOverrides = new Dictionary<string, MedicalOverride>(preset.MedicalOverrides);
+            if (cat is "backpacks" or "all" && preset.BackpackOverrides != null)
+                config.BackpackOverrides = new Dictionary<string, BackpackOverride>(preset.BackpackOverrides);
 
             ApplyAll();
             configService.SaveConfig();
             sw.Stop();
 
-            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count + config.MedicalOverrides.Count;
+            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count + config.MedicalOverrides.Count + config.BackpackOverrides.Count;
             return new GameValuesApplyResult
             {
                 Success = true,
@@ -1257,7 +1670,7 @@ public class GameValuesService(
     {
         lock (_lock)
         {
-            if (BuiltInPresets.ContainsKey(name))
+            if (IsBuiltIn(name))
                 return new GameValuesApplyResult { Success = false, Message = "Cannot delete built-in preset" };
 
             var removed = configService.GetConfig().GameValues.Presets.Remove(name);
@@ -1268,6 +1681,8 @@ public class GameValuesService(
 
     public GameValuesPresetEntry? ExportPreset(string name)
     {
+        var builtIn = FindBuiltIn(name);
+        if (builtIn != null) return builtIn;
         var config = configService.GetConfig().GameValues;
         return config.Presets.GetValueOrDefault(name);
     }
@@ -1276,7 +1691,7 @@ public class GameValuesService(
     {
         lock (_lock)
         {
-            if (BuiltInPresets.ContainsKey(name))
+            if (IsBuiltIn(name))
                 return new GameValuesApplyResult { Success = false, Message = "Cannot overwrite built-in preset" };
 
             configService.GetConfig().GameValues.Presets[name] = preset;
@@ -1295,6 +1710,7 @@ public class GameValuesService(
         ApplyArmor();
         ApplyWeapons();
         ApplyMedical();
+        ApplyBackpacks();
     }
 
     private int ApplyAmmo()
@@ -1544,6 +1960,66 @@ public class GameValuesService(
         return count;
     }
 
+    private int ApplyBackpacks()
+    {
+        EnsureSnapshot();
+        var items = databaseService.GetItems();
+        var config = configService.GetConfig().GameValues;
+
+        // Step 1: Restore ALL backpacks from snapshots
+        foreach (var (tpl, snap) in _backpackSnapshots)
+        {
+            if (!items.TryGetValue(tpl, out var template)) continue;
+            var props = template.Properties;
+            if (props == null) continue;
+
+            props.Weight = snap.Weight;
+            props.SpeedPenaltyPercent = snap.SpeedPenaltyPercent;
+            props.WeaponErgonomicPenalty = snap.WeaponErgonomicPenalty;
+            props.MousePenalty = snap.MousePenalty;
+
+            // Restore grid dimensions (first grid only, single-grid only)
+            if (!snap.IsMultiGrid)
+            {
+                var grids = props.Grids?.ToList();
+                if (grids is { Count: > 0 } && grids[0].Properties != null)
+                {
+                    grids[0].Properties!.CellsH = snap.GridWidth;
+                    grids[0].Properties!.CellsV = snap.GridHeight;
+                }
+            }
+        }
+
+        // Step 2: Apply overrides
+        var count = 0;
+        foreach (var (tpl, ov) in config.BackpackOverrides)
+        {
+            if (!items.TryGetValue(tpl, out var template)) continue;
+            var props = template.Properties;
+            if (props == null) continue;
+
+            if (ov.Weight.HasValue) props.Weight = ov.Weight.Value;
+            if (ov.SpeedPenaltyPercent.HasValue) props.SpeedPenaltyPercent = ov.SpeedPenaltyPercent.Value;
+            if (ov.WeaponErgonomicPenalty.HasValue) props.WeaponErgonomicPenalty = ov.WeaponErgonomicPenalty.Value;
+            if (ov.MousePenalty.HasValue) props.MousePenalty = ov.MousePenalty.Value;
+
+            // Grid overrides only for single-grid backpacks
+            if (_backpackSnapshots.TryGetValue(tpl, out var snap) && !snap.IsMultiGrid)
+            {
+                var grids = props.Grids?.ToList();
+                if (grids is { Count: > 0 } && grids[0].Properties != null)
+                {
+                    if (ov.GridWidth.HasValue) grids[0].Properties!.CellsH = ov.GridWidth.Value;
+                    if (ov.GridHeight.HasValue) grids[0].Properties!.CellsV = ov.GridHeight.Value;
+                }
+            }
+
+            count++;
+        }
+
+        return count;
+    }
+
     // ═══════════════════════════════════════════════════════
     // MERGE HELPERS (non-null fields from `incoming` override `existing`)
     // ═══════════════════════════════════════════════════════
@@ -1637,4 +2113,18 @@ public class GameValuesService(
         o.LightBleedingCost == null && o.HeavyBleedingCost == null && o.FractureCost == null &&
         o.PainDuration == null && o.ContusionDuration == null &&
         o.EnergyChange == null && o.HydrationChange == null;
+
+    private static BackpackOverride MergeBackpackOverride(BackpackOverride existing, BackpackOverride incoming) => new()
+    {
+        Weight = incoming.Weight ?? existing.Weight,
+        SpeedPenaltyPercent = incoming.SpeedPenaltyPercent ?? existing.SpeedPenaltyPercent,
+        WeaponErgonomicPenalty = incoming.WeaponErgonomicPenalty ?? existing.WeaponErgonomicPenalty,
+        MousePenalty = incoming.MousePenalty ?? existing.MousePenalty,
+        GridWidth = incoming.GridWidth ?? existing.GridWidth,
+        GridHeight = incoming.GridHeight ?? existing.GridHeight,
+    };
+
+    private static bool IsBackpackOverrideEmpty(BackpackOverride o) =>
+        o.Weight == null && o.SpeedPenaltyPercent == null && o.WeaponErgonomicPenalty == null &&
+        o.MousePenalty == null && o.GridWidth == null && o.GridHeight == null;
 }

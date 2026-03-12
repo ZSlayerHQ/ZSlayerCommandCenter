@@ -20,6 +20,9 @@ public record GameValuesConfig
     [JsonPropertyName("medicalOverrides")]
     public Dictionary<string, MedicalOverride> MedicalOverrides { get; set; } = new();
 
+    [JsonPropertyName("backpackOverrides")]
+    public Dictionary<string, BackpackOverride> BackpackOverrides { get; set; } = new();
+
     [JsonPropertyName("presets")]
     public Dictionary<string, GameValuesPresetEntry> Presets { get; set; } = new();
 }
@@ -126,6 +129,7 @@ public record MedicalDto
     [JsonPropertyName("energyChange")] public double? EnergyChange { get; set; }
     [JsonPropertyName("hydrationChange")] public double? HydrationChange { get; set; }
     [JsonPropertyName("treats")] public List<string> Treats { get; set; } = [];
+    [JsonPropertyName("handbookPrice")] public double HandbookPrice { get; set; }
     [JsonPropertyName("original")] public MedicalOriginalValues Original { get; set; } = new();
     [JsonPropertyName("isModified")] public bool IsModified { get; set; }
 }
@@ -159,6 +163,57 @@ public record MedicalTypeInfo
 }
 
 // ═══════════════════════════════════════════════════════
+// BACKPACK
+// ═══════════════════════════════════════════════════════
+
+public record BackpackOverride
+{
+    [JsonPropertyName("weight")] public double? Weight { get; set; }
+    [JsonPropertyName("speedPenaltyPercent")] public double? SpeedPenaltyPercent { get; set; }
+    [JsonPropertyName("weaponErgonomicPenalty")] public double? WeaponErgonomicPenalty { get; set; }
+    [JsonPropertyName("mousePenalty")] public double? MousePenalty { get; set; }
+    [JsonPropertyName("gridWidth")] public int? GridWidth { get; set; }
+    [JsonPropertyName("gridHeight")] public int? GridHeight { get; set; }
+}
+
+public record BackpackDto
+{
+    [JsonPropertyName("tpl")] public string Tpl { get; set; } = "";
+    [JsonPropertyName("shortName")] public string ShortName { get; set; } = "";
+    [JsonPropertyName("fullName")] public string FullName { get; set; } = "";
+    [JsonPropertyName("weight")] public double Weight { get; set; }
+    [JsonPropertyName("speedPenaltyPercent")] public double SpeedPenaltyPercent { get; set; }
+    [JsonPropertyName("weaponErgonomicPenalty")] public double WeaponErgonomicPenalty { get; set; }
+    [JsonPropertyName("mousePenalty")] public double MousePenalty { get; set; }
+    [JsonPropertyName("gridWidth")] public int GridWidth { get; set; }
+    [JsonPropertyName("gridHeight")] public int GridHeight { get; set; }
+    [JsonPropertyName("totalSlots")] public int TotalSlots { get; set; }
+    [JsonPropertyName("isMultiGrid")] public bool IsMultiGrid { get; set; }
+    [JsonPropertyName("gridLayout")] public string GridLayout { get; set; } = "";
+    [JsonPropertyName("handbookPrice")] public double HandbookPrice { get; set; }
+    [JsonPropertyName("original")] public BackpackOriginalValues Original { get; set; } = new();
+    [JsonPropertyName("isModified")] public bool IsModified { get; set; }
+}
+
+public record BackpackOriginalValues
+{
+    [JsonPropertyName("weight")] public double Weight { get; set; }
+    [JsonPropertyName("speedPenaltyPercent")] public double SpeedPenaltyPercent { get; set; }
+    [JsonPropertyName("weaponErgonomicPenalty")] public double WeaponErgonomicPenalty { get; set; }
+    [JsonPropertyName("mousePenalty")] public double MousePenalty { get; set; }
+    [JsonPropertyName("gridWidth")] public int GridWidth { get; set; }
+    [JsonPropertyName("gridHeight")] public int GridHeight { get; set; }
+    [JsonPropertyName("totalSlots")] public int TotalSlots { get; set; }
+}
+
+public record BackpackListResponse
+{
+    [JsonPropertyName("backpacks")] public List<BackpackDto> Backpacks { get; set; } = [];
+    [JsonPropertyName("totalCount")] public int TotalCount { get; set; }
+    [JsonPropertyName("totalModified")] public int TotalModified { get; set; }
+}
+
+// ═══════════════════════════════════════════════════════
 // API DTOs — AMMO
 // ═══════════════════════════════════════════════════════
 
@@ -186,6 +241,7 @@ public record AmmoDto
     [JsonPropertyName("staminaBurnPerDamage")] public double StaminaBurnPerDamage { get; set; }
     [JsonPropertyName("ammoAccr")] public double AmmoAccr { get; set; }
     [JsonPropertyName("ammoRec")] public double AmmoRec { get; set; }
+    [JsonPropertyName("handbookPrice")] public double HandbookPrice { get; set; }
     [JsonPropertyName("original")] public AmmoOriginalValues Original { get; set; } = new();
     [JsonPropertyName("isModified")] public bool IsModified { get; set; }
 }
@@ -244,6 +300,7 @@ public record ArmorDto
     [JsonPropertyName("armorMaterial")] public string ArmorMaterial { get; set; } = "";
     [JsonPropertyName("armorType")] public string ArmorType { get; set; } = "";
     [JsonPropertyName("isPlate")] public bool IsPlate { get; set; }
+    [JsonPropertyName("handbookPrice")] public double HandbookPrice { get; set; }
     [JsonPropertyName("original")] public ArmorOriginalValues Original { get; set; } = new();
     [JsonPropertyName("isModified")] public bool IsModified { get; set; }
 }
@@ -302,6 +359,7 @@ public record WeaponDto
     [JsonPropertyName("baseMalfunctionChance")] public double BaseMalfunctionChance { get; set; }
     [JsonPropertyName("velocity")] public double Velocity { get; set; }
     [JsonPropertyName("deviationMax")] public double DeviationMax { get; set; }
+    [JsonPropertyName("handbookPrice")] public double HandbookPrice { get; set; }
     [JsonPropertyName("original")] public WeaponOriginalValues Original { get; set; } = new();
     [JsonPropertyName("isModified")] public bool IsModified { get; set; }
 }
@@ -364,6 +422,7 @@ public record GameValuesPresetEntry
     [JsonPropertyName("armorOverrides")] public Dictionary<string, ArmorOverride>? ArmorOverrides { get; set; }
     [JsonPropertyName("weaponOverrides")] public Dictionary<string, WeaponOverride>? WeaponOverrides { get; set; }
     [JsonPropertyName("medicalOverrides")] public Dictionary<string, MedicalOverride>? MedicalOverrides { get; set; }
+    [JsonPropertyName("backpackOverrides")] public Dictionary<string, BackpackOverride>? BackpackOverrides { get; set; }
 }
 
 public record GameValuesPresetInfo
@@ -443,6 +502,22 @@ public static class GameValuesClamps
         "contusionDuration" => Clamp(value, EffectDurationMin, EffectDurationMax),
         "energyChange" => Clamp(value, HealthChangeMin, HealthChangeMax),
         "hydrationChange" => Clamp(value, HealthChangeMin, HealthChangeMax),
+        _ => value
+    };
+
+    // Backpack
+    public const double BpWeightMin = 0, BpWeightMax = 20;
+    public const double BpSpeedPenaltyMin = -100, BpSpeedPenaltyMax = 0;
+    public const double BpErgoPenaltyMin = -100, BpErgoPenaltyMax = 0;
+    public const double BpMousePenaltyMin = -100, BpMousePenaltyMax = 0;
+    public const int BpGridMin = 1, BpGridMax = 20;
+
+    public static double ClampBackpack(string field, double value) => field switch
+    {
+        "weight" => Clamp(value, BpWeightMin, BpWeightMax),
+        "speedPenaltyPercent" => Clamp(value, BpSpeedPenaltyMin, BpSpeedPenaltyMax),
+        "weaponErgonomicPenalty" => Clamp(value, BpErgoPenaltyMin, BpErgoPenaltyMax),
+        "mousePenalty" => Clamp(value, BpMousePenaltyMin, BpMousePenaltyMax),
         _ => value
     };
 

@@ -4374,6 +4374,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .gv-sub-tab:hover { color: var(--text); }
 .gv-sub-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .gv-sub-tab:disabled { opacity: 0.4; cursor: not-allowed; }
+.gv-price-col { white-space: nowrap; }
 .gv-panel { display: none; }
 .gv-panel.active { display: block; }
 .gv-toolbar {
@@ -7189,6 +7190,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <button class="gv-sub-tab" data-gvtab="weapons" onclick="window.gvSwitchTab('weapons')">Weapons</button>
       <button class="gv-sub-tab" data-gvtab="medical" onclick="window.gvSwitchTab('medical')">Medical</button>
       <button class="gv-sub-tab" data-gvtab="fooddrink" onclick="window.gvSwitchTab('fooddrink')">Food & Drink</button>
+      <button class="gv-sub-tab" data-gvtab="backpacks" onclick="window.gvSwitchTab('backpacks')">Backpacks</button>
     </div>
 
     <!-- Presets row -->
@@ -7206,6 +7208,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <option value="armor">Armor Only</option>
           <option value="weapons">Weapons Only</option>
           <option value="medical">Medical / Food Only</option>
+          <option value="backpacks">Backpacks Only</option>
         </select>
         <button class="btn btn-sm" onclick="window.gvSavePreset()">Save</button>
         <button class="btn btn-sm" onclick="window.gvExportPreset()">Export</button>
@@ -7236,6 +7239,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <thead><tr>
             <th class="gv-compare-col" style="display:none"></th>
             <th class="sortable" onclick="window.gvSortAmmo('name')">Name <span class="sort-arrow"></span></th>
+            <th class="sortable gv-price-col" onclick="window.gvSortAmmo('handbookPrice')">Price <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortAmmo('caliber')">Caliber <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortAmmo('damage')">DMG <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortAmmo('penetrationPower')">PEN <span class="sort-arrow"></span></th>
@@ -7270,6 +7274,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <thead><tr>
             <th class="gv-compare-col" style="display:none"></th>
             <th class="sortable" onclick="window.gvSortArmor('name')">Name <span class="sort-arrow"></span></th>
+            <th class="sortable gv-price-col" onclick="window.gvSortArmor('handbookPrice')">Price <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortArmor('armorClass')">Class <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortArmor('durability')">Durability <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortArmor('bluntThroughput')">Blunt <span class="sort-arrow"></span></th>
@@ -7298,6 +7303,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <thead><tr>
             <th class="gv-compare-col" style="display:none"></th>
             <th class="sortable" onclick="window.gvSortWeapons('name')">Name <span class="sort-arrow"></span></th>
+            <th class="sortable gv-price-col" onclick="window.gvSortWeapons('handbookPrice')">Price <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortWeapons('weapClass')">Class <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortWeapons('ammoCaliber')">Caliber <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortWeapons('ergonomics')">Ergo <span class="sort-arrow"></span></th>
@@ -7326,6 +7332,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <thead><tr>
             <th class="gv-compare-col" style="display:none"></th>
             <th class="sortable" onclick="window.gvSortMedical('name')">Name <span class="sort-arrow"></span></th>
+            <th class="sortable gv-price-col" onclick="window.gvSortMedical('handbookPrice')">Price <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortMedical('medType')">Type <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortMedical('maxHpResource')">HP <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortMedical('hpResourceRate')">HP/s <span class="sort-arrow"></span></th>
@@ -7357,6 +7364,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <thead><tr>
             <th class="gv-compare-col" style="display:none"></th>
             <th class="sortable" onclick="window.gvSortFood('name')">Name <span class="sort-arrow"></span></th>
+            <th class="sortable gv-price-col" onclick="window.gvSortFood('handbookPrice')">Price <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortFood('medType')">Type <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortFood('maxHpResource')">Uses <span class="sort-arrow"></span></th>
             <th class="sortable" onclick="window.gvSortFood('medUseTime')">Use Time <span class="sort-arrow"></span></th>
@@ -7365,6 +7373,34 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             <th>Actions</th>
           </tr></thead>
           <tbody id="gvFoodBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ BACKPACKS SUB-TAB ═══ -->
+    <div class="gv-panel" id="gvPanel-backpacks">
+      <div class="gv-toolbar">
+        <input type="text" class="gv-input gv-search" id="gvBackpackSearch" placeholder="Search backpacks..." oninput="window.gvFilterBackpacks()">
+        <label class="gv-checkbox-label"><input type="checkbox" id="gvBackpackModifiedOnly" onchange="window.gvFilterBackpacks()"> Modified only</label>
+        <label class="gv-checkbox-label"><input type="checkbox" id="gvBackpackCompareMode" onchange="window.gvToggleCompareMode()"> Compare</label>
+        <span class="gv-count" id="gvBackpackCount"></span>
+        <button class="btn btn-sm btn-danger" onclick="window.gvResetAllBackpacks()">Reset All Backpacks</button>
+      </div>
+      <div class="gv-table-wrap">
+        <table class="item-table gv-table" id="gvBackpackTable">
+          <thead><tr>
+            <th class="gv-compare-col" style="display:none"></th>
+            <th class="sortable" onclick="window.gvSortBackpacks('name')">Name <span class="sort-arrow"></span></th>
+            <th class="sortable gv-price-col" onclick="window.gvSortBackpacks('handbookPrice')">Price <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortBackpacks('weight')">Weight <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortBackpacks('speedPenaltyPercent')">Speed <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortBackpacks('weaponErgonomicPenalty')">Ergo <span class="sort-arrow"></span></th>
+            <th class="sortable" onclick="window.gvSortBackpacks('mousePenalty')">Mouse <span class="sort-arrow"></span></th>
+            <th>Grids</th>
+            <th class="sortable" onclick="window.gvSortBackpacks('totalSlots')">Slots <span class="sort-arrow"></span></th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="gvBackpackBody"></tbody>
         </table>
       </div>
     </div>
@@ -17244,6 +17280,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var _gvFoodData = [];
   var _gvFoodFiltered = [];
   var _gvFoodSort = { field: 'name', asc: true };
+  var _gvBackpackData = [];
+  var _gvBackpackFiltered = [];
+  var _gvBackpackSort = { field: 'name', asc: true };
   var _gvCompareSelected = {};
   var _gvCompareMode = false;
   var _gvCurrentTab = 'ammo';
@@ -17270,6 +17309,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'weapons' && _gvWeaponData.length === 0) gvLoadWeapons();
     if (tab === 'medical' && _gvMedicalData.length === 0) gvLoadMedical();
     if (tab === 'fooddrink' && _gvFoodData.length === 0) gvLoadFood();
+    if (tab === 'backpacks' && _gvBackpackData.length === 0) gvLoadBackpacks();
   };
 
   // ── Helper: penetration color class ──
@@ -17301,6 +17341,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       return '<span class="gv-modified">' + escH(String(formatted)) + '</span><span class="gv-delta ' + cls + '">' + sign + dStr + '</span>';
     }
     return escH(String(formatted));
+  }
+
+  // ── Helper: format handbook price ──
+  function gvPrice(v) {
+    if (!v || v <= 0) return '<span style="color:var(--text-dim)">—</span>';
+    return '<span style="font-size:11px;color:var(--text-dim)">' + Math.round(v).toLocaleString() + ' \u20BD</span>';
   }
 
   // ── Helper: extreme value warning ──
@@ -17371,6 +17417,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '<tr class="' + rowCls + '" onclick="window.gvExpandAmmo(\'' + a.tpl + '\')">';
       if (showCmp) html += '<td class="gv-compare-col"><input type="checkbox" ' + (_gvCompareSelected[a.tpl] ? 'checked' : '') + ' onclick="event.stopPropagation();window.gvToggleCompareItem(\'' + a.tpl + '\',this.checked)"></td>';
       html += '<td title="' + escH(a.fullName) + '"><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(a.shortName) + '</div></td>';
+      html += '<td class="gv-price-col">' + gvPrice(a.handbookPrice) + '</td>';
       html += '<td style="font-size:11px;white-space:nowrap">' + escH(a.caliberDisplay) + '</td>';
       html += '<td>' + gvVal(a.damage, a.original.damage) + gvWarn('damage', a.damage) + '</td>';
       html += '<td><span class="' + gvPenClass(a.penetrationPower) + '">' + gvVal(a.penetrationPower, a.original.penetrationPower) + '</span>' + gvWarn('penetrationPower', a.penetrationPower) + '</td>';
@@ -17419,7 +17466,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       { key: 'ammoAccr', label: 'Accuracy Mod', orig: a.original.ammoAccr },
       { key: 'ammoRec', label: 'Recoil Mod', orig: a.original.ammoRec },
     ];
-    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 9 : 8) + '"><div class="gv-edit-form">';
+    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 10 : 9) + '"><div class="gv-edit-form">';
     fields.forEach(function(f) {
       var val = a[f.key];
       var isModified = Math.abs(val - f.orig) > 0.001;
@@ -17557,6 +17604,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       if (showCmp) html += '<td class="gv-compare-col"><input type="checkbox" ' + (_gvCompareSelected[a.tpl] ? 'checked' : '') + ' onclick="event.stopPropagation();window.gvToggleCompareItem(\'' + a.tpl + '\',this.checked)"></td>';
       var plateBadge = a.isPlate ? '<span class="gv-plate-badge">PLATE</span>' : '';
       html += '<td title="' + escH(a.fullName) + '"><div style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(a.shortName) + ' ' + plateBadge + '</div></td>';
+      html += '<td class="gv-price-col">' + gvPrice(a.handbookPrice) + '</td>';
       html += '<td><span class="' + gvAcClass(a.armorClass) + '">' + gvVal(a.armorClass, a.original.armorClass) + '</span></td>';
       html += '<td>' + gvVal(a.durability, a.original.durability, 1) + ' / ' + gvVal(a.maxDurability, a.original.maxDurability, 1) + '</td>';
       html += '<td>' + gvVal(a.bluntThroughput, a.original.bluntThroughput, 3) + '</td>';
@@ -17592,7 +17640,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       { key: 'mousePenalty', label: 'Mouse Penalty', orig: a.original.mousePenalty, step: '0.1' },
       { key: 'weaponErgonomicPenalty', label: 'Ergo Penalty', orig: a.original.weaponErgonomicPenalty, step: '0.1' },
     ];
-    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 9 : 8) + '"><div class="gv-edit-form">';
+    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 10 : 9) + '"><div class="gv-edit-form">';
     fields.forEach(function(f) {
       var val = a[f.key];
       var isModified = Math.abs(val - f.orig) > 0.001;
@@ -17725,6 +17773,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '<tr class="' + rowCls + '" onclick="window.gvExpandWeapon(\'' + w.tpl + '\')">';
       if (showCmp) html += '<td class="gv-compare-col"><input type="checkbox" ' + (_gvCompareSelected[w.tpl] ? 'checked' : '') + ' onclick="event.stopPropagation();window.gvToggleCompareItem(\'' + w.tpl + '\',this.checked)"></td>';
       html += '<td title="' + escH(w.fullName) + '"><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(w.shortName) + '</div></td>';
+      html += '<td class="gv-price-col">' + gvPrice(w.handbookPrice) + '</td>';
       html += '<td style="font-size:11px">' + escH(w.weapClassDisplay) + '</td>';
       html += '<td style="font-size:11px">' + escH(w.ammoCaliberDisplay) + '</td>';
       html += '<td>' + gvVal(w.ergonomics, w.original.ergonomics) + '</td>';
@@ -17768,7 +17817,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       { key: 'velocity', label: 'Velocity', orig: w.original.velocity },
       { key: 'deviationMax', label: 'Deviation Max', orig: w.original.deviationMax, step: '0.1' },
     ];
-    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 10 : 9) + '"><div class="gv-edit-form">';
+    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 11 : 10) + '"><div class="gv-edit-form">';
     fields.forEach(function(f) {
       var val = w[f.key];
       var isModified = Math.abs(val - f.orig) > 0.001;
@@ -17915,6 +17964,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '<td title="' + escH(m.fullName) + '"><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(m.shortName) + '</div>';
       if (m.stimBuffName) html += '<div style="font-size:10px;color:var(--text-dim)">' + escH(m.stimBuffName) + '</div>';
       html += '</td>';
+      html += '<td class="gv-price-col">' + gvPrice(m.handbookPrice) + '</td>';
       html += '<td><span class="gv-med-type gv-med-type-' + m.medType + '">' + m.medType + '</span></td>';
       html += '<td>' + gvVal(m.maxHpResource, m.original.maxHpResource) + '</td>';
       html += '<td>' + gvVal(m.hpResourceRate, m.original.hpResourceRate, 1) + '</td>';
@@ -17957,7 +18007,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (m.original.energyChange != null) fields.push({ key: 'energyChange', label: 'Energy Change', orig: m.original.energyChange });
     if (m.original.hydrationChange != null) fields.push({ key: 'hydrationChange', label: 'Hydration Change', orig: m.original.hydrationChange });
 
-    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 9 : 8) + '"><div class="gv-edit-form">';
+    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 10 : 9) + '"><div class="gv-edit-form">';
     fields.forEach(function(f) {
       var val = m[f.key];
       if (val == null) val = f.orig;
@@ -18094,6 +18144,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '<tr class="' + rowCls + '" onclick="window.gvExpandMedical(\'' + m.tpl + '\')">';
       if (showCmp) html += '<td class="gv-compare-col"><input type="checkbox" ' + (_gvCompareSelected[m.tpl] ? 'checked' : '') + ' onclick="event.stopPropagation();window.gvToggleCompareItem(\'' + m.tpl + '\',this.checked)"></td>';
       html += '<td title="' + escH(m.fullName) + '"><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(m.shortName) + '</div></td>';
+      html += '<td class="gv-price-col">' + gvPrice(m.handbookPrice) + '</td>';
       html += '<td><span class="gv-med-type gv-med-type-' + m.medType + '">' + m.medType + '</span></td>';
       html += '<td>' + gvVal(m.maxHpResource, m.original.maxHpResource) + '</td>';
       html += '<td>' + gvVal(m.medUseTime, m.original.medUseTime, 1) + 's</td>';
@@ -18133,7 +18184,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (m.original.hydrationChange != null) fields.push({ key: 'hydrationChange', label: 'Hydration Change', orig: m.original.hydrationChange });
     if (m.original.hpResourceRate != null && m.original.hpResourceRate > 0) fields.push({ key: 'hpResourceRate', label: 'HP per Tick', orig: m.original.hpResourceRate, step: '0.1' });
 
-    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 9 : 8) + '"><div class="gv-edit-form">';
+    var html = '<tr class="gv-edit-row"><td colspan="' + (_gvCompareMode ? 10 : 9) + '"><div class="gv-edit-form">';
     fields.forEach(function(f) {
       var val = m[f.key];
       if (val == null) val = f.orig;
@@ -18157,9 +18208,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
                      document.getElementById('gvArmorCompareMode')?.checked ||
                      document.getElementById('gvWeaponCompareMode')?.checked ||
                      document.getElementById('gvMedicalCompareMode')?.checked ||
-                     document.getElementById('gvFoodCompareMode')?.checked || false;
+                     document.getElementById('gvFoodCompareMode')?.checked ||
+                     document.getElementById('gvBackpackCompareMode')?.checked || false;
     // Sync all checkboxes
-    ['gvAmmoCompareMode','gvArmorCompareMode','gvWeaponCompareMode','gvMedicalCompareMode','gvFoodCompareMode'].forEach(function(id) {
+    ['gvAmmoCompareMode','gvArmorCompareMode','gvWeaponCompareMode','gvMedicalCompareMode','gvFoodCompareMode','gvBackpackCompareMode'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.checked = _gvCompareMode;
     });
@@ -18171,6 +18223,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     else if (_gvCurrentTab === 'weapons') gvRenderWeaponTable();
     else if (_gvCurrentTab === 'medical') gvRenderMedicalTable();
     else if (_gvCurrentTab === 'fooddrink') gvRenderFoodTable();
+    else if (_gvCurrentTab === 'backpacks') gvRenderBackpackTable();
   };
 
   window.gvToggleCompareItem = function(tpl, checked) {
@@ -18300,6 +18353,171 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('gvCompareOverlay').style.display = 'flex';
   };
 
+  // ═══ BACKPACKS ═══
+  function gvLoadBackpacks() {
+    api('gamevalues/backpacks').then(function(r) {
+      _gvBackpackData = r.backpacks || [];
+      gvFilterBackpacks();
+    }).catch(function(e) { toast('Failed to load backpacks: ' + e.message, 'error'); });
+  }
+
+  window.gvFilterBackpacks = function() {
+    var search = (document.getElementById('gvBackpackSearch').value || '').toLowerCase();
+    var modOnly = document.getElementById('gvBackpackModifiedOnly').checked;
+    _gvBackpackFiltered = _gvBackpackData.filter(function(b) {
+      if (modOnly && !b.isModified) return false;
+      if (search && b.fullName.toLowerCase().indexOf(search) === -1 &&
+          b.shortName.toLowerCase().indexOf(search) === -1 &&
+          b.tpl.toLowerCase().indexOf(search) === -1) return false;
+      return true;
+    });
+    gvSortAndRenderBackpacks();
+  };
+
+  window.gvSortBackpacks = function(field) {
+    if (_gvBackpackSort.field === field) _gvBackpackSort.asc = !_gvBackpackSort.asc;
+    else { _gvBackpackSort.field = field; _gvBackpackSort.asc = true; }
+    gvSortAndRenderBackpacks();
+  };
+
+  function gvSortAndRenderBackpacks() {
+    var f = _gvBackpackSort.field;
+    var asc = _gvBackpackSort.asc;
+    _gvBackpackFiltered.sort(function(a, b) {
+      var va, vb;
+      if (f === 'name') { va = a.shortName.toLowerCase(); vb = b.shortName.toLowerCase(); }
+      else { va = a[f] || 0; vb = b[f] || 0; }
+      var cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return asc ? cmp : -cmp;
+    });
+    gvRenderBackpackTable();
+  }
+
+  function gvRenderBackpackTable() {
+    var body = document.getElementById('gvBackpackBody');
+    var showCmp = _gvCompareMode;
+    var html = '';
+    _gvBackpackFiltered.forEach(function(b) {
+      var isExp = _gvEditingTpl === b.tpl;
+      var rowCls = 'gv-row-clickable' + (isExp ? ' gv-row-expanded' : '') + (b.isModified ? ' gv-modified-row' : '');
+      html += '<tr class="' + rowCls + '" onclick="window.gvExpandBackpack(\'' + b.tpl + '\')">';
+      if (showCmp) html += '<td class="gv-compare-col"><input type="checkbox" ' + (_gvCompareSelected[b.tpl] ? 'checked' : '') + ' onclick="event.stopPropagation();window.gvToggleCompareItem(\'' + b.tpl + '\',this.checked)"></td>';
+      html += '<td title="' + escH(b.fullName) + '"><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(b.shortName) + '</div></td>';
+      html += '<td class="gv-price-col">' + gvPrice(b.handbookPrice) + '</td>';
+      html += '<td>' + gvVal(b.weight, b.original.weight, 2) + ' kg</td>';
+      html += '<td>' + gvVal(b.speedPenaltyPercent, b.original.speedPenaltyPercent, 1) + '%</td>';
+      html += '<td>' + gvVal(b.weaponErgonomicPenalty, b.original.weaponErgonomicPenalty, 1) + '</td>';
+      html += '<td>' + gvVal(b.mousePenalty, b.original.mousePenalty, 1) + '</td>';
+      // Grids column: editable for single-grid, read-only for multi-grid
+      if (b.isMultiGrid) {
+        html += '<td style="font-size:11px;white-space:nowrap" title="Multi-grid (read-only)">' + escH(b.gridLayout) + ' <span style="opacity:0.5" title="Multi-grid backpacks cannot have grid dimensions edited">\u{1f512}</span></td>';
+      } else {
+        html += '<td>' + gvVal(b.gridWidth, b.original.gridWidth) + '\u00d7' + gvVal(b.gridHeight, b.original.gridHeight) + '</td>';
+      }
+      html += '<td>' + gvVal(b.totalSlots, b.original.totalSlots) + '</td>';
+      html += '<td><button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetBackpackItem(\'' + b.tpl + '\')" ' + (b.isModified ? '' : 'disabled') + ' style="font-size:11px;padding:2px 8px">Reset</button></td>';
+      html += '</tr>';
+      if (isExp) html += gvBuildBackpackEditRow(b);
+    });
+    body.innerHTML = html;
+    var modCount = _gvBackpackData.filter(function(b) { return b.isModified; }).length;
+    document.getElementById('gvBackpackCount').textContent = _gvBackpackFiltered.length + ' items' + (modCount > 0 ? ' (' + modCount + ' modified)' : '');
+    document.querySelectorAll('#gvBackpackTable th.sortable').forEach(function(th) {
+      var onclick = th.getAttribute('onclick') || '';
+      var mt = onclick.match(/gvSortBackpacks\('(\w+)'\)/);
+      if (mt) {
+        th.classList.toggle('sort-active', _gvBackpackSort.field === mt[1]);
+        var arrow = th.querySelector('.sort-arrow');
+        if (arrow) arrow.textContent = _gvBackpackSort.field === mt[1] ? (_gvBackpackSort.asc ? '\u25B2' : '\u25BC') : '';
+      }
+    });
+    document.querySelectorAll('#gvBackpackTable .gv-compare-col').forEach(function(el) {
+      el.style.display = _gvCompareMode ? '' : 'none';
+    });
+  }
+
+  function gvBuildBackpackEditRow(b) {
+    var fields = [
+      { key: 'weight', label: 'Weight (kg)', orig: b.original.weight, step: '0.01' },
+      { key: 'speedPenaltyPercent', label: 'Speed Penalty %', orig: b.original.speedPenaltyPercent, step: '0.1' },
+      { key: 'weaponErgonomicPenalty', label: 'Ergo Penalty', orig: b.original.weaponErgonomicPenalty, step: '0.1' },
+      { key: 'mousePenalty', label: 'Mouse Penalty', orig: b.original.mousePenalty, step: '0.1' },
+    ];
+    if (!b.isMultiGrid) {
+      fields.push({ key: 'gridWidth', label: 'Grid Width', orig: b.original.gridWidth });
+      fields.push({ key: 'gridHeight', label: 'Grid Height', orig: b.original.gridHeight });
+    }
+    var showCmp = _gvCompareMode;
+    var html = '<tr class="gv-edit-row"><td colspan="' + (showCmp ? 11 : 10) + '"><div class="gv-edit-form">';
+    fields.forEach(function(f) {
+      var val = b[f.key];
+      var isModified = Math.abs(val - f.orig) > 0.001;
+      html += '<div class="gv-edit-field">';
+      html += '<label>' + f.label + ' <span class="gv-orig">orig: ' + (f.step ? f.orig.toFixed(f.step.split('.')[1]?.length || 2) : f.orig) + '</span></label>';
+      html += '<input type="number" step="' + (f.step || '1') + '" value="' + val + '" id="gvBpEdit_' + b.tpl + '_' + f.key + '" class="' + (isModified ? 'gv-field-modified' : '') + '">';
+      html += '</div>';
+    });
+    if (b.isMultiGrid) {
+      html += '<div class="gv-edit-field"><label>Grid Layout</label><div style="padding:6px 0;font-size:12px;color:var(--text-dim)">' + escH(b.gridLayout) + ' (multi-grid, read-only)</div></div>';
+    }
+    html += '</div><div class="gv-edit-actions">';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvSaveBackpack(\'' + b.tpl + '\')" style="background:var(--accent-dim);color:var(--bg-base)">Save Changes</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetBackpackItem(\'' + b.tpl + '\')">Reset to Default</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();_gvEditingTpl=null;gvRenderBackpackTable()">Cancel</button>';
+    html += '</div></td></tr>';
+    return html;
+  }
+
+  window.gvExpandBackpack = function(tpl) {
+    _gvEditingTpl = (_gvEditingTpl === tpl) ? null : tpl;
+    gvRenderBackpackTable();
+  };
+
+  window.gvSaveBackpack = function(tpl) {
+    var b = _gvBackpackData.find(function(x) { return x.tpl === tpl; });
+    if (!b) return;
+    var allFields = ['weight','speedPenaltyPercent','weaponErgonomicPenalty','mousePenalty'];
+    if (!b.isMultiGrid) { allFields.push('gridWidth'); allFields.push('gridHeight'); }
+    var override = {};
+    var hasChanges = false;
+    allFields.forEach(function(f) {
+      var el = document.getElementById('gvBpEdit_' + tpl + '_' + f);
+      if (!el) return;
+      var val = parseFloat(el.value);
+      if (isNaN(val)) return;
+      var orig = b.original[f];
+      if (Math.abs(val - orig) > 0.001) {
+        override[f] = (f === 'gridWidth' || f === 'gridHeight') ? Math.round(val) : val;
+        hasChanges = true;
+      }
+    });
+    if (!hasChanges) { toast('No changes to save', 'info'); return; }
+    var body = { overrides: {} };
+    body.overrides[tpl] = override;
+    api('gamevalues/backpacks', { method: 'POST', body: JSON.stringify(body) }).then(function(r) {
+      toast(r.message || 'Backpack updated', 'success');
+      _gvEditingTpl = null;
+      gvLoadBackpacks();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvResetBackpackItem = function(tpl) {
+    api('gamevalues/backpacks/reset/' + tpl, { method: 'POST' }).then(function(r) {
+      toast(r.message || 'Reset', 'success');
+      _gvEditingTpl = null;
+      gvLoadBackpacks();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvResetAllBackpacks = function() {
+    if (!confirm('Reset ALL backpack values to game defaults?')) return;
+    api('gamevalues/backpacks/reset', { method: 'POST' }).then(function(r) {
+      toast(r.message || 'All backpacks reset', 'success');
+      _gvEditingTpl = null;
+      gvLoadBackpacks();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
   // ═══ PRESETS ═══
   var _gvPresetsData = [];
   var _gvCatLabels = { all: 'All', ammo: 'Ammo', armor: 'Armor', weapons: 'Weapons', medical: 'Medical' };
@@ -18347,6 +18565,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       if (cat === 'all' || cat === 'armor') { if (_gvArmorData.length) gvLoadArmor(); }
       if (cat === 'all' || cat === 'weapons') { if (_gvWeaponData.length) gvLoadWeapons(); }
       if (cat === 'all' || cat === 'medical') { if (_gvMedicalData.length || _gvFoodData.length) gvReloadMedicalData(); }
+      if (cat === 'all' || cat === 'backpacks') { if (_gvBackpackData.length) gvLoadBackpacks(); }
     }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
   };
 
