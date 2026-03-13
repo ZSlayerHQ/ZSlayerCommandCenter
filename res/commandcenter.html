@@ -10548,12 +10548,17 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var html = '';
       hlWatchdogs.forEach(function(wd) {
         var hl = wd.headlessClient || {};
+        var sys = wd.system || {};
         var actionKey = getActionKey(wd.watchdogId, 'headlessClient');
         var action = watchdogActions[actionKey];
 
         html += '<div style="padding:10px;margin-bottom:8px;background:#1a1810;border:1px solid var(--border-subtle);border-radius:var(--radius)">';
+
+        // Header: Name @ hostname + status badge
         html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-        html += '<span style="font-size:12px;font-weight:600;color:var(--text-bright)">' + escH(wd.name || wd.watchdogId) + '</span>';
+        var nameLabel = escH(wd.name || wd.watchdogId);
+        if (wd.hostname) nameLabel += ' <span style="color:var(--text-muted);font-weight:400">@ ' + escH(wd.hostname) + '</span>';
+        html += '<span style="font-size:12px;font-weight:600;color:var(--text-bright)">' + nameLabel + '</span>';
 
         var hlBadge = 'hl-status-pill ';
         var hlBadgeText = '';
@@ -10570,13 +10575,40 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         html += '<span class="' + hlBadge + '" style="font-size:10px;padding:1px 8px">' + hlBadgeText + '</span>';
         html += '</div>';
 
-        html += '<div class="dash-stat-row" style="margin-bottom:6px">';
+        // Stats row 1: Uptime, PID, Profile
+        html += '<div class="dash-stat-row" style="margin-bottom:4px">';
         html += '<div class="dash-stat"><div class="dash-stat-label">Uptime</div><div class="dash-stat-value sm">' + formatUptime(hl.uptime) + '</div></div>';
         html += '<div class="dash-stat"><div class="dash-stat-label">PID</div><div class="dash-stat-value sm">' + (hl.pid || '--') + '</div></div>';
-        html += '<div class="dash-stat"><div class="dash-stat-label">Crashes</div><div class="dash-stat-value sm">' + (hl.crashes || 0) + '</div></div>';
+        html += '<div class="dash-stat"><div class="dash-stat-label">Profile</div><div class="dash-stat-value sm">' + (hl.profile ? '\uD83E\uDD16 ' + escH(hl.profile) : '<span style="color:var(--text-muted)">--</span>') + '</div></div>';
         html += '</div>';
 
-        html += '<div style="display:flex;gap:6px;justify-content:flex-end">';
+        // Stats row 2: Auto-Start, Auto-Restart, Crashes
+        var crashCount = hl.crashes || 0;
+        var crashColor = crashCount >= 3 ? '#8b3a3a' : crashCount >= 1 ? '#c87a3e' : 'var(--text-dim)';
+        html += '<div class="dash-stat-row" style="margin-bottom:4px">';
+        html += '<div class="dash-stat"><div class="dash-stat-label">Auto-Start</div><div class="dash-stat-value sm">' + (hl.autoStart ? 'Yes' : 'No') + '</div></div>';
+        html += '<div class="dash-stat"><div class="dash-stat-label">Auto-Restart</div><div class="dash-stat-value sm">' + (hl.autoRestart ? 'Yes' : 'No') + '</div></div>';
+        html += '<div class="dash-stat"><div class="dash-stat-label">Crashes</div><div class="dash-stat-value sm" style="color:' + crashColor + '">' + crashCount + '</div></div>';
+        html += '</div>';
+
+        // Stats row 3: System stats (CPU + RAM) if available
+        if (sys.cpuPercent != null || sys.ramUsedGB != null) {
+          html += '<div class="dash-stat-row" style="margin-bottom:4px">';
+          if (sys.cpuPercent != null) {
+            var cpuColor = sys.cpuPercent >= 90 ? '#8b3a3a' : sys.cpuPercent >= 70 ? '#c87a3e' : 'var(--text-dim)';
+            html += '<div class="dash-stat"><div class="dash-stat-label">CPU</div><div class="dash-stat-value sm" style="color:' + cpuColor + '">' + Math.round(sys.cpuPercent) + '%</div></div>';
+          }
+          if (sys.ramUsedGB != null) {
+            var ramPct = sys.ramTotalGB ? (sys.ramUsedGB / sys.ramTotalGB * 100) : 0;
+            var ramColor = ramPct >= 90 ? '#8b3a3a' : ramPct >= 75 ? '#c87a3e' : 'var(--text-dim)';
+            var ramText = sys.ramUsedGB.toFixed(1) + (sys.ramTotalGB ? '/' + sys.ramTotalGB.toFixed(1) + ' GB' : ' GB');
+            html += '<div class="dash-stat"><div class="dash-stat-label">RAM</div><div class="dash-stat-value sm" style="color:' + ramColor + '">' + ramText + '</div></div>';
+          }
+          html += '</div>';
+        }
+
+        // Buttons
+        html += '<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:6px">';
         if (action) {
           html += '<button class="btn btn-sm btn-disabled" disabled>Start</button>';
           html += '<button class="btn btn-sm btn-disabled" disabled>Stop</button>';
