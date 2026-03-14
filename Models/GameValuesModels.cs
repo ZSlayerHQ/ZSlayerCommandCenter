@@ -23,6 +23,9 @@ public record GameValuesConfig
     [JsonPropertyName("backpackOverrides")]
     public Dictionary<string, BackpackOverride> BackpackOverrides { get; set; } = new();
 
+    [JsonPropertyName("stimBuffOverrides")]
+    public Dictionary<string, StimBuffOverride> StimBuffOverrides { get; set; } = new();
+
     [JsonPropertyName("presets")]
     public Dictionary<string, GameValuesPresetEntry> Presets { get; set; } = new();
 }
@@ -132,6 +135,10 @@ public record MedicalDto
     [JsonPropertyName("handbookPrice")] public double HandbookPrice { get; set; }
     [JsonPropertyName("original")] public MedicalOriginalValues Original { get; set; } = new();
     [JsonPropertyName("isModified")] public bool IsModified { get; set; }
+    [JsonPropertyName("effects")] public List<StimBuffEffectDto>? Effects { get; set; }
+    [JsonPropertyName("originalEffects")] public List<StimBuffEffectDto>? OriginalEffects { get; set; }
+    [JsonPropertyName("isBuffModified")] public bool IsBuffModified { get; set; }
+    [JsonPropertyName("stimBuffSharedCount")] public int StimBuffSharedCount { get; set; }
 }
 
 public record MedicalOriginalValues
@@ -160,6 +167,31 @@ public record MedicalTypeInfo
     [JsonPropertyName("key")] public string Key { get; set; } = "";
     [JsonPropertyName("display")] public string Display { get; set; } = "";
     [JsonPropertyName("count")] public int Count { get; set; }
+}
+
+// ═══════════════════════════════════════════════════════
+// STIM BUFF EFFECTS
+// ═══════════════════════════════════════════════════════
+
+public record StimBuffEffectDto
+{
+    [JsonPropertyName("buffType")] public string BuffType { get; set; } = "";
+    [JsonPropertyName("value")] public double Value { get; set; }
+    [JsonPropertyName("duration")] public double Duration { get; set; }
+    [JsonPropertyName("delay")] public double Delay { get; set; }
+    [JsonPropertyName("chance")] public double Chance { get; set; } = 1;
+    [JsonPropertyName("absoluteValue")] public bool AbsoluteValue { get; set; } = true;
+    [JsonPropertyName("skillName")] public string SkillName { get; set; } = "";
+}
+
+public record StimBuffOverride
+{
+    [JsonPropertyName("effects")] public List<StimBuffEffectDto> Effects { get; set; } = [];
+}
+
+public record StimBuffUpdateRequest
+{
+    [JsonPropertyName("overrides")] public Dictionary<string, StimBuffOverride> Overrides { get; set; } = new();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -423,6 +455,7 @@ public record GameValuesPresetEntry
     [JsonPropertyName("weaponOverrides")] public Dictionary<string, WeaponOverride>? WeaponOverrides { get; set; }
     [JsonPropertyName("medicalOverrides")] public Dictionary<string, MedicalOverride>? MedicalOverrides { get; set; }
     [JsonPropertyName("backpackOverrides")] public Dictionary<string, BackpackOverride>? BackpackOverrides { get; set; }
+    [JsonPropertyName("stimBuffOverrides")] public Dictionary<string, StimBuffOverride>? StimBuffOverrides { get; set; }
 }
 
 public record GameValuesPresetInfo
@@ -503,6 +536,20 @@ public static class GameValuesClamps
         "energyChange" => Clamp(value, HealthChangeMin, HealthChangeMax),
         "hydrationChange" => Clamp(value, HealthChangeMin, HealthChangeMax),
         _ => value
+    };
+
+    // Stim Buff Effects
+    public const double BuffValueMin = -10000, BuffValueMax = 10000;
+    public const double BuffDurationMin = 0, BuffDurationMax = 86400;
+    public const double BuffDelayMin = 0, BuffDelayMax = 3600;
+    public const double BuffChanceMin = 0, BuffChanceMax = 1;
+
+    public static StimBuffEffectDto ClampBuffEffect(StimBuffEffectDto e) => e with
+    {
+        Value = Clamp(e.Value, BuffValueMin, BuffValueMax),
+        Duration = Clamp(e.Duration, BuffDurationMin, BuffDurationMax),
+        Delay = Clamp(e.Delay, BuffDelayMin, BuffDelayMax),
+        Chance = Clamp(e.Chance, BuffChanceMin, BuffChanceMax)
     };
 
     // Backpack

@@ -17339,8 +17339,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'ammo' && _gvAmmoData.length === 0) gvLoadAmmo();
     if (tab === 'armor' && _gvArmorData.length === 0) gvLoadArmor();
     if (tab === 'weapons' && _gvWeaponData.length === 0) gvLoadWeapons();
-    if (tab === 'medical' && _gvMedicalData.length === 0) gvLoadMedical();
-    if (tab === 'fooddrink' && _gvFoodData.length === 0) gvLoadFood();
+    if (tab === 'medical') { if (_gvMedicalData.length === 0) gvLoadMedical(); else gvFilterMedical(); }
+    if (tab === 'fooddrink') { if (_gvFoodData.length === 0) gvLoadFood(); else gvFilterFood(); }
     if (tab === 'backpacks' && _gvBackpackData.length === 0) gvLoadBackpacks();
   };
 
@@ -17994,7 +17994,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '<tr class="' + rowCls + '" onclick="window.gvExpandMedical(\'' + m.tpl + '\')">';
       if (showCmp) html += '<td class="gv-compare-col"><input type="checkbox" ' + (_gvCompareSelected[m.tpl] ? 'checked' : '') + ' onclick="event.stopPropagation();window.gvToggleCompareItem(\'' + m.tpl + '\',this.checked)"></td>';
       html += '<td title="' + escH(m.fullName) + '"><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(m.shortName) + '</div>';
-      if (m.stimBuffName) html += '<div style="font-size:10px;color:var(--text-dim)">' + escH(m.stimBuffName) + '</div>';
+      if (m.stimBuffName) {
+        var buffStyle = m.isBuffModified ? 'color:var(--accent)' : 'color:var(--text-dim)';
+        html += '<div style="font-size:10px;' + buffStyle + '">' + escH(m.stimBuffName);
+        if (m.effects && m.effects.length) html += ' <span style="opacity:0.7">(' + m.effects.length + ' effects)</span>';
+        html += '</div>';
+      }
       html += '</td>';
       html += '<td class="gv-price-col">' + gvPrice(m.handbookPrice) + '</td>';
       html += '<td><span class="gv-med-type gv-med-type-' + m.medType + '">' + m.medType + '</span></td>';
@@ -18049,7 +18054,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '<input type="number" step="' + (f.step || '1') + '" value="' + (val != null ? val : '') + '" id="gvMedEdit_' + m.tpl + '_' + f.key + '" class="' + (isModified ? 'gv-field-modified' : '') + '">';
       html += '</div>';
     });
-    html += '</div><div class="gv-edit-actions">';
+    html += '</div>';
+    html += gvBuildEffectsEditor(m);
+    html += '<div class="gv-edit-actions">';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvSaveMedical(\'' + m.tpl + '\')" style="background:var(--accent-dim);color:var(--bg-base)">Save Changes</button>';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetMedicalItem(\'' + m.tpl + '\')">Reset to Default</button>';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();_gvEditingTpl=null;gvRenderMedicalTable()">Cancel</button>';
@@ -18063,13 +18070,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     else if (_gvCurrentTab === 'fooddrink') gvRenderFoodTable();
   };
 
+  // ── Buff effect type options ──
+  var _gvBuffTypes = ['Antidote','BodyTemperature','Contusion','DamageModifier','EnergyRate','Fracture','FrostbiteBuff','HandsTremor','HealthRate','HeavyBleeding','HydrationRate','LightBleeding','MaxStamina','Pain','QuantumTunnelling','RemoveAllBloodLosses','SkillRate','StaminaRate','UnknownToxin','WeightLimit','ZombieInfection'];
+
   window.gvSaveMedical = function(tpl) {
     var src = (_gvCurrentTab === 'fooddrink') ? _gvFoodData : _gvMedicalData;
     var m = src.find(function(x) { return x.tpl === tpl; });
     if (!m) return;
+
+    // Collect item field overrides
     var allFields = ['maxHpResource','hpResourceRate','medUseTime','lightBleedingCost','heavyBleedingCost','fractureCost','painDuration','contusionDuration','energyChange','hydrationChange'];
     var override = {};
-    var hasChanges = false;
+    var hasFieldChanges = false;
     allFields.forEach(function(f) {
       var el = document.getElementById('gvMedEdit_' + tpl + '_' + f);
       if (!el) return;
@@ -18078,21 +18090,158 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var orig = m.original[f];
       if (orig != null && Math.abs(val - orig) > 0.001) {
         override[f] = val;
-        hasChanges = true;
+        hasFieldChanges = true;
       } else if (orig == null) {
         override[f] = val;
-        hasChanges = true;
+        hasFieldChanges = true;
       }
     });
-    if (!hasChanges) { toast('No changes to save', 'info'); return; }
-    var body = { overrides: {} };
-    body.overrides[tpl] = override;
-    api('gamevalues/medical', { method: 'POST', body: JSON.stringify(body) }).then(function(r) {
-      toast(r.message || 'Medical item updated', 'success');
+
+    // Collect buff effect overrides
+    var hasBuffChanges = false;
+    var buffEffects = null;
+    if (m.stimBuffName && m.originalEffects) {
+      buffEffects = gvCollectEffects(tpl);
+      if (buffEffects != null) {
+        // Check if actually changed vs original
+        var origJson = JSON.stringify(m.originalEffects);
+        var newJson = JSON.stringify(buffEffects);
+        hasBuffChanges = (origJson !== newJson);
+      }
+    }
+
+    if (!hasFieldChanges && !hasBuffChanges) { toast('No changes to save', 'info'); return; }
+
+    // Shared buff warning
+    if (hasBuffChanges && m.stimBuffSharedCount > 1) {
+      if (!confirm('This buff (' + m.stimBuffName + ') is shared by ' + m.stimBuffSharedCount + ' items. Changes will affect all of them. Continue?')) return;
+    }
+
+    // Save field changes
+    var fieldPromise = hasFieldChanges
+      ? api('gamevalues/medical', { method: 'POST', body: JSON.stringify({ overrides: { [tpl]: override } }) })
+      : Promise.resolve(null);
+
+    // Save buff changes
+    var buffPromise = hasBuffChanges
+      ? api('gamevalues/stimbuffs', { method: 'POST', body: JSON.stringify({ overrides: { [m.stimBuffName]: { effects: buffEffects } } }) })
+      : Promise.resolve(null);
+
+    Promise.all([fieldPromise, buffPromise]).then(function(results) {
+      var msgs = [];
+      if (results[0]) msgs.push(results[0].message || 'Fields updated');
+      if (results[1]) msgs.push(results[1].message || 'Buff effects updated');
+      toast(msgs.join('; ') || 'Updated', 'success');
       _gvEditingTpl = null;
       gvReloadMedicalData();
     }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
   };
+
+  function gvCollectEffects(tpl) {
+    var container = document.getElementById('gvBuffEffects_' + tpl);
+    if (!container) return null;
+    var rows = container.querySelectorAll('.gv-buff-row');
+    var effects = [];
+    rows.forEach(function(row) {
+      effects.push({
+        buffType: row.querySelector('.gv-buff-type').value,
+        value: parseFloat(row.querySelector('.gv-buff-value').value) || 0,
+        duration: parseFloat(row.querySelector('.gv-buff-duration').value) || 0,
+        delay: parseFloat(row.querySelector('.gv-buff-delay').value) || 0,
+        chance: parseFloat(row.querySelector('.gv-buff-chance').value) || 1,
+        absoluteValue: row.querySelector('.gv-buff-abs').checked,
+        skillName: row.querySelector('.gv-buff-skill').value || '',
+      });
+    });
+    return effects;
+  }
+
+  window.gvResetStimBuff = function(buffName, tpl) {
+    api('gamevalues/stimbuffs/reset/' + encodeURIComponent(buffName), { method: 'POST' }).then(function(r) {
+      toast(r.message || 'Buff reset', 'success');
+      _gvEditingTpl = null;
+      gvReloadMedicalData();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.gvAddBuffEffect = function(tpl) {
+    var container = document.getElementById('gvBuffEffects_' + tpl);
+    if (!container) return;
+    var row = gvBuildBuffRow({ buffType: 'HealthRate', value: 0, duration: 60, delay: 1, chance: 1, absoluteValue: true, skillName: '' }, null);
+    container.insertAdjacentHTML('beforeend', row);
+  };
+
+  window.gvRemoveBuffEffect = function(btn) {
+    btn.closest('.gv-buff-row').remove();
+  };
+
+  function gvBuildEffectsEditor(m) {
+    if (!m.effects || !m.effects.length) return '';
+    var html = '<div style="border-left:2px solid var(--accent-dim);padding:8px 0 8px 12px;margin-top:10px">';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    html += '<span style="font-size:12px;font-weight:600;color:var(--accent)">Buff Effects</span>';
+    html += '<span style="font-size:10px;color:var(--text-dim)">(' + escH(m.stimBuffName) + ')</span>';
+    if (m.stimBuffSharedCount > 1) html += '<span style="font-size:10px;color:var(--red-glow)">Shared by ' + m.stimBuffSharedCount + ' items</span>';
+    html += '<span style="font-size:9px;color:var(--text-dim);margin-left:auto">Restart client for changes to take effect</span>';
+    html += '</div>';
+
+    // Header row
+    html += '<div style="display:grid;grid-template-columns:140px 70px 70px 60px 55px 30px 100px 28px;gap:4px;font-size:9px;color:var(--text-dim);padding:0 0 2px 0">';
+    html += '<span>Type</span><span>Value</span><span>Duration</span><span>Delay</span><span>Chance</span><span>Abs</span><span>Skill</span><span></span>';
+    html += '</div>';
+
+    html += '<div id="gvBuffEffects_' + m.tpl + '">';
+    m.effects.forEach(function(e, idx) {
+      var orig = (m.originalEffects && m.originalEffects[idx]) || null;
+      html += gvBuildBuffRow(e, orig);
+    });
+    html += '</div>';
+
+    html += '<div style="margin-top:4px;display:flex;gap:6px;align-items:center">';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvAddBuffEffect(\'' + m.tpl + '\')" style="font-size:10px;padding:2px 8px">+ Add Effect</button>';
+    if (m.isBuffModified) html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetStimBuff(\'' + escH(m.stimBuffName) + '\',\'' + m.tpl + '\')" style="font-size:10px;padding:2px 8px">Reset Effects</button>';
+    html += '</div></div>';
+    return html;
+  }
+
+  function gvBuildBuffRow(e, orig) {
+    var html = '<div class="gv-buff-row" style="display:grid;grid-template-columns:140px 70px 70px 60px 55px 30px 100px 28px;gap:4px;margin-bottom:2px;align-items:center">';
+
+    // BuffType dropdown
+    html += '<select class="gv-buff-type" style="font-size:11px;background:var(--bg-base);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:3px;padding:2px">';
+    _gvBuffTypes.forEach(function(t) {
+      html += '<option value="' + t + '"' + (e.buffType === t ? ' selected' : '') + '>' + t + '</option>';
+    });
+    html += '</select>';
+
+    // Value
+    var valMod = orig && Math.abs(e.value - orig.value) > 0.001;
+    html += '<input type="number" step="0.1" class="gv-buff-value' + (valMod ? ' gv-field-modified' : '') + '" value="' + e.value + '" style="font-size:11px;width:100%;background:var(--bg-base);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:3px;padding:2px 4px">';
+
+    // Duration
+    var durMod = orig && Math.abs(e.duration - orig.duration) > 0.001;
+    html += '<input type="number" step="1" class="gv-buff-duration' + (durMod ? ' gv-field-modified' : '') + '" value="' + e.duration + '" style="font-size:11px;width:100%;background:var(--bg-base);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:3px;padding:2px 4px">';
+
+    // Delay
+    var delMod = orig && Math.abs(e.delay - orig.delay) > 0.001;
+    html += '<input type="number" step="1" class="gv-buff-delay' + (delMod ? ' gv-field-modified' : '') + '" value="' + e.delay + '" style="font-size:11px;width:100%;background:var(--bg-base);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:3px;padding:2px 4px">';
+
+    // Chance
+    var chaMod = orig && Math.abs(e.chance - orig.chance) > 0.001;
+    html += '<input type="number" step="0.01" min="0" max="1" class="gv-buff-chance' + (chaMod ? ' gv-field-modified' : '') + '" value="' + e.chance + '" style="font-size:11px;width:100%;background:var(--bg-base);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:3px;padding:2px 4px">';
+
+    // AbsoluteValue checkbox
+    html += '<input type="checkbox" class="gv-buff-abs"' + (e.absoluteValue ? ' checked' : '') + ' style="margin:0 auto">';
+
+    // SkillName
+    html += '<input type="text" class="gv-buff-skill" value="' + escH(e.skillName) + '" placeholder="Skill" style="font-size:11px;width:100%;background:var(--bg-base);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:3px;padding:2px 4px">';
+
+    // Remove button
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvRemoveBuffEffect(this)" style="font-size:10px;padding:1px 5px;color:var(--red-glow)" title="Remove effect">\u00d7</button>';
+
+    html += '</div>';
+    return html;
+  }
 
   window.gvResetMedicalItem = function(tpl) {
     api('gamevalues/medical/reset/' + tpl, { method: 'POST' }).then(function(r) {
@@ -18175,7 +18324,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var rowCls = 'gv-row-clickable' + (isExp ? ' gv-row-expanded' : '');
       html += '<tr class="' + rowCls + '" onclick="window.gvExpandMedical(\'' + m.tpl + '\')">';
       if (showCmp) html += '<td class="gv-compare-col"><input type="checkbox" ' + (_gvCompareSelected[m.tpl] ? 'checked' : '') + ' onclick="event.stopPropagation();window.gvToggleCompareItem(\'' + m.tpl + '\',this.checked)"></td>';
-      html += '<td title="' + escH(m.fullName) + '"><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(m.shortName) + '</div></td>';
+      html += '<td title="' + escH(m.fullName) + '"><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(m.shortName) + '</div>';
+      if (m.stimBuffName) {
+        var buffStyleF = m.isBuffModified ? 'color:var(--accent)' : 'color:var(--text-dim)';
+        html += '<div style="font-size:10px;' + buffStyleF + '">' + escH(m.stimBuffName);
+        if (m.effects && m.effects.length) html += ' <span style="opacity:0.7">(' + m.effects.length + ' effects)</span>';
+        html += '</div>';
+      }
+      html += '</td>';
       html += '<td class="gv-price-col">' + gvPrice(m.handbookPrice) + '</td>';
       html += '<td><span class="gv-med-type gv-med-type-' + m.medType + '">' + m.medType + '</span></td>';
       html += '<td>' + gvVal(m.maxHpResource, m.original.maxHpResource) + '</td>';
@@ -18226,7 +18382,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '<input type="number" step="' + (f.step || '1') + '" value="' + (val != null ? val : '') + '" id="gvMedEdit_' + m.tpl + '_' + f.key + '" class="' + (isModified ? 'gv-field-modified' : '') + '">';
       html += '</div>';
     });
-    html += '</div><div class="gv-edit-actions">';
+    html += '</div>';
+    html += gvBuildEffectsEditor(m);
+    html += '<div class="gv-edit-actions">';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvSaveMedical(\'' + m.tpl + '\')" style="background:var(--accent-dim);color:var(--bg-base)">Save Changes</button>';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetMedicalItem(\'' + m.tpl + '\')">Reset to Default</button>';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();_gvEditingTpl=null;gvRenderFoodTable()">Cancel</button>';

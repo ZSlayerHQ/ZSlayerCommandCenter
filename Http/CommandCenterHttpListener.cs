@@ -3191,6 +3191,28 @@ public class CommandCenterHttpListener(
                 break;
             }
 
+            // ── STIM BUFFS ──
+            case "stimbuffs" when method == "POST":
+            {
+                var body = await ReadBody<StimBuffUpdateRequest>(context);
+                if (body?.Overrides == null || body.Overrides.Count == 0)
+                { await WriteJson(context, 400, new { error = "No overrides provided" }); break; }
+                var result = gameValuesService.UpdateStimBuffs(body.Overrides);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Game Values: updated {body.Overrides.Count} stim buff(s)");
+                await WriteJson(context, 200, result);
+                break;
+            }
+
+            case "stimbuffs/reset" when method == "POST":
+            {
+                var result = gameValuesService.ResetAllStimBuffs();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: reset all stim buffs to defaults");
+                await WriteJson(context, 200, result);
+                break;
+            }
+
             // ── BACKPACKS ──
             case "backpacks" when method == "GET":
             {
@@ -3315,6 +3337,13 @@ public class CommandCenterHttpListener(
                 {
                     var tpl = subPath["medical/reset/".Length..];
                     var result = gameValuesService.ResetMedicalItem(tpl);
+                    await WriteJson(context, result.Success ? 200 : 404, result);
+                    break;
+                }
+                if (method == "POST" && subPath.StartsWith("stimbuffs/reset/"))
+                {
+                    var buffName = Uri.UnescapeDataString(subPath["stimbuffs/reset/".Length..]);
+                    var result = gameValuesService.ResetStimBuff(buffName);
                     await WriteJson(context, result.Success ? 200 : 404, result);
                     break;
                 }

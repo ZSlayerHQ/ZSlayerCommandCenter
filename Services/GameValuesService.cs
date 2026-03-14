@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Helpers;
+using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Services;
@@ -28,6 +29,7 @@ public class GameValuesService(
     private readonly Dictionary<string, WeaponSnapshot> _weaponSnapshots = new();
     private readonly Dictionary<string, MedicalSnapshot> _medicalSnapshots = new();
     private readonly Dictionary<string, BackpackSnapshot> _backpackSnapshots = new();
+    private readonly Dictionary<string, List<StimBuffEffectDto>> _stimBuffSnapshots = new();
 
     private record AmmoSnapshot(
         double Damage, double PenetrationPower, double ArmorDamage,
@@ -142,7 +144,7 @@ public class GameValuesService(
             GenerateBalancePresets();
             ApplyAll();
             var config = configService.GetConfig().GameValues;
-            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count + config.MedicalOverrides.Count + config.BackpackOverrides.Count;
+            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count + config.MedicalOverrides.Count + config.BackpackOverrides.Count + config.StimBuffOverrides.Count;
             if (total > 0)
                 logger.Success($"[ZSlayerHQ] Game Values: applied {total} overrides ({config.AmmoOverrides.Count} ammo, {config.ArmorOverrides.Count} armor, {config.WeaponOverrides.Count} weapons, {config.MedicalOverrides.Count} medical, {config.BackpackOverrides.Count} backpacks)");
             else
@@ -332,8 +334,37 @@ public class GameValuesService(
             }
         }
 
+        // Snapshot stim buff definitions from globals
+        var stimBuffCount = 0;
+        try
+        {
+            var buffsDict = databaseService.GetGlobals().Configuration.Health.Effects.Stimulator.Buffs;
+            if (buffsDict != null)
+            {
+                foreach (var (buffName, buffList) in buffsDict)
+                {
+                    if (buffList == null) continue;
+                    _stimBuffSnapshots[buffName] = buffList.Select(b => new StimBuffEffectDto
+                    {
+                        BuffType = b.BuffType ?? "",
+                        Value = b.Value,
+                        Duration = b.Duration,
+                        Delay = b.Delay,
+                        Chance = b.Chance,
+                        AbsoluteValue = b.AbsoluteValue,
+                        SkillName = b.SkillName ?? "",
+                    }).ToList();
+                    stimBuffCount++;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.Warning($"[ZSlayerHQ] Failed to snapshot stim buffs: {ex.Message}");
+        }
+
         _snapshotTaken = true;
-        logger.Info($"[ZSlayerHQ] Game Values: snapshotted {ammoCount} ammo, {armorCount} armor, {weaponCount} weapons, {medicalCount} medical, {backpackCount} backpacks");
+        logger.Info($"[ZSlayerHQ] Game Values: snapshotted {ammoCount} ammo, {armorCount} armor, {weaponCount} weapons, {medicalCount} medical, {backpackCount} backpacks, {stimBuffCount} stim buffs");
     }
 
     // ═══════════════════════════════════════════════════════
@@ -1228,6 +1259,48 @@ public class GameValuesService(
                 });
             }
 
+            // Enrich with stim buff data
+            var buffsDict = databaseService.GetGlobals().Configuration?.Health?.Effects?.Stimulator?.Buffs;
+            // Build shared-count map (how many items reference each buff name)
+            var buffUsageCounts = new Dictionary<string, int>();
+            foreach (var snap in _medicalSnapshots.Values)
+            {
+                if (!string.IsNullOrEmpty(snap.StimBuffName))
+                {
+                    buffUsageCounts.TryGetValue(snap.StimBuffName, out var c);
+                    buffUsageCounts[snap.StimBuffName] = c + 1;
+                }
+            }
+
+            foreach (var dto in result)
+            {
+                if (string.IsNullOrEmpty(dto.StimBuffName)) continue;
+                var bn = dto.StimBuffName;
+
+                // Current live effects
+                if (buffsDict != null && buffsDict.TryGetValue(bn, out var liveBuffs) && liveBuffs != null)
+                {
+                    dto.Effects = liveBuffs.Select(b => new StimBuffEffectDto
+                    {
+                        BuffType = b.BuffType ?? "",
+                        Value = b.Value,
+                        Duration = b.Duration,
+                        Delay = b.Delay,
+                        Chance = b.Chance,
+                        AbsoluteValue = b.AbsoluteValue,
+                        SkillName = b.SkillName ?? "",
+                    }).ToList();
+                }
+
+                // Original snapshot effects
+                if (_stimBuffSnapshots.TryGetValue(bn, out var origEffects))
+                    dto.OriginalEffects = origEffects.Select(e => e with { }).ToList();
+
+                dto.IsBuffModified = config.StimBuffOverrides.ContainsKey(bn);
+                buffUsageCounts.TryGetValue(bn, out var shared);
+                dto.StimBuffSharedCount = shared;
+            }
+
             result.Sort((a, b) => string.Compare(a.ShortName, b.ShortName, StringComparison.OrdinalIgnoreCase));
 
             return new MedicalListResponse
@@ -1237,7 +1310,7 @@ public class GameValuesService(
                     .Select(kv => new MedicalTypeInfo { Key = kv.Key, Display = kv.Key, Count = kv.Value })
                     .OrderBy(t => t.Display)
                     .ToList(),
-                TotalModified = config.MedicalOverrides.Count,
+                TotalModified = config.MedicalOverrides.Count + config.StimBuffOverrides.Count,
             };
         }
     }
@@ -1316,6 +1389,71 @@ public class GameValuesService(
             configService.SaveConfig();
             sw.Stop();
             return new GameValuesApplyResult { Success = removed, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Medical item reset to default" : "No override found" };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // STIM BUFF OVERRIDES
+    // ═══════════════════════════════════════════════════════
+
+    public GameValuesApplyResult UpdateStimBuffs(Dictionary<string, StimBuffOverride> overrides)
+    {
+        lock (_lock)
+        {
+            var sw = Stopwatch.StartNew();
+            EnsureSnapshot();
+            var config = configService.GetConfig().GameValues;
+
+            foreach (var (buffName, ov) in overrides)
+            {
+                if (!_stimBuffSnapshots.ContainsKey(buffName)) continue;
+
+                // Clamp all effect values
+                var clamped = new StimBuffOverride
+                {
+                    Effects = ov.Effects.Select(GameValuesClamps.ClampBuffEffect).ToList()
+                };
+
+                config.StimBuffOverrides[buffName] = clamped;
+            }
+
+            var count = ApplyStimBuffs();
+            configService.SaveConfig();
+            sw.Stop();
+
+            return new GameValuesApplyResult
+            {
+                Success = true,
+                ItemsModified = count,
+                ApplyTimeMs = sw.ElapsedMilliseconds,
+                Message = $"Applied {count} stim buff overrides",
+            };
+        }
+    }
+
+    public GameValuesApplyResult ResetStimBuff(string buffName)
+    {
+        lock (_lock)
+        {
+            var sw = Stopwatch.StartNew();
+            var removed = configService.GetConfig().GameValues.StimBuffOverrides.Remove(buffName);
+            ApplyStimBuffs();
+            configService.SaveConfig();
+            sw.Stop();
+            return new GameValuesApplyResult { Success = removed, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Stim buff reset to default" : "No override found" };
+        }
+    }
+
+    public GameValuesApplyResult ResetAllStimBuffs()
+    {
+        lock (_lock)
+        {
+            var sw = Stopwatch.StartNew();
+            configService.GetConfig().GameValues.StimBuffOverrides.Clear();
+            ApplyStimBuffs();
+            configService.SaveConfig();
+            sw.Stop();
+            return new GameValuesApplyResult { Success = true, ApplyTimeMs = sw.ElapsedMilliseconds, Message = "All stim buff overrides reset to defaults" };
         }
     }
 
@@ -1613,6 +1751,8 @@ public class GameValuesService(
                 entry.MedicalOverrides = new Dictionary<string, MedicalOverride>(config.MedicalOverrides);
             if (category is "backpacks" or "all")
                 entry.BackpackOverrides = new Dictionary<string, BackpackOverride>(config.BackpackOverrides);
+            if (category is "medical" or "all")
+                entry.StimBuffOverrides = new Dictionary<string, StimBuffOverride>(config.StimBuffOverrides);
 
             config.Presets[name] = entry;
             configService.SaveConfig();
@@ -1650,12 +1790,14 @@ public class GameValuesService(
                 config.MedicalOverrides = new Dictionary<string, MedicalOverride>(preset.MedicalOverrides);
             if (cat is "backpacks" or "all" && preset.BackpackOverrides != null)
                 config.BackpackOverrides = new Dictionary<string, BackpackOverride>(preset.BackpackOverrides);
+            if (cat is "medical" or "all" && preset.StimBuffOverrides != null)
+                config.StimBuffOverrides = new Dictionary<string, StimBuffOverride>(preset.StimBuffOverrides);
 
             ApplyAll();
             configService.SaveConfig();
             sw.Stop();
 
-            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count + config.MedicalOverrides.Count + config.BackpackOverrides.Count;
+            var total = config.AmmoOverrides.Count + config.ArmorOverrides.Count + config.WeaponOverrides.Count + config.MedicalOverrides.Count + config.BackpackOverrides.Count + config.StimBuffOverrides.Count;
             return new GameValuesApplyResult
             {
                 Success = true,
@@ -1711,6 +1853,7 @@ public class GameValuesService(
         ApplyWeapons();
         ApplyMedical();
         ApplyBackpacks();
+        ApplyStimBuffs();
     }
 
     private int ApplyAmmo()
@@ -2018,6 +2161,63 @@ public class GameValuesService(
         }
 
         return count;
+    }
+
+    private int ApplyStimBuffs()
+    {
+        EnsureSnapshot();
+        var config = configService.GetConfig().GameValues;
+
+        try
+        {
+            var buffsDict = databaseService.GetGlobals().Configuration.Health.Effects.Stimulator.Buffs;
+            if (buffsDict == null) return 0;
+
+            // Step 1: Restore ALL buffs from snapshots
+            foreach (var (buffName, snapEffects) in _stimBuffSnapshots)
+            {
+                buffsDict[buffName] = snapEffects.Select(e => new Buff
+                {
+                    BuffType = e.BuffType,
+                    Value = e.Value,
+                    Duration = e.Duration,
+                    Delay = e.Delay,
+                    Chance = e.Chance,
+                    AbsoluteValue = e.AbsoluteValue,
+                    SkillName = e.SkillName,
+                }).ToList();
+            }
+
+            // Step 2: Apply overrides
+            var count = 0;
+            foreach (var (buffName, ov) in config.StimBuffOverrides)
+            {
+                if (!_stimBuffSnapshots.ContainsKey(buffName)) continue;
+
+                buffsDict[buffName] = ov.Effects.Select(e =>
+                {
+                    var clamped = GameValuesClamps.ClampBuffEffect(e);
+                    return new Buff
+                    {
+                        BuffType = clamped.BuffType,
+                        Value = clamped.Value,
+                        Duration = clamped.Duration,
+                        Delay = clamped.Delay,
+                        Chance = clamped.Chance,
+                        AbsoluteValue = clamped.AbsoluteValue,
+                        SkillName = clamped.SkillName,
+                    };
+                }).ToList();
+                count++;
+            }
+
+            return count;
+        }
+        catch (Exception ex)
+        {
+            logger.Warning($"[ZSlayerHQ] Failed to apply stim buffs: {ex.Message}");
+            return 0;
+        }
     }
 
     // ═══════════════════════════════════════════════════════
