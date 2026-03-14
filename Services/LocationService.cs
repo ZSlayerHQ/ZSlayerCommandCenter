@@ -21,7 +21,10 @@ public class LocationService(
     private bool _snapshotTaken;
 
     // ── Snapshots (fields NOT managed by ProgressionControlService) ──
-    private record LocationSnapshot(int BotMax, int? BotMaxPlayer);
+    private record LocationSnapshot(int BotMax, int? BotMaxPlayer, bool Enabled, bool Insurance,
+        bool? DisabledForScav, int? BotEasy, int? BotNormal, int? BotHard, int? BotImpossible);
+    private record AirdropSnapshot(double? PlaneAirdropChance, int? CooldownMin, int? CooldownMax,
+        int? StartMin, int? StartMax, int? End, int? Max);
     private record BossSnapshot(int Index, string BossName, double? BossChance, string BossZone,
         string BossEscortAmount, double? Time);
     private record ExitSnapshot(string Name, double? Chance, double? ExfiltrationTime,
@@ -31,6 +34,7 @@ public class LocationService(
         double CarExtract, double CoopExtract, double ScavExtract);
 
     private readonly Dictionary<string, LocationSnapshot> _locationSnapshots = new();
+    private readonly Dictionary<string, AirdropSnapshot> _airdropSnapshots = new();
     private readonly Dictionary<string, List<BossSnapshot>> _bossSnapshots = new();
     private readonly Dictionary<string, List<ExitSnapshot>> _exitSnapshots = new();
     private WeatherSnapshot? _weatherSnapshot;
@@ -41,6 +45,12 @@ public class LocationService(
     private readonly Dictionary<string, double?> _snapLootModifier = new();
     private readonly Dictionary<string, double?> _snapContainerModifier = new();
     private readonly Dictionary<string, double?> _snapEscapeTime = new();
+
+    // Pass 6 — Event factors pushed by EventService
+    private readonly Dictionary<string, double> _eventLootFactors = new();
+    private readonly Dictionary<string, double> _eventBossChances = new();
+    private string? _eventMapOfTheDay;
+    private double _eventMapOfTheDayMult = 1.0;
 
     // ── Playable locations ──
     private static readonly string[] PlayableLocationIds =
@@ -143,15 +153,36 @@ public class LocationService(
             var loc = databaseService.GetLocation(locId);
             if (loc?.Base == null) continue;
 
-            // Snapshot fields we own (bot counts)
+            // Snapshot fields we own (bot counts, map controls, bot difficulty)
             _locationSnapshots[locId] = new LocationSnapshot(
                 loc.Base.BotMax,
-                loc.Base.BotMaxPlayer);
+                loc.Base.BotMaxPlayer,
+                loc.Base.Enabled,
+                loc.Base.Insurance,
+                loc.Base.DisabledForScav,
+                loc.Base.BotEasy,
+                loc.Base.BotNormal,
+                loc.Base.BotHard,
+                loc.Base.BotImpossible);
 
             // Snapshot originals for display (ProgressionControlService owns restore for these)
             _snapLootModifier[locId] = loc.Base.GlobalLootChanceModifier;
             _snapContainerModifier[locId] = loc.Base.GlobalContainerChanceModifier;
             _snapEscapeTime[locId] = loc.Base.EscapeTimeLimit;
+
+            // Airdrop snapshots
+            if (loc.Base.AirdropParameters is { Count: > 0 })
+            {
+                var ap = loc.Base.AirdropParameters[0];
+                _airdropSnapshots[locId] = new AirdropSnapshot(
+                    ap.PlaneAirdropChance,
+                    ap.PlaneAirdropCooldownMin,
+                    ap.PlaneAirdropCooldownMax,
+                    ap.PlaneAirdropStartMin,
+                    ap.PlaneAirdropStartMax,
+                    ap.PlaneAirdropEnd,
+                    ap.PlaneAirdropMax);
+            }
 
             // Boss snapshots
             if (loc.Base.BossLocationSpawn != null)
@@ -259,6 +290,78 @@ public class LocationService(
             {
                 loc.Base.BotMaxPlayer = snap.BotMaxPlayer;
             }
+
+            // Pass 4 — Map controls
+            if (ov.Enabled.HasValue)
+            {
+                loc.Base.Enabled = ov.Enabled.Value;
+                count++;
+            }
+            else
+            {
+                loc.Base.Enabled = snap.Enabled;
+            }
+
+            if (ov.Insurance.HasValue)
+            {
+                loc.Base.Insurance = ov.Insurance.Value;
+                count++;
+            }
+            else
+            {
+                loc.Base.Insurance = snap.Insurance;
+            }
+
+            if (ov.DisabledForScav.HasValue)
+            {
+                loc.Base.DisabledForScav = ov.DisabledForScav.Value;
+                count++;
+            }
+            else
+            {
+                loc.Base.DisabledForScav = snap.DisabledForScav;
+            }
+
+            // Pass 5 — Bot difficulty
+            if (ov.BotEasy.HasValue)
+            {
+                loc.Base.BotEasy = ov.BotEasy.Value;
+                count++;
+            }
+            else
+            {
+                loc.Base.BotEasy = snap.BotEasy;
+            }
+
+            if (ov.BotNormal.HasValue)
+            {
+                loc.Base.BotNormal = ov.BotNormal.Value;
+                count++;
+            }
+            else
+            {
+                loc.Base.BotNormal = snap.BotNormal;
+            }
+
+            if (ov.BotHard.HasValue)
+            {
+                loc.Base.BotHard = ov.BotHard.Value;
+                count++;
+            }
+            else
+            {
+                loc.Base.BotHard = snap.BotHard;
+            }
+
+            if (ov.BotImpossible.HasValue)
+            {
+                loc.Base.BotImpossible = ov.BotImpossible.Value;
+                count++;
+            }
+            else
+            {
+                loc.Base.BotImpossible = snap.BotImpossible;
+            }
         }
 
         // Loot/time/bossChance — these OVERLAY on top of ProgressionControlService's values
@@ -279,6 +382,35 @@ public class LocationService(
         {
             loc.Base.EscapeTimeLimit = ov.EscapeTimeLimit.Value;
             count++;
+        }
+
+        // Pass 4 — Airdrop overrides
+        if (ov.AirdropOverride != null && loc.Base.AirdropParameters is { Count: > 0 })
+        {
+            var ap = loc.Base.AirdropParameters[0];
+            var aSnap = _airdropSnapshots.GetValueOrDefault(locId);
+            var ao = ov.AirdropOverride;
+
+            if (ao.PlaneAirdropChance.HasValue) { ap.PlaneAirdropChance = ao.PlaneAirdropChance.Value; count++; }
+            else if (aSnap != null) ap.PlaneAirdropChance = aSnap.PlaneAirdropChance;
+
+            if (ao.CooldownMin.HasValue) { ap.PlaneAirdropCooldownMin = ao.CooldownMin.Value; count++; }
+            else if (aSnap != null) ap.PlaneAirdropCooldownMin = aSnap.CooldownMin;
+
+            if (ao.CooldownMax.HasValue) { ap.PlaneAirdropCooldownMax = ao.CooldownMax.Value; count++; }
+            else if (aSnap != null) ap.PlaneAirdropCooldownMax = aSnap.CooldownMax;
+
+            if (ao.StartMin.HasValue) { ap.PlaneAirdropStartMin = ao.StartMin.Value; count++; }
+            else if (aSnap != null) ap.PlaneAirdropStartMin = aSnap.StartMin;
+
+            if (ao.StartMax.HasValue) { ap.PlaneAirdropStartMax = ao.StartMax.Value; count++; }
+            else if (aSnap != null) ap.PlaneAirdropStartMax = aSnap.StartMax;
+
+            if (ao.End.HasValue) { ap.PlaneAirdropEnd = ao.End.Value; count++; }
+            else if (aSnap != null) ap.PlaneAirdropEnd = aSnap.End;
+
+            if (ao.Max.HasValue) { ap.PlaneAirdropMax = ao.Max.Value; count++; }
+            else if (aSnap != null) ap.PlaneAirdropMax = aSnap.Max;
         }
 
         // Boss overrides (keyed by index as string)
@@ -464,6 +596,7 @@ public class LocationService(
     /// <summary>
     /// Called after ProgressionControlService re-applies its multipliers.
     /// Re-overlays per-map absolute overrides for loot/time/boss fields.
+    /// Also applies event factors from EventService.
     /// </summary>
     public void ReapplyOverrides()
     {
@@ -496,6 +629,65 @@ public class LocationService(
                     }
                 }
             }
+
+            // Pass 6 — Apply event factors on top
+            ApplyEventFactors();
+        }
+    }
+
+    /// <summary>
+    /// Apply event-driven map factors (loot boosts, boss chances, map of the day).
+    /// Called from ReapplyOverrides() after config overrides are set.
+    /// </summary>
+    private void ApplyEventFactors()
+    {
+        foreach (var locId in PlayableLocationIds)
+        {
+            var loc = databaseService.GetLocation(locId);
+            if (loc?.Base == null) continue;
+
+            // Event loot factors (multiplicative on current value)
+            if (_eventLootFactors.TryGetValue(locId, out var lootFactor) && lootFactor != 1.0)
+            {
+                loc.Base.GlobalLootChanceModifier = (loc.Base.GlobalLootChanceModifier ?? 0) * lootFactor;
+                loc.Base.GlobalContainerChanceModifier = (loc.Base.GlobalContainerChanceModifier ?? 0) * lootFactor;
+            }
+
+            // Event boss chances (replace)
+            if (_eventBossChances.TryGetValue(locId, out var bossChance) && loc.Base.BossLocationSpawn != null)
+            {
+                foreach (var boss in loc.Base.BossLocationSpawn)
+                {
+                    if (boss.BossName != null && BossDisplayNames.ContainsKey(boss.BossName))
+                        boss.BossChance = bossChance;
+                }
+            }
+
+            // Map of the day (loot boost on featured map)
+            if (_eventMapOfTheDay == locId && _eventMapOfTheDayMult != 1.0)
+            {
+                loc.Base.GlobalLootChanceModifier = (loc.Base.GlobalLootChanceModifier ?? 0) * _eventMapOfTheDayMult;
+                loc.Base.GlobalContainerChanceModifier = (loc.Base.GlobalContainerChanceModifier ?? 0) * _eventMapOfTheDayMult;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Called by EventService to push map-specific event factors.
+    /// </summary>
+    public void SetEventMapFactors(Dictionary<string, double> lootFactors,
+        Dictionary<string, double> bossChances, string? mapOfTheDay, double mapOfTheDayMult)
+    {
+        lock (_lock)
+        {
+            _eventLootFactors.Clear();
+            foreach (var (k, v) in lootFactors) _eventLootFactors[k] = v;
+
+            _eventBossChances.Clear();
+            foreach (var (k, v) in bossChances) _eventBossChances[k] = v;
+
+            _eventMapOfTheDay = mapOfTheDay;
+            _eventMapOfTheDayMult = mapOfTheDayMult;
         }
     }
 
@@ -538,7 +730,12 @@ public class LocationService(
                     BossCount = bossCount,
                     ExitCount = loc.Base.Exits?.Count() ?? 0,
                     IsModified = isModified,
-                    MapThumbnail = MapThumbnails.GetValueOrDefault(locId, "")
+                    MapThumbnail = MapThumbnails.GetValueOrDefault(locId, ""),
+                    // Pass 4
+                    Enabled = loc.Base.Enabled,
+                    Insurance = loc.Base.Insurance,
+                    DisabledForScav = loc.Base.DisabledForScav,
+                    HasAirdrops = loc.Base.AirdropParameters is { Count: > 0 }
                 });
             }
 
@@ -632,6 +829,34 @@ public class LocationService(
                 }
             }
 
+            // Build airdrop DTO
+            AirdropDto? airdropDto = null;
+            if (_airdropSnapshots.TryGetValue(locId, out var aSnap) && loc.Base.AirdropParameters is { Count: > 0 })
+            {
+                var ap = loc.Base.AirdropParameters[0];
+                var airdropOv = hasOverride ? config.LocationOverrides[locId].AirdropOverride : null;
+                airdropDto = new AirdropDto
+                {
+                    PlaneAirdropChance = ap.PlaneAirdropChance,
+                    CooldownMin = ap.PlaneAirdropCooldownMin,
+                    CooldownMax = ap.PlaneAirdropCooldownMax,
+                    StartMin = ap.PlaneAirdropStartMin,
+                    StartMax = ap.PlaneAirdropStartMax,
+                    End = ap.PlaneAirdropEnd,
+                    Max = ap.PlaneAirdropMax,
+                    OriginalPlaneAirdropChance = aSnap.PlaneAirdropChance,
+                    OriginalCooldownMin = aSnap.CooldownMin,
+                    OriginalCooldownMax = aSnap.CooldownMax,
+                    OriginalStartMin = aSnap.StartMin,
+                    OriginalStartMax = aSnap.StartMax,
+                    OriginalEnd = aSnap.End,
+                    OriginalMax = aSnap.Max,
+                    IsModified = airdropOv != null
+                };
+            }
+
+            var locSnap = _locationSnapshots.GetValueOrDefault(locId);
+
             return new LocationDetailDto
             {
                 Id = locId,
@@ -645,13 +870,30 @@ public class LocationService(
                 MapThumbnail = MapThumbnails.GetValueOrDefault(locId, ""),
                 Bosses = bosses,
                 Exits = exits,
+                // Pass 4
+                Enabled = loc.Base.Enabled,
+                Insurance = loc.Base.Insurance,
+                DisabledForScav = loc.Base.DisabledForScav,
+                Airdrop = airdropDto,
+                // Pass 5
+                BotEasy = loc.Base.BotEasy,
+                BotNormal = loc.Base.BotNormal,
+                BotHard = loc.Base.BotHard,
+                BotImpossible = loc.Base.BotImpossible,
                 Original = new LocationOriginalValues
                 {
                     EscapeTimeLimit = _snapEscapeTime.GetValueOrDefault(locId) ?? 0,
                     GlobalLootChance = _snapLootModifier.GetValueOrDefault(locId) ?? 0,
                     GlobalContainerChance = _snapContainerModifier.GetValueOrDefault(locId) ?? 0,
-                    BotMax = _locationSnapshots.GetValueOrDefault(locId)?.BotMax ?? 0,
-                    BotMaxPlayer = _locationSnapshots.GetValueOrDefault(locId)?.BotMaxPlayer ?? 0
+                    BotMax = locSnap?.BotMax ?? 0,
+                    BotMaxPlayer = locSnap?.BotMaxPlayer ?? 0,
+                    Enabled = locSnap?.Enabled ?? true,
+                    Insurance = locSnap?.Insurance ?? false,
+                    DisabledForScav = locSnap?.DisabledForScav,
+                    BotEasy = locSnap?.BotEasy,
+                    BotNormal = locSnap?.BotNormal,
+                    BotHard = locSnap?.BotHard,
+                    BotImpossible = locSnap?.BotImpossible
                 }
             };
         }
@@ -681,6 +923,18 @@ public class LocationService(
             if (request.GlobalContainerChanceModifier.HasValue) ov.GlobalContainerChanceModifier = request.GlobalContainerChanceModifier;
             if (request.BotMax.HasValue) ov.BotMax = request.BotMax;
             if (request.BotMaxPlayer.HasValue) ov.BotMaxPlayer = request.BotMaxPlayer;
+
+            // Pass 4 — Map controls
+            if (request.Enabled.HasValue) ov.Enabled = request.Enabled;
+            if (request.Insurance.HasValue) ov.Insurance = request.Insurance;
+            if (request.DisabledForScav.HasValue) ov.DisabledForScav = request.DisabledForScav;
+            if (request.AirdropOverride != null) ov.AirdropOverride = request.AirdropOverride;
+
+            // Pass 5 — Bot difficulty
+            if (request.BotEasy.HasValue) ov.BotEasy = request.BotEasy;
+            if (request.BotNormal.HasValue) ov.BotNormal = request.BotNormal;
+            if (request.BotHard.HasValue) ov.BotHard = request.BotHard;
+            if (request.BotImpossible.HasValue) ov.BotImpossible = request.BotImpossible;
 
             if (request.BossOverrides != null)
             {
@@ -771,6 +1025,26 @@ public class LocationService(
         {
             loc.Base.BotMax = snap.BotMax;
             loc.Base.BotMaxPlayer = snap.BotMaxPlayer;
+            loc.Base.Enabled = snap.Enabled;
+            loc.Base.Insurance = snap.Insurance;
+            loc.Base.DisabledForScav = snap.DisabledForScav;
+            loc.Base.BotEasy = snap.BotEasy;
+            loc.Base.BotNormal = snap.BotNormal;
+            loc.Base.BotHard = snap.BotHard;
+            loc.Base.BotImpossible = snap.BotImpossible;
+        }
+
+        // Restore airdrop parameters
+        if (_airdropSnapshots.TryGetValue(locId, out var aSnap) && loc.Base.AirdropParameters is { Count: > 0 })
+        {
+            var ap = loc.Base.AirdropParameters[0];
+            ap.PlaneAirdropChance = aSnap.PlaneAirdropChance;
+            ap.PlaneAirdropCooldownMin = aSnap.CooldownMin;
+            ap.PlaneAirdropCooldownMax = aSnap.CooldownMax;
+            ap.PlaneAirdropStartMin = aSnap.StartMin;
+            ap.PlaneAirdropStartMax = aSnap.StartMax;
+            ap.PlaneAirdropEnd = aSnap.End;
+            ap.PlaneAirdropMax = aSnap.Max;
         }
 
         // Restore exits
@@ -968,26 +1242,29 @@ public class LocationService(
 
     public List<DetectedModDto> DetectMods()
     {
-        var modsPath = Path.Combine(configService.ModPath, "..");
+        var modsPath = Directory.GetParent(configService.ModPath)?.FullName ?? Path.Combine(configService.ModPath, "..");
+        logger.Info($"[ZSlayerHQ] Mod detection scanning: {modsPath}");
         var mods = new List<DetectedModDto>();
 
         // ABPS
         mods.Add(DetectMod(modsPath, "acidphantasm-botplacementsystem",
-            "Acid's Bot Placement System", "com.acidphantasm.botplacementsystem"));
+            "Acid's Bot Placement System", "com.acidphantasm.botplacementsystem",
+            "/botplacementsystem/"));
 
         // APBS
         mods.Add(DetectMod(modsPath, "acidphantasm-progressivebotsystem",
-            "Acid's Progressive Bot System", "com.acidphantasm.progressivebotsystem"));
+            "Acid's Progressive Bot System", "com.acidphantasm.progressivebotsystem",
+            "/progressivebotsystem/"));
 
         return mods;
     }
 
-    private static DetectedModDto DetectMod(string modsPath, string folderName, string displayName, string guid)
+    private static DetectedModDto DetectMod(string modsPath, string folderName, string displayName, string guid,
+        string? webUiPath = null)
     {
         var modFolder = Path.Combine(modsPath, folderName);
-        var packageJson = Path.Combine(modFolder, "package.json");
 
-        if (!Directory.Exists(modFolder) || !File.Exists(packageJson))
+        if (!Directory.Exists(modFolder))
         {
             return new DetectedModDto
             {
@@ -997,22 +1274,41 @@ public class LocationService(
             };
         }
 
-        var version = "unknown";
-        try
+        // Try package.json first (TypeScript mods), then DLL (C# mods)
+        var version = "installed";
+        var packageJson = Path.Combine(modFolder, "package.json");
+        if (File.Exists(packageJson))
         {
-            var json = File.ReadAllText(packageJson);
-            using var doc = JsonDocument.Parse(json);
-            if (doc.RootElement.TryGetProperty("version", out var ver))
-                version = ver.GetString() ?? "unknown";
+            try
+            {
+                var json = File.ReadAllText(packageJson);
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("version", out var ver))
+                    version = ver.GetString() ?? "installed";
+            }
+            catch { /* ignore */ }
         }
-        catch { /* ignore parse errors */ }
+        else
+        {
+            // C# DLL mod — check for the DLL
+            var dllPath = Path.Combine(modFolder, $"{folderName}.dll");
+            if (!File.Exists(dllPath))
+            {
+                return new DetectedModDto
+                {
+                    Name = displayName,
+                    Guid = guid,
+                    IsDetected = false
+                };
+            }
+        }
 
         return new DetectedModDto
         {
             Name = displayName,
             Guid = guid,
             Version = version,
-            WebUiPath = $"/{folderName}/",
+            WebUiPath = webUiPath ?? $"/{folderName}/",
             IsDetected = true
         };
     }
@@ -1152,6 +1448,337 @@ public class LocationService(
     }
 
     // ═══════════════════════════════════════════════════════
+    // Pass 5 — BULK UPDATE ALL LOCATIONS
+    // ═══════════════════════════════════════════════════════
+
+    public LocationApplyResult BulkUpdateAllLocations(LocationBulkUpdateRequest request)
+    {
+        lock (_lock)
+        {
+            EnsureSnapshot();
+            var config = configService.GetConfig().GameValues;
+            int modified = 0;
+
+            foreach (var locId in PlayableLocationIds)
+            {
+                var loc = databaseService.GetLocation(locId);
+                if (loc?.Base == null) continue;
+
+                if (!config.LocationOverrides.TryGetValue(locId, out var ov))
+                {
+                    ov = new LocationOverride();
+                    config.LocationOverrides[locId] = ov;
+                }
+
+                var changed = false;
+
+                if (request.LootMultiplier.HasValue)
+                {
+                    var snapLoot = _snapLootModifier.GetValueOrDefault(locId) ?? 0;
+                    var snapContainer = _snapContainerModifier.GetValueOrDefault(locId) ?? 0;
+                    ov.GlobalLootChanceModifier = Math.Round(snapLoot * request.LootMultiplier.Value, 2);
+                    ov.GlobalContainerChanceModifier = Math.Round(snapContainer * request.LootMultiplier.Value, 2);
+                    changed = true;
+                }
+
+                if (request.ContainerMultiplier.HasValue)
+                {
+                    var snapContainer = _snapContainerModifier.GetValueOrDefault(locId) ?? 0;
+                    ov.GlobalContainerChanceModifier = Math.Round(snapContainer * request.ContainerMultiplier.Value, 2);
+                    changed = true;
+                }
+
+                if (request.RaidTimeMinutes.HasValue)
+                {
+                    ov.EscapeTimeLimit = request.RaidTimeMinutes.Value;
+                    changed = true;
+                }
+
+                if (request.BossChancePercent.HasValue)
+                {
+                    var bossSnaps = _bossSnapshots.GetValueOrDefault(locId);
+                    if (bossSnaps != null)
+                    {
+                        foreach (var bs in bossSnaps)
+                        {
+                            if (BossDisplayNames.ContainsKey(bs.BossName))
+                                ov.BossOverrides[bs.Index.ToString()] = new BossOverride { BossChance = Math.Clamp(request.BossChancePercent.Value, 0, 100) };
+                        }
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    RestoreLocation(locId);
+                    ApplyLocationOverride(locId, ov);
+                    modified++;
+                }
+
+                // Clean up empty overrides
+                if (IsOverrideEmpty(ov))
+                    config.LocationOverrides.Remove(locId);
+            }
+
+            configService.SaveConfig();
+
+            return new LocationApplyResult
+            {
+                Success = true,
+                Message = $"Bulk update applied to {modified} locations",
+                LocationsModified = config.LocationOverrides.Count
+            };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Pass 6 — RANDOMIZE LOCATIONS
+    // ═══════════════════════════════════════════════════════
+
+    public LocationApplyResult RandomizeLocations()
+    {
+        lock (_lock)
+        {
+            EnsureSnapshot();
+            var config = configService.GetConfig().GameValues;
+            var rng = new Random();
+            int modified = 0;
+
+            foreach (var locId in PlayableLocationIds)
+            {
+                var loc = databaseService.GetLocation(locId);
+                if (loc?.Base == null) continue;
+
+                var snapLoot = _snapLootModifier.GetValueOrDefault(locId) ?? 0;
+                var snapContainer = _snapContainerModifier.GetValueOrDefault(locId) ?? 0;
+                var snapTime = _snapEscapeTime.GetValueOrDefault(locId) ?? 0;
+
+                var ov = new LocationOverride
+                {
+                    GlobalLootChanceModifier = Math.Round(snapLoot * (0.5 + rng.NextDouble() * 2.5), 2),
+                    GlobalContainerChanceModifier = Math.Round(snapContainer * (0.5 + rng.NextDouble() * 2.5), 2),
+                    EscapeTimeLimit = Math.Round(snapTime * (0.8 + rng.NextDouble() * 0.4))
+                };
+
+                var bossSnaps = _bossSnapshots.GetValueOrDefault(locId);
+                if (bossSnaps != null)
+                {
+                    foreach (var bs in bossSnaps)
+                    {
+                        if (BossDisplayNames.ContainsKey(bs.BossName))
+                            ov.BossOverrides[bs.Index.ToString()] = new BossOverride { BossChance = rng.Next(0, 101) };
+                    }
+                }
+
+                RestoreLocation(locId);
+                config.LocationOverrides[locId] = ov;
+                ApplyLocationOverride(locId, ov);
+                modified++;
+            }
+
+            configService.SaveConfig();
+
+            return new LocationApplyResult
+            {
+                Success = true,
+                Message = $"Randomized {modified} locations",
+                LocationsModified = config.LocationOverrides.Count
+            };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Pass 7 — COMPARE
+    // ═══════════════════════════════════════════════════════
+
+    public List<LocationDetailDto> GetLocationCompare(List<string> mapIds)
+    {
+        lock (_lock)
+        {
+            EnsureSnapshot();
+            var results = new List<LocationDetailDto>();
+            foreach (var id in mapIds)
+            {
+                var detail = GetLocationDetailUnlocked(id);
+                if (detail != null) results.Add(detail);
+            }
+            return results;
+        }
+    }
+
+    /// <summary>Non-locking version for use within already-locked methods.</summary>
+    private LocationDetailDto? GetLocationDetailUnlocked(string locId)
+    {
+        var loc = databaseService.GetLocation(locId);
+        if (loc?.Base == null) return null;
+
+        var config = configService.GetConfig().GameValues;
+        var hasOverride = config.LocationOverrides.ContainsKey(locId);
+        var locSnap = _locationSnapshots.GetValueOrDefault(locId);
+
+        return new LocationDetailDto
+        {
+            Id = locId,
+            DisplayName = LocationDisplayNames.GetValueOrDefault(locId, locId),
+            EscapeTimeLimit = loc.Base.EscapeTimeLimit ?? 0,
+            GlobalLootChance = loc.Base.GlobalLootChanceModifier ?? 0,
+            GlobalContainerChance = loc.Base.GlobalContainerChanceModifier ?? 0,
+            BotMax = loc.Base.BotMax,
+            BotMaxPlayer = loc.Base.BotMaxPlayer,
+            IsModified = hasOverride,
+            MapThumbnail = MapThumbnails.GetValueOrDefault(locId, ""),
+            Enabled = loc.Base.Enabled,
+            Insurance = loc.Base.Insurance,
+            DisabledForScav = loc.Base.DisabledForScav,
+            BotEasy = loc.Base.BotEasy,
+            BotNormal = loc.Base.BotNormal,
+            BotHard = loc.Base.BotHard,
+            BotImpossible = loc.Base.BotImpossible,
+            Original = new LocationOriginalValues
+            {
+                EscapeTimeLimit = _snapEscapeTime.GetValueOrDefault(locId) ?? 0,
+                GlobalLootChance = _snapLootModifier.GetValueOrDefault(locId) ?? 0,
+                GlobalContainerChance = _snapContainerModifier.GetValueOrDefault(locId) ?? 0,
+                BotMax = locSnap?.BotMax ?? 0,
+                BotMaxPlayer = locSnap?.BotMaxPlayer ?? 0,
+                Enabled = locSnap?.Enabled ?? true,
+                Insurance = locSnap?.Insurance ?? false,
+                DisabledForScav = locSnap?.DisabledForScav,
+                BotEasy = locSnap?.BotEasy,
+                BotNormal = locSnap?.BotNormal,
+                BotHard = locSnap?.BotHard,
+                BotImpossible = locSnap?.BotImpossible
+            }
+        };
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Pass 7 — EXPORT/IMPORT
+    // ═══════════════════════════════════════════════════════
+
+    public LocationExportData ExportLocationConfig()
+    {
+        lock (_lock)
+        {
+            var config = configService.GetConfig().GameValues;
+            return new LocationExportData
+            {
+                Version = ModMetadata.StaticVersion,
+                ExportedAt = DateTime.UtcNow,
+                LocationOverrides = new Dictionary<string, LocationOverride>(config.LocationOverrides),
+                WeatherOverride = config.WeatherOverride,
+                GlobalRaidSettings = config.GlobalRaidSettings
+            };
+        }
+    }
+
+    public LocationApplyResult ImportLocationConfig(LocationExportData data)
+    {
+        lock (_lock)
+        {
+            EnsureSnapshot();
+            var config = configService.GetConfig().GameValues;
+
+            // Restore everything first
+            foreach (var locId in PlayableLocationIds)
+                RestoreLocation(locId);
+
+            // Replace config
+            config.LocationOverrides = data.LocationOverrides ?? new();
+            config.WeatherOverride = data.WeatherOverride ?? new();
+            config.GlobalRaidSettings = data.GlobalRaidSettings ?? new();
+
+            // Apply all
+            ApplyAll();
+            configService.SaveConfig();
+
+            return new LocationApplyResult
+            {
+                Success = true,
+                Message = $"Imported location config ({config.LocationOverrides.Count} overrides)",
+                LocationsModified = config.LocationOverrides.Count
+            };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Pass 7 — PRESET PREVIEW (DIFF)
+    // ═══════════════════════════════════════════════════════
+
+    public LocationPresetDiffResponse PreviewPreset(string presetName)
+    {
+        lock (_lock)
+        {
+            EnsureSnapshot();
+            var entries = new List<LocationDiffEntry>();
+
+            foreach (var locId in PlayableLocationIds)
+            {
+                var loc = databaseService.GetLocation(locId);
+                if (loc?.Base == null) continue;
+
+                var mapName = LocationDisplayNames.GetValueOrDefault(locId, locId);
+                var presetOv = GeneratePresetOverride(locId, presetName);
+                if (presetOv == null) continue;
+
+                // Compare current values to what the preset would set
+                if (presetOv.EscapeTimeLimit.HasValue)
+                {
+                    var current = loc.Base.EscapeTimeLimit ?? 0;
+                    if (Math.Abs(current - presetOv.EscapeTimeLimit.Value) > 0.01)
+                        entries.Add(new LocationDiffEntry { MapId = locId, MapName = mapName, Field = "Raid Time", CurrentValue = $"{current:F0} min", NewValue = $"{presetOv.EscapeTimeLimit.Value:F0} min" });
+                }
+
+                if (presetOv.GlobalLootChanceModifier.HasValue)
+                {
+                    var current = loc.Base.GlobalLootChanceModifier ?? 0;
+                    if (Math.Abs(current - presetOv.GlobalLootChanceModifier.Value) > 0.001)
+                        entries.Add(new LocationDiffEntry { MapId = locId, MapName = mapName, Field = "Loot Chance", CurrentValue = $"{current:F2}", NewValue = $"{presetOv.GlobalLootChanceModifier.Value:F2}" });
+                }
+
+                if (presetOv.GlobalContainerChanceModifier.HasValue)
+                {
+                    var current = loc.Base.GlobalContainerChanceModifier ?? 0;
+                    if (Math.Abs(current - presetOv.GlobalContainerChanceModifier.Value) > 0.001)
+                        entries.Add(new LocationDiffEntry { MapId = locId, MapName = mapName, Field = "Container Chance", CurrentValue = $"{current:F2}", NewValue = $"{presetOv.GlobalContainerChanceModifier.Value:F2}" });
+                }
+
+                if (presetOv.BotMax.HasValue)
+                {
+                    if (loc.Base.BotMax != presetOv.BotMax.Value)
+                        entries.Add(new LocationDiffEntry { MapId = locId, MapName = mapName, Field = "Max Bots", CurrentValue = $"{loc.Base.BotMax}", NewValue = $"{presetOv.BotMax.Value}" });
+                }
+
+                foreach (var (indexStr, bossOv) in presetOv.BossOverrides)
+                {
+                    if (!int.TryParse(indexStr, out var idx) || idx >= (loc.Base.BossLocationSpawn?.Count ?? 0))
+                        continue;
+                    var boss = loc.Base.BossLocationSpawn![idx];
+                    if (bossOv.BossChance.HasValue && boss.BossChance != bossOv.BossChance.Value)
+                    {
+                        var bName = BossDisplayNames.GetValueOrDefault(boss.BossName ?? "", boss.BossName ?? "?");
+                        entries.Add(new LocationDiffEntry { MapId = locId, MapName = mapName, Field = $"Boss: {bName}", CurrentValue = $"{boss.BossChance}%", NewValue = $"{bossOv.BossChance.Value}%" });
+                    }
+                }
+            }
+
+            return new LocationPresetDiffResponse
+            {
+                PresetName = presetName,
+                Entries = entries
+            };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // PUBLIC ACCESSORS (for EventService)
+    // ═══════════════════════════════════════════════════════
+
+    public string[] GetPlayableLocationIds() => PlayableLocationIds;
+
+    public string GetDisplayName(string locId) => LocationDisplayNames.GetValueOrDefault(locId, locId);
+
+    // ═══════════════════════════════════════════════════════
     // HELPERS
     // ═══════════════════════════════════════════════════════
 
@@ -1162,6 +1789,14 @@ public class LocationService(
             && !ov.GlobalContainerChanceModifier.HasValue
             && !ov.BotMax.HasValue
             && !ov.BotMaxPlayer.HasValue
+            && !ov.Enabled.HasValue
+            && !ov.Insurance.HasValue
+            && !ov.DisabledForScav.HasValue
+            && ov.AirdropOverride == null
+            && !ov.BotEasy.HasValue
+            && !ov.BotNormal.HasValue
+            && !ov.BotHard.HasValue
+            && !ov.BotImpossible.HasValue
             && ov.BossOverrides.Count == 0
             && ov.ExitOverrides.Count == 0;
     }

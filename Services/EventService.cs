@@ -10,6 +10,7 @@ public class EventService(
     ConfigService configService,
     ProgressionControlService progressionControlService,
     TraderApplyService traderApplyService,
+    LocationService locationService,
     PlayerMailService playerMailService,
     ActivityLogService activityLogService,
     ISptLogger<EventService> logger)
@@ -53,6 +54,38 @@ public class EventService(
             Icon = "loot",
             SupportsTargets = false,
             MultiplierLabel = "Loot Multiplier"
+        },
+        new()
+        {
+            Type = EventType.MapLootBoost,
+            Name = "Map Loot Boost",
+            Description = "Boost loot on specific maps for a duration.",
+            DefaultMultiplier = 2.0,
+            Icon = "loot",
+            SupportsTargets = true,
+            TargetLabel = "Maps (empty = all)",
+            MultiplierLabel = "Loot Multiplier"
+        },
+        new()
+        {
+            Type = EventType.MapBossRush,
+            Name = "Map Boss Rush",
+            Description = "100% boss spawn chance on specific maps.",
+            DefaultMultiplier = 100.0,
+            Icon = "boss",
+            SupportsTargets = true,
+            TargetLabel = "Maps (empty = all)",
+            MultiplierLabel = "Boss Chance %"
+        },
+        new()
+        {
+            Type = EventType.MapOfTheDay,
+            Name = "Map of the Day",
+            Description = "Auto-rotate a featured map with boosted loot (deterministic daily).",
+            DefaultMultiplier = 2.0,
+            Icon = "map",
+            SupportsTargets = false,
+            MultiplierLabel = "Loot Multiplier for Featured Map"
         }
     ];
 
@@ -430,6 +463,12 @@ public class EventService(
         double lootFactor = 1.0;
         double traderPriceFactor = 1.0;
 
+        // Map-specific factors
+        var mapLootFactors = new Dictionary<string, double>();
+        var mapBossChances = new Dictionary<string, double>();
+        string? mapOfTheDay = null;
+        double mapOfTheDayMult = 1.0;
+
         foreach (var evt in activeEvents)
         {
             switch (evt.Type)
@@ -443,12 +482,44 @@ public class EventService(
                 case EventType.TraderSale:
                     traderPriceFactor *= evt.Multiplier;
                     break;
+                case EventType.MapLootBoost:
+                {
+                    var targets = evt.TargetIds.Count > 0 ? evt.TargetIds : locationService.GetPlayableLocationIds().ToList();
+                    foreach (var mapId in targets)
+                    {
+                        if (!mapLootFactors.ContainsKey(mapId)) mapLootFactors[mapId] = 1.0;
+                        mapLootFactors[mapId] *= evt.Multiplier;
+                    }
+                    break;
+                }
+                case EventType.MapBossRush:
+                {
+                    var targets = evt.TargetIds.Count > 0 ? evt.TargetIds : locationService.GetPlayableLocationIds().ToList();
+                    foreach (var mapId in targets)
+                        mapBossChances[mapId] = evt.Multiplier; // replace (last wins for overlapping)
+                    break;
+                }
+                case EventType.MapOfTheDay:
+                {
+                    // Deterministic daily seed — excludes factory/sandbox
+                    var eligibleMaps = locationService.GetPlayableLocationIds()
+                        .Where(m => m is not ("factory4_day" or "factory4_night" or "sandbox" or "sandbox_high")).ToArray();
+                    if (eligibleMaps.Length > 0)
+                    {
+                        var dayHash = DateTime.UtcNow.Date.GetHashCode();
+                        var idx = ((dayHash % eligibleMaps.Length) + eligibleMaps.Length) % eligibleMaps.Length;
+                        mapOfTheDay = eligibleMaps[idx];
+                        mapOfTheDayMult = evt.Multiplier;
+                    }
+                    break;
+                }
             }
         }
 
         // Push factors to services and re-apply
         progressionControlService.SetEventFactors(xpFactor, lootFactor);
         traderApplyService.SetEventPriceFactor(traderPriceFactor);
+        locationService.SetEventMapFactors(mapLootFactors, mapBossChances, mapOfTheDay, mapOfTheDayMult);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -551,6 +622,9 @@ public class EventService(
         EventType.DoubleXP => "Double XP",
         EventType.TraderSale => "Trader Sale",
         EventType.LootBoost => "Loot Boost",
+        EventType.MapLootBoost => "Map Loot Boost",
+        EventType.MapBossRush => "Map Boss Rush",
+        EventType.MapOfTheDay => "Map of the Day",
         _ => type.ToString()
     };
 
@@ -559,6 +633,9 @@ public class EventService(
         EventType.DoubleXP => $"{evt.Multiplier}x XP gains",
         EventType.TraderSale => $"{(1 - evt.Multiplier) * 100:F0}% off trader prices",
         EventType.LootBoost => $"{evt.Multiplier}x loot spawns",
+        EventType.MapLootBoost => $"{evt.Multiplier}x loot on {(evt.TargetIds.Count > 0 ? string.Join(", ", evt.TargetIds) : "all maps")}",
+        EventType.MapBossRush => $"{evt.Multiplier}% boss chance on {(evt.TargetIds.Count > 0 ? string.Join(", ", evt.TargetIds) : "all maps")}",
+        EventType.MapOfTheDay => $"{evt.Multiplier}x loot on featured map",
         _ => evt.Type.ToString()
     };
 

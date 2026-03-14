@@ -3394,6 +3394,79 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, result.Success ? 200 : 400, result);
                 break;
             }
+            // Pass 7 — Preset preview (diff)
+            case "locations/presets/preview" when method == "GET":
+            {
+                var presetName = context.Request.Query["name"].FirstOrDefault()?.Trim();
+                if (string.IsNullOrEmpty(presetName))
+                {
+                    await WriteJson(context, 400, new { error = "Missing preset name" });
+                    break;
+                }
+                var result = locationService.PreviewPreset(presetName);
+                await WriteJson(context, 200, result);
+                break;
+            }
+            // Pass 5 — Bulk update
+            case "locations/bulk-update" when method == "POST":
+            {
+                var body = await ReadBody<LocationBulkUpdateRequest>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var result = locationService.BulkUpdateAllLocations(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: bulk updated all locations");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            // Pass 6 — Randomize
+            case "locations/randomize" when method == "POST":
+            {
+                var result = locationService.RandomizeLocations();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: randomized all locations");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            // Pass 7 — Compare
+            case "locations/compare" when method == "GET":
+            {
+                var mapsParam = context.Request.Query["maps"].FirstOrDefault() ?? "";
+                var mapIds = mapsParam.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                if (mapIds.Count < 2)
+                {
+                    await WriteJson(context, 400, new { error = "Need at least 2 maps to compare" });
+                    break;
+                }
+                var result = locationService.GetLocationCompare(mapIds);
+                await WriteJson(context, 200, result);
+                break;
+            }
+            // Pass 7 — Export
+            case "locations/export" when method == "GET":
+            {
+                var result = locationService.ExportLocationConfig();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            // Pass 7 — Import
+            case "locations/import" when method == "POST":
+            {
+                var body = await ReadBody<LocationExportData>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid import data" });
+                    break;
+                }
+                var result = locationService.ImportLocationConfig(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: imported location config");
+                await WriteJson(context, 200, result);
+                break;
+            }
             case "locations/reset" when method == "POST":
             {
                 var result = locationService.ResetAllLocations();

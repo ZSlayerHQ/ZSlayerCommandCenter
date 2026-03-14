@@ -11,7 +11,10 @@ public enum EventType
 {
     DoubleXP,
     TraderSale,
-    LootBoost
+    LootBoost,
+    MapLootBoost,
+    MapBossRush,
+    MapOfTheDay
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
