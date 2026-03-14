@@ -7564,6 +7564,20 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </div>
       </div>
 
+      <!-- Location Presets -->
+      <div class="loc-weather-section" style="padding:10px 16px">
+        <div class="loc-weather-controls">
+          <div class="loc-weather-field">
+            <label>Quick Preset</label>
+            <select id="locPresetSelect" class="gv-select" style="min-width:180px">
+              <option value="">— Select Preset —</option>
+            </select>
+          </div>
+          <button class="btn btn-sm" onclick="window.locApplyPreset()">Apply Preset</button>
+          <span class="gv-count" id="locPresetDesc" style="margin-left:4px;font-style:italic"></span>
+        </div>
+      </div>
+
       <!-- Map Grid -->
       <div class="loc-section-header" style="margin-top:16px">
         <h4>Map Locations</h4>
@@ -19091,6 +19105,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     locRenderModCards(_locData.detectedMods || []);
     locRenderWeather(_locData.weather);
     locRenderGlobalRaid(_locData.globalRaidSettings);
+    locRenderPresets(_locData.presets || []);
     locRenderMapGrid(_locData.locations || []);
     var cnt = document.getElementById('locModifiedCount');
     if (cnt) cnt.textContent = _locData.totalModified > 0 ? _locData.totalModified + ' modified' : '';
@@ -19177,6 +19192,39 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     api('gamevalues/locations/global-raid-settings/reset', { method: 'POST' }).then(function(r) {
       toast(r.message || 'Reset', 'success');
       _locLoaded = false; gvLoadLocations();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  var _locPresets = [];
+  function locRenderPresets(presets) {
+    _locPresets = presets || [];
+    var sel = document.getElementById('locPresetSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Select Preset —</option>';
+    _locPresets.forEach(function(p) {
+      sel.innerHTML += '<option value="' + escH(p.name) + '">' + escH(p.name) + '</option>';
+    });
+    sel.onchange = function() {
+      var desc = document.getElementById('locPresetDesc');
+      var selected = _locPresets.find(function(p) { return p.name === sel.value; });
+      desc.textContent = selected ? selected.description : '';
+    };
+  }
+
+  window.locApplyPreset = function() {
+    var sel = document.getElementById('locPresetSelect');
+    var name = sel ? sel.value : '';
+    if (!name) { toast('Select a preset first', 'error'); return; }
+    if (!confirm('Apply "' + name + '" preset to all locations?')) return;
+    api('gamevalues/locations/presets/apply', {
+      method: 'POST', body: JSON.stringify({ name: name })
+    }).then(function(r) {
+      toast(r.message || 'Preset applied', 'success');
+      _locLoaded = false;
+      _locSelectedMap = null;
+      _locDetailData = null;
+      document.getElementById('locDetailEditor').style.display = 'none';
+      gvLoadLocations();
     }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
   };
 

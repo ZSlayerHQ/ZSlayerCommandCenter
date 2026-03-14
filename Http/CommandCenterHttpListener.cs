@@ -3378,6 +3378,22 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, 200, result);
                 break;
             }
+            case "locations/presets/apply" when method == "POST":
+            {
+                var body = await ReadBody<Dictionary<string, string>>(context);
+                var name = body?.GetValueOrDefault("name")?.Trim();
+                if (string.IsNullOrEmpty(name))
+                {
+                    await WriteJson(context, 400, new { error = "Missing preset name" });
+                    break;
+                }
+                var result = locationService.ApplyLocationPreset(name);
+                if (result.Success)
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Game Values: applied location preset '{name}'");
+                await WriteJson(context, result.Success ? 200 : 400, result);
+                break;
+            }
             case "locations/reset" when method == "POST":
             {
                 var result = locationService.ResetAllLocations();

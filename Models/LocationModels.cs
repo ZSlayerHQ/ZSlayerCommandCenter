@@ -65,6 +65,7 @@ public record LocationListResponse
     [JsonPropertyName("detectedMods")] public List<DetectedModDto> DetectedMods { get; set; } = [];
     [JsonPropertyName("weather")] public WeatherDto Weather { get; set; } = new();
     [JsonPropertyName("globalRaidSettings")] public GlobalRaidSettingsDto GlobalRaidSettings { get; set; } = new();
+    [JsonPropertyName("presets")] public List<LocationPresetInfo> Presets { get; set; } = [];
     [JsonPropertyName("totalModified")] public int TotalModified { get; set; }
 }
 
@@ -186,4 +187,11 @@ public record LocationApplyResult
     [JsonPropertyName("success")] public bool Success { get; set; }
     [JsonPropertyName("message")] public string? Message { get; set; }
     [JsonPropertyName("locationsModified")] public int LocationsModified { get; set; }
+}
+
+public record LocationPresetInfo
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("description")] public string Description { get; set; } = "";
+    [JsonPropertyName("isBuiltIn")] public bool IsBuiltIn { get; set; }
 }

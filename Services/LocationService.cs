@@ -548,6 +548,7 @@ public class LocationService(
                 DetectedMods = DetectMods(),
                 Weather = GetWeatherDto(),
                 GlobalRaidSettings = GetGlobalRaidSettingsDto(),
+                Presets = GetLocationPresets(),
                 TotalModified = totalModified
             };
         }
@@ -1014,6 +1015,140 @@ public class LocationService(
             WebUiPath = $"/{folderName}/",
             IsDetected = true
         };
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // LOCATION PRESETS
+    // ═══════════════════════════════════════════════════════
+
+    private static readonly string[] PresetNames =
+    [
+        "Easy Mode", "Hardcore", "Horde Mode", "Loot Run", "Boss Rush", "Vanilla"
+    ];
+
+    private static readonly Dictionary<string, string> PresetDescriptions = new()
+    {
+        ["Easy Mode"] = "All bosses 50%, +50% loot, +10 min raid time",
+        ["Hardcore"] = "All bosses 100%, -30% loot, normal raid time",
+        ["Horde Mode"] = "Max bots, all bosses 100%, 2x loot",
+        ["Loot Run"] = "3x loot, +20 min raid time, all exits 100%",
+        ["Boss Rush"] = "All bosses 100% with max escort amounts",
+        ["Vanilla"] = "Reset all location overrides to defaults"
+    };
+
+    public List<LocationPresetInfo> GetLocationPresets()
+    {
+        return PresetNames.Select(n => new LocationPresetInfo
+        {
+            Name = n,
+            Description = PresetDescriptions.GetValueOrDefault(n, ""),
+            IsBuiltIn = true
+        }).ToList();
+    }
+
+    public LocationApplyResult ApplyLocationPreset(string presetName)
+    {
+        lock (_lock)
+        {
+            EnsureSnapshot();
+            var config = configService.GetConfig().GameValues;
+
+            if (presetName == "Vanilla")
+            {
+                config.LocationOverrides.Clear();
+                foreach (var locId in PlayableLocationIds)
+                    RestoreLocation(locId);
+                configService.SaveConfig();
+                return new LocationApplyResult { Success = true, Message = "All locations reset to vanilla", LocationsModified = 0 };
+            }
+
+            // Generate overrides for each location based on preset
+            config.LocationOverrides.Clear();
+            foreach (var locId in PlayableLocationIds)
+            {
+                RestoreLocation(locId);
+                var ov = GeneratePresetOverride(locId, presetName);
+                if (ov != null && !IsOverrideEmpty(ov))
+                    config.LocationOverrides[locId] = ov;
+            }
+
+            // Apply all overrides
+            foreach (var (locId, ov) in config.LocationOverrides)
+                ApplyLocationOverride(locId, ov);
+
+            configService.SaveConfig();
+            return new LocationApplyResult
+            {
+                Success = true,
+                Message = $"Applied '{presetName}' preset to {config.LocationOverrides.Count} locations",
+                LocationsModified = config.LocationOverrides.Count
+            };
+        }
+    }
+
+    private LocationOverride? GeneratePresetOverride(string locId, string preset)
+    {
+        var snapTime = _snapEscapeTime.GetValueOrDefault(locId) ?? 0;
+        var snapLoot = _snapLootModifier.GetValueOrDefault(locId) ?? 0;
+        var snapContainer = _snapContainerModifier.GetValueOrDefault(locId) ?? 0;
+        var snapBotMax = _locationSnapshots.GetValueOrDefault(locId)?.BotMax ?? 0;
+        var bossSnaps = _bossSnapshots.GetValueOrDefault(locId);
+
+        var ov = new LocationOverride();
+
+        switch (preset)
+        {
+            case "Easy Mode":
+                ov.EscapeTimeLimit = snapTime + 10;
+                ov.GlobalLootChanceModifier = Math.Round(snapLoot * 1.5, 2);
+                ov.GlobalContainerChanceModifier = Math.Round(snapContainer * 1.5, 2);
+                if (bossSnaps != null)
+                    foreach (var bs in bossSnaps)
+                        if (BossDisplayNames.ContainsKey(bs.BossName))
+                            ov.BossOverrides[bs.Index.ToString()] = new BossOverride { BossChance = 50 };
+                break;
+
+            case "Hardcore":
+                ov.GlobalLootChanceModifier = Math.Round(snapLoot * 0.7, 2);
+                ov.GlobalContainerChanceModifier = Math.Round(snapContainer * 0.7, 2);
+                if (bossSnaps != null)
+                    foreach (var bs in bossSnaps)
+                        if (BossDisplayNames.ContainsKey(bs.BossName))
+                            ov.BossOverrides[bs.Index.ToString()] = new BossOverride { BossChance = 100 };
+                break;
+
+            case "Horde Mode":
+                ov.BotMax = Math.Max(snapBotMax, 30);
+                ov.GlobalLootChanceModifier = Math.Round(snapLoot * 2, 2);
+                ov.GlobalContainerChanceModifier = Math.Round(snapContainer * 2, 2);
+                if (bossSnaps != null)
+                    foreach (var bs in bossSnaps)
+                        if (BossDisplayNames.ContainsKey(bs.BossName))
+                            ov.BossOverrides[bs.Index.ToString()] = new BossOverride { BossChance = 100 };
+                break;
+
+            case "Loot Run":
+                ov.EscapeTimeLimit = snapTime + 20;
+                ov.GlobalLootChanceModifier = Math.Round(snapLoot * 3, 2);
+                ov.GlobalContainerChanceModifier = Math.Round(snapContainer * 3, 2);
+                // All exits 100%
+                if (_exitSnapshots.TryGetValue(locId, out var exitSnaps))
+                    foreach (var es in exitSnaps)
+                        ov.ExitOverrides[es.Name] = new ExitOverride { Chance = 100, ChancePVE = 100 };
+                break;
+
+            case "Boss Rush":
+                if (bossSnaps != null)
+                    foreach (var bs in bossSnaps)
+                        if (BossDisplayNames.ContainsKey(bs.BossName))
+                            ov.BossOverrides[bs.Index.ToString()] = new BossOverride { BossChance = 100 };
+                break;
+
+            default:
+                return null;
+        }
+
+        return ov;
     }
 
     // ═══════════════════════════════════════════════════════
