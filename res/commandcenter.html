@@ -18059,7 +18059,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     html += '<div class="gv-edit-actions">';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvSaveMedical(\'' + m.tpl + '\')" style="background:var(--accent-dim);color:var(--bg-base)">Save Changes</button>';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetMedicalItem(\'' + m.tpl + '\')">Reset to Default</button>';
-    html += '<button class="btn btn-sm" onclick="event.stopPropagation();_gvEditingTpl=null;gvRenderMedicalTable()">Cancel</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvExpandMedical(null)">Cancel</button>';
     html += '</div></td></tr>';
     return html;
   }
@@ -18387,7 +18387,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     html += '<div class="gv-edit-actions">';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvSaveMedical(\'' + m.tpl + '\')" style="background:var(--accent-dim);color:var(--bg-base)">Save Changes</button>';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetMedicalItem(\'' + m.tpl + '\')">Reset to Default</button>';
-    html += '<button class="btn btn-sm" onclick="event.stopPropagation();_gvEditingTpl=null;gvRenderFoodTable()">Cancel</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvExpandMedical(null)">Cancel</button>';
     html += '</div></td></tr>';
     return html;
   }

@@ -747,7 +747,7 @@ public class GameValuesService(
                 Success = removed,
                 ItemsModified = removed ? 0 : 0,
                 ApplyTimeMs = sw.ElapsedMilliseconds,
-                Message = removed ? "Ammo reset to default" : "No override found",
+                Message = removed ? "Ammo reset to default" : "Already at default",
             };
         }
     }
@@ -932,7 +932,7 @@ public class GameValuesService(
             ApplyArmor();
             configService.SaveConfig();
             sw.Stop();
-            return new GameValuesApplyResult { Success = removed, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Armor reset to default" : "No override found" };
+            return new GameValuesApplyResult { Success = true, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Armor reset to default" : "Already at default" };
         }
     }
 
@@ -1147,7 +1147,7 @@ public class GameValuesService(
             ApplyWeapons();
             configService.SaveConfig();
             sw.Stop();
-            return new GameValuesApplyResult { Success = removed, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Weapon reset to default" : "No override found" };
+            return new GameValuesApplyResult { Success = true, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Weapon reset to default" : "Already at default" };
         }
     }
 
@@ -1388,7 +1388,7 @@ public class GameValuesService(
             ApplyMedical();
             configService.SaveConfig();
             sw.Stop();
-            return new GameValuesApplyResult { Success = removed, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Medical item reset to default" : "No override found" };
+            return new GameValuesApplyResult { Success = true, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Medical item reset to default" : "Already at default" };
         }
     }
 
@@ -1440,7 +1440,7 @@ public class GameValuesService(
             ApplyStimBuffs();
             configService.SaveConfig();
             sw.Stop();
-            return new GameValuesApplyResult { Success = removed, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Stim buff reset to default" : "No override found" };
+            return new GameValuesApplyResult { Success = true, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Stim buff reset to default" : "Already at default" };
         }
     }
 
@@ -1627,7 +1627,7 @@ public class GameValuesService(
             ApplyBackpacks();
             configService.SaveConfig();
             sw.Stop();
-            return new GameValuesApplyResult { Success = removed, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Backpack reset to default" : "No override found" };
+            return new GameValuesApplyResult { Success = true, ApplyTimeMs = sw.ElapsedMilliseconds, Message = removed ? "Backpack reset to default" : "Already at default" };
         }
     }
 
