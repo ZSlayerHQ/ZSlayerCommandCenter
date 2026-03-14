@@ -28,6 +28,12 @@ public record GameValuesConfig
 
     [JsonPropertyName("presets")]
     public Dictionary<string, GameValuesPresetEntry> Presets { get; set; } = new();
+
+    [JsonPropertyName("locationOverrides")]
+    public Dictionary<string, LocationOverride> LocationOverrides { get; set; } = new();
+
+    [JsonPropertyName("weatherOverride")]
+    public WeatherOverrideConfig WeatherOverride { get; set; } = new();
 }
 
 // ═══════════════════════════════════════════════════════

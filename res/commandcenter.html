@@ -4489,6 +4489,104 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .gv-med-type-Drink { background: rgba(0,188,212,0.15); color: #00bcd4; }
 .gv-treat-badge { display: inline-block; padding: 1px 5px; border-radius: 6px; font-size: 9px; margin: 1px; background: rgba(200,170,110,0.1); color: var(--text-dim); border: 1px solid rgba(200,170,110,0.15); }
 
+/* ═══ LOCATIONS SUB-TAB ═══ */
+.loc-mod-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.loc-mod-card {
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+}
+.loc-mod-card.detected { border-color: rgba(76,175,80,0.3); }
+.loc-mod-card.not-detected { opacity: 0.5; }
+.loc-mod-icon {
+  width: 36px; height: 36px; border-radius: 6px; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  background: rgba(200,170,110,0.1);
+}
+.loc-mod-icon svg { width: 20px; height: 20px; color: var(--accent); }
+.loc-mod-info { flex: 1; min-width: 0; }
+.loc-mod-info .loc-mod-name { font-weight: 600; font-size: 13px; color: var(--text); }
+.loc-mod-info .loc-mod-version { font-size: 11px; color: var(--text-muted); }
+.loc-mod-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
+}
+.loc-mod-badge.detected { background: rgba(76,175,80,0.15); color: #4caf50; }
+.loc-mod-badge.not-detected { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+.loc-mod-btn {
+  padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 600;
+  background: rgba(200,170,110,0.12); color: var(--accent); border: 1px solid rgba(200,170,110,0.25);
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+}
+.loc-mod-btn:hover { background: rgba(200,170,110,0.2); }
+
+.loc-weather-section {
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; margin-bottom: 16px;
+}
+.loc-section-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.loc-section-header h4 { margin: 0; font-size: 14px; color: var(--text); font-weight: 600; }
+.loc-weather-controls {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.loc-weather-field { display: flex; flex-direction: column; gap: 2px; }
+.loc-weather-field label { font-size: 11px; color: var(--text-muted); }
+
+.loc-map-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.loc-map-card {
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
+  cursor: pointer; overflow: hidden; transition: border-color 0.15s;
+}
+.loc-map-card:hover { border-color: var(--accent); }
+.loc-map-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.loc-map-card.modified { border-color: rgba(200,170,110,0.4); }
+.loc-map-thumb {
+  width: 100%; height: 110px; object-fit: cover; display: block;
+  border-bottom: 1px solid var(--border);
+}
+.loc-map-info { padding: 8px 10px; }
+.loc-map-name {
+  font-weight: 600; font-size: 13px; color: var(--text);
+  display: flex; align-items: center; gap: 4px;
+}
+.loc-map-name .loc-modified-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
+}
+.loc-map-stats {
+  display: flex; gap: 8px; margin-top: 4px; font-size: 11px; color: var(--text-muted);
+}
+
+.loc-detail-editor {
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px; margin-bottom: 16px;
+}
+.loc-detail-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.loc-detail-header h4 { margin: 0; font-size: 15px; color: var(--accent); font-weight: 600; }
+.loc-detail-actions { display: flex; gap: 6px; }
+.loc-settings-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px; margin-bottom: 16px;
+}
+.loc-field-group h5 {
+  margin: 0 0 8px; font-size: 12px; color: var(--text-muted);
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.loc-boss-section, .loc-exit-section { margin-top: 14px; }
+.loc-boss-section h5, .loc-exit-section h5 {
+  margin: 0 0 8px; font-size: 12px; color: var(--text-muted);
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
 </style>
 </head>
 <body>
@@ -7191,6 +7289,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <button class="gv-sub-tab" data-gvtab="medical" onclick="window.gvSwitchTab('medical')">Medical</button>
       <button class="gv-sub-tab" data-gvtab="fooddrink" onclick="window.gvSwitchTab('fooddrink')">Food & Drink</button>
       <button class="gv-sub-tab" data-gvtab="backpacks" onclick="window.gvSwitchTab('backpacks')">Backpacks</button>
+      <button class="gv-sub-tab" data-gvtab="locations" onclick="window.gvSwitchTab('locations')">Locations</button>
     </div>
 
     <!-- Presets row -->
@@ -7402,6 +7501,126 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           </tr></thead>
           <tbody id="gvBackpackBody"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- ═══ LOCATIONS SUB-TAB ═══ -->
+    <div class="gv-panel" id="gvPanel-locations">
+
+      <!-- Mod Integration Cards -->
+      <div class="loc-mod-cards" id="locModCards"></div>
+
+      <!-- Weather/Season Controls -->
+      <div class="loc-weather-section" id="locWeatherSection">
+        <div class="loc-section-header">
+          <h4>Weather & Season</h4>
+          <div class="gv-restart-banner" style="display:inline-flex;margin:0;padding:4px 10px;font-size:11px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 105.64-11.36L3 10"/></svg>
+            Restart client to apply
+          </div>
+        </div>
+        <div class="loc-weather-controls">
+          <div class="loc-weather-field">
+            <label>Season</label>
+            <select id="locSeasonSelect" class="gv-select"></select>
+          </div>
+          <div class="loc-weather-field">
+            <label>Time Acceleration</label>
+            <input type="number" id="locAcceleration" class="gv-input" min="1" max="28" style="width:80px">
+          </div>
+          <button class="btn btn-sm" onclick="window.locSaveWeather()">Apply Weather</button>
+          <button class="btn btn-sm" onclick="window.locResetWeather()">Reset Weather</button>
+        </div>
+      </div>
+
+      <!-- Map Grid -->
+      <div class="loc-section-header" style="margin-top:16px">
+        <h4>Map Locations</h4>
+        <span class="gv-count" id="locModifiedCount"></span>
+        <button class="btn btn-sm btn-danger" onclick="window.locResetAll()" style="margin-left:auto">Reset All Locations</button>
+      </div>
+      <div class="loc-map-grid" id="locMapGrid"></div>
+
+      <!-- Location Detail Editor (visible when map selected) -->
+      <div class="loc-detail-editor" id="locDetailEditor" style="display:none">
+        <div class="loc-detail-header">
+          <h4 id="locDetailTitle">Map Name</h4>
+          <div class="loc-detail-actions">
+            <button class="btn btn-sm" onclick="window.locSaveLocation()">Save Changes</button>
+            <button class="btn btn-sm" onclick="window.locResetLocation()">Reset Location</button>
+            <button class="btn btn-sm" onclick="window.locCloseDetail()">Close</button>
+          </div>
+        </div>
+
+        <!-- Raid Settings -->
+        <div class="loc-settings-grid">
+          <div class="loc-field-group">
+            <h5>Raid Settings</h5>
+            <div class="gv-edit-form" style="padding:0">
+              <div class="gv-edit-field">
+                <label>Raid Time (min) <span class="gv-orig" id="locOrigTime"></span></label>
+                <input type="number" id="locEscapeTime" class="gv-input" min="1" max="180" step="1">
+              </div>
+              <div class="gv-edit-field">
+                <label>Max Bots <span class="gv-orig" id="locOrigBotMax"></span></label>
+                <input type="number" id="locBotMax" class="gv-input" min="0" max="100" step="1">
+              </div>
+              <div class="gv-edit-field">
+                <label>Max Player Bots <span class="gv-orig" id="locOrigBotMaxPlayer"></span></label>
+                <input type="number" id="locBotMaxPlayer" class="gv-input" min="0" max="100" step="1">
+              </div>
+            </div>
+          </div>
+          <div class="loc-field-group">
+            <h5>Loot Settings</h5>
+            <div class="gv-edit-form" style="padding:0">
+              <div class="gv-edit-field">
+                <label>Loose Loot Chance <span class="gv-orig" id="locOrigLoot"></span></label>
+                <input type="number" id="locLootChance" class="gv-input" min="0" max="10" step="0.01">
+              </div>
+              <div class="gv-edit-field">
+                <label>Container Loot Chance <span class="gv-orig" id="locOrigContainer"></span></label>
+                <input type="number" id="locContainerChance" class="gv-input" min="0" max="10" step="0.01">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Boss Spawns -->
+        <div class="loc-boss-section" id="locBossSection" style="display:none">
+          <h5>Boss Spawns</h5>
+          <div class="gv-table-wrap" style="max-height:300px">
+            <table class="item-table gv-table" id="locBossTable">
+              <thead><tr>
+                <th>Boss</th>
+                <th>Chance %</th>
+                <th>Zone</th>
+                <th>Escorts</th>
+                <th>Spawn Time</th>
+                <th>Actions</th>
+              </tr></thead>
+              <tbody id="locBossBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Exits -->
+        <div class="loc-exit-section" id="locExitSection" style="display:none">
+          <h5>Extracts</h5>
+          <div class="gv-table-wrap" style="max-height:300px">
+            <table class="item-table gv-table" id="locExitTable">
+              <thead><tr>
+                <th>Exit Name</th>
+                <th>Chance %</th>
+                <th>PVE Chance %</th>
+                <th>Exfil Time (s)</th>
+                <th>Requirement</th>
+                <th>Actions</th>
+              </tr></thead>
+              <tbody id="locExitBody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -17342,6 +17561,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'medical') { if (_gvMedicalData.length === 0) gvLoadMedical(); else gvFilterMedical(); }
     if (tab === 'fooddrink') { if (_gvFoodData.length === 0) gvLoadFood(); else gvFilterFood(); }
     if (tab === 'backpacks' && _gvBackpackData.length === 0) gvLoadBackpacks();
+    if (tab === 'locations') gvLoadLocations();
   };
 
   // ── Helper: penetration color class ──
@@ -18208,7 +18428,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var html = '<div class="gv-buff-row" style="display:grid;grid-template-columns:140px 70px 70px 60px 55px 30px 100px 28px;gap:4px;margin-bottom:2px;align-items:center">';
 
     // BuffType dropdown
-    html += '<select class="gv-buff-type" style="font-size:11px;background:var(--bg-base);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:3px;padding:2px">';
+    html += '<select class="gv-buff-type" onchange="this.closest(\'.gv-buff-row\').querySelector(\'.gv-buff-skill\').style.display=this.value===\'SkillRate\'?\'\':\'none\'" style="font-size:11px;background:var(--bg-base);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:3px;padding:2px">';
     _gvBuffTypes.forEach(function(t) {
       html += '<option value="' + t + '"' + (e.buffType === t ? ' selected' : '') + '>' + t + '</option>';
     });
@@ -18234,7 +18454,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     html += '<input type="checkbox" class="gv-buff-abs"' + (e.absoluteValue ? ' checked' : '') + ' style="margin:0 auto">';
 
     // SkillName
-    html += '<input type="text" class="gv-buff-skill" value="' + escH(e.skillName) + '" placeholder="Skill" style="font-size:11px;width:100%;background:var(--bg-base);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:3px;padding:2px 4px">';
+    var skillVis = e.buffType === 'SkillRate' ? '' : 'display:none;';
+    html += '<input type="text" class="gv-buff-skill" value="' + escH(e.skillName) + '" placeholder="Skill" style="' + skillVis + 'font-size:11px;width:100%;background:var(--bg-base);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:3px;padding:2px 4px">';
 
     // Remove button
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvRemoveBuffEffect(this)" style="font-size:10px;padding:1px 5px;color:var(--red-glow)" title="Remove effect">\u00d7</button>';
@@ -18814,6 +19035,353 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     };
     reader.readAsText(file);
     event.target.value = '';
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // LOCATIONS SUB-TAB
+  // ═══════════════════════════════════════════════════════
+
+  var _locData = null;       // LocationListResponse cache
+  var _locDetailData = null;  // LocationDetailDto cache
+  var _locSelectedMap = null;
+  var _locLoaded = false;
+
+  function gvLoadLocations() {
+    if (_locLoaded && _locData) { locRender(); return; }
+    api('gamevalues/locations').then(function(r) {
+      _locData = r;
+      _locLoaded = true;
+      locRender();
+    }).catch(function(e) { toast('Failed to load locations: ' + e.message, 'error'); });
+  }
+
+  function locRender() {
+    if (!_locData) return;
+    locRenderModCards(_locData.detectedMods || []);
+    locRenderWeather(_locData.weather);
+    locRenderMapGrid(_locData.locations || []);
+    var cnt = document.getElementById('locModifiedCount');
+    if (cnt) cnt.textContent = _locData.totalModified > 0 ? _locData.totalModified + ' modified' : '';
+  }
+
+  function locRenderModCards(mods) {
+    var el = document.getElementById('locModCards');
+    if (!el) return;
+    if (!mods.length) { el.innerHTML = ''; return; }
+    var html = '';
+    mods.forEach(function(m) {
+      var cls = m.isDetected ? 'detected' : 'not-detected';
+      html += '<div class="loc-mod-card ' + cls + '">';
+      html += '<div class="loc-mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>';
+      html += '<div class="loc-mod-info"><div class="loc-mod-name">' + escH(m.name) + '</div>';
+      if (m.isDetected) {
+        html += '<div class="loc-mod-version">v' + escH(m.version) + '</div>';
+      }
+      html += '</div>';
+      html += '<span class="loc-mod-badge ' + cls + '">' + (m.isDetected ? 'Detected' : 'Not Installed') + '</span>';
+      if (m.isDetected && m.webUiPath) {
+        html += ' <a class="loc-mod-btn" href="' + escH(window.location.origin + m.webUiPath) + '" target="_blank">Open Web UI</a>';
+      }
+      html += '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function locRenderWeather(w) {
+    if (!w) return;
+    var sel = document.getElementById('locSeasonSelect');
+    var accel = document.getElementById('locAcceleration');
+    if (!sel || !accel) return;
+
+    // Populate season dropdown
+    sel.innerHTML = '<option value="">Auto (Server Default)</option>';
+    if (w.seasonNames) {
+      Object.keys(w.seasonNames).forEach(function(k) {
+        var selected = (w.seasonOverride !== null && w.seasonOverride !== undefined && String(w.seasonOverride) === k) ? ' selected' : '';
+        sel.innerHTML += '<option value="' + k + '"' + selected + '>' + escH(w.seasonNames[k]) + '</option>';
+      });
+    }
+    accel.value = w.acceleration || 7;
+  }
+
+  function locRenderMapGrid(locations) {
+    var el = document.getElementById('locMapGrid');
+    if (!el) return;
+    var html = '';
+    locations.forEach(function(loc) {
+      var cls = 'loc-map-card';
+      if (loc.isModified) cls += ' modified';
+      if (_locSelectedMap === loc.id) cls += ' selected';
+      html += '<div class="' + cls + '" onclick="window.locSelectMap(\'' + escH(loc.id) + '\')">';
+      if (loc.mapThumbnail) {
+        html += '<img class="loc-map-thumb" src="' + escH(loc.mapThumbnail) + '" alt="' + escH(loc.displayName) + '" loading="lazy">';
+      }
+      html += '<div class="loc-map-info">';
+      html += '<div class="loc-map-name">' + escH(loc.displayName);
+      if (loc.isModified) html += ' <span class="loc-modified-dot"></span>';
+      html += '</div>';
+      html += '<div class="loc-map-stats">';
+      html += '<span>' + Math.round(loc.escapeTimeLimit) + ' min</span>';
+      html += '<span>' + (loc.globalLootChance || 0).toFixed(2) + 'x loot</span>';
+      html += '<span>' + loc.bossCount + ' boss' + (loc.bossCount !== 1 ? 'es' : '') + '</span>';
+      html += '</div></div></div>';
+    });
+    el.innerHTML = html;
+  }
+
+  window.locSelectMap = function(locId) {
+    _locSelectedMap = locId;
+    // Highlight selected card
+    document.querySelectorAll('.loc-map-card').forEach(function(c) {
+      c.classList.toggle('selected', c.onclick && c.onclick.toString().indexOf(locId) > -1);
+    });
+    // Update selected card highlight by re-rendering grid
+    if (_locData) locRenderMapGrid(_locData.locations || []);
+
+    // Load detail
+    api('gamevalues/locations/' + locId).then(function(r) {
+      _locDetailData = r;
+      locRenderDetail(r);
+    }).catch(function(e) { toast('Failed to load location: ' + e.message, 'error'); });
+  };
+
+  function locRenderDetail(d) {
+    var editor = document.getElementById('locDetailEditor');
+    if (!editor || !d) return;
+    editor.style.display = 'block';
+
+    document.getElementById('locDetailTitle').textContent = d.displayName;
+
+    // Raid settings
+    document.getElementById('locEscapeTime').value = Math.round(d.escapeTimeLimit);
+    document.getElementById('locBotMax').value = d.botMax;
+    document.getElementById('locBotMaxPlayer').value = d.botMaxPlayer;
+
+    // Loot settings
+    document.getElementById('locLootChance').value = (d.globalLootChance || 0).toFixed(2);
+    document.getElementById('locContainerChance').value = (d.globalContainerChance || 0).toFixed(2);
+
+    // Original values
+    if (d.original) {
+      document.getElementById('locOrigTime').textContent = '(orig: ' + Math.round(d.original.escapeTimeLimit) + ')';
+      document.getElementById('locOrigBotMax').textContent = '(orig: ' + d.original.botMax + ')';
+      document.getElementById('locOrigBotMaxPlayer').textContent = '(orig: ' + d.original.botMaxPlayer + ')';
+      document.getElementById('locOrigLoot').textContent = '(orig: ' + (d.original.globalLootChance || 0).toFixed(2) + ')';
+      document.getElementById('locOrigContainer').textContent = '(orig: ' + (d.original.globalContainerChance || 0).toFixed(2) + ')';
+    }
+
+    // Bosses
+    var bossSection = document.getElementById('locBossSection');
+    var bossBody = document.getElementById('locBossBody');
+    if (d.bosses && d.bosses.length > 0) {
+      bossSection.style.display = 'block';
+      var bhtml = '';
+      d.bosses.forEach(function(b) {
+        var modCls = b.isModified ? ' class="gv-modified"' : '';
+        bhtml += '<tr>';
+        bhtml += '<td' + modCls + '>' + escH(b.displayName) + '</td>';
+        bhtml += '<td><input type="number" class="gv-input loc-boss-chance" data-idx="' + b.index + '" value="' + (b.bossChance != null ? b.bossChance : '') + '" min="0" max="100" step="1" style="width:70px">';
+        if (b.originalChance != null) bhtml += ' <span class="gv-orig" style="font-size:10px">(orig: ' + b.originalChance + ')</span>';
+        bhtml += '</td>';
+        bhtml += '<td style="font-size:11px;color:var(--text-muted)">' + escH(b.bossZone || '-') + '</td>';
+        bhtml += '<td><input type="text" class="gv-input loc-boss-escorts" data-idx="' + b.index + '" value="' + escH(b.bossEscortAmount) + '" style="width:60px"></td>';
+        bhtml += '<td><input type="number" class="gv-input loc-boss-time" data-idx="' + b.index + '" value="' + (b.time != null ? b.time : '') + '" min="-1" step="1" style="width:70px"></td>';
+        bhtml += '<td><button class="btn btn-sm" onclick="window.locResetBoss(' + b.index + ')" style="font-size:11px;padding:2px 8px"' + (b.isModified ? '' : ' disabled') + '>Reset</button></td>';
+        bhtml += '</tr>';
+      });
+      bossBody.innerHTML = bhtml;
+    } else {
+      bossSection.style.display = 'none';
+      bossBody.innerHTML = '';
+    }
+
+    // Exits
+    var exitSection = document.getElementById('locExitSection');
+    var exitBody = document.getElementById('locExitBody');
+    if (d.exits && d.exits.length > 0) {
+      exitSection.style.display = 'block';
+      var ehtml = '';
+      d.exits.forEach(function(ex) {
+        var modCls = ex.isModified ? ' class="gv-modified"' : '';
+        ehtml += '<tr>';
+        ehtml += '<td' + modCls + '>' + escH(ex.name) + '</td>';
+        ehtml += '<td><input type="number" class="gv-input loc-exit-chance" data-name="' + escH(ex.name) + '" value="' + ex.chance + '" min="0" max="100" step="1" style="width:70px">';
+        if (ex.originalChance != null) ehtml += ' <span class="gv-orig" style="font-size:10px">(orig: ' + ex.originalChance + ')</span>';
+        ehtml += '</td>';
+        ehtml += '<td><input type="number" class="gv-input loc-exit-pve" data-name="' + escH(ex.name) + '" value="' + ex.chancePVE + '" min="0" max="100" step="1" style="width:70px"></td>';
+        ehtml += '<td><input type="number" class="gv-input loc-exit-time" data-name="' + escH(ex.name) + '" value="' + ex.exfiltrationTime + '" min="0" step="1" style="width:70px"></td>';
+        var req = ex.passageRequirement || 'None';
+        var reqBadge = req === 'None' ? '' : '<span class="loc-mod-badge detected" style="font-size:9px">' + escH(req) + '</span>';
+        ehtml += '<td>' + reqBadge + '</td>';
+        ehtml += '<td><button class="btn btn-sm" onclick="window.locResetExit(\'' + escH(ex.name) + '\')" style="font-size:11px;padding:2px 8px"' + (ex.isModified ? '' : ' disabled') + '>Reset</button></td>';
+        ehtml += '</tr>';
+      });
+      exitBody.innerHTML = ehtml;
+    } else {
+      exitSection.style.display = 'none';
+      exitBody.innerHTML = '';
+    }
+
+    // Scroll into view
+    editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  window.locSaveLocation = function() {
+    if (!_locSelectedMap) return;
+    var body = {};
+
+    var timeVal = parseFloat(document.getElementById('locEscapeTime').value);
+    if (!isNaN(timeVal)) body.escapeTimeLimit = timeVal;
+
+    var lootVal = parseFloat(document.getElementById('locLootChance').value);
+    if (!isNaN(lootVal)) body.globalLootChanceModifier = lootVal;
+
+    var contVal = parseFloat(document.getElementById('locContainerChance').value);
+    if (!isNaN(contVal)) body.globalContainerChanceModifier = contVal;
+
+    var botMax = parseInt(document.getElementById('locBotMax').value);
+    if (!isNaN(botMax)) body.botMax = botMax;
+
+    var botMaxP = parseInt(document.getElementById('locBotMaxPlayer').value);
+    if (!isNaN(botMaxP)) body.botMaxPlayer = botMaxP;
+
+    // Gather boss overrides
+    var bossOverrides = {};
+    document.querySelectorAll('.loc-boss-chance').forEach(function(inp) {
+      var idx = inp.dataset.idx;
+      var val = parseFloat(inp.value);
+      if (!isNaN(val)) {
+        if (!bossOverrides[idx]) bossOverrides[idx] = {};
+        bossOverrides[idx].bossChance = val;
+      }
+    });
+    document.querySelectorAll('.loc-boss-escorts').forEach(function(inp) {
+      var idx = inp.dataset.idx;
+      if (inp.value !== '') {
+        if (!bossOverrides[idx]) bossOverrides[idx] = {};
+        bossOverrides[idx].bossEscortAmount = inp.value;
+      }
+    });
+    document.querySelectorAll('.loc-boss-time').forEach(function(inp) {
+      var idx = inp.dataset.idx;
+      var val = parseFloat(inp.value);
+      if (!isNaN(val)) {
+        if (!bossOverrides[idx]) bossOverrides[idx] = {};
+        bossOverrides[idx].time = val;
+      }
+    });
+    if (Object.keys(bossOverrides).length) body.bossOverrides = bossOverrides;
+
+    // Gather exit overrides
+    var exitOverrides = {};
+    document.querySelectorAll('.loc-exit-chance').forEach(function(inp) {
+      var name = inp.dataset.name;
+      var val = parseFloat(inp.value);
+      if (!isNaN(val)) {
+        if (!exitOverrides[name]) exitOverrides[name] = {};
+        exitOverrides[name].chance = val;
+      }
+    });
+    document.querySelectorAll('.loc-exit-pve').forEach(function(inp) {
+      var name = inp.dataset.name;
+      var val = parseFloat(inp.value);
+      if (!isNaN(val)) {
+        if (!exitOverrides[name]) exitOverrides[name] = {};
+        exitOverrides[name].chancePVE = val;
+      }
+    });
+    document.querySelectorAll('.loc-exit-time').forEach(function(inp) {
+      var name = inp.dataset.name;
+      var val = parseFloat(inp.value);
+      if (!isNaN(val)) {
+        if (!exitOverrides[name]) exitOverrides[name] = {};
+        exitOverrides[name].exfiltrationTime = val;
+      }
+    });
+    if (Object.keys(exitOverrides).length) body.exitOverrides = exitOverrides;
+
+    api('gamevalues/locations/' + _locSelectedMap, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }).then(function(r) {
+      toast(r.message || 'Location saved', 'success');
+      _locLoaded = false;
+      gvLoadLocations();
+      // Reload detail
+      window.locSelectMap(_locSelectedMap);
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.locResetLocation = function() {
+    if (!_locSelectedMap) return;
+    if (!confirm('Reset ' + (_locDetailData ? _locDetailData.displayName : _locSelectedMap) + ' to defaults?')) return;
+    api('gamevalues/locations/' + _locSelectedMap + '/reset', { method: 'POST' }).then(function(r) {
+      toast(r.message || 'Location reset', 'success');
+      _locLoaded = false;
+      gvLoadLocations();
+      window.locSelectMap(_locSelectedMap);
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.locCloseDetail = function() {
+    document.getElementById('locDetailEditor').style.display = 'none';
+    _locSelectedMap = null;
+    _locDetailData = null;
+    if (_locData) locRenderMapGrid(_locData.locations || []);
+  };
+
+  window.locResetAll = function() {
+    if (!confirm('Reset ALL location overrides to game defaults?')) return;
+    api('gamevalues/locations/reset', { method: 'POST' }).then(function(r) {
+      toast(r.message || 'All locations reset', 'success');
+      _locLoaded = false;
+      _locSelectedMap = null;
+      _locDetailData = null;
+      document.getElementById('locDetailEditor').style.display = 'none';
+      gvLoadLocations();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.locSaveWeather = function() {
+    var body = {};
+    var accel = parseInt(document.getElementById('locAcceleration').value);
+    if (!isNaN(accel)) body.acceleration = accel;
+
+    var sel = document.getElementById('locSeasonSelect');
+    var seasonVal = sel.value;
+    if (seasonVal !== '') {
+      body.seasonOverride = parseInt(seasonVal);
+    } else {
+      body.seasonOverride = null;
+    }
+
+    api('gamevalues/locations/weather', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }).then(function(r) {
+      toast(r.message || 'Weather updated', 'success');
+      _locLoaded = false;
+      gvLoadLocations();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.locResetWeather = function() {
+    api('gamevalues/locations/weather/reset', { method: 'POST' }).then(function(r) {
+      toast(r.message || 'Weather reset', 'success');
+      _locLoaded = false;
+      gvLoadLocations();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.locResetBoss = function(idx) {
+    // Reset by saving without that boss's override
+    // For simplicity, just reset the whole location
+    window.locResetLocation();
+  };
+
+  window.locResetExit = function(name) {
+    // Reset by saving without that exit's override
+    window.locResetLocation();
   };
 
   // ═══════════════════════════════════════════════════════

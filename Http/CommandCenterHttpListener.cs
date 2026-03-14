@@ -48,6 +48,7 @@ public class CommandCenterHttpListener(
     WipeService wipeService,
     EventService eventService,
     GameValuesService gameValuesService,
+    LocationService locationService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -2690,6 +2691,7 @@ public class CommandCenterHttpListener(
                 configService.SaveConfig();
                 progressionControlService.ClearActivePreset();
                 var result = progressionControlService.ApplyConfig();
+                locationService.ReapplyOverrides();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     $"Skills: updated rate multipliers");
                 await WriteJson(context, 200, result);
@@ -2951,6 +2953,7 @@ public class CommandCenterHttpListener(
                 configService.SaveConfig();
                 progressionControlService.ClearActivePreset();
                 var result = progressionControlService.ApplyConfig();
+                locationService.ReapplyOverrides();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     $"Progression: updated config — {result.SettingsModified} settings applied");
                 await WriteJson(context, 200, result);
@@ -2959,12 +2962,14 @@ public class CommandCenterHttpListener(
             case "apply" when method == "POST":
             {
                 var result = progressionControlService.ApplyConfig();
+                locationService.ReapplyOverrides();
                 await WriteJson(context, 200, result);
                 break;
             }
             case "reset" when method == "POST":
             {
                 var result = progressionControlService.ResetToDefaults();
+                locationService.ReapplyOverrides();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     "Progression: reset all settings to defaults");
                 await WriteJson(context, 200, result);
@@ -3015,6 +3020,7 @@ public class CommandCenterHttpListener(
                         break;
                     }
                     var result = progressionControlService.ApplyPreset(presetName);
+                    locationService.ReapplyOverrides();
                     if (result.Success)
                     {
                         configService.SaveConfig();
@@ -3309,8 +3315,98 @@ public class CommandCenterHttpListener(
                 break;
             }
 
+            // ── LOCATIONS ──
+            case "locations" when method == "GET":
+            {
+                var result = locationService.GetLocations();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "locations/weather" when method == "GET":
+            {
+                var result = locationService.GetWeather();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "locations/weather" when method == "POST":
+            {
+                var body = await ReadBody<WeatherUpdateRequest>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var result = locationService.UpdateWeather(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: updated weather settings");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "locations/weather/reset" when method == "POST":
+            {
+                var result = locationService.ResetWeather();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: reset weather to defaults");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "locations/reset" when method == "POST":
+            {
+                var result = locationService.ResetAllLocations();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: reset all locations to defaults");
+                await WriteJson(context, 200, result);
+                break;
+            }
+
             default:
             {
+                // ── Location parameterized routes: locations/{locId} ──
+                if (subPath.StartsWith("locations/"))
+                {
+                    var locSub = subPath["locations/".Length..];
+
+                    // locations/{locId}/reset
+                    if (method == "POST" && locSub.EndsWith("/reset"))
+                    {
+                        var locId = locSub[..^"/reset".Length];
+                        var result = locationService.ResetLocation(locId);
+                        activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                            $"Game Values: reset location '{locId}' to defaults");
+                        await WriteJson(context, 200, result);
+                        break;
+                    }
+
+                    // locations/{locId} GET — detail
+                    if (method == "GET" && !locSub.Contains('/'))
+                    {
+                        var detail = locationService.GetLocationDetail(locSub);
+                        if (detail == null)
+                        {
+                            await WriteJson(context, 404, new { error = "Location not found" });
+                            break;
+                        }
+                        await WriteJson(context, 200, detail);
+                        break;
+                    }
+
+                    // locations/{locId} POST — update
+                    if (method == "POST" && !locSub.Contains('/'))
+                    {
+                        var body = await ReadBody<LocationUpdateRequest>(context);
+                        if (body == null)
+                        {
+                            await WriteJson(context, 400, new { error = "Invalid request body" });
+                            break;
+                        }
+                        var result = locationService.UpdateLocation(locSub, body);
+                        activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                            $"Game Values: updated location '{locSub}'");
+                        await WriteJson(context, 200, result);
+                        break;
+                    }
+                }
+
                 // Per-item reset: ammo/reset/{tpl}, armor/reset/{tpl}, weapons/reset/{tpl}
                 if (method == "POST" && subPath.StartsWith("ammo/reset/"))
                 {
