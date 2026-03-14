@@ -744,8 +744,8 @@ public class GameValuesService(
 
             return new GameValuesApplyResult
             {
-                Success = removed,
-                ItemsModified = removed ? 0 : 0,
+                Success = true,
+                ItemsModified = 0,
                 ApplyTimeMs = sw.ElapsedMilliseconds,
                 Message = removed ? "Ammo reset to default" : "Already at default",
             };
