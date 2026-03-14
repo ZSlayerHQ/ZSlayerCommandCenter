@@ -34,6 +34,9 @@ public record GameValuesConfig
 
     [JsonPropertyName("weatherOverride")]
     public WeatherOverrideConfig WeatherOverride { get; set; } = new();
+
+    [JsonPropertyName("globalRaidSettings")]
+    public GlobalRaidSettingsConfig GlobalRaidSettings { get; set; } = new();
 }
 
 // ═══════════════════════════════════════════════════════

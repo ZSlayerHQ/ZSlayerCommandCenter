@@ -37,6 +37,15 @@ public record WeatherOverrideConfig
     [JsonPropertyName("seasonOverride")] public int? SeasonOverride { get; set; }
 }
 
+public record GlobalRaidSettingsConfig
+{
+    [JsonPropertyName("scavCooldownSeconds")] public int? ScavCooldownSeconds { get; set; }
+    [JsonPropertyName("playerScavHostileChancePercent")] public double? PlayerScavHostileChancePercent { get; set; }
+    [JsonPropertyName("carExtractBaseStandingGain")] public double? CarExtractBaseStandingGain { get; set; }
+    [JsonPropertyName("coopExtractBaseStandingGain")] public double? CoopExtractBaseStandingGain { get; set; }
+    [JsonPropertyName("scavExtractStandingGain")] public double? ScavExtractStandingGain { get; set; }
+}
+
 // ═══════════════════════════════════════════════════════
 // API DTOs — LOCATIONS
 // ═══════════════════════════════════════════════════════
@@ -55,7 +64,23 @@ public record LocationListResponse
     [JsonPropertyName("locations")] public List<LocationSummaryDto> Locations { get; set; } = [];
     [JsonPropertyName("detectedMods")] public List<DetectedModDto> DetectedMods { get; set; } = [];
     [JsonPropertyName("weather")] public WeatherDto Weather { get; set; } = new();
+    [JsonPropertyName("globalRaidSettings")] public GlobalRaidSettingsDto GlobalRaidSettings { get; set; } = new();
     [JsonPropertyName("totalModified")] public int TotalModified { get; set; }
+}
+
+public record GlobalRaidSettingsDto
+{
+    [JsonPropertyName("scavCooldownSeconds")] public int ScavCooldownSeconds { get; set; }
+    [JsonPropertyName("playerScavHostileChancePercent")] public double PlayerScavHostileChancePercent { get; set; }
+    [JsonPropertyName("carExtractBaseStandingGain")] public double CarExtractBaseStandingGain { get; set; }
+    [JsonPropertyName("coopExtractBaseStandingGain")] public double CoopExtractBaseStandingGain { get; set; }
+    [JsonPropertyName("scavExtractStandingGain")] public double ScavExtractStandingGain { get; set; }
+    [JsonPropertyName("originalScavCooldownSeconds")] public int OriginalScavCooldownSeconds { get; set; }
+    [JsonPropertyName("originalPlayerScavHostileChancePercent")] public double OriginalPlayerScavHostileChancePercent { get; set; }
+    [JsonPropertyName("originalCarExtractBaseStandingGain")] public double OriginalCarExtractBaseStandingGain { get; set; }
+    [JsonPropertyName("originalCoopExtractBaseStandingGain")] public double OriginalCoopExtractBaseStandingGain { get; set; }
+    [JsonPropertyName("originalScavExtractStandingGain")] public double OriginalScavExtractStandingGain { get; set; }
+    [JsonPropertyName("isModified")] public bool IsModified { get; set; }
 }
 
 public record LocationSummaryDto

@@ -3350,6 +3350,34 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, 200, result);
                 break;
             }
+            case "locations/global-raid-settings" when method == "GET":
+            {
+                var result = locationService.GetGlobalRaidSettings();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "locations/global-raid-settings" when method == "POST":
+            {
+                var body = await ReadBody<GlobalRaidSettingsConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var result = locationService.UpdateGlobalRaidSettings(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: updated global raid settings");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "locations/global-raid-settings/reset" when method == "POST":
+            {
+                var result = locationService.ResetGlobalRaidSettings();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Game Values: reset global raid settings");
+                await WriteJson(context, 200, result);
+                break;
+            }
             case "locations/reset" when method == "POST":
             {
                 var result = locationService.ResetAllLocations();

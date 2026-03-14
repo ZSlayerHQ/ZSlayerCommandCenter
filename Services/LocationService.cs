@@ -27,11 +27,14 @@ public class LocationService(
     private record ExitSnapshot(string Name, double? Chance, double? ExfiltrationTime,
         double? ChancePVE, int? Count, string PassageRequirement);
     private record WeatherSnapshot(double? Acceleration);
+    private record GlobalRaidSnapshot(int ScavCooldown, double HostileChance,
+        double CarExtract, double CoopExtract, double ScavExtract);
 
     private readonly Dictionary<string, LocationSnapshot> _locationSnapshots = new();
     private readonly Dictionary<string, List<BossSnapshot>> _bossSnapshots = new();
     private readonly Dictionary<string, List<ExitSnapshot>> _exitSnapshots = new();
     private WeatherSnapshot? _weatherSnapshot;
+    private GlobalRaidSnapshot? _globalRaidSnapshot;
 
     // Also snapshot loot/time/bossChance originals for display purposes
     // (ProgressionControlService owns the actual restore for these)
@@ -191,6 +194,16 @@ public class LocationService(
         var weatherCfg = configServer.GetConfig<WeatherConfig>();
         _weatherSnapshot = new WeatherSnapshot(weatherCfg.Acceleration);
 
+        // Global raid settings snapshot
+        var inraidCfg = configServer.GetConfig<InRaidConfig>();
+        var globals = databaseService.GetGlobals();
+        _globalRaidSnapshot = new GlobalRaidSnapshot(
+            globals.Configuration.SavagePlayCooldown,
+            inraidCfg.PlayerScavHostileChancePercent,
+            inraidCfg.CarExtractBaseStandingGain,
+            inraidCfg.CoopExtractBaseStandingGain,
+            inraidCfg.ScavExtractStandingGain);
+
         _snapshotTaken = true;
     }
 
@@ -211,6 +224,9 @@ public class LocationService(
 
         // Apply weather
         count += ApplyWeather(config.WeatherOverride);
+
+        // Apply global raid settings
+        count += ApplyGlobalRaidSettings(config.GlobalRaidSettings);
 
         return count;
     }
@@ -386,6 +402,65 @@ public class LocationService(
         return count;
     }
 
+    private int ApplyGlobalRaidSettings(GlobalRaidSettingsConfig settings)
+    {
+        var globals = databaseService.GetGlobals();
+        var inraidCfg = configServer.GetConfig<InRaidConfig>();
+        int count = 0;
+
+        if (settings.ScavCooldownSeconds.HasValue)
+        {
+            globals.Configuration.SavagePlayCooldown = settings.ScavCooldownSeconds.Value;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            globals.Configuration.SavagePlayCooldown = _globalRaidSnapshot.ScavCooldown;
+        }
+
+        if (settings.PlayerScavHostileChancePercent.HasValue)
+        {
+            inraidCfg.PlayerScavHostileChancePercent = settings.PlayerScavHostileChancePercent.Value;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.PlayerScavHostileChancePercent = _globalRaidSnapshot.HostileChance;
+        }
+
+        if (settings.CarExtractBaseStandingGain.HasValue)
+        {
+            inraidCfg.CarExtractBaseStandingGain = settings.CarExtractBaseStandingGain.Value;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.CarExtractBaseStandingGain = _globalRaidSnapshot.CarExtract;
+        }
+
+        if (settings.CoopExtractBaseStandingGain.HasValue)
+        {
+            inraidCfg.CoopExtractBaseStandingGain = settings.CoopExtractBaseStandingGain.Value;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.CoopExtractBaseStandingGain = _globalRaidSnapshot.CoopExtract;
+        }
+
+        if (settings.ScavExtractStandingGain.HasValue)
+        {
+            inraidCfg.ScavExtractStandingGain = settings.ScavExtractStandingGain.Value;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.ScavExtractStandingGain = _globalRaidSnapshot.ScavExtract;
+        }
+
+        return count;
+    }
+
     /// <summary>
     /// Called after ProgressionControlService re-applies its multipliers.
     /// Re-overlays per-map absolute overrides for loot/time/boss fields.
@@ -472,6 +547,7 @@ public class LocationService(
                 Locations = locations,
                 DetectedMods = DetectMods(),
                 Weather = GetWeatherDto(),
+                GlobalRaidSettings = GetGlobalRaidSettingsDto(),
                 TotalModified = totalModified
             };
         }
@@ -801,6 +877,88 @@ public class LocationService(
             SeasonNames = SeasonNames,
             IsModified = config.WeatherOverride.Acceleration.HasValue || config.WeatherOverride.SeasonOverride.HasValue
         };
+    }
+
+    private GlobalRaidSettingsDto GetGlobalRaidSettingsDto()
+    {
+        var globals = databaseService.GetGlobals();
+        var inraidCfg = configServer.GetConfig<InRaidConfig>();
+        var config = configService.GetConfig().GameValues;
+        var gs = config.GlobalRaidSettings;
+
+        return new GlobalRaidSettingsDto
+        {
+            ScavCooldownSeconds = globals.Configuration.SavagePlayCooldown,
+            PlayerScavHostileChancePercent = inraidCfg.PlayerScavHostileChancePercent,
+            CarExtractBaseStandingGain = inraidCfg.CarExtractBaseStandingGain,
+            CoopExtractBaseStandingGain = inraidCfg.CoopExtractBaseStandingGain,
+            ScavExtractStandingGain = inraidCfg.ScavExtractStandingGain,
+            OriginalScavCooldownSeconds = _globalRaidSnapshot?.ScavCooldown ?? globals.Configuration.SavagePlayCooldown,
+            OriginalPlayerScavHostileChancePercent = _globalRaidSnapshot?.HostileChance ?? inraidCfg.PlayerScavHostileChancePercent,
+            OriginalCarExtractBaseStandingGain = _globalRaidSnapshot?.CarExtract ?? inraidCfg.CarExtractBaseStandingGain,
+            OriginalCoopExtractBaseStandingGain = _globalRaidSnapshot?.CoopExtract ?? inraidCfg.CoopExtractBaseStandingGain,
+            OriginalScavExtractStandingGain = _globalRaidSnapshot?.ScavExtract ?? inraidCfg.ScavExtractStandingGain,
+            IsModified = gs.ScavCooldownSeconds.HasValue || gs.PlayerScavHostileChancePercent.HasValue
+                || gs.CarExtractBaseStandingGain.HasValue || gs.CoopExtractBaseStandingGain.HasValue
+                || gs.ScavExtractStandingGain.HasValue
+        };
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // GLOBAL RAID SETTINGS — PUBLIC CRUD
+    // ═══════════════════════════════════════════════════════
+
+    public GlobalRaidSettingsDto GetGlobalRaidSettings()
+    {
+        lock (_lock)
+        {
+            EnsureSnapshot();
+            return GetGlobalRaidSettingsDto();
+        }
+    }
+
+    public LocationApplyResult UpdateGlobalRaidSettings(GlobalRaidSettingsConfig request)
+    {
+        lock (_lock)
+        {
+            EnsureSnapshot();
+            var config = configService.GetConfig().GameValues;
+            var gs = config.GlobalRaidSettings;
+
+            if (request.ScavCooldownSeconds.HasValue) gs.ScavCooldownSeconds = request.ScavCooldownSeconds;
+            if (request.PlayerScavHostileChancePercent.HasValue) gs.PlayerScavHostileChancePercent = request.PlayerScavHostileChancePercent;
+            if (request.CarExtractBaseStandingGain.HasValue) gs.CarExtractBaseStandingGain = request.CarExtractBaseStandingGain;
+            if (request.CoopExtractBaseStandingGain.HasValue) gs.CoopExtractBaseStandingGain = request.CoopExtractBaseStandingGain;
+            if (request.ScavExtractStandingGain.HasValue) gs.ScavExtractStandingGain = request.ScavExtractStandingGain;
+
+            ApplyGlobalRaidSettings(gs);
+            configService.SaveConfig();
+
+            return new LocationApplyResult
+            {
+                Success = true,
+                Message = "Global raid settings updated"
+            };
+        }
+    }
+
+    public LocationApplyResult ResetGlobalRaidSettings()
+    {
+        lock (_lock)
+        {
+            EnsureSnapshot();
+            var config = configService.GetConfig().GameValues;
+            config.GlobalRaidSettings = new GlobalRaidSettingsConfig();
+
+            ApplyGlobalRaidSettings(config.GlobalRaidSettings);
+            configService.SaveConfig();
+
+            return new LocationApplyResult
+            {
+                Success = true,
+                Message = "Global raid settings reset to defaults"
+            };
+        }
     }
 
     // ═══════════════════════════════════════════════════════

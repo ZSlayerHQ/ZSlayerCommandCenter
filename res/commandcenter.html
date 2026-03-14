@@ -7533,6 +7533,37 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </div>
       </div>
 
+      <!-- Global Raid Settings -->
+      <div class="loc-weather-section" id="locGlobalRaidSection">
+        <div class="loc-section-header">
+          <h4>Scav & Extract Settings</h4>
+        </div>
+        <div class="loc-weather-controls">
+          <div class="loc-weather-field">
+            <label>Scav Cooldown (sec) <span class="gv-orig" id="locOrigScavCd"></span></label>
+            <input type="number" id="locScavCooldown" class="gv-input" min="0" max="86400" step="1" style="width:100px">
+          </div>
+          <div class="loc-weather-field">
+            <label>Hostile Scav % <span class="gv-orig" id="locOrigHostile"></span></label>
+            <input type="number" id="locHostileChance" class="gv-input" min="0" max="100" step="1" style="width:80px">
+          </div>
+          <div class="loc-weather-field">
+            <label>Car Extract Rep <span class="gv-orig" id="locOrigCarRep"></span></label>
+            <input type="number" id="locCarExtract" class="gv-input" min="0" max="10" step="0.01" style="width:80px">
+          </div>
+          <div class="loc-weather-field">
+            <label>Coop Extract Rep <span class="gv-orig" id="locOrigCoopRep"></span></label>
+            <input type="number" id="locCoopExtract" class="gv-input" min="0" max="10" step="0.01" style="width:80px">
+          </div>
+          <div class="loc-weather-field">
+            <label>Scav Extract Rep <span class="gv-orig" id="locOrigScavRep"></span></label>
+            <input type="number" id="locScavExtract" class="gv-input" min="0" max="10" step="0.01" style="width:80px">
+          </div>
+          <button class="btn btn-sm" onclick="window.locSaveGlobalRaid()">Apply</button>
+          <button class="btn btn-sm" onclick="window.locResetGlobalRaid()">Reset</button>
+        </div>
+      </div>
+
       <!-- Map Grid -->
       <div class="loc-section-header" style="margin-top:16px">
         <h4>Map Locations</h4>
@@ -19059,6 +19090,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (!_locData) return;
     locRenderModCards(_locData.detectedMods || []);
     locRenderWeather(_locData.weather);
+    locRenderGlobalRaid(_locData.globalRaidSettings);
     locRenderMapGrid(_locData.locations || []);
     var cnt = document.getElementById('locModifiedCount');
     if (cnt) cnt.textContent = _locData.totalModified > 0 ? _locData.totalModified + ' modified' : '';
@@ -19103,6 +19135,50 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }
     accel.value = w.acceleration || 7;
   }
+
+  function locRenderGlobalRaid(gs) {
+    if (!gs) return;
+    document.getElementById('locScavCooldown').value = gs.scavCooldownSeconds;
+    document.getElementById('locHostileChance').value = gs.playerScavHostileChancePercent;
+    document.getElementById('locCarExtract').value = gs.carExtractBaseStandingGain;
+    document.getElementById('locCoopExtract').value = gs.coopExtractBaseStandingGain;
+    document.getElementById('locScavExtract').value = gs.scavExtractStandingGain;
+    document.getElementById('locOrigScavCd').textContent = '(orig: ' + gs.originalScavCooldownSeconds + ')';
+    document.getElementById('locOrigHostile').textContent = '(orig: ' + gs.originalPlayerScavHostileChancePercent + '%)';
+    document.getElementById('locOrigCarRep').textContent = '(orig: ' + gs.originalCarExtractBaseStandingGain + ')';
+    document.getElementById('locOrigCoopRep').textContent = '(orig: ' + gs.originalCoopExtractBaseStandingGain + ')';
+    document.getElementById('locOrigScavRep').textContent = '(orig: ' + gs.originalScavExtractStandingGain + ')';
+  }
+
+  window.locSaveGlobalRaid = function() {
+    var body = {};
+    var v;
+    v = parseInt(document.getElementById('locScavCooldown').value);
+    if (!isNaN(v)) body.scavCooldownSeconds = v;
+    v = parseFloat(document.getElementById('locHostileChance').value);
+    if (!isNaN(v)) body.playerScavHostileChancePercent = v;
+    v = parseFloat(document.getElementById('locCarExtract').value);
+    if (!isNaN(v)) body.carExtractBaseStandingGain = v;
+    v = parseFloat(document.getElementById('locCoopExtract').value);
+    if (!isNaN(v)) body.coopExtractBaseStandingGain = v;
+    v = parseFloat(document.getElementById('locScavExtract').value);
+    if (!isNaN(v)) body.scavExtractStandingGain = v;
+
+    api('gamevalues/locations/global-raid-settings', {
+      method: 'POST', body: JSON.stringify(body)
+    }).then(function(r) {
+      toast(r.message || 'Saved', 'success');
+      _locLoaded = false; gvLoadLocations();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.locResetGlobalRaid = function() {
+    if (!confirm('Reset scav & extract settings to defaults?')) return;
+    api('gamevalues/locations/global-raid-settings/reset', { method: 'POST' }).then(function(r) {
+      toast(r.message || 'Reset', 'success');
+      _locLoaded = false; gvLoadLocations();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
 
   function locRenderMapGrid(locations) {
     var el = document.getElementById('locMapGrid');
