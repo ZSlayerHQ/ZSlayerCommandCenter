@@ -794,7 +794,7 @@ public class QuestOverrideService(
             }
         }
         presets.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
-        return new QuestPresetListResponse { Presets = presets };
+        return new QuestPresetListResponse { Presets = presets, ActivePreset = configService.GetConfig().ActiveQuestPreset };
     }
 
     public QuestPreset SaveQuestPreset(string name, string description)
@@ -833,6 +833,7 @@ public class QuestOverrideService(
                 return new QuestApplyResult { Success = false, Error = "Preset not found" };
 
             ApplyQuestGameplayConfig(preset.Config);
+            configService.GetConfig().ActiveQuestPreset = name;
             configService.SaveConfig();
             return ApplyConfig();
         }
@@ -845,8 +846,19 @@ public class QuestOverrideService(
         if (!File.Exists(filePath))
             return false;
         File.Delete(filePath);
+        if (configService.GetConfig().ActiveQuestPreset == name)
+        {
+            configService.GetConfig().ActiveQuestPreset = null;
+            configService.SaveConfig();
+        }
         logger.Info($"[ZSlayerHQ] Quests: Deleted preset '{name}'");
         return true;
+    }
+
+    public void ClearActivePreset()
+    {
+        configService.GetConfig().ActiveQuestPreset = null;
+        configService.SaveConfig();
     }
 
     public QuestPreset UploadQuestPreset(string name, string presetJson)

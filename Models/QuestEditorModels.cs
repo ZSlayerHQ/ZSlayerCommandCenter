@@ -575,6 +575,9 @@ public record QuestPresetListResponse
 {
     [JsonPropertyName("presets")]
     public List<QuestPresetSummary> Presets { get; set; } = [];
+
+    [JsonPropertyName("activePreset")]
+    public string? ActivePreset { get; set; }
 }
 
 public record QuestPresetSaveRequest

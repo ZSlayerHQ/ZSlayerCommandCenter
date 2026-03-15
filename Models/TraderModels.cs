@@ -531,6 +531,9 @@ public record TraderPresetListResponse
 {
     [JsonPropertyName("presets")]
     public List<TraderPresetSummary> Presets { get; set; } = [];
+
+    [JsonPropertyName("activePreset")]
+    public string? ActivePreset { get; set; }
 }
 
 public record TraderPresetSaveRequest

@@ -1794,6 +1794,7 @@ public class GameValuesService(
                 config.StimBuffOverrides = new Dictionary<string, StimBuffOverride>(preset.StimBuffOverrides);
 
             ApplyAll();
+            configService.GetConfig().ActiveGameValuesPreset = name;
             configService.SaveConfig();
             sw.Stop();
 
@@ -1816,9 +1817,19 @@ public class GameValuesService(
                 return new GameValuesApplyResult { Success = false, Message = "Cannot delete built-in preset" };
 
             var removed = configService.GetConfig().GameValues.Presets.Remove(name);
+            if (configService.GetConfig().ActiveGameValuesPreset == name)
+                configService.GetConfig().ActiveGameValuesPreset = null;
             if (removed) configService.SaveConfig();
             return new GameValuesApplyResult { Success = removed, Message = removed ? $"Preset '{name}' deleted" : "Preset not found" };
         }
+    }
+
+    public string? GetActivePreset() => configService.GetConfig().ActiveGameValuesPreset;
+
+    public void ClearActivePreset()
+    {
+        configService.GetConfig().ActiveGameValuesPreset = null;
+        configService.SaveConfig();
     }
 
     public GameValuesPresetEntry? ExportPreset(string name)

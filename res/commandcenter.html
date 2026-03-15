@@ -13765,6 +13765,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   window.questRefreshPresets = function() {
     api('quests/presets').then(function(r) {
       questRenderPresetList(r.presets || []);
+      var sel = document.getElementById('questPresetSelect');
+      if (sel && r.activePreset) sel.value = r.activePreset;
     });
   };
 
@@ -15195,7 +15197,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         opt.textContent = p.name + (p.description ? ' — ' + p.description : '');
         sel.appendChild(opt);
       });
-      if (prev) sel.value = prev;
+      sel.value = prev || data.activePreset || '';
     }).catch(function() {});
   }
 
@@ -15859,7 +15861,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         opt.textContent = p.name + (p.description ? ' — ' + p.description : '');
         sel.appendChild(opt);
       });
-      if (prev) sel.value = prev;
+      sel.value = prev || data.activePreset || '';
     }).catch(function() {});
   }
 
@@ -19196,6 +19198,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         });
         sel.innerHTML += '</optgroup>';
       }
+      if (r.activePreset) sel.value = r.activePreset;
     });
   }
 

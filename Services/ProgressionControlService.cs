@@ -151,11 +151,16 @@ public class ProgressionControlService(
 
     public void Initialize()
     {
+        // Restore persisted active preset name
+        _activePreset = configService.GetConfig().ActiveProgressionPreset;
+
         var config = configService.GetConfig().Progression;
         if (HasAnyOverrides(config))
         {
             var result = ApplyConfig();
             logger.Info($"[ZSlayerHQ] Progression: Applied startup overrides — {result.SettingsModified} settings in {result.ApplyTimeMs}ms");
+            if (_activePreset != null)
+                logger.Info($"[ZSlayerHQ] Progression: Active preset restored — '{_activePreset}'");
         }
         else
         {
@@ -1061,8 +1066,9 @@ public class ProgressionControlService(
         {
             var config = configService.GetConfig();
             config.Progression = new ProgressionConfig();
-            configService.SaveConfig();
             _activePreset = null;
+            config.ActiveProgressionPreset = null;
+            configService.SaveConfig();
 
             var result = ApplyConfig();
             result.Message = "All progression settings reset to defaults";
@@ -1167,8 +1173,9 @@ public class ProgressionControlService(
         {
             config.Progression = new ProgressionConfig();
             preset.Apply(config.Progression);
-            configService.SaveConfig();
             _activePreset = presetName;
+            config.ActiveProgressionPreset = _activePreset;
+            configService.SaveConfig();
             return ApplyConfig();
         }
 
@@ -1177,8 +1184,9 @@ public class ProgressionControlService(
         {
             config.Progression = System.Text.Json.JsonSerializer.Deserialize<ProgressionConfig>(
                 System.Text.Json.JsonSerializer.Serialize(custom.Config))!;
-            configService.SaveConfig();
             _activePreset = presetName;
+            config.ActiveProgressionPreset = _activePreset;
+            configService.SaveConfig();
             return ApplyConfig();
         }
 
@@ -1212,9 +1220,13 @@ public class ProgressionControlService(
         if (!config.ProgressionPresets.ContainsKey(name)) return false;
 
         config.ProgressionPresets.Remove(name);
-        configService.SaveConfig();
 
-        if (_activePreset == name) _activePreset = null;
+        if (_activePreset == name)
+        {
+            _activePreset = null;
+            config.ActiveProgressionPreset = null;
+        }
+        configService.SaveConfig();
         return true;
     }
 
@@ -1237,6 +1249,13 @@ public class ProgressionControlService(
     public void ClearActivePreset()
     {
         _activePreset = null;
+        PersistActivePreset();
+    }
+
+    private void PersistActivePreset()
+    {
+        configService.GetConfig().ActiveProgressionPreset = _activePreset;
+        configService.SaveConfig();
     }
 
     private static int CountModifiedSettings(ProgressionConfig config)

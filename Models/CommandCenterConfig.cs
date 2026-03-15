@@ -37,6 +37,21 @@ public record CommandCenterConfig
     [JsonPropertyName("progressionPresets")]
     public Dictionary<string, ProgressionPresetEntry> ProgressionPresets { get; set; } = new();
 
+    [JsonPropertyName("activeProgressionPreset")]
+    public string? ActiveProgressionPreset { get; set; }
+
+    [JsonPropertyName("activeTraderPreset")]
+    public string? ActiveTraderPreset { get; set; }
+
+    [JsonPropertyName("activeFleaPreset")]
+    public string? ActiveFleaPreset { get; set; }
+
+    [JsonPropertyName("activeQuestPreset")]
+    public string? ActiveQuestPreset { get; set; }
+
+    [JsonPropertyName("activeGameValuesPreset")]
+    public string? ActiveGameValuesPreset { get; set; }
+
     [JsonPropertyName("backup")]
     public CcBackupConfig Backup { get; set; } = new();
 

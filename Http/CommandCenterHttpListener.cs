@@ -2047,6 +2047,7 @@ public class CommandCenterHttpListener(
                     await WriteJson(context, 404, new { error = "Preset not found" });
                     return;
                 }
+                fleaPriceService.SetActivePreset(body.Name.Trim());
                 await WriteJson(context, 200, preset);
                 break;
             }
@@ -2182,6 +2183,7 @@ public class CommandCenterHttpListener(
                     return;
                 }
                 var result = traderApplyService.UpdateTraderOverride(body);
+                traderApplyService.ClearActivePreset();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     $"Traders: updated override for {body.TraderId}");
                 await WriteJson(context, 200, result);
@@ -2950,6 +2952,7 @@ public class CommandCenterHttpListener(
                 }
                 var config = configService.GetConfig();
                 config.Progression = body;
+                config.ActiveProgressionPreset = null;
                 configService.SaveConfig();
                 progressionControlService.ClearActivePreset();
                 var result = progressionControlService.ApplyConfig();
@@ -3255,7 +3258,7 @@ public class CommandCenterHttpListener(
             case "presets" when method == "GET":
             {
                 var presets = gameValuesService.GetPresets();
-                await WriteJson(context, 200, new { presets });
+                await WriteJson(context, 200, new { presets, activePreset = gameValuesService.GetActivePreset() });
                 break;
             }
             case "presets/save" when method == "POST":

@@ -435,7 +435,7 @@ public class FleaPriceService(
             }
         }
         presets.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
-        return new FleaPresetListResponse { Presets = presets };
+        return new FleaPresetListResponse { Presets = presets, ActivePreset = configService.GetConfig().ActiveFleaPreset };
     }
 
     public FleaPreset SavePreset(string name, string description)
@@ -472,8 +472,19 @@ public class FleaPriceService(
         if (!File.Exists(filePath))
             return false;
         File.Delete(filePath);
+        if (configService.GetConfig().ActiveFleaPreset == name)
+        {
+            configService.GetConfig().ActiveFleaPreset = null;
+            configService.SaveConfig();
+        }
         logger.Info($"ZSlayerCC Flea: Deleted preset '{name}'");
         return true;
+    }
+
+    public void SetActivePreset(string? name)
+    {
+        configService.GetConfig().ActiveFleaPreset = name;
+        configService.SaveConfig();
     }
 
     public FleaPreset ImportPreset(FleaPreset preset)

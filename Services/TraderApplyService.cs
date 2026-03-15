@@ -624,6 +624,8 @@ public class TraderApplyService(
         // TraderDisplayOverrides left untouched
     }
 
+    public string? GetActivePreset() => configService.GetConfig().ActiveTraderPreset;
+
     public TraderPresetListResponse ListTraderPresets()
     {
         var dir = GetPresetsDir();
@@ -650,7 +652,7 @@ public class TraderApplyService(
             }
         }
         presets.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
-        return new TraderPresetListResponse { Presets = presets };
+        return new TraderPresetListResponse { Presets = presets, ActivePreset = configService.GetConfig().ActiveTraderPreset };
     }
 
     public TraderPreset SaveTraderPreset(string name, string description)
@@ -689,6 +691,7 @@ public class TraderApplyService(
                 return new TraderApplyResult { Success = false, Error = "Preset not found" };
 
             ApplyGameplayConfig(preset.Config);
+            configService.GetConfig().ActiveTraderPreset = name;
             configService.SaveConfig();
             return ApplyConfig();
         }
@@ -701,8 +704,19 @@ public class TraderApplyService(
         if (!File.Exists(filePath))
             return false;
         File.Delete(filePath);
+        if (configService.GetConfig().ActiveTraderPreset == name)
+        {
+            configService.GetConfig().ActiveTraderPreset = null;
+            configService.SaveConfig();
+        }
         logger.Info($"ZSlayerCC Traders: Deleted preset '{name}'");
         return true;
+    }
+
+    public void ClearActivePreset()
+    {
+        configService.GetConfig().ActiveTraderPreset = null;
+        configService.SaveConfig();
     }
 
     public TraderPreset UploadTraderPreset(string name, string presetJson)

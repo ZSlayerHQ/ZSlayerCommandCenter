@@ -311,4 +311,7 @@ public record FleaPresetListResponse
 {
     [JsonPropertyName("presets")]
     public List<FleaPresetSummary> Presets { get; set; } = [];
+
+    [JsonPropertyName("activePreset")]
+    public string? ActivePreset { get; set; }
 }
