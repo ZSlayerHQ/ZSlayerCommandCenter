@@ -27,20 +27,23 @@ public class TraderApplyService(
     private bool _initialized;
     private long? _lastApplyTimeMs;
 
-    // Event overlay factor (set by EventService, multiplicative on buy prices)
+    // Event overlay factors (set by EventService, multiplicative on buy prices)
     private double _eventPriceFactor = 1.0;
+    private Dictionary<string, double> _perTraderEventFactors = new();
 
     // Snapshot of original restock timers (traderId → min, max)
     private readonly Dictionary<string, (int min, int max)> _originalRestockTimers = new();
 
     /// <summary>
     /// Set event price factor (called by EventService). Triggers re-apply.
+    /// Per-trader factors override the global factor for specific traders.
     /// </summary>
-    public void SetEventPriceFactor(double factor)
+    public void SetEventPriceFactor(double factor, Dictionary<string, double>? perTraderFactors = null)
     {
         lock (_lock)
         {
             _eventPriceFactor = factor;
+            _perTraderEventFactors = perTraderFactors ?? new();
             if (_initialized) ApplyConfig();
         }
     }
@@ -115,7 +118,8 @@ public class TraderApplyService(
                 var tradersAffected = RestoreAllTraders();
 
                 // Step 2: Apply buy price multipliers (with event overlay)
-                var itemsModified = priceService.ApplyBuyMultipliers(config, _eventPriceFactor);
+                var itemsModified = priceService.ApplyBuyMultipliers(config, _eventPriceFactor,
+                    _perTraderEventFactors.Count > 0 ? _perTraderEventFactors : null);
 
                 // Step 3: Apply sell multipliers (modify buy_price_coef)
                 priceService.ApplySellMultipliers(config);
@@ -717,6 +721,12 @@ public class TraderApplyService(
     {
         configService.GetConfig().ActiveTraderPreset = null;
         configService.SaveConfig();
+    }
+
+    public List<string> GetAllTraderIds()
+    {
+        var traders = discoveryService.GetDiscoveredTraders(configService.GetConfig().Traders);
+        return traders.Select(t => t.Id).ToList();
     }
 
     public TraderPreset UploadTraderPreset(string name, string presetJson)

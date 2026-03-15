@@ -22,6 +22,9 @@ public class ProgressionControlService(
     // Event overlay factors (set by EventService, multiplicative on top of config)
     private double _eventXpFactor = 1.0;
     private double _eventLootFactor = 1.0;
+    private double _eventSkillSpeedFactor = 1.0;
+    private double _eventInsuranceReturnTimeFactor = 1.0;
+    private double _eventInsuranceReturnChanceFactor = 1.0;
 
     // ── XP snapshots ──
     private double _snapKillVictimLevelExp;
@@ -139,12 +142,15 @@ public class ProgressionControlService(
     /// <summary>
     /// Set event overlay factors (called by EventService). Triggers re-apply.
     /// </summary>
-    public void SetEventFactors(double xpFactor, double lootFactor)
+    public void SetEventFactors(EventFactors factors)
     {
         lock (_lock)
         {
-            _eventXpFactor = xpFactor;
-            _eventLootFactor = lootFactor;
+            _eventXpFactor = factors.XpFactor;
+            _eventLootFactor = factors.LootFactor;
+            _eventSkillSpeedFactor = factors.SkillSpeedFactor;
+            _eventInsuranceReturnTimeFactor = factors.InsuranceReturnTimeFactor;
+            _eventInsuranceReturnChanceFactor = factors.InsuranceReturnChanceFactor;
             if (_snapshotTaken) ApplyConfig();
         }
     }
@@ -503,8 +509,8 @@ public class ProgressionControlService(
         var cfg = globals.Configuration;
         int count = 0;
 
-        // Global skill progress rate (event factor applied to skill speed too)
-        var skillSpeedMult = skills.GlobalSkillSpeedMultiplier * _eventXpFactor;
+        // Global skill progress rate (event factors applied to skill speed)
+        var skillSpeedMult = skills.GlobalSkillSpeedMultiplier * _eventXpFactor * _eventSkillSpeedFactor;
         cfg.SkillsSettings.SkillProgressRate = _snapSkillProgressRate * skillSpeedMult;
         cfg.SkillsSettings.WeaponSkillProgressRate = _snapWeaponSkillProgressRate * skillSpeedMult;
         if (Math.Abs(skills.GlobalSkillSpeedMultiplier - 1.0) > 0.001) count += 2;
@@ -657,24 +663,28 @@ public class ProgressionControlService(
         var insuranceConfig = configServer.GetConfig<InsuranceConfig>();
         int count = 0;
 
+        // Combined return time factor (config * event)
+        var eventTimeFactor = _eventInsuranceReturnTimeFactor;
+
         // Return time
         if (insurance.ReturnTimeOverrideHours.HasValue)
         {
-            var overrideSec = insurance.ReturnTimeOverrideHours.Value * 3600.0;
+            var overrideSec = insurance.ReturnTimeOverrideHours.Value * 3600.0 * eventTimeFactor;
             insuranceConfig.ReturnTimeOverrideSeconds = overrideSec;
             insuranceConfig.StorageTimeOverrideSeconds = overrideSec * 2;
             count += 2;
         }
         else
         {
-            // Restore + apply multiplier
+            // Restore + apply multiplier + event factor
+            var timeMult = insurance.ReturnTimeMultiplier * eventTimeFactor;
             insuranceConfig.ReturnTimeOverrideSeconds = _snapInsuranceReturnTimeOverride;
             insuranceConfig.StorageTimeOverrideSeconds = _snapInsuranceStorageTimeOverride;
 
-            if (Math.Abs(insurance.ReturnTimeMultiplier - 1.0) > 0.001)
+            if (Math.Abs(timeMult - 1.0) > 0.001)
             {
-                globals.Configuration.Insurance.MaxStorageTimeInHour = _snapInsuranceMaxStorageTime * insurance.ReturnTimeMultiplier;
-                globals.Configuration.Insurance.CoefOfSendingMessageTime = _snapInsuranceCoefSendingMsg * insurance.ReturnTimeMultiplier;
+                globals.Configuration.Insurance.MaxStorageTimeInHour = _snapInsuranceMaxStorageTime * timeMult;
+                globals.Configuration.Insurance.CoefOfSendingMessageTime = _snapInsuranceCoefSendingMsg * timeMult;
                 count += 2;
             }
             else
@@ -684,12 +694,15 @@ public class ProgressionControlService(
             }
         }
 
+        // Combined return chance factor (config * event)
+        var chanceMultCombined = insurance.ReturnChanceMultiplier * _eventInsuranceReturnChanceFactor;
+
         // Return chance
-        if (Math.Abs(insurance.ReturnChanceMultiplier - 1.0) > 0.001)
+        if (Math.Abs(chanceMultCombined - 1.0) > 0.001)
         {
             foreach (var (traderId, origChance) in _snapInsuranceReturnChancePercent)
             {
-                var newChance = Math.Min(100.0, origChance * insurance.ReturnChanceMultiplier);
+                var newChance = Math.Min(100.0, origChance * chanceMultCombined);
                 insuranceConfig.ReturnChancePercent[traderId] = newChance;
                 count++;
             }

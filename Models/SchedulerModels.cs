@@ -14,7 +14,27 @@ public enum EventType
     LootBoost,
     MapLootBoost,
     MapBossRush,
-    MapOfTheDay
+    MapOfTheDay,
+    InsuranceExpress,
+    SkillBoost,
+    AirdropFrenzy,
+    HardcoreMode
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum StackingMode
+{
+    Multiply,
+    Override,
+    Max
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum WeekdayFilter
+{
+    None,
+    WeekdaysOnly,
+    WeekendsOnly
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -82,6 +102,9 @@ public record ServerEvent
     [JsonPropertyName("targetIds")]
     public List<string> TargetIds { get; set; } = [];
 
+    [JsonPropertyName("cycleRandomTarget")]
+    public bool CycleRandomTarget { get; set; }
+
     // Notifications
     [JsonPropertyName("broadcastOnStart")]
     public bool BroadcastOnStart { get; set; } = true;
@@ -94,6 +117,43 @@ public record ServerEvent
 
     [JsonPropertyName("customEndMessage")]
     public string? CustomEndMessage { get; set; }
+
+    // Advanced options
+    [JsonPropertyName("stackingMode")]
+    public StackingMode StackingMode { get; set; } = StackingMode.Multiply;
+
+    [JsonPropertyName("weekdayFilter")]
+    public WeekdayFilter WeekdayFilter { get; set; } = WeekdayFilter.None;
+
+    [JsonPropertyName("minPlayersOnline")]
+    public int? MinPlayersOnline { get; set; }
+
+    [JsonPropertyName("maxActivations")]
+    public int? MaxActivations { get; set; }
+
+    [JsonPropertyName("activationCount")]
+    public int ActivationCount { get; set; }
+
+    [JsonPropertyName("warmupMinutes")]
+    public int WarmupMinutes { get; set; }
+
+    [JsonPropertyName("cooldownMinutes")]
+    public int CooldownMinutes { get; set; }
+
+    [JsonPropertyName("multiplierMin")]
+    public double? MultiplierMin { get; set; }
+
+    [JsonPropertyName("multiplierMax")]
+    public double? MultiplierMax { get; set; }
+
+    [JsonPropertyName("resolvedMultiplier")]
+    public double? ResolvedMultiplier { get; set; }
+
+    [JsonPropertyName("nextEventId")]
+    public string? NextEventId { get; set; }
+
+    [JsonPropertyName("excludeTargetIds")]
+    public List<string> ExcludeTargetIds { get; set; } = [];
 
     // Metadata
     [JsonPropertyName("createdAt")]
@@ -153,6 +213,61 @@ public record SchedulerState
 
     [JsonPropertyName("tasks")]
     public List<ScheduledTask> Tasks { get; set; } = [];
+
+    [JsonPropertyName("history")]
+    public List<EventHistoryEntry> History { get; set; } = [];
+
+    [JsonPropertyName("savedTemplates")]
+    public List<SavedEventTemplate> SavedTemplates { get; set; } = [];
+}
+
+public record EventFactors
+{
+    public double XpFactor { get; set; } = 1.0;
+    public double LootFactor { get; set; } = 1.0;
+    public double SkillSpeedFactor { get; set; } = 1.0;
+    public double InsuranceReturnTimeFactor { get; set; } = 1.0;
+    public double InsuranceReturnChanceFactor { get; set; } = 1.0;
+    public double AirdropChanceFactor { get; set; } = 1.0;
+}
+
+public record EventHistoryEntry
+{
+    [JsonPropertyName("eventId")]
+    public string EventId { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("type")]
+    public EventType Type { get; set; }
+
+    [JsonPropertyName("multiplier")]
+    public double Multiplier { get; set; }
+
+    [JsonPropertyName("startedAt")]
+    public DateTime StartedAt { get; set; }
+
+    [JsonPropertyName("endedAt")]
+    public DateTime EndedAt { get; set; }
+
+    [JsonPropertyName("triggerReason")]
+    public string TriggerReason { get; set; } = "";
+}
+
+public record SavedEventTemplate
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = Guid.NewGuid().ToString("N")[..12];
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("config")]
+    public CreateEventRequest Config { get; set; } = new();
+
+    [JsonPropertyName("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -172,6 +287,12 @@ public record SchedulerOverviewResponse
 
     [JsonPropertyName("templates")]
     public List<EventTemplateDto> Templates { get; set; } = [];
+
+    [JsonPropertyName("savedTemplates")]
+    public List<SavedEventTemplate> SavedTemplates { get; set; } = [];
+
+    [JsonPropertyName("recentHistory")]
+    public List<EventHistoryEntry> RecentHistory { get; set; } = [];
 }
 
 public record EventTemplateDto
@@ -199,6 +320,30 @@ public record EventTemplateDto
 
     [JsonPropertyName("multiplierLabel")]
     public string MultiplierLabel { get; set; } = "";
+
+    [JsonPropertyName("supportsCycleRandom")]
+    public bool SupportsCycleRandom { get; set; }
+
+    [JsonPropertyName("supportsExclusion")]
+    public bool SupportsExclusion { get; set; }
+
+    [JsonPropertyName("isInverse")]
+    public bool IsInverse { get; set; }
+}
+
+public record QuickCreateRequest
+{
+    [JsonPropertyName("preset")]
+    public string Preset { get; set; } = "";
+}
+
+public record SaveTemplateRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("config")]
+    public CreateEventRequest Config { get; set; } = new();
 }
 
 public record CreateEventRequest
@@ -227,6 +372,9 @@ public record CreateEventRequest
     [JsonPropertyName("targetIds")]
     public List<string> TargetIds { get; set; } = [];
 
+    [JsonPropertyName("cycleRandomTarget")]
+    public bool CycleRandomTarget { get; set; }
+
     [JsonPropertyName("broadcastOnStart")]
     public bool BroadcastOnStart { get; set; } = true;
 
@@ -241,6 +389,37 @@ public record CreateEventRequest
 
     [JsonPropertyName("activateNow")]
     public bool ActivateNow { get; set; }
+
+    // Advanced options
+    [JsonPropertyName("stackingMode")]
+    public StackingMode StackingMode { get; set; } = StackingMode.Multiply;
+
+    [JsonPropertyName("weekdayFilter")]
+    public WeekdayFilter WeekdayFilter { get; set; } = WeekdayFilter.None;
+
+    [JsonPropertyName("minPlayersOnline")]
+    public int? MinPlayersOnline { get; set; }
+
+    [JsonPropertyName("maxActivations")]
+    public int? MaxActivations { get; set; }
+
+    [JsonPropertyName("warmupMinutes")]
+    public int WarmupMinutes { get; set; }
+
+    [JsonPropertyName("cooldownMinutes")]
+    public int CooldownMinutes { get; set; }
+
+    [JsonPropertyName("multiplierMin")]
+    public double? MultiplierMin { get; set; }
+
+    [JsonPropertyName("multiplierMax")]
+    public double? MultiplierMax { get; set; }
+
+    [JsonPropertyName("nextEventId")]
+    public string? NextEventId { get; set; }
+
+    [JsonPropertyName("excludeTargetIds")]
+    public List<string> ExcludeTargetIds { get; set; } = [];
 }
 
 public record CreateTaskRequest

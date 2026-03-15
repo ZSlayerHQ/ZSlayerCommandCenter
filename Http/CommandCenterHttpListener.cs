@@ -3934,6 +3934,62 @@ public class CommandCenterHttpListener(
                 break;
             }
 
+            // GET /scheduler/history — paginated event history
+            case "scheduler/history" when method == "GET":
+            {
+                var query = context.Request.Query;
+                var limit = int.TryParse(query["limit"].FirstOrDefault(), out var l) ? l : 50;
+                EventType? typeFilter = null;
+                if (Enum.TryParse<EventType>(query["type"].FirstOrDefault(), true, out var tf)) typeFilter = tf;
+                await WriteJson(context, 200, new { history = eventService.GetHistory(limit, typeFilter) });
+                break;
+            }
+
+            // GET /scheduler/templates — list saved templates
+            case "scheduler/templates" when method == "GET":
+                await WriteJson(context, 200, new { templates = eventService.GetSavedTemplates() });
+                break;
+
+            // POST /scheduler/templates — save a new template
+            case "scheduler/templates" when method == "POST":
+            {
+                var body = await ReadBody<SaveTemplateRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Name and config required" }); break;
+                }
+                var template = eventService.SaveTemplate(body.Name, body.Config);
+                await WriteJson(context, 200, template);
+                break;
+            }
+
+            // POST /scheduler/quick-create — instant event from preset
+            case "scheduler/quick-create" when method == "POST":
+            {
+                var body = await ReadBody<QuickCreateRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Preset))
+                {
+                    await WriteJson(context, 400, new { error = "Preset name required", presets = EventService.GetQuickPresetNames() }); break;
+                }
+                var evt = eventService.QuickCreate(body.Preset, headerSessionId);
+                if (evt == null)
+                {
+                    await WriteJson(context, 400, new { error = $"Unknown preset: {body.Preset}", presets = EventService.GetQuickPresetNames() }); break;
+                }
+                await WriteJson(context, 200, evt);
+                break;
+            }
+
+            // GET /scheduler/calendar — timeline data
+            case "scheduler/calendar" when method == "GET":
+            {
+                var query = context.Request.Query;
+                var from = DateTime.TryParse(query["from"].FirstOrDefault(), out var f) ? f.ToUniversalTime() : DateTime.UtcNow.AddDays(-3);
+                var to = DateTime.TryParse(query["to"].FirstOrDefault(), out var t) ? t.ToUniversalTime() : DateTime.UtcNow.AddDays(4);
+                await WriteJson(context, 200, eventService.GetCalendar(from, to));
+                break;
+            }
+
             default:
             {
                 // Parameterized event routes: scheduler/event/{id}/{action}
@@ -3987,6 +4043,28 @@ public class CommandCenterHttpListener(
                                 await WriteJson(context, 404, new { error = "Unknown event action" });
                                 break;
                         }
+                        break;
+                    }
+                }
+
+                // Parameterized template routes: scheduler/templates/{id} or scheduler/templates/{id}/create
+                if (path.StartsWith("scheduler/templates/"))
+                {
+                    var parts = path["scheduler/templates/".Length..].Split('/');
+                    var templateId = parts[0];
+
+                    if (parts.Length == 1 && method == "DELETE")
+                    {
+                        var deleted = eventService.DeleteTemplate(templateId);
+                        await WriteJson(context, deleted ? 200 : 404, new { success = deleted });
+                        break;
+                    }
+
+                    if (parts.Length == 2 && parts[1] == "create" && method == "POST")
+                    {
+                        var evt = eventService.CreateFromTemplate(templateId, headerSessionId);
+                        if (evt == null) { await WriteJson(context, 404, new { error = "Template not found" }); break; }
+                        await WriteJson(context, 200, evt);
                         break;
                     }
                 }

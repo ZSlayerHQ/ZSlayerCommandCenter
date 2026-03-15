@@ -1257,6 +1257,135 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 }
 
 /* ══════════════════════════════════════════════════════════
+   DASHBOARD — ACTIVE EVENTS BANNER
+   ══════════════════════════════════════════════════════════ */
+.dash-events-banner {
+  position: relative; overflow: hidden; border-radius: 12px; margin-bottom: 16px;
+  background: linear-gradient(135deg, #0a0a12 0%, #111128 50%, #0a0a12 100%);
+  border: 1px solid rgba(200,170,110,0.15);
+  perspective: 800px;
+}
+.dash-events-banner::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 600px 300px at 20% 50%, rgba(200,170,110,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 200px at 80% 30%, rgba(76,175,80,0.04) 0%, transparent 70%);
+}
+.dash-events-banner::after {
+  content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px, rgba(200,170,110,0.015) 2px, rgba(200,170,110,0.015) 4px
+  );
+}
+.dash-events-header {
+  position: relative; z-index: 1; padding: 16px 20px 6px;
+  display: flex; align-items: center; gap: 10px;
+}
+.dash-events-header h3 {
+  margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+  font-weight: 700; color: var(--accent);
+}
+.dash-events-pulse {
+  width: 8px; height: 8px; border-radius: 50%; background: #4ade80; flex-shrink: 0;
+  box-shadow: 0 0 8px #4ade80, 0 0 16px rgba(74,222,128,0.3);
+  animation: dashEvtPulse 2s ease-in-out infinite;
+}
+@keyframes dashEvtPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+.dash-events-count {
+  font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);
+  margin-left: auto; letter-spacing: 0.5px;
+}
+.dash-events-grid {
+  position: relative; z-index: 1; padding: 8px 16px 16px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;
+}
+.dash-evt-card {
+  padding: 16px 18px; border-radius: 10px; position: relative; overflow: hidden;
+  transform: rotateY(0deg) rotateX(0deg);
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s ease;
+  transform-style: preserve-3d;
+}
+.dash-evt-card:hover {
+  transform: rotateY(-2deg) rotateX(1deg) translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 20px rgba(200,170,110,0.08);
+}
+.dash-evt-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: 10px; z-index: 0;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.dash-evt-card.evt-xp {
+  background: linear-gradient(145deg, rgba(200,170,110,0.08) 0%, rgba(200,170,110,0.02) 100%);
+}
+.dash-evt-card.evt-xp::before { border-color: rgba(200,170,110,0.15); }
+.dash-evt-card.evt-sale {
+  background: linear-gradient(145deg, rgba(100,160,220,0.08) 0%, rgba(100,160,220,0.02) 100%);
+}
+.dash-evt-card.evt-sale::before { border-color: rgba(100,160,220,0.15); }
+.dash-evt-card.evt-loot {
+  background: linear-gradient(145deg, rgba(76,175,80,0.08) 0%, rgba(76,175,80,0.02) 100%);
+}
+.dash-evt-card.evt-loot::before { border-color: rgba(76,175,80,0.15); }
+.dash-evt-card.evt-map {
+  background: linear-gradient(145deg, rgba(255,152,0,0.08) 0%, rgba(255,152,0,0.02) 100%);
+}
+.dash-evt-card.evt-map::before { border-color: rgba(255,152,0,0.15); }
+.dash-evt-card.evt-boss {
+  background: linear-gradient(145deg, rgba(244,67,54,0.08) 0%, rgba(244,67,54,0.02) 100%);
+}
+.dash-evt-card.evt-boss::before { border-color: rgba(244,67,54,0.15); }
+.dash-evt-icon {
+  position: absolute; top: 12px; right: 14px; opacity: 0.1; z-index: 0;
+  font-size: 44px; line-height: 1; pointer-events: none;
+}
+.dash-evt-name {
+  position: relative; z-index: 1;
+  font-size: 12px; font-weight: 600; color: var(--text-muted); margin: 0 0 2px;
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+.dash-evt-mult {
+  position: relative; z-index: 1;
+  font-size: 26px; font-weight: 800; line-height: 1.1; margin: 0 0 8px;
+  font-family: var(--font-mono); letter-spacing: -0.5px;
+  background: linear-gradient(180deg, #fff 30%, var(--accent) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.dash-evt-targets {
+  position: relative; z-index: 1; margin: 0 0 8px;
+  display: flex; gap: 4px; flex-wrap: wrap; align-items: center;
+}
+.dash-evt-target-pill {
+  display: inline-block; padding: 2px 8px; border-radius: 8px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.3px; line-height: 1.4;
+  background: rgba(255,255,255,0.06); color: var(--text-dim);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.dash-evt-timer {
+  position: relative; z-index: 1;
+  font-size: 11px; font-family: var(--font-mono); color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px;
+}
+.dash-evt-timer span { white-space: nowrap; flex-shrink: 0; }
+.dash-evt-timer-bar {
+  flex: 1; height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden;
+}
+.dash-evt-timer-fill {
+  height: 100%; border-radius: 2px; transition: width 1s linear;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+}
+.dash-evt-particle {
+  position: absolute; border-radius: 50%; pointer-events: none; z-index: 0;
+  animation: dashEvtFloat 6s ease-in-out infinite;
+}
+@keyframes dashEvtFloat {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+  50% { transform: translateY(-20px) scale(1.2); opacity: 0.6; }
+}
+
+/* ══════════════════════════════════════════════════════════
    DASHBOARD
    ══════════════════════════════════════════════════════════ */
 .dash-grid {
@@ -5114,6 +5243,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   <!-- ═══════ DASHBOARD ═══════ -->
   <div class="main-tab-panel active" id="main-dashboard">
 
+    <!-- Active Events Banner (hidden when no events) -->
+    <div id="dashEventsBanner" class="dash-events-banner" style="display:none"></div>
+
     <!-- Top Stats Grid -->
     <div class="dash-grid">
 
@@ -7126,7 +7258,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     </div>
 
     <!-- Toolbar -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-sm" onclick="window.showEventCreateModal()" style="padding:6px 14px;font-size:12px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Event
       </button>
@@ -7134,6 +7266,20 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>New Task
       </button>
       <button class="btn btn-sm" onclick="window.loadScheduler()" style="padding:6px 14px;font-size:12px">Refresh</button>
+      <span style="margin-left:auto;display:flex;gap:4px">
+        <button class="btn btn-sm evtViewBtn active" data-view="list" onclick="window.evtSetView('list')" style="font-size:10px;padding:3px 8px">List</button>
+        <button class="btn btn-sm evtViewBtn" data-view="timeline" onclick="window.evtSetView('timeline')" style="font-size:10px;padding:3px 8px">Timeline</button>
+      </span>
+    </div>
+
+    <!-- Quick Create -->
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-right:4px">Quick:</span>
+      <button class="btn btn-sm" onclick="window.evtQuickCreate('doubleXp1h')" style="font-size:10px;padding:3px 10px;border-color:var(--accent-dim)">2x XP 1hr</button>
+      <button class="btn btn-sm" onclick="window.evtQuickCreate('flashSale30m')" style="font-size:10px;padding:3px 10px;border-color:var(--accent-dim)">Flash Sale 30m</button>
+      <button class="btn btn-sm" onclick="window.evtQuickCreate('lootBoost2h')" style="font-size:10px;padding:3px 10px;border-color:var(--accent-dim)">Loot Boost 2hr</button>
+      <button class="btn btn-sm" onclick="window.evtQuickCreate('weekendBoss')" style="font-size:10px;padding:3px 10px;border-color:var(--accent-dim)">Weekend Boss</button>
+      <span style="margin-left:8px" id="evtSavedTemplatesDropdown"></span>
     </div>
 
     <!-- Events List -->
@@ -7153,10 +7299,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             <th>Multiplier</th>
             <th>Schedule</th>
             <th>Duration</th>
-            <th style="width:140px">Actions</th>
+            <th style="width:60px">Runs</th>
+            <th style="width:150px">Actions</th>
           </tr></thead>
           <tbody id="evtEventsBody">
-            <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">Loading...</td></tr>
+            <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">Loading...</td></tr>
           </tbody>
         </table>
       </div>
@@ -7188,6 +7335,48 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       </div>
     </div>
 
+    <!-- Calendar Timeline (hidden by default, shown when Timeline view selected) -->
+    <div id="evtCalendarSection" style="display:none;margin-bottom:16px">
+      <div class="dash-widget">
+        <div class="dash-widget-header">
+          <span class="dash-widget-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            7-Day Timeline
+          </span>
+        </div>
+        <div class="dash-widget-body" style="padding:12px;overflow-x:auto">
+          <div id="evtCalendarTimeline" style="position:relative;min-height:80px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event History -->
+    <div class="dash-widget" style="margin-bottom:16px">
+      <div class="dash-widget-header" style="display:flex;align-items:center;justify-content:space-between">
+        <span class="dash-widget-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          Event History
+        </span>
+        <input type="text" id="evtHistorySearch" class="cc-input" placeholder="Search history..." style="width:180px;font-size:11px;padding:3px 8px" oninput="window.evtFilterHistory()">
+      </div>
+      <div class="dash-widget-body" style="padding:0">
+        <table class="data-table" style="width:100%">
+          <thead><tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Multiplier</th>
+            <th>Started</th>
+            <th>Ended</th>
+            <th>Duration</th>
+            <th>Trigger</th>
+          </tr></thead>
+          <tbody id="evtHistoryBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:16px;font-size:11px">No history yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Create Event Modal -->
     <div id="evtCreateModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px)">
       <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;max-width:95vw;max-height:85vh;overflow-y:auto;background:var(--bg-panel);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:24px">
@@ -7214,6 +7403,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <input type="number" id="evtMultiplier" class="cc-input" value="2.0" step="0.1" min="0.1" max="100" style="width:120px">
         </div>
 
+        <!-- Targets (shown for map/trader events) -->
+        <div id="evtTargetSection" style="display:none;margin-bottom:14px">
+          <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);display:block;margin-bottom:6px" id="evtTargetLabel">Targets</label>
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px" id="evtTargetHint">Select targets (none = all)</div>
+          <div id="evtTargetCheckboxes" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+
+        <!-- Cycle Random (shown for TraderSale) -->
+        <div id="evtCycleSection" style="display:none;margin-bottom:14px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer">
+            <input type="checkbox" id="evtCycleRandom">
+            <span>Cycle Random Trader</span>
+          </label>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;margin-left:24px">Each time the event recurs, a different random trader gets the discount</div>
+        </div>
+
         <!-- Duration -->
         <div style="margin-bottom:14px">
           <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);display:block;margin-bottom:6px">Duration (minutes)</label>
@@ -7229,10 +7434,48 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <div style="display:flex;gap:8px;margin-bottom:8px">
             <button class="btn btn-sm evtSchedBtn active" data-sched="now" onclick="window.evtSetScheduleMode('now')" style="font-size:11px;padding:4px 10px">Start Now</button>
             <button class="btn btn-sm evtSchedBtn" data-sched="datetime" onclick="window.evtSetScheduleMode('datetime')" style="font-size:11px;padding:4px 10px">Date/Time</button>
+            <button class="btn btn-sm evtSchedBtn" data-sched="recurring" onclick="window.evtSetScheduleMode('recurring')" style="font-size:11px;padding:4px 10px">Recurring</button>
             <button class="btn btn-sm evtSchedBtn" data-sched="cron" onclick="window.evtSetScheduleMode('cron')" style="font-size:11px;padding:4px 10px">Cron</button>
           </div>
           <div id="evtSchedDatetime" style="display:none">
             <input type="datetime-local" id="evtStartTime" class="cc-input" style="width:220px">
+          </div>
+          <div id="evtSchedRecurring" style="display:none">
+            <select id="evtRecurFreq" class="cc-input" style="width:220px;margin-bottom:8px" onchange="window.evtRecurFreqChanged()">
+              <option value="hours">Every N hours</option>
+              <option value="daily">Daily at time</option>
+              <option value="weekly">Weekly on day at time</option>
+            </select>
+            <div id="evtRecurHoursRow">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:11px;color:var(--text-dim)">Every</span>
+                <input type="number" id="evtRecurHours" class="cc-input" value="2" min="1" max="24" style="width:60px">
+                <span style="font-size:11px;color:var(--text-dim)">hours</span>
+              </div>
+            </div>
+            <div id="evtRecurDailyRow" style="display:none">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:11px;color:var(--text-dim)">At</span>
+                <input type="time" id="evtRecurDailyTime" class="cc-input" value="18:00" style="width:120px">
+              </div>
+            </div>
+            <div id="evtRecurWeeklyRow" style="display:none">
+              <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
+                <label style="font-size:10px;color:var(--text);cursor:pointer;padding:2px 6px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px"><input type="checkbox" class="evtRecurDayCb" value="0"> Sun</label>
+                <label style="font-size:10px;color:var(--text);cursor:pointer;padding:2px 6px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px"><input type="checkbox" class="evtRecurDayCb" value="1"> Mon</label>
+                <label style="font-size:10px;color:var(--text);cursor:pointer;padding:2px 6px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px"><input type="checkbox" class="evtRecurDayCb" value="2"> Tue</label>
+                <label style="font-size:10px;color:var(--text);cursor:pointer;padding:2px 6px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px"><input type="checkbox" class="evtRecurDayCb" value="3"> Wed</label>
+                <label style="font-size:10px;color:var(--text);cursor:pointer;padding:2px 6px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px"><input type="checkbox" class="evtRecurDayCb" value="4"> Thu</label>
+                <label style="font-size:10px;color:var(--text);cursor:pointer;padding:2px 6px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px"><input type="checkbox" class="evtRecurDayCb" value="5"> Fri</label>
+                <label style="font-size:10px;color:var(--text);cursor:pointer;padding:2px 6px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px"><input type="checkbox" class="evtRecurDayCb" value="6"> Sat</label>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:11px;color:var(--text-dim)">At</span>
+                <input type="time" id="evtRecurWeeklyTime" class="cc-input" value="18:00" style="width:120px">
+              </div>
+            </div>
+            <div style="margin-top:6px;font-size:10px;color:var(--text-dim)" id="evtRecurPreview"></div>
+            <button class="btn btn-sm" style="font-size:9px;padding:2px 6px;margin-top:6px" onclick="window.evtSetScheduleMode('cron')">Advanced (raw cron)</button>
           </div>
           <div id="evtSchedCron" style="display:none">
             <input type="text" id="evtCronExpr" class="cc-input" placeholder="*/30 * * * *" style="width:220px" oninput="window.evtValidateCron()">
@@ -7267,8 +7510,80 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           </label>
         </div>
 
+        <!-- Advanced Options (collapsible) -->
+        <details style="margin-bottom:14px;border:1px solid var(--border);border-radius:var(--radius);padding:0">
+          <summary style="padding:8px 12px;cursor:pointer;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);user-select:none">Advanced Options</summary>
+          <div style="padding:12px;display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--border)">
+            <!-- Stacking Mode -->
+            <div>
+              <label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px">Stacking Mode</label>
+              <div style="display:flex;gap:4px">
+                <button class="btn btn-sm evtStackBtn active" data-stack="Multiply" onclick="window.evtSetStacking('Multiply')" style="font-size:10px;padding:3px 8px">Multiply</button>
+                <button class="btn btn-sm evtStackBtn" data-stack="Override" onclick="window.evtSetStacking('Override')" style="font-size:10px;padding:3px 8px">Override</button>
+                <button class="btn btn-sm evtStackBtn" data-stack="Max" onclick="window.evtSetStacking('Max')" style="font-size:10px;padding:3px 8px">Max</button>
+              </div>
+            </div>
+            <!-- Weekday Filter -->
+            <div>
+              <label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px">Weekday Filter</label>
+              <div style="display:flex;gap:4px">
+                <button class="btn btn-sm evtWeekdayBtn active" data-wd="None" onclick="window.evtSetWeekday('None')" style="font-size:10px;padding:3px 8px">Any Day</button>
+                <button class="btn btn-sm evtWeekdayBtn" data-wd="WeekdaysOnly" onclick="window.evtSetWeekday('WeekdaysOnly')" style="font-size:10px;padding:3px 8px">Weekdays</button>
+                <button class="btn btn-sm evtWeekdayBtn" data-wd="WeekendsOnly" onclick="window.evtSetWeekday('WeekendsOnly')" style="font-size:10px;padding:3px 8px">Weekends</button>
+              </div>
+            </div>
+            <!-- Min Players -->
+            <div style="display:flex;gap:12px">
+              <div>
+                <label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px">Min Players Online</label>
+                <input type="number" id="evtMinPlayers" class="cc-input" placeholder="disabled" min="0" max="100" style="width:80px;font-size:11px">
+              </div>
+              <div>
+                <label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px">Max Activations</label>
+                <input type="number" id="evtMaxActivations" class="cc-input" placeholder="unlimited" min="1" max="10000" style="width:80px;font-size:11px">
+              </div>
+            </div>
+            <!-- Warmup / Cooldown -->
+            <div style="display:flex;gap:12px">
+              <div>
+                <label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px">Warmup (min)</label>
+                <input type="number" id="evtWarmup" class="cc-input" value="0" min="0" max="120" style="width:80px;font-size:11px">
+              </div>
+              <div>
+                <label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px">Cooldown (min)</label>
+                <input type="number" id="evtCooldown" class="cc-input" value="0" min="0" max="120" style="width:80px;font-size:11px">
+              </div>
+            </div>
+            <!-- Random Multiplier -->
+            <div>
+              <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text);cursor:pointer;margin-bottom:4px">
+                <input type="checkbox" id="evtRandomMult" onchange="document.getElementById('evtRandomRange').style.display=this.checked?'flex':'none'">
+                <span>Random Multiplier (roll between range each activation)</span>
+              </label>
+              <div id="evtRandomRange" style="display:none;gap:8px;align-items:center">
+                <input type="number" id="evtMultMin" class="cc-input" placeholder="min" step="0.1" style="width:70px;font-size:11px">
+                <span style="color:var(--text-muted);font-size:11px">to</span>
+                <input type="number" id="evtMultMax" class="cc-input" placeholder="max" step="0.1" style="width:70px;font-size:11px">
+              </div>
+            </div>
+            <!-- Chain to Event -->
+            <div>
+              <label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px">Chain to Event (auto-start when this ends)</label>
+              <select id="evtChainTo" class="cc-input" style="width:200px;font-size:11px">
+                <option value="">None</option>
+              </select>
+            </div>
+            <!-- Exclusion (for map events) -->
+            <div id="evtExcludeSection" style="display:none">
+              <label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px">Exclude Maps</label>
+              <div id="evtExcludeCheckboxes" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+            </div>
+          </div>
+        </details>
+
         <!-- Submit -->
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+          <button class="btn btn-sm" onclick="window.evtSaveAsTemplate()" style="padding:6px 16px;font-size:11px;color:var(--text-muted)">Save as Template</button>
           <button class="btn btn-sm" onclick="document.getElementById('evtCreateModal').style.display='none'" style="padding:6px 16px">Cancel</button>
           <button class="btn btn-sm" onclick="window.evtSubmitEvent()" style="padding:6px 16px;background:var(--accent-dim);color:var(--bg-base)">Create Event</button>
         </div>
@@ -9239,8 +9554,171 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     pollConsole();
     pollHeadless();
     loadFikaConfig();
-    // Live clock handles time display
+    loadDashActiveEvents();
   };
+
+  // ── Dashboard Active Events Banner ──
+  var _dashEvtMapNames = {
+    bigmap: 'Customs', factory4_day: 'Factory (Day)', factory4_night: 'Factory (Night)',
+    interchange: 'Interchange', laboratory: 'Labs', lighthouse: 'Lighthouse',
+    rezervbase: 'Reserve', sandbox: 'Ground Zero', sandbox_high: 'Ground Zero (High)',
+    shoreline: 'Shoreline', tarkovstreets: 'Streets', woods: 'Woods', labyrinth: 'Labyrinth'
+  };
+
+  function dashEvtCardClass(type) {
+    if (type === 'DoubleXP') return 'evt-xp';
+    if (type === 'TraderSale') return 'evt-sale';
+    if (type === 'LootBoost') return 'evt-loot';
+    if (type === 'MapLootBoost') return 'evt-map';
+    if (type === 'MapBossRush') return 'evt-boss';
+    if (type === 'MapOfTheDay') return 'evt-map';
+    return 'evt-xp';
+  }
+
+  function dashEvtBigIcon(type) {
+    if (type === 'DoubleXP') return '\u26A1';
+    if (type === 'TraderSale') return '\uD83D\uDCB0';
+    if (type === 'LootBoost') return '\uD83D\uDCE6';
+    if (type === 'MapLootBoost') return '\uD83D\uDDFA\uFE0F';
+    if (type === 'MapBossRush') return '\uD83D\uDC80';
+    if (type === 'MapOfTheDay') return '\u2600\uFE0F';
+    return '\u2728';
+  }
+
+  function dashEvtMultLabel(type, mult) {
+    if (type === 'DoubleXP') return mult + 'x XP';
+    if (type === 'TraderSale') return Math.round((1 - mult) * 100) + '% OFF';
+    if (type === 'LootBoost') return mult + 'x LOOT';
+    if (type === 'MapLootBoost') return mult + 'x LOOT';
+    if (type === 'MapBossRush') return mult + '% BOSS';
+    if (type === 'MapOfTheDay') return mult + 'x LOOT';
+    return mult + 'x';
+  }
+
+  // Cache trader names for dashboard display
+  var _dashTraderNames = {};
+  function dashLoadTraderNames() {
+    if (Object.keys(_dashTraderNames).length > 0) return;
+    fetch(BASE + 'traders/list', { headers: { 'X-Session-Id': sessionId, 'X-Password': ccPassword } })
+      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        (r.traders || []).forEach(function(t) { _dashTraderNames[t.id] = t.nickname; });
+      }).catch(function() {});
+  }
+
+  function dashEvtTimeLeft(expiresAt) {
+    if (!expiresAt) return { text: 'No expiry', pct: 100 };
+    var ms = new Date(expiresAt) - Date.now();
+    if (ms <= 0) return { text: 'Expired', pct: 0 };
+    var s = Math.floor(ms / 1000);
+    var h = Math.floor(s / 3600); s %= 3600;
+    var m = Math.floor(s / 60); s %= 60;
+    var text = h > 0 ? h + 'h ' + m + 'm' : m + 'm ' + s + 's';
+    return { text: text, pct: 100 };
+  }
+
+  function dashEvtTimePct(activatedAt, expiresAt) {
+    if (!activatedAt || !expiresAt) return 100;
+    var total = new Date(expiresAt) - new Date(activatedAt);
+    var elapsed = Date.now() - new Date(activatedAt);
+    if (total <= 0) return 0;
+    return Math.max(0, Math.min(100, 100 - (elapsed / total * 100)));
+  }
+
+  var _dashActiveEvents = [];
+
+  function loadDashActiveEvents() {
+    dashLoadTraderNames();
+    fetch(BASE + 'scheduler/active', { headers: { 'X-Session-Id': sessionId, 'X-Password': ccPassword } })
+      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        _dashActiveEvents = r.events || [];
+        renderDashEventsBanner();
+      }).catch(function() {
+        _dashActiveEvents = [];
+        renderDashEventsBanner();
+      });
+  }
+
+  function renderDashEventsBanner() {
+    var events = _dashActiveEvents;
+    var banner = document.getElementById('dashEventsBanner');
+    if (!banner) return;
+    if (!events.length) { banner.style.display = 'none'; return; }
+    banner.style.display = 'block';
+
+    var particles = '';
+    for (var i = 0; i < 6; i++) {
+      var size = 2 + Math.random() * 4;
+      var left = Math.random() * 100;
+      var top = Math.random() * 100;
+      var delay = Math.random() * 6;
+      var color = ['rgba(200,170,110,0.2)', 'rgba(76,175,80,0.15)', 'rgba(100,160,220,0.15)'][i % 3];
+      particles += '<div class="dash-evt-particle" style="width:' + size + 'px;height:' + size + 'px;left:' + left + '%;top:' + top + '%;background:' + color + ';animation-delay:' + delay + 's"></div>';
+    }
+
+    var html = particles;
+    html += '<div class="dash-events-header">';
+    html += '<div class="dash-events-pulse"></div>';
+    html += '<h3>Live Events</h3>';
+    html += '<span class="dash-events-count">' + events.length + ' active</span>';
+    html += '</div>';
+    html += '<div class="dash-events-grid">';
+
+    events.forEach(function(e) {
+      var cls = dashEvtCardClass(e.type);
+      var pct = dashEvtTimePct(e.activatedAt, e.expiresAt);
+      var tl = dashEvtTimeLeft(e.expiresAt);
+
+      html += '<div class="dash-evt-card ' + cls + '" data-expires="' + (e.expiresAt || '') + '" data-activated="' + (e.activatedAt || '') + '">';
+      html += '<div class="dash-evt-icon">' + dashEvtBigIcon(e.type) + '</div>';
+      html += '<div class="dash-evt-name">' + escH(e.name) + '</div>';
+      html += '<div class="dash-evt-mult">' + dashEvtMultLabel(e.type, e.multiplier) + '</div>';
+
+      // Targets
+      if (e.targetIds && e.targetIds.length > 0) {
+        html += '<div class="dash-evt-targets">';
+        e.targetIds.forEach(function(id) {
+          var label = _dashEvtMapNames[id] || _dashTraderNames[id] || id;
+          html += '<span class="dash-evt-target-pill">' + escH(label) + '</span>';
+        });
+        if (e.cycleRandomTarget) html += '<span class="dash-evt-target-pill" style="border-color:rgba(200,170,110,0.3);color:var(--accent)">Cycling</span>';
+        html += '</div>';
+      } else if (e.type === 'MapOfTheDay') {
+        html += '<div class="dash-evt-targets"><span class="dash-evt-target-pill">Featured map rotates daily</span></div>';
+      } else if (e.type === 'MapLootBoost' || e.type === 'MapBossRush') {
+        html += '<div class="dash-evt-targets"><span class="dash-evt-target-pill">All Maps</span></div>';
+      } else if (e.type === 'TraderSale') {
+        html += '<div class="dash-evt-targets"><span class="dash-evt-target-pill">All Traders</span></div>';
+      }
+
+      html += '<div class="dash-evt-timer">';
+      html += '<span class="dash-evt-time-text">' + tl.text + '</span>';
+      html += '<div class="dash-evt-timer-bar"><div class="dash-evt-timer-fill" style="width:' + pct + '%"></div></div>';
+      html += '</div>';
+      html += '</div>';
+    });
+
+    html += '</div>';
+    banner.innerHTML = html;
+  }
+
+  // Live countdown every second
+  setInterval(function() {
+    var banner = document.getElementById('dashEventsBanner');
+    if (!banner || banner.style.display === 'none') return;
+    banner.querySelectorAll('.dash-evt-card').forEach(function(card) {
+      var expires = card.dataset.expires;
+      var activated = card.dataset.activated;
+      if (!expires) return;
+      var tl = dashEvtTimeLeft(expires);
+      var pct = dashEvtTimePct(activated, expires);
+      var timeEl = card.querySelector('.dash-evt-time-text');
+      var fillEl = card.querySelector('.dash-evt-timer-fill');
+      if (timeEl) timeEl.textContent = tl.text;
+      if (fillEl) fillEl.style.width = pct + '%';
+    });
+  }, 1000);
 
   function loadServerStatus() {
     api('dashboard/status').then(function(d) {
@@ -17427,14 +17905,21 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     loadScheduler();
   }
 
+  var evtViewMode = 'list';
+  var evtStackingMode = 'Multiply';
+  var evtWeekdayFilter = 'None';
+
   window.loadScheduler = function() {
     api('scheduler').then(function(d) {
       evtData = d;
       renderEvents(d.events || []);
       renderTasks(d.tasks || []);
       renderActiveBanner(d.activeEvents || []);
+      renderEventHistory(d.recentHistory || []);
+      renderSavedTemplates(d.savedTemplates || []);
+      renderChainDropdown(d.events || []);
     }).catch(function(e) {
-      document.getElementById('evtEventsBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--error-bright);padding:24px">Failed to load: ' + (e.message || e) + '</td></tr>';
+      document.getElementById('evtEventsBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--error-bright);padding:24px">Failed to load: ' + (e.message || e) + '</td></tr>';
     });
   };
 
@@ -17466,7 +17951,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   function evtTypeLabel(type) {
-    var map = { DoubleXP: 'Double XP', TraderSale: 'Trader Sale', LootBoost: 'Loot Boost' };
+    var map = { DoubleXP: 'Double XP', TraderSale: 'Trader Sale', LootBoost: 'Loot Boost', MapLootBoost: 'Map Loot Boost', MapBossRush: 'Map Boss Rush', MapOfTheDay: 'Map of the Day', InsuranceExpress: 'Insurance Express', SkillBoost: 'Skill Boost', AirdropFrenzy: 'Airdrop Frenzy', HardcoreMode: 'Hardcore Mode' };
     return map[type] || type;
   }
 
@@ -17474,6 +17959,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (type === 'DoubleXP') return '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="width:14px;height:14px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
     if (type === 'TraderSale') return '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="width:14px;height:14px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>';
     if (type === 'LootBoost') return '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="width:14px;height:14px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>';
+    if (type === 'MapLootBoost') return '<svg viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="2" style="width:14px;height:14px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+    if (type === 'MapBossRush') return '<svg viewBox="0 0 24 24" fill="none" stroke="#f44336" stroke-width="2" style="width:14px;height:14px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>';
+    if (type === 'MapOfTheDay') return '<svg viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>';
+    if (type === 'InsuranceExpress') return '<svg viewBox="0 0 24 24" fill="none" stroke="#42a5f5" stroke-width="2" style="width:14px;height:14px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="12" r="3"/><polyline points="12 9 12 12 14 13"/></svg>';
+    if (type === 'SkillBoost') return '<svg viewBox="0 0 24 24" fill="none" stroke="#66bb6a" stroke-width="2" style="width:14px;height:14px"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>';
+    if (type === 'AirdropFrenzy') return '<svg viewBox="0 0 24 24" fill="none" stroke="#ab47bc" stroke-width="2" style="width:14px;height:14px"><path d="M12 2C8 2 6 6 6 8c0 0-2 0-2 2s2 2 2 2h12s2 0 2-2-2-2-2-2c0-2-2-6-6-6z"/><line x1="8" y1="14" x2="6" y2="22"/><line x1="16" y1="14" x2="18" y2="22"/><line x1="12" y1="14" x2="12" y2="22"/><rect x="9" y="19" width="6" height="3" rx="1"/></svg>';
+    if (type === 'HardcoreMode') return '<svg viewBox="0 0 24 24" fill="none" stroke="#ef5350" stroke-width="2" style="width:14px;height:14px"><circle cx="9" cy="9" r="2"/><circle cx="15" cy="9" r="2"/><path d="M8 16c0 0 2-3 4-3s4 3 4 3"/><circle cx="12" cy="12" r="10"/></svg>';
     return '';
   }
 
@@ -17482,10 +17974,20 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     return '<span style="width:10px;height:10px;border-radius:50%;display:inline-block;background:' + (colors[status] || '#6b7280') + '" title="' + status + '"></span>';
   }
 
+  function evtConditionBadges(e) {
+    var badges = '';
+    if (e.weekdayFilter === 'WeekendsOnly') badges += '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(200,170,110,0.15);color:var(--accent);margin-right:2px" title="Weekends only">WE</span>';
+    if (e.weekdayFilter === 'WeekdaysOnly') badges += '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(200,170,110,0.15);color:var(--accent);margin-right:2px" title="Weekdays only">WD</span>';
+    if (e.minPlayersOnline) badges += '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(100,200,100,0.15);color:#4ade80;margin-right:2px" title="Min ' + e.minPlayersOnline + ' players">' + e.minPlayersOnline + '+</span>';
+    if (e.nextEventId) badges += '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(100,100,200,0.15);color:#818cf8;margin-right:2px" title="Chains to another event">&#x1f517;</span>';
+    if (e.warmupMinutes > 0) badges += '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(255,165,0,0.15);color:#fb923c;margin-right:2px" title="' + e.warmupMinutes + 'm warmup">W</span>';
+    return badges;
+  }
+
   function renderEvents(events) {
     var tbody = document.getElementById('evtEventsBody');
     if (!events.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">No events yet. Click "New Event" to create one.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">No events yet. Click "New Event" to create one.</td></tr>';
       return;
     }
     tbody.innerHTML = events.map(function(e) {
@@ -17502,13 +18004,21 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       if (e.status === 'Active')
         actions += '<button class="btn btn-sm" onclick="window.evtCancel(\'' + e.id + '\')" style="font-size:10px;padding:2px 8px;color:var(--error-bright)">Cancel</button>';
 
+      var multDisplay = (e.resolvedMultiplier && e.resolvedMultiplier !== e.multiplier)
+        ? '<span title="Base: ' + e.multiplier + 'x, Rolled: ' + e.resolvedMultiplier + 'x">' + e.resolvedMultiplier + 'x <span style="font-size:9px;color:var(--text-dim)">(' + e.multiplier + ')</span></span>'
+        : e.multiplier + 'x';
+
+      var runsCol = e.activationCount + (e.maxActivations ? '/' + e.maxActivations : '');
+      var badges = evtConditionBadges(e);
+
       return '<tr>' +
         '<td style="text-align:center">' + evtStatusDot(e.status) + '</td>' +
-        '<td style="color:var(--text-bright)">' + escH(e.name) + '</td>' +
+        '<td style="color:var(--text-bright)">' + escH(e.name) + (badges ? ' ' + badges : '') + '</td>' +
         '<td>' + evtTypeIcon(e.type) + ' <span style="font-size:11px">' + evtTypeLabel(e.type) + '</span></td>' +
-        '<td style="font-family:var(--font-mono);font-size:12px">' + e.multiplier + 'x</td>' +
+        '<td style="font-family:var(--font-mono);font-size:12px">' + multDisplay + '</td>' +
         '<td style="font-size:11px">' + schedule + '</td>' +
         '<td style="font-size:11px">' + dur + '</td>' +
+        '<td style="font-size:11px;text-align:center">' + runsCol + '</td>' +
         '<td>' + actions + '</td>' +
         '</tr>';
     }).join('');
@@ -17556,6 +18066,19 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('evtStartTime').value = '';
     document.getElementById('evtBroadcastStart').checked = true;
     document.getElementById('evtBroadcastEnd').checked = true;
+    // Reset advanced options
+    evtStackingMode = 'Multiply';
+    evtWeekdayFilter = 'None';
+    document.querySelectorAll('.evtStackBtn').forEach(function(b) { b.classList.toggle('active', b.dataset.stack === 'Multiply'); });
+    document.querySelectorAll('.evtWeekdayBtn').forEach(function(b) { b.classList.toggle('active', b.dataset.wd === 'None'); });
+    document.getElementById('evtMinPlayers').value = '';
+    document.getElementById('evtMaxActivations').value = '';
+    document.getElementById('evtWarmup').value = '0';
+    document.getElementById('evtCooldown').value = '0';
+    document.getElementById('evtRandomMult').checked = false;
+    document.getElementById('evtRandomRange').style.display = 'none';
+    document.getElementById('evtMultMin').value = '';
+    document.getElementById('evtMultMax').value = '';
     evtSetScheduleMode('now');
     evtBuildTypeButtons();
     evtUpdateTypeUI();
@@ -17580,6 +18103,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     evtUpdateTypeUI();
   };
 
+  var _evtMapNames = {
+    bigmap: 'Customs', factory4_day: 'Factory (Day)', factory4_night: 'Factory (Night)',
+    interchange: 'Interchange', laboratory: 'Labs', lighthouse: 'Lighthouse',
+    rezervbase: 'Reserve', sandbox: 'Ground Zero', sandbox_high: 'Ground Zero (High)',
+    shoreline: 'Shoreline', tarkovstreets: 'Streets', woods: 'Woods', labyrinth: 'Labyrinth'
+  };
+  var _evtTraderCache = null;
+
   function evtUpdateTypeUI() {
     var templates = evtData && evtData.templates ? evtData.templates : [];
     var tmpl = templates.find(function(t) { return t.type === evtSelectedType; });
@@ -17587,13 +18118,67 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       document.getElementById('evtMultLabel').textContent = tmpl.multiplierLabel || 'Multiplier';
       document.getElementById('evtMultiplier').value = tmpl.defaultMultiplier || 2.0;
     }
+
+    var targetSection = document.getElementById('evtTargetSection');
+    var cycleSection = document.getElementById('evtCycleSection');
+
+    // Show/hide cycle random
+    cycleSection.style.display = (tmpl && tmpl.supportsCycleRandom) ? 'block' : 'none';
+    if (!(tmpl && tmpl.supportsCycleRandom)) document.getElementById('evtCycleRandom').checked = false;
+
+    // Show/hide target section
+    if (tmpl && tmpl.supportsTargets) {
+      targetSection.style.display = 'block';
+      document.getElementById('evtTargetLabel').textContent = tmpl.targetLabel || 'Targets';
+
+      if (evtSelectedType === 'TraderSale') {
+        // Load traders for target selection
+        document.getElementById('evtTargetHint').textContent = 'Select traders (none = all traders)';
+        if (_evtTraderCache) {
+          evtRenderTraderCheckboxes(_evtTraderCache);
+        } else {
+          document.getElementById('evtTargetCheckboxes').innerHTML = '<span style="font-size:11px;color:var(--text-muted)">Loading traders...</span>';
+          api('traders/list').then(function(r) {
+            _evtTraderCache = (r.traders || []).map(function(t) { return { id: t.id, name: t.nickname || t.id }; });
+            evtRenderTraderCheckboxes(_evtTraderCache);
+          }).catch(function() {
+            document.getElementById('evtTargetCheckboxes').innerHTML = '<span style="color:var(--text-muted);font-size:11px">Failed to load traders</span>';
+          });
+        }
+      } else {
+        // Map targets
+        document.getElementById('evtTargetHint').textContent = 'Select maps to target (none = all maps)';
+        var cbHtml = '';
+        Object.keys(_evtMapNames).forEach(function(id) {
+          cbHtml += '<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text);cursor:pointer;padding:3px 8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px">';
+          cbHtml += '<input type="checkbox" class="evtTargetCb" value="' + id + '"> ' + _evtMapNames[id];
+          cbHtml += '</label>';
+        });
+        document.getElementById('evtTargetCheckboxes').innerHTML = cbHtml;
+      }
+    } else {
+      targetSection.style.display = 'none';
+    }
+    evtUpdateExcludeSection();
+  }
+
+  function evtRenderTraderCheckboxes(traders) {
+    var cbHtml = '';
+    traders.forEach(function(t) {
+      cbHtml += '<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text);cursor:pointer;padding:3px 8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px">';
+      cbHtml += '<input type="checkbox" class="evtTargetCb" value="' + escH(t.id) + '"> ' + escH(t.name);
+      cbHtml += '</label>';
+    });
+    document.getElementById('evtTargetCheckboxes').innerHTML = cbHtml;
   }
 
   window.evtSetScheduleMode = function(mode) {
     evtScheduleMode = mode;
     document.querySelectorAll('.evtSchedBtn').forEach(function(b) { b.classList.toggle('active', b.dataset.sched === mode); });
     document.getElementById('evtSchedDatetime').style.display = mode === 'datetime' ? 'block' : 'none';
+    document.getElementById('evtSchedRecurring').style.display = mode === 'recurring' ? 'block' : 'none';
     document.getElementById('evtSchedCron').style.display = mode === 'cron' ? 'block' : 'none';
+    if (mode === 'recurring') evtUpdateRecurringPreview();
   };
 
   document.getElementById('evtDuration').addEventListener('input', evtUpdateDurationLabel);
@@ -17626,11 +18211,32 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       broadcastOnStart: document.getElementById('evtBroadcastStart').checked,
       broadcastOnEnd: document.getElementById('evtBroadcastEnd').checked,
       activateNow: evtScheduleMode === 'now',
-      targetIds: []
+      targetIds: Array.from(document.querySelectorAll('.evtTargetCb:checked')).map(function(cb) { return cb.value; }),
+      cycleRandomTarget: document.getElementById('evtCycleRandom').checked,
+      stackingMode: evtStackingMode,
+      weekdayFilter: evtWeekdayFilter,
+      warmupMinutes: parseInt(document.getElementById('evtWarmup').value) || 0,
+      cooldownMinutes: parseInt(document.getElementById('evtCooldown').value) || 0,
+      excludeTargetIds: Array.from(document.querySelectorAll('.evtExcludeCb:checked')).map(function(cb) { return cb.value; })
     };
+    var minP = document.getElementById('evtMinPlayers').value;
+    if (minP) body.minPlayersOnline = parseInt(minP);
+    var maxA = document.getElementById('evtMaxActivations').value;
+    if (maxA) body.maxActivations = parseInt(maxA);
+    if (document.getElementById('evtRandomMult').checked) {
+      body.multiplierMin = parseFloat(document.getElementById('evtMultMin').value) || undefined;
+      body.multiplierMax = parseFloat(document.getElementById('evtMultMax').value) || undefined;
+    }
+    var chainTo = document.getElementById('evtChainTo').value;
+    if (chainTo) body.nextEventId = chainTo;
+
     if (evtScheduleMode === 'datetime') {
       var dt = document.getElementById('evtStartTime').value;
       if (dt) body.startTime = new Date(dt).toISOString();
+    }
+    if (evtScheduleMode === 'recurring') {
+      body.cronExpression = evtBuildRecurringCron();
+      if (!body.cronExpression) { toast('Configure recurring schedule', 'error'); return; }
     }
     if (evtScheduleMode === 'cron') {
       body.cronExpression = document.getElementById('evtCronExpr').value.trim();
@@ -17750,6 +18356,250 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       loadScheduler();
     });
   };
+
+  // ── Recurring Schedule Builder ──
+
+  window.evtRecurFreqChanged = function() {
+    var freq = document.getElementById('evtRecurFreq').value;
+    document.getElementById('evtRecurHoursRow').style.display = freq === 'hours' ? 'block' : 'none';
+    document.getElementById('evtRecurDailyRow').style.display = freq === 'daily' ? 'block' : 'none';
+    document.getElementById('evtRecurWeeklyRow').style.display = freq === 'weekly' ? 'block' : 'none';
+    evtUpdateRecurringPreview();
+  };
+
+  function evtBuildRecurringCron() {
+    var freq = document.getElementById('evtRecurFreq').value;
+    if (freq === 'hours') {
+      var h = parseInt(document.getElementById('evtRecurHours').value) || 2;
+      return '0 */' + h + ' * * *';
+    } else if (freq === 'daily') {
+      var t = (document.getElementById('evtRecurDailyTime').value || '18:00').split(':');
+      return (parseInt(t[1]) || 0) + ' ' + (parseInt(t[0]) || 18) + ' * * *';
+    } else if (freq === 'weekly') {
+      var days = Array.from(document.querySelectorAll('.evtRecurDayCb:checked')).map(function(cb) { return cb.value; });
+      if (!days.length) return null;
+      var t2 = (document.getElementById('evtRecurWeeklyTime').value || '18:00').split(':');
+      return (parseInt(t2[1]) || 0) + ' ' + (parseInt(t2[0]) || 18) + ' * * ' + days.join(',');
+    }
+    return null;
+  }
+
+  function evtUpdateRecurringPreview() {
+    var cron = evtBuildRecurringCron();
+    var preview = document.getElementById('evtRecurPreview');
+    if (!cron) { preview.textContent = ''; return; }
+    api('scheduler/cron/validate', { method: 'POST', body: JSON.stringify({ expression: cron }) }).then(function(r) {
+      if (r.valid) {
+        preview.style.color = 'var(--text-dim)';
+        preview.textContent = r.description + (r.nextRun ? ' — next: ' + new Date(r.nextRun).toLocaleString() : '');
+      } else {
+        preview.textContent = '';
+      }
+    });
+  }
+
+  // Debounced recur preview updates
+  ['evtRecurHours', 'evtRecurDailyTime', 'evtRecurWeeklyTime'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', evtUpdateRecurringPreview);
+  });
+  document.querySelectorAll('.evtRecurDayCb').forEach(function(cb) {
+    cb.addEventListener('change', evtUpdateRecurringPreview);
+  });
+
+  // ── Advanced Options ──
+
+  window.evtSetStacking = function(mode) {
+    evtStackingMode = mode;
+    document.querySelectorAll('.evtStackBtn').forEach(function(b) { b.classList.toggle('active', b.dataset.stack === mode); });
+  };
+
+  window.evtSetWeekday = function(mode) {
+    evtWeekdayFilter = mode;
+    document.querySelectorAll('.evtWeekdayBtn').forEach(function(b) { b.classList.toggle('active', b.dataset.wd === mode); });
+  };
+
+  function renderChainDropdown(events) {
+    var sel = document.getElementById('evtChainTo');
+    sel.innerHTML = '<option value="">None</option>';
+    events.forEach(function(e) {
+      if (e.status !== 'Expired' && e.status !== 'Cancelled') {
+        sel.innerHTML += '<option value="' + e.id + '">' + escH(e.name) + ' (' + e.status + ')</option>';
+      }
+    });
+  }
+
+  // ── Quick Create ──
+
+  window.evtQuickCreate = function(preset) {
+    api('scheduler/quick-create', { method: 'POST', body: JSON.stringify({ preset: preset }) }).then(function(r) {
+      if (r.error) { toast(r.error, 'error'); return; }
+      toast('Quick event started: ' + r.name, 'success');
+      loadScheduler();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  // ── Saved Templates ──
+
+  function renderSavedTemplates(templates) {
+    var el = document.getElementById('evtSavedTemplatesDropdown');
+    if (!templates.length) { el.innerHTML = ''; return; }
+    var html = '<select class="cc-input" style="font-size:10px;padding:3px 8px;width:160px" onchange="window.evtLoadTemplate(this.value);this.selectedIndex=0">';
+    html += '<option value="">Templates (' + templates.length + ')</option>';
+    templates.forEach(function(t) {
+      html += '<option value="' + t.id + '">' + escH(t.name) + '</option>';
+    });
+    html += '</select>';
+    el.innerHTML = html;
+  }
+
+  window.evtLoadTemplate = function(id) {
+    if (!id) return;
+    api('scheduler/templates/' + id + '/create', { method: 'POST' }).then(function(r) {
+      if (r.error) { toast(r.error, 'error'); return; }
+      toast('Event created from template: ' + r.name, 'success');
+      loadScheduler();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  window.evtSaveAsTemplate = function() {
+    var name = prompt('Template name:');
+    if (!name) return;
+    var config = {
+      type: evtSelectedType,
+      name: document.getElementById('evtName').value.trim(),
+      multiplier: parseFloat(document.getElementById('evtMultiplier').value) || 2.0,
+      durationMinutes: parseInt(document.getElementById('evtDuration').value) || 60,
+      broadcastOnStart: document.getElementById('evtBroadcastStart').checked,
+      broadcastOnEnd: document.getElementById('evtBroadcastEnd').checked,
+      targetIds: Array.from(document.querySelectorAll('.evtTargetCb:checked')).map(function(cb) { return cb.value; }),
+      stackingMode: evtStackingMode,
+      weekdayFilter: evtWeekdayFilter
+    };
+    api('scheduler/templates', { method: 'POST', body: JSON.stringify({ name: name, config: config }) }).then(function(r) {
+      if (r.error) { toast(r.error, 'error'); return; }
+      toast('Template saved: ' + name, 'success');
+      loadScheduler();
+    }).catch(function(e) { toast('Failed: ' + e.message, 'error'); });
+  };
+
+  // ── Event History ──
+
+  var _evtHistoryAll = [];
+  function renderEventHistory(history) {
+    _evtHistoryAll = history;
+    evtRenderHistoryFiltered(history);
+  }
+
+  window.evtFilterHistory = function() {
+    var q = (document.getElementById('evtHistorySearch').value || '').toLowerCase();
+    var filtered = q ? _evtHistoryAll.filter(function(h) {
+      return h.name.toLowerCase().includes(q) || h.type.toLowerCase().includes(q) || (h.triggerReason || '').toLowerCase().includes(q);
+    }) : _evtHistoryAll;
+    evtRenderHistoryFiltered(filtered);
+  };
+
+  function evtRenderHistoryFiltered(history) {
+    var tbody = document.getElementById('evtHistoryBody');
+    if (!history.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:16px;font-size:11px">No history yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = history.map(function(h) {
+      var dur = '';
+      if (h.startedAt && h.endedAt) {
+        var ms = new Date(h.endedAt).getTime() - new Date(h.startedAt).getTime();
+        dur = evtFormatDuration(Math.round(ms / 60000));
+      }
+      return '<tr>' +
+        '<td style="font-size:11px;color:var(--text-bright)">' + escH(h.name) + '</td>' +
+        '<td style="font-size:11px">' + evtTypeIcon(h.type) + ' ' + evtTypeLabel(h.type) + '</td>' +
+        '<td style="font-family:var(--font-mono);font-size:11px">' + h.multiplier + 'x</td>' +
+        '<td style="font-size:10px">' + new Date(h.startedAt).toLocaleString() + '</td>' +
+        '<td style="font-size:10px">' + new Date(h.endedAt).toLocaleString() + '</td>' +
+        '<td style="font-size:10px">' + dur + '</td>' +
+        '<td style="font-size:10px;color:var(--text-dim)">' + escH(h.triggerReason || '') + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // ── View Toggle (List / Timeline) ──
+
+  window.evtSetView = function(view) {
+    evtViewMode = view;
+    document.querySelectorAll('.evtViewBtn').forEach(function(b) { b.classList.toggle('active', b.dataset.view === view); });
+    document.getElementById('evtCalendarSection').style.display = view === 'timeline' ? 'block' : 'none';
+    if (view === 'timeline') evtLoadCalendar();
+  };
+
+  function evtLoadCalendar() {
+    var from = new Date(); from.setDate(from.getDate() - 3);
+    var to = new Date(); to.setDate(to.getDate() + 4);
+    api('scheduler/calendar?from=' + from.toISOString() + '&to=' + to.toISOString()).then(function(d) {
+      evtRenderCalendar(d.entries || [], from, to);
+    });
+  }
+
+  function evtRenderCalendar(entries, from, to) {
+    var container = document.getElementById('evtCalendarTimeline');
+    if (!entries.length) {
+      container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:11px">No events in this range</div>';
+      return;
+    }
+
+    var totalMs = to.getTime() - from.getTime();
+    var dayMs = 86400000;
+    var days = Math.ceil(totalMs / dayMs);
+
+    // Day headers
+    var html = '<div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:8px">';
+    for (var d = 0; d < days; d++) {
+      var date = new Date(from.getTime() + d * dayMs);
+      var isToday = date.toDateString() === new Date().toDateString();
+      html += '<div style="flex:1;text-align:center;padding:4px 0;font-size:10px;color:' + (isToday ? 'var(--accent)' : 'var(--text-muted)') + ';font-weight:' + (isToday ? '600' : '400') + '">';
+      html += ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][date.getDay()] + ' ' + (date.getMonth()+1) + '/' + date.getDate();
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // Event bars
+    var statusColors = { active: '#4ade80', scheduled: 'var(--accent)', past: '#6b7280' };
+    entries.forEach(function(e) {
+      var startMs = new Date(e.start).getTime() - from.getTime();
+      var endMs = new Date(e.end).getTime() - from.getTime();
+      var leftPct = Math.max(0, (startMs / totalMs) * 100);
+      var widthPct = Math.max(1, Math.min(100 - leftPct, ((endMs - startMs) / totalMs) * 100));
+      var color = statusColors[e.status] || '#6b7280';
+      var opacity = e.status === 'past' ? '0.4' : '1';
+      var border = e.status === 'scheduled' ? 'border:1px dashed ' + color : 'border:none';
+      var bg = e.status === 'scheduled' ? 'transparent' : color;
+      var glow = e.status === 'active' ? ';box-shadow:0 0 6px ' + color : '';
+
+      html += '<div style="position:relative;height:22px;margin-bottom:4px">';
+      html += '<div style="position:absolute;left:' + leftPct + '%;width:' + widthPct + '%;height:20px;background:' + bg + ';' + border + ';border-radius:3px;opacity:' + opacity + glow + ';display:flex;align-items:center;padding:0 6px;overflow:hidden;cursor:pointer" title="' + escH(e.name) + ' (' + e.status + ') ' + e.multiplier + 'x">';
+      html += '<span style="font-size:9px;color:' + (e.status === 'scheduled' ? color : '#000') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(e.name) + '</span>';
+      html += '</div></div>';
+    });
+
+    container.innerHTML = html;
+  }
+
+  // ── Exclusion Checkboxes ──
+
+  function evtUpdateExcludeSection() {
+    var tmpl = evtData && evtData.templates ? evtData.templates.find(function(t) { return t.type === evtSelectedType; }) : null;
+    var show = tmpl && tmpl.supportsExclusion;
+    document.getElementById('evtExcludeSection').style.display = show ? 'block' : 'none';
+    if (show) {
+      var html = '';
+      Object.keys(_evtMapNames).forEach(function(id) {
+        html += '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text);cursor:pointer;padding:2px 6px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:3px">';
+        html += '<input type="checkbox" class="evtExcludeCb" value="' + id + '"> ' + _evtMapNames[id];
+        html += '</label>';
+      });
+      document.getElementById('evtExcludeCheckboxes').innerHTML = html;
+    }
+  }
 
   // ═══════════════════════════════════════════════════════
   // GAME VALUES TAB

@@ -49,6 +49,7 @@ public class LocationService(
     // Pass 6 — Event factors pushed by EventService
     private readonly Dictionary<string, double> _eventLootFactors = new();
     private readonly Dictionary<string, double> _eventBossChances = new();
+    private readonly Dictionary<string, double> _eventAirdropFactors = new();
     private string? _eventMapOfTheDay;
     private double _eventMapOfTheDayMult = 1.0;
 
@@ -636,7 +637,7 @@ public class LocationService(
     }
 
     /// <summary>
-    /// Apply event-driven map factors (loot boosts, boss chances, map of the day).
+    /// Apply event-driven map factors (loot boosts, boss chances, airdrop, map of the day).
     /// Called from ReapplyOverrides() after config overrides are set.
     /// </summary>
     private void ApplyEventFactors()
@@ -663,6 +664,19 @@ public class LocationService(
                 }
             }
 
+            // Airdrop event factors (multiplicative on current airdrop chance, divide cooldowns)
+            if (_eventAirdropFactors.TryGetValue(locId, out var airdropFactor) && airdropFactor != 1.0
+                && loc.Base.AirdropParameters is { Count: > 0 })
+            {
+                var ap = loc.Base.AirdropParameters[0];
+                ap.PlaneAirdropChance = Math.Min(100.0, (ap.PlaneAirdropChance ?? 0) * airdropFactor);
+                // Reduce cooldowns — higher airdrop factor = more frequent airdrops
+                if (ap.PlaneAirdropCooldownMin.HasValue)
+                    ap.PlaneAirdropCooldownMin = Math.Max(60, (int)(ap.PlaneAirdropCooldownMin.Value / airdropFactor));
+                if (ap.PlaneAirdropCooldownMax.HasValue)
+                    ap.PlaneAirdropCooldownMax = Math.Max(120, (int)(ap.PlaneAirdropCooldownMax.Value / airdropFactor));
+            }
+
             // Map of the day (loot boost on featured map)
             if (_eventMapOfTheDay == locId && _eventMapOfTheDayMult != 1.0)
             {
@@ -676,7 +690,8 @@ public class LocationService(
     /// Called by EventService to push map-specific event factors.
     /// </summary>
     public void SetEventMapFactors(Dictionary<string, double> lootFactors,
-        Dictionary<string, double> bossChances, string? mapOfTheDay, double mapOfTheDayMult)
+        Dictionary<string, double> bossChances, string? mapOfTheDay, double mapOfTheDayMult,
+        Dictionary<string, double>? airdropFactors = null)
     {
         lock (_lock)
         {
@@ -685,6 +700,10 @@ public class LocationService(
 
             _eventBossChances.Clear();
             foreach (var (k, v) in bossChances) _eventBossChances[k] = v;
+
+            _eventAirdropFactors.Clear();
+            if (airdropFactors != null)
+                foreach (var (k, v) in airdropFactors) _eventAirdropFactors[k] = v;
 
             _eventMapOfTheDay = mapOfTheDay;
             _eventMapOfTheDayMult = mapOfTheDayMult;

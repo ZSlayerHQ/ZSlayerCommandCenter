@@ -19,7 +19,8 @@ public class TraderPriceService(
     /// Only modifies currency-based costs (not barter items).
     /// Assumes data has already been restored from snapshot.
     /// </summary>
-    public int ApplyBuyMultipliers(TraderControlConfig config, double eventPriceFactor = 1.0)
+    public int ApplyBuyMultipliers(TraderControlConfig config, double eventPriceFactor = 1.0,
+        Dictionary<string, double>? perTraderEventFactors = null)
     {
         var traders = databaseService.GetTables().Traders;
         if (traders == null) return 0;
@@ -60,7 +61,11 @@ public class TraderPriceService(
                     }
                 }
                 // Apply event price factor on top of config multiplier
-                effectiveMult *= eventPriceFactor;
+                // Per-trader event factor takes priority over global
+                var traderEvtFactor = eventPriceFactor;
+                if (perTraderEventFactors != null && perTraderEventFactors.TryGetValue(id, out var ptf))
+                    traderEvtFactor = ptf;
+                effectiveMult *= traderEvtFactor;
                 if (Math.Abs(effectiveMult - 1.0) < 0.001) continue;
 
                 foreach (var paymentOption in paymentOptions)
