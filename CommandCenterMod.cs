@@ -26,6 +26,7 @@ public class CommandCenterMod(
     TelemetryService telemetryService,
     GameValuesService gameValuesService,
     LocationService locationService,
+    FirService firService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
     ISptLogger<CommandCenterMod> logger) : IOnLoad
@@ -139,6 +140,9 @@ public class CommandCenterMod(
 
         // Initialize location/weather editor (snapshot locations, apply overrides after progression)
         locationService.Initialize();
+
+        // Initialize FIR toggles (snapshot barter/hideout/config values, apply saved state)
+        firService.Initialize();
 
         // Detect bound IP and build URLs based on bind mode
         var httpCfg = configServer.GetConfig<HttpConfig>();

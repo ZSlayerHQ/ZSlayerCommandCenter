@@ -790,6 +790,7 @@ public class EventService(
                         var idx = ((dayHash % eligibleMaps.Length) + eligibleMaps.Length) % eligibleMaps.Length;
                         mapOfTheDay = eligibleMaps[idx];
                         mapOfTheDayMult = mult;
+                        evt.ResolvedTarget = mapOfTheDay; // expose resolved map to UI
                     }
                     break;
                 }

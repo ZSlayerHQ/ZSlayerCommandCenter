@@ -149,6 +149,9 @@ public record ServerEvent
     [JsonPropertyName("resolvedMultiplier")]
     public double? ResolvedMultiplier { get; set; }
 
+    [JsonPropertyName("resolvedTarget")]
+    public string? ResolvedTarget { get; set; }
+
     [JsonPropertyName("nextEventId")]
     public string? NextEventId { get; set; }
 

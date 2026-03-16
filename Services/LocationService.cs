@@ -31,7 +31,10 @@ public class LocationService(
         double? ChancePVE, int? Count, string PassageRequirement);
     private record WeatherSnapshot(double? Acceleration);
     private record GlobalRaidSnapshot(int ScavCooldown, double HostileChance,
-        double CarExtract, double CoopExtract, double ScavExtract);
+        double CarExtract, double CoopExtract, double ScavExtract,
+        bool KeepFiR, bool AlwaysKeepFiR,
+        string AiAmount, string AiDifficulty, bool BossEnabled,
+        bool ScavWars, bool TaggedAndCursed, bool EnablePve);
 
     private readonly Dictionary<string, LocationSnapshot> _locationSnapshots = new();
     private readonly Dictionary<string, AirdropSnapshot> _airdropSnapshots = new();
@@ -234,7 +237,15 @@ public class LocationService(
             inraidCfg.PlayerScavHostileChancePercent,
             inraidCfg.CarExtractBaseStandingGain,
             inraidCfg.CoopExtractBaseStandingGain,
-            inraidCfg.ScavExtractStandingGain);
+            inraidCfg.ScavExtractStandingGain,
+            inraidCfg.KeepFiRSecureContainerOnDeath,
+            inraidCfg.AlwaysKeepFoundInRaidOnRaidEnd,
+            inraidCfg.RaidMenuSettings.AiAmount,
+            inraidCfg.RaidMenuSettings.AiDifficulty,
+            inraidCfg.RaidMenuSettings.BossEnabled,
+            inraidCfg.RaidMenuSettings.ScavWars,
+            inraidCfg.RaidMenuSettings.TaggedAndCursed,
+            inraidCfg.RaidMenuSettings.EnablePve);
 
         _snapshotTaken = true;
     }
@@ -589,6 +600,86 @@ public class LocationService(
         else if (_globalRaidSnapshot != null)
         {
             inraidCfg.ScavExtractStandingGain = _globalRaidSnapshot.ScavExtract;
+        }
+
+        if (settings.KeepFiRSecureContainerOnDeath.HasValue)
+        {
+            inraidCfg.KeepFiRSecureContainerOnDeath = settings.KeepFiRSecureContainerOnDeath.Value;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.KeepFiRSecureContainerOnDeath = _globalRaidSnapshot.KeepFiR;
+        }
+
+        if (settings.AlwaysKeepFoundInRaidOnRaidEnd.HasValue)
+        {
+            inraidCfg.AlwaysKeepFoundInRaidOnRaidEnd = settings.AlwaysKeepFoundInRaidOnRaidEnd.Value;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.AlwaysKeepFoundInRaidOnRaidEnd = _globalRaidSnapshot.AlwaysKeepFiR;
+        }
+
+        if (settings.RaidMenuAiAmount != null)
+        {
+            inraidCfg.RaidMenuSettings.AiAmount = settings.RaidMenuAiAmount;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.RaidMenuSettings.AiAmount = _globalRaidSnapshot.AiAmount;
+        }
+
+        if (settings.RaidMenuAiDifficulty != null)
+        {
+            inraidCfg.RaidMenuSettings.AiDifficulty = settings.RaidMenuAiDifficulty;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.RaidMenuSettings.AiDifficulty = _globalRaidSnapshot.AiDifficulty;
+        }
+
+        if (settings.RaidMenuBossEnabled.HasValue)
+        {
+            inraidCfg.RaidMenuSettings.BossEnabled = settings.RaidMenuBossEnabled.Value;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.RaidMenuSettings.BossEnabled = _globalRaidSnapshot.BossEnabled;
+        }
+
+        if (settings.RaidMenuScavWars.HasValue)
+        {
+            inraidCfg.RaidMenuSettings.ScavWars = settings.RaidMenuScavWars.Value;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.RaidMenuSettings.ScavWars = _globalRaidSnapshot.ScavWars;
+        }
+
+        if (settings.RaidMenuTaggedAndCursed.HasValue)
+        {
+            inraidCfg.RaidMenuSettings.TaggedAndCursed = settings.RaidMenuTaggedAndCursed.Value;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.RaidMenuSettings.TaggedAndCursed = _globalRaidSnapshot.TaggedAndCursed;
+        }
+
+        if (settings.RaidMenuEnablePve.HasValue)
+        {
+            inraidCfg.RaidMenuSettings.EnablePve = settings.RaidMenuEnablePve.Value;
+            count++;
+        }
+        else if (_globalRaidSnapshot != null)
+        {
+            inraidCfg.RaidMenuSettings.EnablePve = _globalRaidSnapshot.EnablePve;
         }
 
         return count;
@@ -1192,9 +1283,31 @@ public class LocationService(
             OriginalCarExtractBaseStandingGain = _globalRaidSnapshot?.CarExtract ?? inraidCfg.CarExtractBaseStandingGain,
             OriginalCoopExtractBaseStandingGain = _globalRaidSnapshot?.CoopExtract ?? inraidCfg.CoopExtractBaseStandingGain,
             OriginalScavExtractStandingGain = _globalRaidSnapshot?.ScavExtract ?? inraidCfg.ScavExtractStandingGain,
+            // Raid behavior
+            KeepFiRSecureContainerOnDeath = inraidCfg.KeepFiRSecureContainerOnDeath,
+            AlwaysKeepFoundInRaidOnRaidEnd = inraidCfg.AlwaysKeepFoundInRaidOnRaidEnd,
+            OriginalKeepFiRSecureContainerOnDeath = _globalRaidSnapshot?.KeepFiR ?? inraidCfg.KeepFiRSecureContainerOnDeath,
+            OriginalAlwaysKeepFoundInRaidOnRaidEnd = _globalRaidSnapshot?.AlwaysKeepFiR ?? inraidCfg.AlwaysKeepFoundInRaidOnRaidEnd,
+            // Raid menu defaults
+            RaidMenuAiAmount = inraidCfg.RaidMenuSettings.AiAmount,
+            RaidMenuAiDifficulty = inraidCfg.RaidMenuSettings.AiDifficulty,
+            RaidMenuBossEnabled = inraidCfg.RaidMenuSettings.BossEnabled,
+            RaidMenuScavWars = inraidCfg.RaidMenuSettings.ScavWars,
+            RaidMenuTaggedAndCursed = inraidCfg.RaidMenuSettings.TaggedAndCursed,
+            RaidMenuEnablePve = inraidCfg.RaidMenuSettings.EnablePve,
+            OriginalRaidMenuAiAmount = _globalRaidSnapshot?.AiAmount ?? inraidCfg.RaidMenuSettings.AiAmount,
+            OriginalRaidMenuAiDifficulty = _globalRaidSnapshot?.AiDifficulty ?? inraidCfg.RaidMenuSettings.AiDifficulty,
+            OriginalRaidMenuBossEnabled = _globalRaidSnapshot?.BossEnabled ?? inraidCfg.RaidMenuSettings.BossEnabled,
+            OriginalRaidMenuScavWars = _globalRaidSnapshot?.ScavWars ?? inraidCfg.RaidMenuSettings.ScavWars,
+            OriginalRaidMenuTaggedAndCursed = _globalRaidSnapshot?.TaggedAndCursed ?? inraidCfg.RaidMenuSettings.TaggedAndCursed,
+            OriginalRaidMenuEnablePve = _globalRaidSnapshot?.EnablePve ?? inraidCfg.RaidMenuSettings.EnablePve,
             IsModified = gs.ScavCooldownSeconds.HasValue || gs.PlayerScavHostileChancePercent.HasValue
                 || gs.CarExtractBaseStandingGain.HasValue || gs.CoopExtractBaseStandingGain.HasValue
-                || gs.ScavExtractStandingGain.HasValue
+                || gs.ScavExtractStandingGain.HasValue || gs.KeepFiRSecureContainerOnDeath.HasValue
+                || gs.AlwaysKeepFoundInRaidOnRaidEnd.HasValue || gs.RaidMenuAiAmount != null
+                || gs.RaidMenuAiDifficulty != null || gs.RaidMenuBossEnabled.HasValue
+                || gs.RaidMenuScavWars.HasValue || gs.RaidMenuTaggedAndCursed.HasValue
+                || gs.RaidMenuEnablePve.HasValue
         };
     }
 
@@ -1224,6 +1337,14 @@ public class LocationService(
             if (request.CarExtractBaseStandingGain.HasValue) gs.CarExtractBaseStandingGain = request.CarExtractBaseStandingGain;
             if (request.CoopExtractBaseStandingGain.HasValue) gs.CoopExtractBaseStandingGain = request.CoopExtractBaseStandingGain;
             if (request.ScavExtractStandingGain.HasValue) gs.ScavExtractStandingGain = request.ScavExtractStandingGain;
+            if (request.KeepFiRSecureContainerOnDeath.HasValue) gs.KeepFiRSecureContainerOnDeath = request.KeepFiRSecureContainerOnDeath;
+            if (request.AlwaysKeepFoundInRaidOnRaidEnd.HasValue) gs.AlwaysKeepFoundInRaidOnRaidEnd = request.AlwaysKeepFoundInRaidOnRaidEnd;
+            if (request.RaidMenuAiAmount != null) gs.RaidMenuAiAmount = request.RaidMenuAiAmount;
+            if (request.RaidMenuAiDifficulty != null) gs.RaidMenuAiDifficulty = request.RaidMenuAiDifficulty;
+            if (request.RaidMenuBossEnabled.HasValue) gs.RaidMenuBossEnabled = request.RaidMenuBossEnabled;
+            if (request.RaidMenuScavWars.HasValue) gs.RaidMenuScavWars = request.RaidMenuScavWars;
+            if (request.RaidMenuTaggedAndCursed.HasValue) gs.RaidMenuTaggedAndCursed = request.RaidMenuTaggedAndCursed;
+            if (request.RaidMenuEnablePve.HasValue) gs.RaidMenuEnablePve = request.RaidMenuEnablePve;
 
             ApplyGlobalRaidSettings(gs);
             configService.SaveConfig();

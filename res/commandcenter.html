@@ -268,9 +268,9 @@ body {
   vertical-align: middle;
 }
 .nav-btn .nav-lock svg { width: 10px; height: 10px; }
-.nav-icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 3px; opacity: 0.5; transition: opacity 0.15s, filter 0.15s; }
+.nav-icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 3px; opacity: 0.5; filter: brightness(0) invert(1); transition: opacity 0.15s, filter 0.15s; }
 .nav-btn:hover .nav-icon { opacity: 0.7; }
-.nav-btn.active .nav-icon { opacity: 1; filter: brightness(1.2) sepia(1) saturate(2) hue-rotate(10deg); }
+.nav-btn.active .nav-icon { opacity: 1; filter: brightness(0) invert(1) brightness(1.2) sepia(1) saturate(2) hue-rotate(10deg); }
 
 /* ── Buttons ── */
 .btn {
@@ -330,7 +330,7 @@ body {
 .hl-status-pill.pill-stopped { background: #8b3a3a; color: #e8d0d0; }
 .hl-status-pill.pill-running { background: #4a7c59; color: #d0e8d4; }
 .hl-status-pill.pill-transition { background: #6b5a28; color: #f0e0d0; }
-.hl-status-pill.pill-unavailable { background: var(--bg-hover); color: var(--text-muted); }
+.hl-status-pill.pill-unavailable { background: rgba(160,100,20,0.35); color: #d4933a; }
 
 @keyframes hl-spin { to { transform: rotate(360deg); } }
 .hl-spinner {
@@ -1509,7 +1509,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   animation-delay: calc(var(--row-index, 0) * 30ms);
 }
 .player-simple-row:last-child { border-bottom: none; }
-.player-simple-row:hover { background: rgba(200,170,110,0.06); }
+.player-simple-row:hover { background: rgba(200,170,110,0.09); border-left: 2px solid rgba(200,170,110,0.35); padding-left: 2px; }
 
 /* Detailed row */
 .player-detail-row {
@@ -1525,17 +1525,35 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   animation-delay: calc(var(--row-index, 0) * 40ms);
 }
 .player-detail-row:last-child { border-bottom: none; }
-.player-detail-row:hover { background: rgba(200,170,110,0.06); }
+.player-detail-row:hover { background: rgba(200,170,110,0.09); border-left: 2px solid rgba(200,170,110,0.35); padding-left: 4px; }
 
 .player-detail-avatar {
+  display: block;
   width: 40px; height: 40px;
   border-radius: 50%;
   border: 2px solid var(--border-subtle);
   flex-shrink: 0;
   object-fit: cover;
+  object-position: center;
+  overflow: hidden;
 }
 .player-detail-avatar.online { border-color: #4a7c59; box-shadow: 0 0 8px rgba(74,124,89,0.5); }
 .player-detail-avatar.in-raid { border-color: #c87a3e; box-shadow: 0 0 8px rgba(200,122,62,0.5); }
+.player-detail-avatar.offline {
+  border-color: #4e1a0a;
+  animation: avatarEmberGlow 11.4s ease-in-out infinite;
+}
+@keyframes avatarEmberGlow {
+  0%   { box-shadow: 0 0 3px 0px rgba(120,35,10,0.18); border-color: #3a1008; }
+  9%   { box-shadow: 0 0 5px 1px rgba(120,35,10,0.25); border-color: #501608; }
+  18%  { box-shadow: 0 0 2px 0px rgba(120,35,10,0.1);  border-color: #2e0c06; }
+  31%  { box-shadow: 0 0 4px 1px rgba(120,35,10,0.22); border-color: #461208; }
+  47%  { box-shadow: 0 0 1px 0px rgba(120,35,10,0.08); border-color: #280a04; }
+  59%  { box-shadow: 0 0 5px 1px rgba(120,35,10,0.24); border-color: #501608; }
+  72%  { box-shadow: 0 0 2px 0px rgba(120,35,10,0.12); border-color: #2e0c06; }
+  88%  { box-shadow: 0 0 3px 0px rgba(120,35,10,0.17); border-color: #3c1008; }
+  100% { box-shadow: 0 0 3px 0px rgba(120,35,10,0.18); border-color: #3a1008; }
+}
 
 .player-detail-info { flex: 1; min-width: 0; }
 .player-detail-name {
@@ -1577,9 +1595,45 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .faction-pill.bear { background: rgba(139,58,58,0.4); color: #d08080; }
 .faction-pill.usec { background: rgba(58,90,139,0.4); color: #80a0d0; }
 
-.status-dot.online { background: #4a7c59; box-shadow: 0 0 6px #4a7c59; animation: statusPulse 2s infinite; }
-.status-dot.in-raid { background: #c87a3e; box-shadow: 0 0 6px #c87a3e; animation: statusPulse 1.5s infinite; }
-.status-dot.offline { background: #8b3a3a; box-shadow: none; animation: none; }
+.status-dot.online {
+  background: #4caf6e;
+  box-shadow: 0 0 4px 1px rgba(76,175,110,0.5);
+  animation: dotOnlineBreathe 7.5s ease-in-out infinite;
+}
+.status-dot.in-raid {
+  background: #d4893a;
+  box-shadow: 0 0 5px 1px rgba(212,137,58,0.65);
+  animation: dotRaidPulse 3.6s ease-in-out infinite;
+}
+.status-dot.offline {
+  background: #7a2e1a;
+  box-shadow: 0 0 3px 1px rgba(160,50,20,0.4);
+  animation: dotEmberFlicker 11.4s ease-in-out infinite;
+}
+
+/* Player row status states */
+/* rowEntry ends at opacity:1 (fill-mode:both), so offline rows need their own animation ending at 0.52 */
+@keyframes rowEntryDim {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 0.52; transform: translateY(0); }
+}
+.player-simple-row.player-offline {
+  opacity: 0.52;
+  animation: rowEntryDim 0.25s ease both;
+  animation-delay: calc(var(--row-index, 0) * 30ms);
+}
+.player-detail-row.player-offline {
+  opacity: 0.52;
+  animation: rowEntryDim 0.3s ease both;
+  animation-delay: calc(var(--row-index, 0) * 40ms);
+}
+.player-simple-row.player-offline:hover,
+.player-detail-row.player-offline:hover { opacity: 0.78; }
+.player-simple-row.player-in-raid,
+.player-detail-row.player-in-raid {
+  border-left: 2px solid rgba(212,137,58,0.55);
+  padding-left: 4px;
+}
 
 /* Hover expand stats */
 .player-expand-stats {
@@ -1608,9 +1662,28 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .player-expand-inner .stat-value { color: var(--accent-bright); font-weight: 600; }
 
 /* Animations */
-@keyframes statusPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+@keyframes dotOnlineBreathe {
+  0%, 100% { box-shadow: 0 0 3px 1px rgba(76,175,110,0.4); }
+  50%       { box-shadow: 0 0 9px 3px rgba(76,175,110,0.22); }
+}
+@keyframes dotRaidPulse {
+  0%   { box-shadow: 0 0 4px 1px rgba(212,137,58,0.5);  opacity: 0.9; }
+  18%  { box-shadow: 0 0 8px 2px rgba(212,137,58,0.75); opacity: 1;   }
+  32%  { box-shadow: 0 0 3px 1px rgba(212,137,58,0.4);  opacity: 0.85; }
+  58%  { box-shadow: 0 0 7px 2px rgba(212,137,58,0.68); opacity: 1;   }
+  78%  { box-shadow: 0 0 3px 0px rgba(212,137,58,0.38); opacity: 0.85; }
+  100% { box-shadow: 0 0 4px 1px rgba(212,137,58,0.5);  opacity: 0.9; }
+}
+@keyframes dotEmberFlicker {
+  0%   { opacity: 0.5; box-shadow: 0 0 3px 1px rgba(160,50,20,0.38); }
+  9%   { opacity: 0.62; box-shadow: 0 0 4px 1px rgba(160,50,20,0.45); }
+  18%  { opacity: 0.42; box-shadow: 0 0 2px 0px rgba(160,50,20,0.22); }
+  31%  { opacity: 0.58; box-shadow: 0 0 4px 1px rgba(160,50,20,0.4); }
+  47%  { opacity: 0.36; box-shadow: 0 0 2px 0px rgba(160,50,20,0.18); }
+  59%  { opacity: 0.64; box-shadow: 0 0 5px 1px rgba(160,50,20,0.48); }
+  72%  { opacity: 0.4;  box-shadow: 0 0 2px 0px rgba(160,50,20,0.2); }
+  88%  { opacity: 0.54; box-shadow: 0 0 3px 1px rgba(160,50,20,0.34); }
+  100% { opacity: 0.5; box-shadow: 0 0 3px 1px rgba(160,50,20,0.38); }
 }
 @keyframes rowEntry {
   from { opacity: 0; transform: translateY(6px); }
@@ -2549,12 +2622,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 }
 .player-table tr:hover td { background: var(--bg-hover); }
 .player-table tr.expanded td { background: var(--accent-glow); border-bottom-color: var(--accent-dim); }
+.player-table tr.row-offline { opacity: 0.52; }
+.player-table tr.row-offline:hover { opacity: 0.8; }
 
 .online-dot {
   display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: middle;
 }
-.online-dot.on { background: var(--success-bright); box-shadow: 0 0 6px rgba(106,173,106,0.5); }
-.online-dot.off { background: #8b3a3a; box-shadow: none; }
+.online-dot.on  { background: var(--success-bright); box-shadow: 0 0 4px 1px rgba(76,175,110,0.5); animation: dotOnlineBreathe 7.5s ease-in-out infinite; }
+.online-dot.off { background: #6e2a14; box-shadow: 0 0 3px 0px rgba(120,35,10,0.35); animation: dotEmberFlicker 11.4s ease-in-out infinite; }
 
 .ban-badge {
   font-size: 10px; color: var(--error-bright); background: rgba(139,58,58,0.25);
@@ -4727,7 +4802,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 /* Pass 4 — Toggle switch */
 .loc-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .loc-toggle-row label { font-size: 12px; color: var(--text); min-width: 120px; }
-.loc-toggle { position: relative; width: 36px; height: 20px; display: inline-block; }
+.loc-toggle { position: relative; width: 36px; min-width: 36px; height: 20px; display: inline-block; flex-shrink: 0; }
 .loc-toggle input { opacity: 0; width: 0; height: 0; }
 .loc-toggle-slider {
   position: absolute; inset: 0; border-radius: 10px; cursor: pointer;
@@ -4830,6 +4905,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <button class="nav-btn" data-nav="progression" onclick="switchMainTab('progression')"><img class="nav-icon" src="ui-icons/icon_star.png" alt="">Progression</button>
     <button class="nav-btn" data-nav="events" onclick="switchMainTab('events')"><img class="nav-icon" src="ui-icons/icon_time_big.png" alt="">Events</button>
     <button class="nav-btn" data-nav="gamevalues" onclick="switchMainTab('gamevalues')"><img class="nav-icon" src="ui-icons/icon_edit.png" alt="">Game Values</button>
+    <button class="nav-btn" data-nav="fir" onclick="switchMainTab('fir')"><img class="nav-icon" src="ui-icons/icon_search.png" alt="">Found in Raid</button>
     <button class="nav-btn disabled" data-nav="profiles" onclick="switchMainTab('profiles')">Profiles <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="loadouts" onclick="switchMainTab('loadouts')">Loadouts <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="bounties" onclick="switchMainTab('bounties')">Bounties <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
@@ -5286,9 +5362,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </div>
         <div class="dash-widget-body">
           <div class="dash-stat-row">
-            <div class="dash-stat"><span class="dash-stat-label">Total Profiles</span><span class="dash-stat-value" id="dashTotalProfiles">--</span></div>
-            <div class="dash-stat"><span class="dash-stat-label">Online</span><span class="dash-stat-value" id="dashOnlineCount" style="color:var(--success-bright)">--</span></div>
-            <div class="dash-stat"><span class="dash-stat-label">In Raid</span><span class="dash-stat-value" id="dashInRaidCount" style="color:var(--text-muted)">0</span></div>
+            <div class="dash-stat"><span class="dash-stat-label">Total Profiles</span><span class="dash-stat-value"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.25);margin-right:5px;vertical-align:2px"></span><span id="dashTotalProfiles">--</span></span></div>
+            <div class="dash-stat"><span class="dash-stat-label">Online</span><span class="dash-stat-value"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success-bright);margin-right:5px;vertical-align:2px;box-shadow:0 0 4px rgba(76,175,110,0.6)"></span><span id="dashOnlineCount" style="color:var(--success-bright)">--</span></span></div>
+            <div class="dash-stat"><span class="dash-stat-label">In Raid</span><span class="dash-stat-value"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#c87a3e;margin-right:5px;vertical-align:2px;box-shadow:0 0 4px rgba(200,122,62,0.5)"></span><span id="dashInRaidCount" style="color:var(--text-muted)">0</span></span></div>
           </div>
           <div class="dash-player-list" id="dashPlayerList"></div>
         </div>
@@ -7905,29 +7981,95 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <!-- Global Raid Settings -->
       <div class="loc-weather-section" id="locGlobalRaidSection">
         <div class="loc-section-header">
-          <h4>Scav & Extract Settings</h4>
+          <h4>Raid Rules</h4>
         </div>
-        <div class="loc-weather-controls">
-          <div class="loc-weather-field">
-            <label>Scav Cooldown (sec) <span class="gv-orig" id="locOrigScavCd"></span></label>
-            <input type="number" id="locScavCooldown" class="gv-input" min="0" max="86400" step="1" style="width:100px">
+
+        <!-- Raid Menu Defaults -->
+        <div style="padding:0 0 4px 0">
+          <div class="gv-group-label" style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin:8px 0 6px">AI &amp; Bosses</div>
+          <div class="loc-weather-controls">
+            <div class="loc-weather-field">
+              <label>AI Density <span class="gv-orig" id="locOrigAiAmount"></span></label>
+              <select id="locAiAmount" class="gv-select" style="min-width:110px">
+                <option value="AsOnline">As Online</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Horde">Horde</option>
+              </select>
+            </div>
+            <div class="loc-weather-field">
+              <label>AI Difficulty <span class="gv-orig" id="locOrigAiDiff"></span></label>
+              <select id="locAiDifficulty" class="gv-select" style="min-width:110px">
+                <option value="AsOnline">As Online</option>
+                <option value="Easy">Easy</option>
+                <option value="Normal">Normal</option>
+                <option value="Hard">Hard</option>
+                <option value="Impossible">Impossible</option>
+              </select>
+            </div>
+            <div class="loc-weather-field" style="flex-direction:row;align-items:center;gap:8px">
+              <label style="margin:0">Bosses Enabled</label>
+              <input type="checkbox" id="locBossEnabled" style="width:16px;height:16px;accent-color:var(--gold)">
+            </div>
           </div>
-          <div class="loc-weather-field">
-            <label>Hostile Scav % <span class="gv-orig" id="locOrigHostile"></span></label>
-            <input type="number" id="locHostileChance" class="gv-input" min="0" max="100" step="1" style="width:80px">
+        </div>
+
+        <!-- Game Rules -->
+        <div style="padding:4px 0">
+          <div class="gv-group-label" style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin:4px 0 6px">Game Rules</div>
+          <div class="loc-weather-controls">
+            <div class="loc-weather-field" style="flex-direction:row;align-items:center;gap:8px">
+              <label style="margin:0">Scav Wars</label>
+              <input type="checkbox" id="locScavWars" style="width:16px;height:16px;accent-color:var(--gold)">
+            </div>
+            <div class="loc-weather-field" style="flex-direction:row;align-items:center;gap:8px">
+              <label style="margin:0">Tagged &amp; Cursed</label>
+              <input type="checkbox" id="locTaggedCursed" style="width:16px;height:16px;accent-color:var(--gold)">
+            </div>
+            <div class="loc-weather-field" style="flex-direction:row;align-items:center;gap:8px">
+              <label style="margin:0">Enable PvE</label>
+              <input type="checkbox" id="locEnablePve" style="width:16px;height:16px;accent-color:var(--gold)">
+            </div>
+            <div class="loc-weather-field" style="flex-direction:row;align-items:center;gap:8px">
+              <label style="margin:0;white-space:nowrap">Keep FiR on Death <span class="gv-orig" id="locOrigKeepFir" style="font-size:10px;opacity:0.6"></span></label>
+              <input type="checkbox" id="locKeepFir" style="width:16px;height:16px;accent-color:var(--gold)">
+            </div>
+            <div class="loc-weather-field" style="flex-direction:row;align-items:center;gap:8px">
+              <label style="margin:0;white-space:nowrap">Always Keep FiR <span class="gv-orig" id="locOrigAlwaysFir" style="font-size:10px;opacity:0.6"></span></label>
+              <input type="checkbox" id="locAlwaysFir" style="width:16px;height:16px;accent-color:var(--gold)">
+            </div>
           </div>
-          <div class="loc-weather-field">
-            <label>Car Extract Rep <span class="gv-orig" id="locOrigCarRep"></span></label>
-            <input type="number" id="locCarExtract" class="gv-input" min="0" max="10" step="0.01" style="width:80px">
+        </div>
+
+        <!-- Scav & Extract -->
+        <div style="padding:4px 0">
+          <div class="gv-group-label" style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin:4px 0 6px">Scav &amp; Extract</div>
+          <div class="loc-weather-controls">
+            <div class="loc-weather-field">
+              <label>Scav Cooldown (sec) <span class="gv-orig" id="locOrigScavCd"></span></label>
+              <input type="number" id="locScavCooldown" class="gv-input" min="0" max="86400" step="1" style="width:100px">
+            </div>
+            <div class="loc-weather-field">
+              <label>Hostile Scav % <span class="gv-orig" id="locOrigHostile"></span></label>
+              <input type="number" id="locHostileChance" class="gv-input" min="0" max="100" step="1" style="width:80px">
+            </div>
+            <div class="loc-weather-field">
+              <label>Car Extract Rep <span class="gv-orig" id="locOrigCarRep"></span></label>
+              <input type="number" id="locCarExtract" class="gv-input" min="0" max="10" step="0.01" style="width:80px">
+            </div>
+            <div class="loc-weather-field">
+              <label>Coop Extract Rep <span class="gv-orig" id="locOrigCoopRep"></span></label>
+              <input type="number" id="locCoopExtract" class="gv-input" min="0" max="10" step="0.01" style="width:80px">
+            </div>
+            <div class="loc-weather-field">
+              <label>Scav Extract Rep <span class="gv-orig" id="locOrigScavRep"></span></label>
+              <input type="number" id="locScavExtract" class="gv-input" min="0" max="10" step="0.01" style="width:80px">
+            </div>
           </div>
-          <div class="loc-weather-field">
-            <label>Coop Extract Rep <span class="gv-orig" id="locOrigCoopRep"></span></label>
-            <input type="number" id="locCoopExtract" class="gv-input" min="0" max="10" step="0.01" style="width:80px">
-          </div>
-          <div class="loc-weather-field">
-            <label>Scav Extract Rep <span class="gv-orig" id="locOrigScavRep"></span></label>
-            <input type="number" id="locScavExtract" class="gv-input" min="0" max="10" step="0.01" style="width:80px">
-          </div>
+        </div>
+
+        <div style="margin-top:8px">
           <button class="btn btn-sm" onclick="window.locSaveGlobalRaid()">Apply</button>
           <button class="btn btn-sm" onclick="window.locResetGlobalRaid()">Reset</button>
         </div>
@@ -8187,6 +8329,149 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       </div>
     </div>
 
+  </div>
+
+  <!-- ═══════ FOUND IN RAID ═══════ -->
+  <div class="main-tab-panel" id="main-fir">
+    <!-- Warning banner -->
+    <div style="background:rgba(200,122,62,0.1);border:1px solid rgba(200,122,62,0.3);border-radius:6px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--warning)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Changes apply to <strong>all players</strong>. These settings take effect immediately on Apply — no server restart needed.
+    </div>
+
+    <!-- FIR Toggles -->
+    <div class="cc-panel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:18px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Found in Raid Toggles</div>
+
+      <!-- Flea Purchases FIR -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Flea Market Purchases → FIR</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Items bought on the flea market will arrive marked as Found in Raid. Useful for enforcing FIR-only gameplay while still allowing flea use.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firFleaPurchases" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Trader Purchases FIR -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Trader Purchases → FIR</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Items bought from any trader (vanilla + modded) will arrive marked as Found in Raid. Combines well with quest FIR removal.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firTraderPurchases" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Barters Require Functional -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Barters Require Functional Items</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Non-currency barter items at all traders must be in functional (undamaged) condition. Currency-only purchases (rubles, USD, EUR) are unaffected.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firBartersFunctional" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Hideout Construction FIR -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Hideout Construction Requires FIR Items</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">All item requirements for hideout module construction must be Found in Raid. Items purchased from traders or the flea will not count.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firHideoutConstruction" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Barter Items Must Be FIR -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Barter Items Must Be FIR</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Non-currency items used in trader barters must be Found in Raid. Currency payments (rubles, USD, EUR) are exempt. Server blocks the trade if any barter item isn't FIR.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firBartersMustBeFir" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Sell to Trader Requires FIR -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Selling to Traders Requires FIR Items</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Items sold to any trader must be Found in Raid. Non-FIR items (purchased from traders/flea, transferred, etc.) cannot be sold back. Server blocks the sale if any item isn't FIR.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firSellToTrader" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Economy Controls section header -->
+      <div style="font-size:13px;font-weight:600;color:var(--accent);margin:20px 0 14px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;border-top:1px solid rgba(200,170,110,0.15);padding-top:18px">Economy Controls</div>
+
+      <!-- Non-FIR Sell Penalty -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Non-FIR Sell Penalty</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Reduce sell price when selling non-FIR items to traders. Only active when "Selling Requires FIR" is OFF. Client shows full price but server pays the penalized amount.</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <input type="range" id="firNonFirPenalty" min="0" max="100" value="0" step="5" oninput="document.getElementById('firNonFirPenaltyVal').textContent=this.value+'%';firCheckDirty()" style="flex:1;max-width:200px;accent-color:var(--accent)">
+            <span id="firNonFirPenaltyVal" style="font-size:13px;font-weight:600;color:var(--accent);min-width:40px">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Purchase Quantity Limits -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Purchase Quantity Limits</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Cap how many of each item a player can buy per trader reset cycle. Uses SPT's built-in buy restriction system. Existing tighter limits are preserved.</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <label class="cc-toggle" style="flex-shrink:0">
+              <input type="checkbox" id="firPurchaseLimit" onchange="firCheckDirty()">
+              <span class="cc-toggle-slider"></span>
+            </label>
+            <span style="font-size:12px;color:var(--text-dim)">Limit:</span>
+            <input type="number" id="firPurchaseLimitVal" min="1" max="999" value="5" step="1" onchange="firCheckDirty()" oninput="firCheckDirty()" style="width:60px;background:var(--bg-dark);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-family:var(--font-mono);font-size:13px;text-align:center">
+            <span style="font-size:12px;color:var(--text-dim)">per item per reset</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Death Tax -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Death Tax</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Lose a percentage of stash rubles when dying in a PMC raid (killed, MIA, or run-through). Scav raids and survived extracts are unaffected. Set to 0% to disable.</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <input type="range" id="firDeathTax" min="0" max="100" value="0" step="1" oninput="document.getElementById('firDeathTaxVal').textContent=this.value+'%';firCheckDirty()" style="flex:1;max-width:200px;accent-color:var(--accent)">
+            <span id="firDeathTaxVal" style="font-size:13px;font-weight:600;color:var(--accent);min-width:40px">0%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quest FIR note -->
+    <div style="background:rgba(100,160,220,0.07);border:1px solid rgba(100,160,220,0.2);border-radius:6px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;font-size:12px;color:var(--text-dim)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#7ab3e0" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <div><span style="color:#7ab3e0;font-weight:600">Quest handover FIR</span> is controlled in the <strong style="color:var(--text)">Quests tab</strong> → Global Settings → "Remove Found-in-Raid requirements". Unchecking that toggle enforces FIR for quest item handovers.</div>
+    </div>
+
+    <!-- Action buttons -->
+    <div style="display:flex;gap:10px;align-items:center">
+      <button id="firApplyBtn" onclick="firApply()" style="padding:9px 22px;background:rgba(200,170,110,0.15);color:var(--accent);border:1px solid rgba(200,170,110,0.4);border-radius:5px;cursor:pointer;font-family:var(--font-mono);font-size:13px;font-weight:600">Apply</button>
+      <button onclick="firReset()" style="padding:9px 18px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-family:var(--font-mono);font-size:12px">Reset to Defaults</button>
+      <span id="firStatus" style="font-size:12px;color:var(--text-dim);margin-left:6px"></span>
+    </div>
   </div>
 
   <div class="main-tab-panel" id="main-profiles">
@@ -8756,6 +9041,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'progression' && !progressionLoaded) progressionInit();
     if (tab === 'events' && !eventsLoaded) eventsInit();
     if (tab === 'gamevalues' && !gamevaluesLoaded) gameValuesInit();
+    if (tab === 'fir' && !window.firLoaded) window.firInit && window.firInit();
 
     // Manage raid info polling — start when on tab, stop when leaving
     if (tab === 'raidinfo') {
@@ -9565,6 +9851,25 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     shoreline: 'Shoreline', tarkovstreets: 'Streets', woods: 'Woods', labyrinth: 'Labyrinth'
   };
 
+  // Deterministic daily map selection — mirrors C# RecalculateAllEventFactors MapOfTheDay logic
+  // Uses same algorithm: .NET DateTime.Date.GetHashCode() % eligibleMaps.Length
+  function getMapOfTheDayId() {
+    var eligible = ['bigmap', 'interchange', 'laboratory', 'lighthouse', 'rezervbase', 'shoreline', 'tarkovstreets', 'woods', 'labyrinth'];
+    try {
+      var now = new Date();
+      var utcMidnightMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      // .NET ticks from Jan 1, 0001: offset = 621355968000000000 ticks
+      var OFFSET = 621355968000000000n;
+      var ticks = BigInt(utcMidnightMs) * 10000n + OFFSET;
+      // .NET DateTime.GetHashCode() = (int)ticks ^ (int)(ticks >> 32)
+      var low32 = Number(ticks & 0xFFFFFFFFn);
+      var high32 = Number((ticks >> 32n) & 0xFFFFFFFFn);
+      var hash = (low32 ^ high32) | 0; // coerce to signed int32
+      var idx = ((hash % eligible.length) + eligible.length) % eligible.length;
+      return eligible[idx];
+    } catch(e) { return eligible[0]; }
+  }
+
   function dashEvtCardClass(type) {
     if (type === 'DoubleXP') return 'evt-xp';
     if (type === 'TraderSale') return 'evt-sale';
@@ -9685,7 +9990,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         if (e.cycleRandomTarget) html += '<span class="dash-evt-target-pill" style="border-color:rgba(200,170,110,0.3);color:var(--accent)">Cycling</span>';
         html += '</div>';
       } else if (e.type === 'MapOfTheDay') {
-        html += '<div class="dash-evt-targets"><span class="dash-evt-target-pill">Featured map rotates daily</span></div>';
+        var motdId = e.resolvedTarget || getMapOfTheDayId();
+        var motdLabel = _dashEvtMapNames[motdId] || motdId;
+        html += '<div class="dash-evt-targets"><span class="dash-evt-target-pill" style="border-color:rgba(255,152,0,0.6);color:#ff9800;font-size:13px;font-weight:600;padding:4px 10px">' + escH(motdLabel) + '</span></div>';
       } else if (e.type === 'MapLootBoost' || e.type === 'MapBossRush') {
         html += '<div class="dash-evt-targets"><span class="dash-evt-target-pill">All Maps</span></div>';
       } else if (e.type === 'TraderSale') {
@@ -9791,7 +10098,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function renderSimpleRow(p, idx) {
     var statusClass = p.inRaid ? 'in-raid' : (p.online ? 'online' : 'offline');
-    return '<div class="player-simple-row" style="--row-index:' + idx + '" onclick="navigateToPlayerFromDash(\'' + escH(p.sessionId) + '\')">' +
+    var rowStatusClass = p.inRaid ? ' player-in-raid' : (p.online ? ' player-online' : ' player-offline');
+    return '<div class="player-simple-row' + rowStatusClass + '" style="--row-index:' + idx + '" onclick="navigateToPlayerFromDash(\'' + escH(p.sessionId) + '\')">' +
       '<span class="status-dot ' + statusClass + '"></span>' +
       '<span class="p-name">' + escH(p.nickname) + '</span>' +
       '<span class="p-detail">Lv ' + p.level + '</span>' +
@@ -9800,8 +10108,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function renderDetailedRow(p, idx) {
     var statusClass = p.inRaid ? 'in-raid' : (p.online ? 'online' : 'offline');
+    var rowStatusClass = p.inRaid ? ' player-in-raid' : (p.online ? ' player-online' : ' player-offline');
     var nameClass = p.inRaid ? ' in-raid' : (p.online ? ' online' : '');
-    var avatarClass = p.inRaid ? ' in-raid' : (p.online ? ' online' : '');
+    var avatarClass = p.inRaid ? ' in-raid' : (p.online ? ' online' : ' offline');
     var avatarSrc = p.avatarIcon ? 'Profile Icons/' + encodeURIComponent(p.avatarIcon) : '';
     var avatarHtml = avatarSrc
       ? '<img class="player-detail-avatar' + avatarClass + '" src="' + avatarSrc + '" alt="">'
@@ -9817,12 +10126,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       var rawMap = p.lastMapPlayed || '';
       var mapName = (rawMap && rawMap !== 'Unknown') ? mapDisplayName(rawMap) : '';
       if (mapName && mapName.toLowerCase().indexOf('unavailable') !== -1) mapName = '';
-      if (ago && mapName) statusText = '<span style="color:#7a7060">Last seen: ' + ago + ' on ' + escH(mapName) + '</span>';
-      else if (ago) statusText = '<span style="color:#7a7060">Last seen: ' + ago + '</span>';
-      else statusText = '<span style="color:#7a7060">Offline</span>';
+      var seenColor = '#50443a'; // default: very faded
+      if (p.lastSessionDate) {
+        var ageSec = Math.floor(Date.now() / 1000) - p.lastSessionDate;
+        if (ageSec < 86400) seenColor = '#a08878';       // <24h: readable warm
+        else if (ageSec < 604800) seenColor = '#6e5a50'; // <1 week: dimmer
+      }
+      if (ago && mapName) statusText = '<span style="color:' + seenColor + '">Last seen: ' + ago + ' on ' + escH(mapName) + '</span>';
+      else if (ago) statusText = '<span style="color:' + seenColor + '">Last seen: ' + ago + '</span>';
+      else statusText = '<span style="color:#50443a">Offline</span>';
     }
 
-    var sub = 'Lv ' + p.level + ' · ' + (p.totalRaids || 0) + ' raids · ' + (p.survivalRate || 0) + '% SR';
+    var sr = parseFloat(p.survivalRate) || 0;
+    var srColor = sr >= 60 ? '#6aab78' : (sr >= 40 ? '#c8933a' : '#c05050');
+    var sub = '<span style="display:inline-block;background:rgba(255,255,255,0.07);color:var(--text-dim);font-size:10px;padding:0px 5px;border-radius:3px;font-family:var(--font-mono);vertical-align:middle;line-height:16px">Lv ' + p.level + '</span>'
+      + ' <span style="color:var(--text-dim)">' + (p.totalRaids || 0) + ' raids</span>'
+      + ' · <span style="color:' + srColor + ';font-weight:600">' + sr.toFixed(1) + '% SR</span>';
 
     var expandHtml = '<div class="player-expand-stats"><div class="player-expand-inner">' +
       '<span><span class="stat-label">Kills </span><span class="stat-value">' + (p.totalKills || 0) + '</span></span>' +
@@ -9834,7 +10153,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     var factionPill = p.side ? '<span class="faction-pill ' + (p.side.toLowerCase() === 'bear' ? 'bear' : 'usec') + '">' + escH(p.side) + '</span>' : '';
 
-    return '<div class="player-detail-row" style="--row-index:' + idx + '" onclick="navigateToPlayerFromDash(\'' + escH(p.sessionId) + '\')">' +
+    return '<div class="player-detail-row' + rowStatusClass + '" style="--row-index:' + idx + '" onclick="navigateToPlayerFromDash(\'' + escH(p.sessionId) + '\')">' +
       avatarHtml +
       '<div class="player-detail-info">' +
         '<div class="player-detail-name' + nameClass + '"><span class="status-dot ' + statusClass + '"></span>' + escH(p.nickname) + '</div>' +
@@ -9891,6 +10210,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         listEl.innerHTML = '<div style="padding:12px;color:var(--text-muted);text-align:center">No profiles found</div>';
         return;
       }
+
+      // Sort: in-raid first, then online, then offline; stable within each group
+      realPlayers.sort(function(a, b) {
+        var rank = function(p) { return p.inRaid ? 0 : (p.online ? 1 : 2); };
+        return rank(a) - rank(b);
+      });
 
       var html = '';
       var idx = 0;
@@ -13041,7 +13366,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (search) qs += '&search=' + encodeURIComponent(search);
     if (faction) qs += '&faction=' + encodeURIComponent(faction);
     api(qs).then(function(data) {
-      playersData = data.players || [];
+      var raw = data.players || [];
+      // Stable sort: online first, offline last (preserves server sort within each group)
+      raw.sort(function(a, b) { return (b.online ? 1 : 0) - (a.online ? 1 : 0); });
+      playersData = raw;
       playerTotal = data.total || 0;
       playersLoaded = true;
       renderPlayerRoster();
@@ -13070,7 +13398,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     for (var i = 0; i < paged.length; i++) {
       var p = paged[i];
       var isExpanded = expandedPlayerId === p.sessionId;
-      html += '<tr class="' + (isExpanded ? 'expanded' : '') + '" style="cursor:pointer" onclick="togglePlayerExpand(\'' + escA(p.sessionId) + '\')">';
+      var rowCls = (isExpanded ? 'expanded' : '') + (!p.online ? ' row-offline' : '');
+      html += '<tr class="' + rowCls.trim() + '" style="cursor:pointer" onclick="togglePlayerExpand(\'' + escA(p.sessionId) + '\')">';
       html += '<td><span class="online-dot ' + (p.online ? 'on' : 'off') + '"></span>' + escH(p.nickname);
       if (p.banned) html += ' <span class="ban-badge">banned</span>';
       html += '</td>';
@@ -17930,10 +18259,15 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     banner.style.display = 'block';
     list.innerHTML = active.map(function(e) {
       var timeLeft = e.expiresAt ? formatTimeLeft(new Date(e.expiresAt)) : 'No expiry';
+      var extra = '';
+      if (e.type === 'MapOfTheDay') {
+        var motdId2 = e.resolvedTarget || getMapOfTheDayId();
+        extra = ' &middot; <span style="color:var(--accent)">' + escH(_evtMapNames[motdId2] || _dashEvtMapNames[motdId2] || motdId2) + '</span>';
+      }
       return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">' +
         '<span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block"></span>' +
         '<span style="color:var(--text-bright)">' + escH(e.name) + '</span>' +
-        '<span style="color:var(--text-muted);font-size:11px">' + evtTypeLabel(e.type) + ' &middot; ' + e.multiplier + 'x</span>' +
+        '<span style="color:var(--text-muted);font-size:11px">' + evtTypeLabel(e.type) + ' &middot; ' + (e.resolvedMultiplier || e.multiplier) + 'x' + extra + '</span>' +
         '<span style="margin-left:auto;font-size:10px;color:var(--text-dim)">' + timeLeft + '</span>' +
         '</div>';
     }).join('');
@@ -17993,9 +18327,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     tbody.innerHTML = events.map(function(e) {
       var schedule = e.cronExpression ? '<span style="font-family:var(--font-mono);font-size:10px">' + escH(e.cronExpression) + '</span>' :
         (e.startTime ? new Date(e.startTime).toLocaleString() : 'Manual');
+      if (e.type === 'MapOfTheDay' && e.resolvedTarget)
+        schedule += ' <span style="font-size:10px;color:#ff9800">' + escH(_evtMapNames[e.resolvedTarget] || e.resolvedTarget) + '</span>';
       var dur = evtFormatDuration(e.durationMinutes);
       var actions = '';
-      if (e.status === 'Scheduled' || e.status === 'Draft')
+      if (e.status !== 'Active')
         actions += '<button class="btn btn-sm" onclick="window.evtActivate(\'' + e.id + '\')" style="font-size:10px;padding:2px 8px">Start</button> ';
       if (e.status === 'Active')
         actions += '<button class="btn btn-sm" onclick="window.evtDeactivate(\'' + e.id + '\')" style="font-size:10px;padding:2px 8px">Stop</button> ';
@@ -19893,7 +20229,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     gvRenderBackpackTable();
   }
 
-  function gvRenderBackpackTable() {
+  window.gvRenderBackpackTable = function gvRenderBackpackTable() {
     var body = document.getElementById('gvBackpackBody');
     var showCmp = _gvCompareMode;
     var html = '';
@@ -19963,7 +20299,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     html += '</div><div class="gv-edit-actions">';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvSaveBackpack(\'' + b.tpl + '\')" style="background:var(--accent-dim);color:var(--bg-base)">Save Changes</button>';
     html += '<button class="btn btn-sm" onclick="event.stopPropagation();window.gvResetBackpackItem(\'' + b.tpl + '\')">Reset to Default</button>';
-    html += '<button class="btn btn-sm" onclick="event.stopPropagation();_gvEditingTpl=null;gvRenderBackpackTable()">Cancel</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();_gvEditingTpl=null;window.gvRenderBackpackTable()">Cancel</button>';
     html += '</div></td></tr>';
     return html;
   }
@@ -20198,6 +20534,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function locRenderGlobalRaid(gs) {
     if (!gs) return;
+    // Scav & Extract
     document.getElementById('locScavCooldown').value = gs.scavCooldownSeconds;
     document.getElementById('locHostileChance').value = gs.playerScavHostileChancePercent;
     document.getElementById('locCarExtract').value = gs.carExtractBaseStandingGain;
@@ -20208,11 +20545,32 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('locOrigCarRep').textContent = '(orig: ' + gs.originalCarExtractBaseStandingGain + ')';
     document.getElementById('locOrigCoopRep').textContent = '(orig: ' + gs.originalCoopExtractBaseStandingGain + ')';
     document.getElementById('locOrigScavRep').textContent = '(orig: ' + gs.originalScavExtractStandingGain + ')';
+    // AI & Bosses
+    var aiAmtSel = document.getElementById('locAiAmount');
+    if (aiAmtSel) aiAmtSel.value = gs.raidMenuAiAmount || 'AsOnline';
+    var aiDiffSel = document.getElementById('locAiDifficulty');
+    if (aiDiffSel) aiDiffSel.value = gs.raidMenuAiDifficulty || 'AsOnline';
+    document.getElementById('locBossEnabled').checked = gs.raidMenuBossEnabled;
+    var origAiAmt = document.getElementById('locOrigAiAmount');
+    if (origAiAmt) origAiAmt.textContent = '(orig: ' + (gs.originalRaidMenuAiAmount || 'AsOnline') + ')';
+    var origAiDiff = document.getElementById('locOrigAiDiff');
+    if (origAiDiff) origAiDiff.textContent = '(orig: ' + (gs.originalRaidMenuAiDifficulty || 'AsOnline') + ')';
+    // Game Rules
+    document.getElementById('locScavWars').checked = gs.raidMenuScavWars;
+    document.getElementById('locTaggedCursed').checked = gs.raidMenuTaggedAndCursed;
+    document.getElementById('locEnablePve').checked = gs.raidMenuEnablePve;
+    document.getElementById('locKeepFir').checked = gs.keepFiRSecureContainerOnDeath;
+    document.getElementById('locAlwaysFir').checked = gs.alwaysKeepFoundInRaidOnRaidEnd;
+    var origKeepFir = document.getElementById('locOrigKeepFir');
+    if (origKeepFir) origKeepFir.textContent = '(orig: ' + (gs.originalKeepFiRSecureContainerOnDeath ? 'on' : 'off') + ')';
+    var origAlwaysFir = document.getElementById('locOrigAlwaysFir');
+    if (origAlwaysFir) origAlwaysFir.textContent = '(orig: ' + (gs.originalAlwaysKeepFoundInRaidOnRaidEnd ? 'on' : 'off') + ')';
   }
 
   window.locSaveGlobalRaid = function() {
     var body = {};
     var v;
+    // Scav & Extract
     v = parseInt(document.getElementById('locScavCooldown').value);
     if (!isNaN(v)) body.scavCooldownSeconds = v;
     v = parseFloat(document.getElementById('locHostileChance').value);
@@ -20223,6 +20581,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (!isNaN(v)) body.coopExtractBaseStandingGain = v;
     v = parseFloat(document.getElementById('locScavExtract').value);
     if (!isNaN(v)) body.scavExtractStandingGain = v;
+    // AI & Bosses
+    var aiAmtSel = document.getElementById('locAiAmount');
+    if (aiAmtSel && aiAmtSel.value) body.raidMenuAiAmount = aiAmtSel.value;
+    var aiDiffSel = document.getElementById('locAiDifficulty');
+    if (aiDiffSel && aiDiffSel.value) body.raidMenuAiDifficulty = aiDiffSel.value;
+    body.raidMenuBossEnabled = document.getElementById('locBossEnabled').checked;
+    // Game Rules
+    body.raidMenuScavWars = document.getElementById('locScavWars').checked;
+    body.raidMenuTaggedAndCursed = document.getElementById('locTaggedCursed').checked;
+    body.raidMenuEnablePve = document.getElementById('locEnablePve').checked;
+    body.keepFiRSecureContainerOnDeath = document.getElementById('locKeepFir').checked;
+    body.alwaysKeepFoundInRaidOnRaidEnd = document.getElementById('locAlwaysFir').checked;
 
     api('gamevalues/locations/global-raid-settings', {
       method: 'POST', body: JSON.stringify(body)
@@ -20809,6 +21179,116 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     loadProfileList();
     startVitalsPolling();
   }
+})();
+
+// ═══════════════════════════════════════════════════════
+// FOUND IN RAID (FIR) TAB
+// ═══════════════════════════════════════════════════════
+(function() {
+  'use strict';
+
+  var firLoaded = false;
+  var firAppliedState = null;
+
+  window.firLoaded = false; // expose for switchMainTab check
+
+  function firSetStatus(msg, isError) {
+    var el = document.getElementById('firStatus');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = isError ? 'var(--error-bright)' : 'var(--text-dim)';
+  }
+
+  function firGetValues() {
+    return {
+      fleaPurchasesFir: !!(document.getElementById('firFleaPurchases') || {}).checked,
+      traderPurchasesFir: !!(document.getElementById('firTraderPurchases') || {}).checked,
+      bartersRequireFunctional: !!(document.getElementById('firBartersFunctional') || {}).checked,
+      hideoutConstructionFir: !!(document.getElementById('firHideoutConstruction') || {}).checked,
+      barterItemsMustBeFir: !!(document.getElementById('firBartersMustBeFir') || {}).checked,
+      sellToTraderRequiresFir: !!(document.getElementById('firSellToTrader') || {}).checked,
+      nonFirSellPenaltyPercent: parseInt(document.getElementById('firNonFirPenalty')?.value || '0', 10),
+      purchaseLimitEnabled: !!(document.getElementById('firPurchaseLimit') || {}).checked,
+      purchaseLimitPerReset: parseInt(document.getElementById('firPurchaseLimitVal')?.value || '5', 10),
+      deathTaxPercent: parseInt(document.getElementById('firDeathTax')?.value || '0', 10)
+    };
+  }
+
+  function firPopulate(cfg) {
+    var f = document.getElementById('firFleaPurchases');
+    var t = document.getElementById('firTraderPurchases');
+    var b = document.getElementById('firBartersFunctional');
+    var h = document.getElementById('firHideoutConstruction');
+    var bfir = document.getElementById('firBartersMustBeFir');
+    var sfir = document.getElementById('firSellToTrader');
+    if (f) f.checked = !!cfg.fleaPurchasesFir;
+    if (t) t.checked = !!cfg.traderPurchasesFir;
+    if (b) b.checked = !!cfg.bartersRequireFunctional;
+    if (h) h.checked = !!cfg.hideoutConstructionFir;
+    if (bfir) bfir.checked = !!cfg.barterItemsMustBeFir;
+    if (sfir) sfir.checked = !!cfg.sellToTraderRequiresFir;
+    // New economy controls
+    var penalty = document.getElementById('firNonFirPenalty');
+    var penaltyVal = document.getElementById('firNonFirPenaltyVal');
+    if (penalty) { penalty.value = cfg.nonFirSellPenaltyPercent || 0; }
+    if (penaltyVal) { penaltyVal.textContent = (cfg.nonFirSellPenaltyPercent || 0) + '%'; }
+    var plimit = document.getElementById('firPurchaseLimit');
+    var plimitVal = document.getElementById('firPurchaseLimitVal');
+    if (plimit) plimit.checked = !!cfg.purchaseLimitEnabled;
+    if (plimitVal) plimitVal.value = cfg.purchaseLimitPerReset || 5;
+    var dtax = document.getElementById('firDeathTax');
+    var dtaxVal = document.getElementById('firDeathTaxVal');
+    if (dtax) { dtax.value = cfg.deathTaxPercent || 0; }
+    if (dtaxVal) { dtaxVal.textContent = (cfg.deathTaxPercent || 0) + '%'; }
+    firAppliedState = JSON.stringify(firGetValues());
+    firCheckDirty();
+  }
+
+  window.firCheckDirty = function() {
+    var btn = document.getElementById('firApplyBtn');
+    if (!btn || !firAppliedState) return;
+    var cur = JSON.stringify(firGetValues());
+    var dirty = cur !== firAppliedState;
+    btn.style.opacity = dirty ? '1' : '0.6';
+    btn.style.borderColor = dirty ? 'rgba(200,170,110,0.6)' : 'rgba(200,170,110,0.3)';
+  };
+
+  window.firApply = function() {
+    var body = firGetValues();
+    firSetStatus('Applying...', false);
+    api('fir/apply', 'POST', body).then(function(result) {
+      firAppliedState = JSON.stringify(body);
+      firCheckDirty();
+      firSetStatus(result.message || 'Applied', false);
+    }).catch(function(e) {
+      firSetStatus('Error: ' + (e.message || e), true);
+    });
+  };
+
+  window.firReset = function() {
+    if (!confirm('Reset all FIR settings to defaults?')) return;
+    api('fir/reset', 'POST', {}).then(function(result) {
+      return api('fir/config', 'GET');
+    }).then(function(status) {
+      firPopulate(status.config || {});
+      firSetStatus('Reset to defaults', false);
+    }).catch(function(e) {
+      firSetStatus('Error: ' + (e.message || e), true);
+    });
+  };
+
+  function firInit() {
+    firLoaded = true;
+    window.firLoaded = true;
+    api('fir/config', 'GET').then(function(status) {
+      firPopulate(status.config || {});
+    }).catch(function(e) {
+      firSetStatus('Failed to load FIR config', true);
+    });
+  }
+
+  // Make firInit accessible to switchMainTab
+  window.firInit = firInit;
 })();
 </script>
 </body>

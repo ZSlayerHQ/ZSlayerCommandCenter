@@ -49,6 +49,7 @@ public class CommandCenterHttpListener(
     EventService eventService,
     GameValuesService gameValuesService,
     LocationService locationService,
+    FirService firService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -216,6 +217,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("gamevalues/") || path == "gamevalues")
             {
                 await HandleGameValuesRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle FIR routes
+            if (path.StartsWith("fir/") || path == "fir")
+            {
+                await HandleFirRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -3049,6 +3057,53 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, 404, new { error = "Not found" });
                 break;
             }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // FIR ROUTES
+    // ═══════════════════════════════════════════════════════
+
+    private async Task HandleFirRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        var sub = path == "fir" ? "" : path["fir/".Length..];
+
+        switch (sub)
+        {
+            case "config" when method == "GET":
+            {
+                var status = firService.GetStatus();
+                await WriteJson(context, 200, status);
+                break;
+            }
+            case "apply" when method == "POST":
+            {
+                var body = await ReadBody<FirConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                configService.GetConfig().Fir = body;
+                configService.SaveConfig();
+                var result = firService.ApplyConfig();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"FIR: updated settings — {result.Message}");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "reset" when method == "POST":
+            {
+                var result = firService.Reset();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "FIR: reset to defaults");
+                await WriteJson(context, 200, result);
+                break;
+            }
+            default:
+                await WriteJson(context, 404, new { error = "Not found" });
+                break;
         }
     }
 

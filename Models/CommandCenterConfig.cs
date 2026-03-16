@@ -63,6 +63,9 @@ public record CommandCenterConfig
 
     [JsonPropertyName("gameValues")]
     public GameValuesConfig GameValues { get; set; } = new();
+
+    [JsonPropertyName("fir")]
+    public FirConfig Fir { get; set; } = new();
 }
 
 public record HeadlessConfig

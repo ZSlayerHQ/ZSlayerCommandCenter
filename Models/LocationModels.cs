@@ -65,6 +65,16 @@ public record GlobalRaidSettingsConfig
     [JsonPropertyName("carExtractBaseStandingGain")] public double? CarExtractBaseStandingGain { get; set; }
     [JsonPropertyName("coopExtractBaseStandingGain")] public double? CoopExtractBaseStandingGain { get; set; }
     [JsonPropertyName("scavExtractStandingGain")] public double? ScavExtractStandingGain { get; set; }
+    // Raid behavior
+    [JsonPropertyName("keepFiRSecureContainerOnDeath")] public bool? KeepFiRSecureContainerOnDeath { get; set; }
+    [JsonPropertyName("alwaysKeepFoundInRaidOnRaidEnd")] public bool? AlwaysKeepFoundInRaidOnRaidEnd { get; set; }
+    // Raid menu defaults
+    [JsonPropertyName("raidMenuAiAmount")] public string? RaidMenuAiAmount { get; set; }
+    [JsonPropertyName("raidMenuAiDifficulty")] public string? RaidMenuAiDifficulty { get; set; }
+    [JsonPropertyName("raidMenuBossEnabled")] public bool? RaidMenuBossEnabled { get; set; }
+    [JsonPropertyName("raidMenuScavWars")] public bool? RaidMenuScavWars { get; set; }
+    [JsonPropertyName("raidMenuTaggedAndCursed")] public bool? RaidMenuTaggedAndCursed { get; set; }
+    [JsonPropertyName("raidMenuEnablePve")] public bool? RaidMenuEnablePve { get; set; }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -102,6 +112,24 @@ public record GlobalRaidSettingsDto
     [JsonPropertyName("originalCarExtractBaseStandingGain")] public double OriginalCarExtractBaseStandingGain { get; set; }
     [JsonPropertyName("originalCoopExtractBaseStandingGain")] public double OriginalCoopExtractBaseStandingGain { get; set; }
     [JsonPropertyName("originalScavExtractStandingGain")] public double OriginalScavExtractStandingGain { get; set; }
+    // Raid behavior
+    [JsonPropertyName("keepFiRSecureContainerOnDeath")] public bool KeepFiRSecureContainerOnDeath { get; set; }
+    [JsonPropertyName("alwaysKeepFoundInRaidOnRaidEnd")] public bool AlwaysKeepFoundInRaidOnRaidEnd { get; set; }
+    [JsonPropertyName("originalKeepFiRSecureContainerOnDeath")] public bool OriginalKeepFiRSecureContainerOnDeath { get; set; }
+    [JsonPropertyName("originalAlwaysKeepFoundInRaidOnRaidEnd")] public bool OriginalAlwaysKeepFoundInRaidOnRaidEnd { get; set; }
+    // Raid menu defaults
+    [JsonPropertyName("raidMenuAiAmount")] public string RaidMenuAiAmount { get; set; } = "";
+    [JsonPropertyName("raidMenuAiDifficulty")] public string RaidMenuAiDifficulty { get; set; } = "";
+    [JsonPropertyName("raidMenuBossEnabled")] public bool RaidMenuBossEnabled { get; set; }
+    [JsonPropertyName("raidMenuScavWars")] public bool RaidMenuScavWars { get; set; }
+    [JsonPropertyName("raidMenuTaggedAndCursed")] public bool RaidMenuTaggedAndCursed { get; set; }
+    [JsonPropertyName("raidMenuEnablePve")] public bool RaidMenuEnablePve { get; set; }
+    [JsonPropertyName("originalRaidMenuAiAmount")] public string OriginalRaidMenuAiAmount { get; set; } = "";
+    [JsonPropertyName("originalRaidMenuAiDifficulty")] public string OriginalRaidMenuAiDifficulty { get; set; } = "";
+    [JsonPropertyName("originalRaidMenuBossEnabled")] public bool OriginalRaidMenuBossEnabled { get; set; }
+    [JsonPropertyName("originalRaidMenuScavWars")] public bool OriginalRaidMenuScavWars { get; set; }
+    [JsonPropertyName("originalRaidMenuTaggedAndCursed")] public bool OriginalRaidMenuTaggedAndCursed { get; set; }
+    [JsonPropertyName("originalRaidMenuEnablePve")] public bool OriginalRaidMenuEnablePve { get; set; }
     [JsonPropertyName("isModified")] public bool IsModified { get; set; }
 }
 
