@@ -47,6 +47,60 @@ public record FirConfig
     /// <summary>Percentage of stash rubles lost on death (0 = disabled, 100 = lose all).</summary>
     [JsonPropertyName("deathTaxPercent")]
     public int DeathTaxPercent { get; set; } = 0;
+
+    /// <summary>On death, lose all items in secure container except keys and cases.</summary>
+    [JsonPropertyName("secureContainerWipeOnDeath")]
+    public bool SecureContainerWipeOnDeath { get; set; } = false;
+
+    // ── Global Gameplay Toggles ──
+
+    /// <summary>All traders have unlimited stock.</summary>
+    [JsonPropertyName("tradingUnlimitedItems")]
+    public bool? TradingUnlimitedItems { get; set; }
+
+    /// <summary>Unlock all trader loyalty levels for all players.</summary>
+    [JsonPropertyName("maxLoyaltyLevelForAll")]
+    public bool? MaxLoyaltyLevelForAll { get; set; }
+
+    /// <summary>Disable in-raid item discard limits.</summary>
+    [JsonPropertyName("discardLimitsDisabled")]
+    public bool? DiscardLimitsDisabled { get; set; }
+
+    /// <summary>Disable skill decay over time.</summary>
+    [JsonPropertyName("skillAtrophyDisabled")]
+    public bool? SkillAtrophyDisabled { get; set; }
+
+    /// <summary>Enable level-gated flea market (items unlock at certain player levels).</summary>
+    [JsonPropertyName("tieredFleaEnabled")]
+    public bool? TieredFleaEnabled { get; set; }
+
+    // ── Lost on Death ──
+
+    /// <summary>Override lost-on-death settings. Null = use server default.</summary>
+    [JsonPropertyName("lostOnDeath")]
+    public LostOnDeathOverride? LostOnDeath { get; set; }
+}
+
+public record LostOnDeathOverride
+{
+    [JsonPropertyName("enabled")] public bool Enabled { get; set; } = false;
+    [JsonPropertyName("headwear")] public bool Headwear { get; set; } = true;
+    [JsonPropertyName("earpiece")] public bool Earpiece { get; set; } = true;
+    [JsonPropertyName("faceCover")] public bool FaceCover { get; set; } = true;
+    [JsonPropertyName("armorVest")] public bool ArmorVest { get; set; } = true;
+    [JsonPropertyName("eyewear")] public bool Eyewear { get; set; } = true;
+    [JsonPropertyName("tacticalVest")] public bool TacticalVest { get; set; } = true;
+    [JsonPropertyName("pocketItems")] public bool PocketItems { get; set; } = true;
+    [JsonPropertyName("backpack")] public bool Backpack { get; set; } = true;
+    [JsonPropertyName("holster")] public bool Holster { get; set; } = true;
+    [JsonPropertyName("firstPrimaryWeapon")] public bool FirstPrimaryWeapon { get; set; } = true;
+    [JsonPropertyName("secondPrimaryWeapon")] public bool SecondPrimaryWeapon { get; set; } = true;
+    [JsonPropertyName("scabbard")] public bool Scabbard { get; set; } = false;
+    [JsonPropertyName("armBand")] public bool ArmBand { get; set; } = false;
+    [JsonPropertyName("compass")] public bool Compass { get; set; } = false;
+    [JsonPropertyName("securedContainer")] public bool SecuredContainer { get; set; } = false;
+    [JsonPropertyName("questItems")] public bool QuestItems { get; set; } = true;
+    [JsonPropertyName("specialSlotItems")] public bool SpecialSlotItems { get; set; } = false;
 }
 
 // ═══════════════════════════════════════════════════════════════

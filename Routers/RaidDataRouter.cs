@@ -1,8 +1,11 @@
 using System.Text.Json;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
+using SPTarkov.Server.Core.Helpers;
+using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Eft.Match;
+using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Utils;
@@ -17,6 +20,7 @@ public class RaidDataRouter : StaticRouter
     private static RaidTrackingService _raidTracker = null!;
     private static SaveServer _saveServer = null!;
     private static ConfigService _configService = null!;
+    private static ItemHelper _itemHelper = null!;
     private static ISptLogger<RaidDataRouter> _logger = null!;
     private static JsonUtil _jsonUtil = null!;
 
@@ -25,11 +29,13 @@ public class RaidDataRouter : StaticRouter
         RaidTrackingService raidTrackingService,
         SaveServer saveServer,
         ConfigService configService,
+        ItemHelper itemHelper,
         ISptLogger<RaidDataRouter> logger) : base(jsonUtil, GetRoutes())
     {
         _raidTracker = raidTrackingService;
         _saveServer = saveServer;
         _configService = configService;
+        _itemHelper = itemHelper;
         _logger = logger;
         _jsonUtil = jsonUtil;
     }
@@ -50,14 +56,14 @@ public class RaidDataRouter : StaticRouter
                         _logger?.Warning($"ZSlayerCommandCenter: Failed to parse raid end data: {ex.Message}");
                     }
 
-                    // Apply death tax after SPT has processed the raid
+                    // Apply death penalties after SPT has processed the raid
                     try
                     {
-                        ApplyDeathTax(sessionId.ToString(), info);
+                        ApplyDeathPenalties(sessionId.ToString(), info);
                     }
                     catch (Exception ex)
                     {
-                        _logger?.Warning($"ZSlayerCommandCenter: Death tax error: {ex.Message}");
+                        _logger?.Warning($"ZSlayerCommandCenter: Death penalty error: {ex.Message}");
                     }
 
                     // Always passthrough SPT's response unchanged
@@ -66,17 +72,16 @@ public class RaidDataRouter : StaticRouter
         ];
     }
 
-    private static void ApplyDeathTax(string sessionId, EndLocalRaidRequestData info)
+    /// <summary>Check if this raid ended in a PMC death. Returns (isDead, isPmc) tuple.</summary>
+    private static (bool isDead, bool isPmc) CheckPmcDeath(EndLocalRaidRequestData info)
     {
-        var cfg = _configService?.GetConfig()?.Fir;
-        if (cfg == null || cfg.DeathTaxPercent <= 0) return;
-
-        // Check if player died
         var resultStr = "Unknown";
+        var isPmc = false;
+
         try
         {
             var json = _jsonUtil.Serialize(info);
-            if (string.IsNullOrEmpty(json)) return;
+            if (string.IsNullOrEmpty(json)) return (false, false);
 
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
@@ -85,39 +90,63 @@ public class RaidDataRouter : StaticRouter
                 resultStr = TryGetString(resultsEl, "result") ?? TryGetString(resultsEl, "Result") ?? "Unknown";
             else
                 resultStr = TryGetString(root, "result") ?? TryGetString(root, "exitStatus") ?? "Unknown";
-        }
-        catch { return; }
 
-        // Only apply on death (KILLED, LEFT, MISSINGINACTION)
-        var isDead = resultStr is "Killed" or "KILLED" or "Left" or "LEFT" or "MissingInAction" or "MISSINGINACTION";
-        if (!isDead) return;
-
-        // Check if this is a PMC raid (not scav)
-        try
-        {
-            var json = _jsonUtil.Serialize(info);
-            if (string.IsNullOrEmpty(json)) return;
-            using var doc = JsonDocument.Parse(json);
-            if (doc.RootElement.TryGetProperty("serverId", out var serverIdEl))
+            if (root.TryGetProperty("serverId", out var serverIdEl))
             {
                 var serverId = serverIdEl.GetString() ?? "";
-                if (!serverId.ToLowerInvariant().Contains("pmc")) return;
+                isPmc = serverId.ToLowerInvariant().Contains("pmc");
             }
         }
-        catch { return; }
+        catch { return (false, false); }
 
-        // Get the saved profile (SPT has already saved post-death state)
+        var isDead = resultStr is "Killed" or "KILLED" or "Left" or "LEFT" or "MissingInAction" or "MISSINGINACTION";
+        return (isDead, isPmc);
+    }
+
+    private static void ApplyDeathPenalties(string sessionId, EndLocalRaidRequestData info)
+    {
+        var cfg = _configService?.GetConfig()?.Fir;
+        if (cfg == null) return;
+
+        var hasDeathTax = cfg.DeathTaxPercent > 0;
+        var hasSecureWipe = cfg.SecureContainerWipeOnDeath;
+        if (!hasDeathTax && !hasSecureWipe) return;
+
+        var (isDead, isPmc) = CheckPmcDeath(info);
+        if (!isDead || !isPmc) return;
+
         var profiles = _saveServer?.GetProfiles();
         if (profiles == null || !profiles.TryGetValue(sessionId, out var profile)) return;
 
         var pmcData = profile.CharacterData?.PmcData;
         if (pmcData?.Inventory?.Items == null) return;
 
-        // Find stash root ID
-        var stashId = pmcData.Inventory.Stash.ToString();
-        if (string.IsNullOrEmpty(stashId)) return;
+        var nickname = pmcData.Info?.Nickname ?? "Unknown";
+        var profileChanged = false;
 
-        // Find all ruble stacks in stash (walk parent chain to verify in stash)
+        // ── Death Tax ──
+        if (hasDeathTax)
+            profileChanged |= ApplyDeathTax(pmcData, cfg, nickname);
+
+        // ── Secure Container Wipe ──
+        if (hasSecureWipe)
+            profileChanged |= ApplySecureContainerWipe(pmcData, nickname);
+
+        if (profileChanged)
+        {
+            try { _ = _saveServer.SaveProfileAsync(sessionId); }
+            catch (Exception ex)
+            {
+                _logger?.Warning($"ZSlayerCommandCenter: Failed to save profile after death penalties: {ex.Message}");
+            }
+        }
+    }
+
+    private static bool ApplyDeathTax(PmcData pmcData, FirConfig cfg, string nickname)
+    {
+        var stashId = pmcData.Inventory.Stash.ToString();
+        if (string.IsNullOrEmpty(stashId)) return false;
+
         const string roublesTemplate = "5449016a4bdc2d6f028b456f";
         var rubleStacks = new List<Item>();
 
@@ -125,40 +154,31 @@ public class RaidDataRouter : StaticRouter
         {
             if (item.Template.ToString() != roublesTemplate) continue;
 
-            // Walk parent chain to check if item is in stash
             var currentParent = item.ParentId?.ToString() ?? "";
             var inStash = false;
             var maxDepth = 20;
 
             while (!string.IsNullOrEmpty(currentParent) && maxDepth-- > 0)
             {
-                if (currentParent == stashId)
-                {
-                    inStash = true;
-                    break;
-                }
-                // Find the parent item
+                if (currentParent == stashId) { inStash = true; break; }
                 var parentItem = pmcData.Inventory.Items.FirstOrDefault(i => i.Id.ToString() == currentParent);
                 if (parentItem == null) break;
                 currentParent = parentItem.ParentId?.ToString() ?? "";
             }
 
-            if (inStash)
-                rubleStacks.Add(item);
+            if (inStash) rubleStacks.Add(item);
         }
 
-        if (rubleStacks.Count == 0) return;
+        if (rubleStacks.Count == 0) return false;
 
-        // Calculate total rubles and tax
         var totalRoubles = rubleStacks.Sum(i => i.Upd?.StackObjectsCount ?? 1);
         var taxPercent = Math.Clamp(cfg.DeathTaxPercent, 0, 100);
         var taxAmount = Math.Round(totalRoubles * taxPercent / 100.0);
-        if (taxAmount < 1) return;
+        if (taxAmount < 1) return false;
 
         var remaining = taxAmount;
         var itemsToRemove = new List<Item>();
 
-        // Sort by stack size ascending (consume smaller stacks first)
         foreach (var stack in rubleStacks.OrderBy(i => i.Upd?.StackObjectsCount ?? 1))
         {
             if (remaining <= 0) break;
@@ -166,35 +186,94 @@ public class RaidDataRouter : StaticRouter
 
             if (stackCount <= remaining)
             {
-                // Consume entire stack
                 remaining -= stackCount;
                 itemsToRemove.Add(stack);
             }
             else
             {
-                // Partial consumption
-                if (stack.Upd != null)
-                    stack.Upd.StackObjectsCount = stackCount - remaining;
+                if (stack.Upd != null) stack.Upd.StackObjectsCount = stackCount - remaining;
                 remaining = 0;
             }
         }
 
-        // Remove fully consumed stacks
         foreach (var item in itemsToRemove)
             pmcData.Inventory.Items.Remove(item);
 
-        // Save the modified profile
-        try
+        _logger?.Info($"[ZSlayerHQ] Death tax: {nickname} lost ₽{taxAmount:N0} ({taxPercent}% of ₽{totalRoubles:N0})");
+        return true;
+    }
+
+    private static bool ApplySecureContainerWipe(PmcData pmcData, string nickname)
+    {
+        // Find the secure container item (slotId == "SecuredContainer")
+        var secureContainer = pmcData.Inventory.Items.FirstOrDefault(i => i.SlotId == "SecuredContainer");
+        if (secureContainer == null) return false;
+
+        var containerId = secureContainer.Id.ToString();
+
+        // Build a set of all item IDs that descend from the secure container (BFS)
+        var containerItemIds = new HashSet<string>();
+        var queue = new Queue<string>();
+        queue.Enqueue(containerId);
+
+        while (queue.Count > 0)
         {
-            _ = _saveServer.SaveProfileAsync(sessionId);
-        }
-        catch (Exception ex)
-        {
-            _logger?.Warning($"ZSlayerCommandCenter: Failed to save profile after death tax: {ex.Message}");
+            var parentId = queue.Dequeue();
+            foreach (var child in pmcData.Inventory.Items)
+            {
+                var childId = child.Id.ToString();
+                if (child.ParentId?.ToString() == parentId && childId != containerId)
+                {
+                    containerItemIds.Add(childId);
+                    queue.Enqueue(childId);
+                }
+            }
         }
 
-        var nickname = pmcData.Info?.Nickname ?? "Unknown";
-        _logger?.Info($"[ZSlayerHQ] Death tax: {nickname} lost ₽{taxAmount:N0} ({taxPercent}% of ₽{totalRoubles:N0})");
+        if (containerItemIds.Count == 0) return false;
+
+        // Identify which items are keys or cases (protected from wipe)
+        var protectedIds = new HashSet<string>();
+        foreach (var item in pmcData.Inventory.Items)
+        {
+            var itemId = item.Id.ToString();
+            if (!containerItemIds.Contains(itemId)) continue;
+
+            var tpl = item.Template;
+            // Protect keys (all types) and cases/containers
+            if (_itemHelper.IsOfBaseclass(tpl, BaseClasses.KEY)
+                || _itemHelper.IsOfBaseclass(tpl, BaseClasses.SIMPLE_CONTAINER)
+                || _itemHelper.IsOfBaseclass(tpl, BaseClasses.MOB_CONTAINER)
+                || _itemHelper.IsOfBaseclass(tpl, BaseClasses.LOCKABLE_CONTAINER))
+            {
+                protectedIds.Add(itemId);
+            }
+        }
+
+        // Also protect items INSIDE protected cases (BFS from protected items)
+        var protectedQueue = new Queue<string>(protectedIds);
+        while (protectedQueue.Count > 0)
+        {
+            var parentId = protectedQueue.Dequeue();
+            foreach (var child in pmcData.Inventory.Items)
+            {
+                var childId = child.Id.ToString();
+                if (child.ParentId?.ToString() == parentId && containerItemIds.Contains(childId) && protectedIds.Add(childId))
+                    protectedQueue.Enqueue(childId);
+            }
+        }
+
+        // Remove all non-protected items from the secure container
+        var removed = pmcData.Inventory.Items.RemoveAll(item =>
+        {
+            var itemId = item.Id.ToString();
+            return containerItemIds.Contains(itemId) && !protectedIds.Contains(itemId);
+        });
+
+        if (removed > 0)
+            _logger?.Info($"[ZSlayerHQ] Secure container wipe: {nickname} lost {removed} items (keys & cases preserved)");
+
+        return removed > 0;
     }
 
     private static void ParseAndRecordRaid(string sessionId, EndLocalRaidRequestData info)

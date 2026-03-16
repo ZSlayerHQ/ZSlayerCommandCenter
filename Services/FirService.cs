@@ -24,16 +24,27 @@ public class FirService(
     private bool _snapFleaPurchasesFir;
     private bool _snapTraderPurchasesFir;
 
+    // ── Globals snapshots ──
+    private bool _snapTradingUnlimited;
+    private bool _snapMaxLoyalty;
+    private bool _snapDiscardLimitsEnabled;
+    private bool _snapSkillAtrophy;
+    private bool _snapTieredFleaEnabled;
+
+    // ── Lost on Death snapshots ──
+    private bool _snapLodHeadwear, _snapLodEarpiece, _snapLodFaceCover, _snapLodArmorVest;
+    private bool _snapLodEyewear, _snapLodTacticalVest, _snapLodPocketItems, _snapLodBackpack;
+    private bool _snapLodHolster, _snapLodFirstPrimary, _snapLodSecondPrimary;
+    private bool _snapLodScabbard, _snapLodArmBand, _snapLodCompass, _snapLodSecuredContainer;
+    private bool _snapLodQuestItems, _snapLodSpecialSlotItems;
+
     // ── Barter OnlyFunctional snapshot ──
-    // Key: "{traderId}|{itemId}|{optionIdx}|{reqIdx}" → original OnlyFunctional
     private readonly Dictionary<string, bool?> _barterSnapshot = new();
 
     // ── Hideout IsSpawnedInSession snapshot ──
-    // Key: "{areaType}|{stageKey}|{reqIdx}" → original IsSpawnedInSession
     private readonly Dictionary<string, bool?> _hideoutSnapshot = new();
 
     // ── Purchase limit snapshot ──
-    // Key: "{traderId}|{itemId}" → original BuyRestrictionMax (null if none)
     private readonly Dictionary<string, int?> _buyLimitSnapshot = new();
 
     public void Initialize()
@@ -51,9 +62,37 @@ public class FirService(
 
         var ragfairConfig = configServer.GetConfig<RagfairConfig>();
         _snapFleaPurchasesFir = ragfairConfig.Dynamic.PurchasesAreFoundInRaid;
+        _snapTieredFleaEnabled = ragfairConfig.TieredFlea.Enabled;
 
         var traderConfig = configServer.GetConfig<TraderConfig>();
         _snapTraderPurchasesFir = traderConfig.PurchasesAreFoundInRaid;
+
+        // Globals
+        var globals = databaseService.GetGlobals().Configuration;
+        _snapTradingUnlimited = globals.TradingUnlimitedItems;
+        _snapMaxLoyalty = globals.MaxLoyaltyLevelForAll;
+        _snapDiscardLimitsEnabled = globals.DiscardLimitsEnabled;
+        _snapSkillAtrophy = globals.SkillAtrophy;
+
+        // Lost on Death
+        var lod = configServer.GetConfig<LostOnDeathConfig>();
+        _snapLodHeadwear = lod.Equipment.Headwear;
+        _snapLodEarpiece = lod.Equipment.Earpiece;
+        _snapLodFaceCover = lod.Equipment.FaceCover;
+        _snapLodArmorVest = lod.Equipment.ArmorVest;
+        _snapLodEyewear = lod.Equipment.Eyewear;
+        _snapLodTacticalVest = lod.Equipment.TacticalVest;
+        _snapLodPocketItems = lod.Equipment.PocketItems;
+        _snapLodBackpack = lod.Equipment.Backpack;
+        _snapLodHolster = lod.Equipment.Holster;
+        _snapLodFirstPrimary = lod.Equipment.FirstPrimaryWeapon;
+        _snapLodSecondPrimary = lod.Equipment.SecondPrimaryWeapon;
+        _snapLodScabbard = lod.Equipment.Scabbard;
+        _snapLodArmBand = lod.Equipment.ArmBand;
+        _snapLodCompass = lod.Equipment.Compass;
+        _snapLodSecuredContainer = lod.Equipment.SecuredContainer;
+        _snapLodQuestItems = lod.QuestItems;
+        _snapLodSpecialSlotItems = lod.SpecialSlotItems;
 
         // Snapshot barter scheme OnlyFunctional values
         foreach (var (traderId, trader) in databaseService.GetTables().Traders)
@@ -92,7 +131,7 @@ public class FirService(
         }
 
         _snapshotTaken = true;
-        logger.Info("FirService: snapshots taken");
+        logger.Info("FirService: snapshots taken (FIR + globals + lost-on-death)");
     }
 
     public FirApplyResult ApplyConfig()
@@ -109,13 +148,45 @@ public class FirService(
         var cfg = configService.GetConfig().Fir;
         var changes = new List<string>();
 
-        // ── Restore all values to snapshot first ──
+        // ══════════════════════════════════════════
+        // RESTORE all values to snapshot first
+        // ══════════════════════════════════════════
+
         var ragfairConfig = configServer.GetConfig<RagfairConfig>();
         ragfairConfig.Dynamic.PurchasesAreFoundInRaid = _snapFleaPurchasesFir;
+        ragfairConfig.TieredFlea.Enabled = _snapTieredFleaEnabled;
 
         var traderConfig = configServer.GetConfig<TraderConfig>();
         traderConfig.PurchasesAreFoundInRaid = _snapTraderPurchasesFir;
 
+        // Restore globals
+        var globals = databaseService.GetGlobals().Configuration;
+        globals.TradingUnlimitedItems = _snapTradingUnlimited;
+        globals.MaxLoyaltyLevelForAll = _snapMaxLoyalty;
+        globals.DiscardLimitsEnabled = _snapDiscardLimitsEnabled;
+        globals.SkillAtrophy = _snapSkillAtrophy;
+
+        // Restore lost-on-death
+        var lod = configServer.GetConfig<LostOnDeathConfig>();
+        lod.Equipment.Headwear = _snapLodHeadwear;
+        lod.Equipment.Earpiece = _snapLodEarpiece;
+        lod.Equipment.FaceCover = _snapLodFaceCover;
+        lod.Equipment.ArmorVest = _snapLodArmorVest;
+        lod.Equipment.Eyewear = _snapLodEyewear;
+        lod.Equipment.TacticalVest = _snapLodTacticalVest;
+        lod.Equipment.PocketItems = _snapLodPocketItems;
+        lod.Equipment.Backpack = _snapLodBackpack;
+        lod.Equipment.Holster = _snapLodHolster;
+        lod.Equipment.FirstPrimaryWeapon = _snapLodFirstPrimary;
+        lod.Equipment.SecondPrimaryWeapon = _snapLodSecondPrimary;
+        lod.Equipment.Scabbard = _snapLodScabbard;
+        lod.Equipment.ArmBand = _snapLodArmBand;
+        lod.Equipment.Compass = _snapLodCompass;
+        lod.Equipment.SecuredContainer = _snapLodSecuredContainer;
+        lod.QuestItems = _snapLodQuestItems;
+        lod.SpecialSlotItems = _snapLodSpecialSlotItems;
+
+        // Restore barter/trader/hideout values
         var traders = databaseService.GetTables().Traders;
         foreach (var (traderId, trader) in traders)
         {
@@ -132,7 +203,6 @@ public class FirService(
                 }
             }
 
-            // Restore purchase limits from snapshot
             if (trader.Assort?.Items != null)
             {
                 foreach (var item in trader.Assort.Items)
@@ -162,7 +232,11 @@ public class FirService(
             }
         }
 
-        // ── Apply new config values ──
+        // ══════════════════════════════════════════
+        // APPLY new config values
+        // ══════════════════════════════════════════
+
+        // ── FIR toggles ──
         if (cfg.FleaPurchasesFir)
         {
             ragfairConfig.Dynamic.PurchasesAreFoundInRaid = true;
@@ -228,7 +302,6 @@ public class FirService(
                     if (item.ParentId != "hideout") continue;
                     if (item.Upd == null) continue;
 
-                    // Only set limit on items that don't already have a tighter restriction
                     var existing = item.Upd.BuyRestrictionMax;
                     if (existing == null || existing > cfg.PurchaseLimitPerReset)
                     {
@@ -241,14 +314,85 @@ public class FirService(
             changes.Add($"Purchase limits: {count} items capped at {cfg.PurchaseLimitPerReset}/reset");
         }
 
-        // Note: BarterItemsMustBeFir, SellToTraderRequiresFir, NonFirSellPenaltyPercent, and DeathTaxPercent
-        // are enforced at runtime by FirTradeController / RaidDataRouter — no DB changes needed
+        // ── Global gameplay toggles ──
+        if (cfg.TradingUnlimitedItems == true)
+        {
+            globals.TradingUnlimitedItems = true;
+            changes.Add("Unlimited trader stock: ON");
+        }
+
+        if (cfg.MaxLoyaltyLevelForAll == true)
+        {
+            globals.MaxLoyaltyLevelForAll = true;
+            changes.Add("All loyalty levels unlocked: ON");
+        }
+
+        if (cfg.DiscardLimitsDisabled == true)
+        {
+            globals.DiscardLimitsEnabled = false;
+            changes.Add("Discard limits: DISABLED");
+        }
+
+        if (cfg.SkillAtrophyDisabled == true)
+        {
+            globals.SkillAtrophy = false;
+            changes.Add("Skill atrophy/decay: DISABLED");
+        }
+
+        if (cfg.TieredFleaEnabled == true)
+        {
+            ragfairConfig.TieredFlea.Enabled = true;
+            changes.Add("Tiered flea market: ON");
+        }
+        else if (cfg.TieredFleaEnabled == false)
+        {
+            ragfairConfig.TieredFlea.Enabled = false;
+            changes.Add("Tiered flea market: OFF");
+        }
+
+        // ── Lost on Death ──
+        if (cfg.LostOnDeath is { Enabled: true })
+        {
+            var d = cfg.LostOnDeath;
+            lod.Equipment.Headwear = d.Headwear;
+            lod.Equipment.Earpiece = d.Earpiece;
+            lod.Equipment.FaceCover = d.FaceCover;
+            lod.Equipment.ArmorVest = d.ArmorVest;
+            lod.Equipment.Eyewear = d.Eyewear;
+            lod.Equipment.TacticalVest = d.TacticalVest;
+            lod.Equipment.PocketItems = d.PocketItems;
+            lod.Equipment.Backpack = d.Backpack;
+            lod.Equipment.Holster = d.Holster;
+            lod.Equipment.FirstPrimaryWeapon = d.FirstPrimaryWeapon;
+            lod.Equipment.SecondPrimaryWeapon = d.SecondPrimaryWeapon;
+            lod.Equipment.Scabbard = d.Scabbard;
+            lod.Equipment.ArmBand = d.ArmBand;
+            lod.Equipment.Compass = d.Compass;
+            lod.Equipment.SecuredContainer = d.SecuredContainer;
+            lod.QuestItems = d.QuestItems;
+            lod.SpecialSlotItems = d.SpecialSlotItems;
+
+            var kept = new List<string>();
+            if (!d.Headwear) kept.Add("headwear");
+            if (!d.ArmorVest) kept.Add("armor");
+            if (!d.Backpack) kept.Add("backpack");
+            if (!d.FirstPrimaryWeapon) kept.Add("weapons");
+            if (!d.TacticalVest) kept.Add("rig");
+            if (d.SecuredContainer) kept.Add("lose secure container");
+
+            var summary = kept.Count > 0 ? string.Join(", ", kept) : "custom slots";
+            changes.Add($"Lost on death: overridden ({summary})");
+        }
+
+        // ── Runtime-enforced features (just report) ──
         if (cfg.BarterItemsMustBeFir)
             changes.Add("Barter items must be FIR (server-enforced)");
         if (cfg.SellToTraderRequiresFir)
             changes.Add("Selling to traders requires FIR (server-enforced)");
         if (cfg.NonFirSellPenaltyPercent > 0 && !cfg.SellToTraderRequiresFir)
             changes.Add($"Non-FIR sell penalty: {cfg.NonFirSellPenaltyPercent}% price reduction");
+        if (cfg.SecureContainerWipeOnDeath)
+            changes.Add("Secure container wipe on death (keys & cases preserved)");
         if (cfg.DeathTaxPercent > 0)
             changes.Add($"Death tax: {cfg.DeathTaxPercent}% of stash rubles on death");
 

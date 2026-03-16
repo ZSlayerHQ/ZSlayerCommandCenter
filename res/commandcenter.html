@@ -4905,7 +4905,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <button class="nav-btn" data-nav="progression" onclick="switchMainTab('progression')"><img class="nav-icon" src="ui-icons/icon_star.png" alt="">Progression</button>
     <button class="nav-btn" data-nav="events" onclick="switchMainTab('events')"><img class="nav-icon" src="ui-icons/icon_time_big.png" alt="">Events</button>
     <button class="nav-btn" data-nav="gamevalues" onclick="switchMainTab('gamevalues')"><img class="nav-icon" src="ui-icons/icon_edit.png" alt="">Game Values</button>
-    <button class="nav-btn" data-nav="fir" onclick="switchMainTab('fir')"><img class="nav-icon" src="ui-icons/icon_search.png" alt="">Found in Raid</button>
+    <button class="nav-btn" data-nav="fir" onclick="switchMainTab('fir')"><img class="nav-icon" src="ui-icons/icon_search.png" alt="">FIR / Economy</button>
     <button class="nav-btn disabled" data-nav="profiles" onclick="switchMainTab('profiles')">Profiles <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="loadouts" onclick="switchMainTab('loadouts')">Loadouts <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="bounties" onclick="switchMainTab('bounties')">Bounties <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
@@ -8447,6 +8447,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </div>
       </div>
 
+      <!-- Secure Container Wipe -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Secure Container Wipe on Death</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">On PMC death, lose all items inside your secure container <strong style="color:var(--text)">except keys and cases</strong> (and their contents). Keycards, mechanical keys, keytool, docs case, SICC, etc. are all preserved.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firSecureWipe" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+
       <!-- Death Tax -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0">
         <div style="flex:1">
@@ -8457,6 +8469,110 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             <span id="firDeathTaxVal" style="font-size:13px;font-weight:600;color:var(--accent);min-width:40px">0%</span>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Global Gameplay Toggles -->
+    <div class="cc-panel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:18px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Global Gameplay Toggles</div>
+
+      <!-- Unlimited Trader Stock -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Unlimited Trader Stock</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">All traders have unlimited item stock. Items never sell out regardless of how many players buy them. Requires client restart to take effect.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firUnlimitedStock" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Max Loyalty Level -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Unlock All Loyalty Levels</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">All traders are at max loyalty level for all players, regardless of level, reputation, or money spent. Requires client restart.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firMaxLoyalty" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Disable Discard Limits -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Disable Discard Limits</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Remove in-raid item discard limits. Normally some items can only be discarded a limited number of times per raid — this removes that restriction. Requires client restart.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firNoDiscardLimits" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Disable Skill Atrophy -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Disable Skill Decay</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Prevent skills from decaying over time when not used. Skills will only go up, never down. Requires client restart.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firNoSkillDecay" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Tiered Flea Market -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Tiered Flea Market</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Enable level-gated flea market where items unlock at specific player levels. Higher-tier items (armor, ammo, weapons) require higher levels to list and buy.</div>
+        </div>
+        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+          <input type="checkbox" id="firTieredFlea" onchange="firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Lost on Death -->
+    <div class="cc-panel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div style="font-size:14px;font-weight:600;color:var(--accent);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Lost on Death</div>
+        <label class="cc-toggle" style="flex-shrink:0">
+          <input type="checkbox" id="firLodEnabled" onchange="firLodToggle();firCheckDirty()">
+          <span class="cc-toggle-slider"></span>
+        </label>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.5">Control which equipment slots are lost when dying in raid. Checked = <span style="color:var(--error-bright)">LOST</span>, Unchecked = <span style="color:#4a7">KEPT</span>. Enable the master toggle to override server defaults.</div>
+
+      <div id="firLodGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;opacity:0.4;pointer-events:none">
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodHeadwear" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Headwear</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodEarpiece" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Earpiece</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodFaceCover" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Face Cover</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodArmorVest" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Armor Vest</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodEyewear" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Eyewear</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodTacticalVest" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Tactical Vest / Rig</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodPocketItems" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Pocket Items</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodBackpack" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Backpack</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodHolster" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Holster / Sidearm</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodFirstPrimary" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Primary Weapon</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodSecondPrimary" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Secondary Weapon</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodQuestItems" checked onchange="firCheckDirty()" style="accent-color:var(--accent)"> Quest Items</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodScabbard" onchange="firCheckDirty()" style="accent-color:var(--accent)"> Melee Weapon</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodArmBand" onchange="firCheckDirty()" style="accent-color:var(--accent)"> Armband</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodCompass" onchange="firCheckDirty()" style="accent-color:var(--accent)"> Compass</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="firLodSpecialSlot" onchange="firCheckDirty()" style="accent-color:var(--accent)"> Special Slot Items</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(200,60,60,0.1);border:1px solid rgba(200,60,60,0.3);border-radius:5px;cursor:pointer;font-size:12px;color:var(--error-bright);font-weight:600"><input type="checkbox" id="firLodSecuredContainer" onchange="firCheckDirty()" style="accent-color:#c44"> Secure Container (!)</label>
+      </div>
+
+      <!-- Quick presets -->
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button onclick="firLodPreset('vanilla')" style="padding:5px 12px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font-mono)">Vanilla</button>
+        <button onclick="firLodPreset('casual')" style="padding:5px 12px;background:rgba(74,167,89,0.1);color:#4a7;border:1px solid rgba(74,167,89,0.3);border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font-mono)">Casual (keep all)</button>
+        <button onclick="firLodPreset('hardcore')" style="padding:5px 12px;background:rgba(200,60,60,0.1);color:var(--error-bright);border:1px solid rgba(200,60,60,0.3);border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font-mono)">Hardcore (lose all)</button>
       </div>
     </div>
 
@@ -21200,6 +21316,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   function firGetValues() {
+    var lodEnabled = !!(document.getElementById('firLodEnabled') || {}).checked;
     return {
       fleaPurchasesFir: !!(document.getElementById('firFleaPurchases') || {}).checked,
       traderPurchasesFir: !!(document.getElementById('firTraderPurchases') || {}).checked,
@@ -21210,7 +21327,33 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       nonFirSellPenaltyPercent: parseInt(document.getElementById('firNonFirPenalty')?.value || '0', 10),
       purchaseLimitEnabled: !!(document.getElementById('firPurchaseLimit') || {}).checked,
       purchaseLimitPerReset: parseInt(document.getElementById('firPurchaseLimitVal')?.value || '5', 10),
-      deathTaxPercent: parseInt(document.getElementById('firDeathTax')?.value || '0', 10)
+      deathTaxPercent: parseInt(document.getElementById('firDeathTax')?.value || '0', 10),
+      secureContainerWipeOnDeath: !!(document.getElementById('firSecureWipe') || {}).checked,
+      tradingUnlimitedItems: document.getElementById('firUnlimitedStock')?.checked ? true : null,
+      maxLoyaltyLevelForAll: document.getElementById('firMaxLoyalty')?.checked ? true : null,
+      discardLimitsDisabled: document.getElementById('firNoDiscardLimits')?.checked ? true : null,
+      skillAtrophyDisabled: document.getElementById('firNoSkillDecay')?.checked ? true : null,
+      tieredFleaEnabled: document.getElementById('firTieredFlea')?.checked ? true : null,
+      lostOnDeath: lodEnabled ? {
+        enabled: true,
+        headwear: !!(document.getElementById('firLodHeadwear') || {}).checked,
+        earpiece: !!(document.getElementById('firLodEarpiece') || {}).checked,
+        faceCover: !!(document.getElementById('firLodFaceCover') || {}).checked,
+        armorVest: !!(document.getElementById('firLodArmorVest') || {}).checked,
+        eyewear: !!(document.getElementById('firLodEyewear') || {}).checked,
+        tacticalVest: !!(document.getElementById('firLodTacticalVest') || {}).checked,
+        pocketItems: !!(document.getElementById('firLodPocketItems') || {}).checked,
+        backpack: !!(document.getElementById('firLodBackpack') || {}).checked,
+        holster: !!(document.getElementById('firLodHolster') || {}).checked,
+        firstPrimaryWeapon: !!(document.getElementById('firLodFirstPrimary') || {}).checked,
+        secondPrimaryWeapon: !!(document.getElementById('firLodSecondPrimary') || {}).checked,
+        scabbard: !!(document.getElementById('firLodScabbard') || {}).checked,
+        armBand: !!(document.getElementById('firLodArmBand') || {}).checked,
+        compass: !!(document.getElementById('firLodCompass') || {}).checked,
+        securedContainer: !!(document.getElementById('firLodSecuredContainer') || {}).checked,
+        questItems: !!(document.getElementById('firLodQuestItems') || {}).checked,
+        specialSlotItems: !!(document.getElementById('firLodSpecialSlot') || {}).checked
+      } : null
     };
   }
 
@@ -21227,7 +21370,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (h) h.checked = !!cfg.hideoutConstructionFir;
     if (bfir) bfir.checked = !!cfg.barterItemsMustBeFir;
     if (sfir) sfir.checked = !!cfg.sellToTraderRequiresFir;
-    // New economy controls
+    // Economy controls
     var penalty = document.getElementById('firNonFirPenalty');
     var penaltyVal = document.getElementById('firNonFirPenaltyVal');
     if (penalty) { penalty.value = cfg.nonFirSellPenaltyPercent || 0; }
@@ -21240,6 +21383,34 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var dtaxVal = document.getElementById('firDeathTaxVal');
     if (dtax) { dtax.value = cfg.deathTaxPercent || 0; }
     if (dtaxVal) { dtaxVal.textContent = (cfg.deathTaxPercent || 0) + '%'; }
+    var sw = document.getElementById('firSecureWipe');
+    if (sw) sw.checked = !!cfg.secureContainerWipeOnDeath;
+    // Global gameplay toggles
+    var us = document.getElementById('firUnlimitedStock');
+    if (us) us.checked = !!cfg.tradingUnlimitedItems;
+    var ml = document.getElementById('firMaxLoyalty');
+    if (ml) ml.checked = !!cfg.maxLoyaltyLevelForAll;
+    var nd = document.getElementById('firNoDiscardLimits');
+    if (nd) nd.checked = !!cfg.discardLimitsDisabled;
+    var ns = document.getElementById('firNoSkillDecay');
+    if (ns) ns.checked = !!cfg.skillAtrophyDisabled;
+    var tf = document.getElementById('firTieredFlea');
+    if (tf) tf.checked = !!cfg.tieredFleaEnabled;
+    // Lost on Death
+    var lodCfg = cfg.lostOnDeath || {};
+    var lodEn = document.getElementById('firLodEnabled');
+    if (lodEn) lodEn.checked = !!lodCfg.enabled;
+    var lodIds = {firLodHeadwear:'headwear',firLodEarpiece:'earpiece',firLodFaceCover:'faceCover',
+      firLodArmorVest:'armorVest',firLodEyewear:'eyewear',firLodTacticalVest:'tacticalVest',
+      firLodPocketItems:'pocketItems',firLodBackpack:'backpack',firLodHolster:'holster',
+      firLodFirstPrimary:'firstPrimaryWeapon',firLodSecondPrimary:'secondPrimaryWeapon',
+      firLodScabbard:'scabbard',firLodArmBand:'armBand',firLodCompass:'compass',
+      firLodSecuredContainer:'securedContainer',firLodQuestItems:'questItems',firLodSpecialSlot:'specialSlotItems'};
+    for (var id in lodIds) {
+      var el = document.getElementById(id);
+      if (el && lodCfg[lodIds[id]] !== undefined) el.checked = !!lodCfg[lodIds[id]];
+    }
+    firLodToggle();
     firAppliedState = JSON.stringify(firGetValues());
     firCheckDirty();
   }
@@ -21286,6 +21457,38 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       firSetStatus('Failed to load FIR config', true);
     });
   }
+
+  window.firLodToggle = function() {
+    var en = !!(document.getElementById('firLodEnabled') || {}).checked;
+    var grid = document.getElementById('firLodGrid');
+    if (grid) {
+      grid.style.opacity = en ? '1' : '0.4';
+      grid.style.pointerEvents = en ? 'auto' : 'none';
+    }
+  };
+
+  window.firLodPreset = function(preset) {
+    var lodEn = document.getElementById('firLodEnabled');
+    if (lodEn) lodEn.checked = true;
+    firLodToggle();
+    var slots = ['firLodHeadwear','firLodEarpiece','firLodFaceCover','firLodArmorVest',
+      'firLodEyewear','firLodTacticalVest','firLodPocketItems','firLodBackpack',
+      'firLodHolster','firLodFirstPrimary','firLodSecondPrimary','firLodQuestItems',
+      'firLodScabbard','firLodArmBand','firLodCompass','firLodSpecialSlot','firLodSecuredContainer'];
+    // Vanilla defaults: lose most gear, keep melee/armband/compass/special/secure
+    var vanillaLost = {firLodHeadwear:true,firLodEarpiece:true,firLodFaceCover:true,firLodArmorVest:true,
+      firLodEyewear:true,firLodTacticalVest:true,firLodPocketItems:true,firLodBackpack:true,
+      firLodHolster:true,firLodFirstPrimary:true,firLodSecondPrimary:true,firLodQuestItems:true,
+      firLodScabbard:false,firLodArmBand:false,firLodCompass:false,firLodSpecialSlot:false,firLodSecuredContainer:false};
+    for (var i = 0; i < slots.length; i++) {
+      var el = document.getElementById(slots[i]);
+      if (!el) continue;
+      if (preset === 'casual') el.checked = false;
+      else if (preset === 'hardcore') el.checked = true;
+      else el.checked = !!vanillaLost[slots[i]];
+    }
+    firCheckDirty();
+  };
 
   // Make firInit accessible to switchMainTab
   window.firInit = firInit;
