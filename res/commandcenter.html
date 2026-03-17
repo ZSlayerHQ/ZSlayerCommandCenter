@@ -6734,6 +6734,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           <label class="cc-toggle"><input type="checkbox" id="fleaEuroEnabled" checked onchange="fleaMarkDirty()"><span class="cc-toggle-slider"></span></label>
         </div>
       </div>
+      <!-- Blacklist toggle -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <label style="font-size:12px;color:var(--text-dim)">Disable Flea Blacklist</label>
+          <label class="cc-toggle"><input type="checkbox" id="fleaDisableBlacklist" onchange="fleaMarkDirty()"><span class="cc-toggle-slider"></span></label>
+          <i class="cc-info-icon">i<span class="cc-tip">Disables all flea market blacklists (BSG list, quest list, custom categories, trader items). All items become listable on the flea market. Requires Apply &amp; Regenerate.</span></i>
+        </div>
+      </div>
     </div>
 
     <!-- D) CATEGORY CONTROLS -->
@@ -17218,6 +17226,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var fleaConfig = null;
   var fleaCategories = [];
   var fleaOverridesOpen = false;
+  var fleaExpandedConfig = null;
   var fleaItemSearchTimer = null;
 
   function fleaInit() {
@@ -17225,10 +17234,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     Promise.all([
       api('flea/config'),
       api('flea/categories'),
-      api('flea/status')
+      api('flea/status'),
+      api('flea/expanded-config')
     ]).then(function(results) {
       fleaConfig = results[0];
       fleaCategories = results[1].categories || [];
+      fleaExpandedConfig = results[3];
       fleaPopulateUI();
       fleaUpdateStatus(results[2]);
       fleaDirty = false;
@@ -17261,6 +17272,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     fleaBarterToggled();
     document.getElementById('fleaDollarEnabled').checked = c.dollarOffersEnabled !== false;
     document.getElementById('fleaEuroEnabled').checked = c.euroOffersEnabled !== false;
+    // Blacklist toggle (from expansion config)
+    var blEl = document.getElementById('fleaDisableBlacklist');
+    if (blEl && fleaExpandedConfig && fleaExpandedConfig.config) {
+      blEl.checked = !!fleaExpandedConfig.config.disableFleaBlacklist;
+    }
     // Categories
     fleaRenderCategories();
     // Item overrides
@@ -17307,9 +17323,19 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var cfg = fleaGatherConfig();
     var taxChanged = Math.abs(cfg.fleaTaxMultiplier - oldTax) > 0.001;
 
-    fleaLoggedFetch('flea/config', { method: 'POST', body: JSON.stringify(cfg) })
-    .then(function(savedConfig) {
-      fleaConfig = savedConfig;
+    // Also apply blacklist toggle via expansion API
+    var blChecked = !!(document.getElementById('fleaDisableBlacklist') || {}).checked;
+    var expCfg = (fleaExpandedConfig && fleaExpandedConfig.config) ? Object.assign({}, fleaExpandedConfig.config) : { enableFleaExpansion: true };
+    expCfg.enableFleaExpansion = true;
+    expCfg.disableFleaBlacklist = blChecked || null;
+
+    Promise.all([
+      fleaLoggedFetch('flea/config', { method: 'POST', body: JSON.stringify(cfg) }),
+      api('flea/expanded-apply', 'POST', expCfg)
+    ])
+    .then(function(results) {
+      fleaConfig = results[0];
+      if (fleaExpandedConfig && fleaExpandedConfig.config) fleaExpandedConfig.config.disableFleaBlacklist = blChecked || null;
       txt.textContent = 'Regenerating offers...';
       return fleaLoggedFetch('flea/regenerate', { method: 'POST' });
     })

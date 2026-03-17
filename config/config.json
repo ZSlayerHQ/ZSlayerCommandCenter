@@ -56,10 +56,7 @@
     "globalBuyMultiplier": 1.0,
     "categoryMultipliers": {},
     "itemOverrides": {},
-    "fleaTaxMultiplier": 1.0,
-    "fleaMinUserLevel": 0,
-    "fleaOfferCount": 0,
-    "fleaBlacklist": []
+    "fleaTaxMultiplier": 1.0
   },
   "headless": {
     "autoStart": false,

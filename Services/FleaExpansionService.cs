@@ -70,6 +70,15 @@ public class FleaExpansionService(
 
     private readonly Dictionary<string, (double Min, double Max)> _categoryConditionSnapshots = new();
 
+    // ═══════════════════════════════════════════════════════
+    // SNAPSHOTS — G. Blacklist Control
+    // ═══════════════════════════════════════════════════════
+
+    private bool _snapEnableBsgList;
+    private bool _snapEnableQuestList;
+    private bool _snapEnableCustomItemCategoryList;
+    private bool _snapTraderItems;
+
     // Category parent IDs for condition editing
     private static readonly Dictionary<string, string> CategoryNames = new()
     {
@@ -178,6 +187,12 @@ public class FleaExpansionService(
             }
         }
 
+        // ── G. Blacklist Control ──
+        _snapEnableBsgList = ragfairConfig.Dynamic.Blacklist.EnableBsgList;
+        _snapEnableQuestList = ragfairConfig.Dynamic.Blacklist.EnableQuestList;
+        _snapEnableCustomItemCategoryList = ragfairConfig.Dynamic.Blacklist.EnableCustomItemCategoryList;
+        _snapTraderItems = ragfairConfig.Dynamic.Blacklist.TraderItems;
+
         _snapshotTaken = true;
         logger.Info("FleaExpansionService: snapshots taken (FIR/sell, dynamic offers, category conditions)");
     }
@@ -249,6 +264,12 @@ public class FleaExpansionService(
                 condition.Max.Max = max;
             }
         }
+
+        // ── G. Restore Blacklist Control ──
+        ragfairConfig.Dynamic.Blacklist.EnableBsgList = _snapEnableBsgList;
+        ragfairConfig.Dynamic.Blacklist.EnableQuestList = _snapEnableQuestList;
+        ragfairConfig.Dynamic.Blacklist.EnableCustomItemCategoryList = _snapEnableCustomItemCategoryList;
+        ragfairConfig.Dynamic.Blacklist.TraderItems = _snapTraderItems;
     }
 
     // ═══════════════════════════════════════════════════════
@@ -391,6 +412,15 @@ public class FleaExpansionService(
                     condition.Max.Max = entry.ConditionMax.Value;
             }
         }
+
+        // ── G. Blacklist Control ──
+        if (cfg.DisableFleaBlacklist == true)
+        {
+            ragfairConfig.Dynamic.Blacklist.EnableBsgList = false;
+            ragfairConfig.Dynamic.Blacklist.EnableQuestList = false;
+            ragfairConfig.Dynamic.Blacklist.EnableCustomItemCategoryList = false;
+            ragfairConfig.Dynamic.Blacklist.TraderItems = false;
+        }
     }
 
     // ═══════════════════════════════════════════════════════
@@ -494,7 +524,13 @@ public class FleaExpansionService(
                     CurrencyRatioEur = _snapCurrencyEur,
 
                     // F
-                    Categories = categoryDefaults
+                    Categories = categoryDefaults,
+
+                    // G
+                    EnableBsgList = _snapEnableBsgList,
+                    EnableQuestList = _snapEnableQuestList,
+                    EnableCustomItemCategoryList = _snapEnableCustomItemCategoryList,
+                    TraderItems = _snapTraderItems
                 }
             };
         }

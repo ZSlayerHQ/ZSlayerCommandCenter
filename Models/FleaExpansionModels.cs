@@ -46,6 +46,9 @@ public record FleaExpansionConfig
     [JsonPropertyName("minUserLevel")] public int? MinUserLevel { get; set; }
     [JsonPropertyName("maxActiveOfferCount")] public double? MaxActiveOfferCount { get; set; }
 
+    // ── G. Blacklist Control ──
+    [JsonPropertyName("disableFleaBlacklist")] public bool? DisableFleaBlacklist { get; set; }
+
     // ── F. Per-Category Conditions ──
     [JsonPropertyName("categoryConditions")] public Dictionary<string, CategoryConditionEntry>? CategoryConditions { get; set; }
 }
@@ -117,6 +120,12 @@ public record FleaExpansionDefaults
 
     // F
     [JsonPropertyName("categories")] public List<CategoryConditionDefaults> Categories { get; set; } = [];
+
+    // G
+    [JsonPropertyName("enableBsgList")] public bool EnableBsgList { get; set; }
+    [JsonPropertyName("enableQuestList")] public bool EnableQuestList { get; set; }
+    [JsonPropertyName("enableCustomItemCategoryList")] public bool EnableCustomItemCategoryList { get; set; }
+    [JsonPropertyName("traderItems")] public bool TraderItems { get; set; }
 }
 
 public record CategoryConditionDefaults
