@@ -53,6 +53,7 @@ public class CommandCenterHttpListener(
     HideoutService hideoutService,
     ItemStackService itemStackService,
     RaidRulesService raidRulesService,
+    ServicesSettingsService servicesSettingsService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -248,6 +249,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("raid-rules/") || path == "raid-rules")
             {
                 await HandleRaidRulesRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle service settings routes
+            if (path.StartsWith("services/") || path == "services")
+            {
+                await HandleServicesRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -4591,6 +4599,51 @@ public class CommandCenterHttpListener(
             }
             default:
                 await WriteJson(context, 404, new { error = "Unknown raid rules route" });
+                break;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // SERVICE SETTINGS ROUTES
+    // ═══════════════════════════════════════════════════════
+
+    private async Task HandleServicesRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        var sub = path == "services" ? "" : path["services/".Length..];
+
+        switch (sub)
+        {
+            case "config" when method == "GET":
+            {
+                var result = servicesSettingsService.GetConfig();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "apply" when method == "POST":
+            {
+                var body = await ReadBody<ServiceSettingsConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                servicesSettingsService.Apply(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Services: applied changes");
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+            case "reset" when method == "POST":
+            {
+                servicesSettingsService.Reset();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Services: reset to defaults");
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+            default:
+                await WriteJson(context, 404, new { error = "Unknown services route" });
                 break;
         }
     }
