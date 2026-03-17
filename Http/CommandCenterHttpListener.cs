@@ -51,6 +51,7 @@ public class CommandCenterHttpListener(
     LocationService locationService,
     FirService firService,
     HideoutService hideoutService,
+    ItemStackService itemStackService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -232,6 +233,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("hideout/") || path == "hideout")
             {
                 await HandleHideoutRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle item stack/container routes
+            if (path.StartsWith("items/stack") || path.StartsWith("items/containers"))
+            {
+                await HandleItemStackRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -3117,6 +3125,54 @@ public class CommandCenterHttpListener(
             }
             default:
                 await WriteJson(context, 404, new { error = "Not found" });
+                break;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // ITEM STACK / CONTAINER ROUTES
+    // ═══════════════════════════════════════════════════════
+
+    private async Task HandleItemStackRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        switch (path)
+        {
+            case "items/stack-config" when method == "GET":
+            {
+                var result = itemStackService.GetConfig();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "items/stack-apply" when method == "POST":
+            {
+                var body = await ReadBody<ItemStackConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var count = itemStackService.ApplyConfig(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Items & Stacks: applied {count} change(s)");
+                await WriteJson(context, 200, new { success = true, changes = count });
+                break;
+            }
+            case "items/stack-reset" when method == "POST":
+            {
+                var count = itemStackService.ResetToDefaults();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Items & Stacks: reset to defaults");
+                await WriteJson(context, 200, new { success = true, changes = count });
+                break;
+            }
+            case "items/containers" when method == "GET":
+            {
+                await WriteJson(context, 200, itemStackService.GetContainers());
+                break;
+            }
+            default:
+                await WriteJson(context, 404, new { error = "Unknown item stack route" });
                 break;
         }
     }

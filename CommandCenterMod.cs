@@ -28,6 +28,7 @@ public class CommandCenterMod(
     LocationService locationService,
     FirService firService,
     HideoutService hideoutService,
+    ItemStackService itemStackService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
     ISptLogger<CommandCenterMod> logger) : IOnLoad
@@ -147,6 +148,9 @@ public class CommandCenterMod(
 
         // Initialize FIR toggles (snapshot barter/hideout/config values, apply saved state)
         firService.Initialize();
+
+        // Initialize item stack/container editor (snapshot item templates, apply saved overrides)
+        itemStackService.Initialize();
 
         // Detect bound IP and build URLs based on bind mode
         var httpCfg = configServer.GetConfig<HttpConfig>();

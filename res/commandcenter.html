@@ -4801,6 +4801,128 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   margin: 0 0 8px; font-size: 12px; color: var(--text-muted);
   font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
 }
+/* ═══ ITEMS & STACKS / CONTAINERS ═══ */
+.is-section {
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
+  margin-bottom: 12px; overflow: hidden;
+}
+.is-section-header {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  cursor: pointer; user-select: none;
+}
+.is-section-header:hover { background: rgba(200,170,110,0.04); }
+.is-section-chevron {
+  width: 16px; height: 16px; color: var(--text-dim);
+  transition: transform 0.2s;
+}
+.is-section.collapsed .is-section-chevron { transform: rotate(-90deg); }
+.is-section-title {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.8px;
+}
+.is-section-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 4px;
+  background: rgba(200,170,110,0.12); color: var(--accent-dim);
+  font-weight: 600; letter-spacing: 0.3px;
+}
+.is-section-body { padding: 0 16px 14px; }
+.is-section.collapsed .is-section-body { display: none; }
+.is-master-toggle {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  padding: 8px 12px; background: rgba(200,170,110,0.05); border-radius: 6px;
+  border: 1px solid rgba(200,170,110,0.1);
+}
+.is-master-toggle label { font-size: 12px; font-weight: 600; color: var(--accent); }
+.is-field-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 16px;
+}
+.is-field { display: flex; flex-direction: column; gap: 3px; }
+.is-field-label {
+  font-size: 11px; color: var(--text-muted); display: flex;
+  justify-content: space-between; align-items: center;
+}
+.is-field-label .is-default { font-size: 10px; color: var(--text-dim); }
+.is-field input[type="number"] {
+  background: var(--bg-base); border: 1px solid var(--border); border-radius: 4px;
+  padding: 5px 8px; color: var(--text); font-size: 13px; width: 100%;
+  box-sizing: border-box;
+}
+.is-field input[type="number"]:focus { border-color: var(--accent); outline: none; }
+.is-field input[type="number"].is-modified { border-color: var(--accent); color: var(--accent); }
+.is-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.is-toggle-row > span { font-size: 12px; color: var(--text); flex: 1; }
+.is-sub-heading {
+  font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.5px; margin: 12px 0 8px; padding-bottom: 4px;
+  border-bottom: 1px solid rgba(200,170,110,0.1);
+}
+.is-slider-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.is-slider-row > span:first-child { font-size: 12px; color: var(--text); min-width: 160px; }
+.is-slider-row input[type="range"] {
+  flex: 1; height: 6px; appearance: none; background: var(--border);
+  border-radius: 3px; cursor: pointer; min-width: 100px;
+}
+.is-slider-row input[type="range"]::-webkit-slider-thumb {
+  appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--bg-panel); cursor: pointer;
+}
+.is-slider-row .is-slider-val {
+  font-size: 13px; color: var(--accent); font-weight: 600;
+  min-width: 50px; text-align: right; font-family: var(--font-mono);
+}
+.is-toolbar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.is-toolbar .btn { font-family: var(--font-mono); }
+.is-status { font-size: 12px; color: var(--text-dim); margin-left: 6px; }
+/* Container cards */
+.cnt-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.cnt-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; transition: border-color 0.15s;
+}
+.cnt-card:hover { border-color: var(--border-light); }
+.cnt-card.cnt-modified { border-color: rgba(200,170,110,0.4); }
+.cnt-card-name {
+  font-size: 13px; font-weight: 600; color: var(--text-bright);
+  margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cnt-size-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.cnt-size-field { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.cnt-size-field label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.cnt-size-field input {
+  background: var(--bg-base); border: 1px solid var(--border); border-radius: 4px;
+  padding: 4px 8px; color: var(--text); font-size: 13px; width: 100%;
+  box-sizing: border-box; text-align: center;
+}
+.cnt-size-field input:focus { border-color: var(--accent); outline: none; }
+.cnt-size-x { font-size: 14px; color: var(--text-dim); font-weight: 700; margin-top: 14px; }
+.cnt-mini-grid {
+  display: inline-grid; gap: 1px; margin-top: 6px;
+  border: 1px solid var(--border); border-radius: 3px; overflow: hidden;
+}
+.cnt-mini-cell {
+  width: 8px; height: 8px; background: rgba(200,170,110,0.08);
+}
+.cnt-defaults {
+  font-size: 10px; color: var(--text-dim); margin-top: 4px;
+}
+.cnt-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.cnt-section-header h4 {
+  margin: 0; font-size: 13px; font-weight: 600; color: var(--text);
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.8px;
+}
+.cnt-section-count { font-size: 11px; color: var(--text-dim); }
 /* Pass 4 — Map card disabled/scav states */
 .loc-map-card.disabled { opacity: 0.45; }
 .loc-map-badge {
@@ -5251,6 +5373,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <button class="tab-btn active" data-tab="items" onclick="switchTab('items')">Items</button>
       <button class="tab-btn" data-tab="presets" onclick="switchTab('presets')">Presets</button>
       <button class="tab-btn" data-tab="cart" onclick="switchTab('cart')">Cart <span class="badge" id="cartBadge" style="display:none">0</span></button>
+      <button class="tab-btn" data-tab="stacks" onclick="switchTab('stacks')">Stacks</button>
+      <button class="tab-btn" data-tab="containers" onclick="switchTab('containers')">Containers</button>
     </div>
 
     <!-- Items Sub-Tab -->
@@ -5338,6 +5462,296 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <div class="tab-panel" id="tab-cart">
       <div id="cartContent"></div>
     </div>
+
+    <!-- ═══ STACKS SUB-TAB ═══ -->
+    <div class="tab-panel" id="tab-stacks">
+      <div class="gv-restart-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Changes require a <strong>client restart</strong> to take effect
+      </div>
+
+      <div class="is-toolbar">
+        <button class="btn btn-accent btn-sm" onclick="window.isApply()">Apply Changes</button>
+        <button class="btn btn-sm" onclick="window.isReset()">Reset to Defaults</button>
+        <span class="is-status" id="isStatus"></span>
+      </div>
+
+      <div id="isLoading" style="color:var(--text-dim);text-align:center;padding:40px;font-family:var(--font-mono)">Loading item stack settings...</div>
+      <div id="isContent" style="display:none">
+
+        <!-- A. AMMO STACKS -->
+        <div class="is-section" id="isSecAmmo">
+          <div class="is-section-header" onclick="window.isToggleSection('isSecAmmo')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Ammo Stacks</span>
+            <span class="is-section-badge" id="isAmmoCount"></span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-master-toggle">
+              <label class="loc-toggle"><input type="checkbox" id="isEnableAmmo" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+              <label>Enable custom ammo stack sizes</label>
+            </div>
+            <div class="is-field-grid" id="isAmmoFields"></div>
+          </div>
+        </div>
+
+        <!-- B. CURRENCY STACKS -->
+        <div class="is-section" id="isSecCurrency">
+          <div class="is-section-header" onclick="window.isToggleSection('isSecCurrency')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Currency Stacks</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-master-toggle">
+              <label class="loc-toggle"><input type="checkbox" id="isEnableCurrency" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+              <label>Enable custom currency stack sizes</label>
+            </div>
+            <div class="is-field-grid" id="isCurrencyFields"></div>
+          </div>
+        </div>
+
+        <!-- C. GLOBAL PROPERTIES -->
+        <div class="is-section" id="isSecGlobal">
+          <div class="is-section-header" onclick="window.isToggleSection('isSecGlobal')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Global Properties</span>
+            <span class="is-section-badge" id="isGlobalCount"></span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-toggle-row">
+              <span>Weightless items</span>
+              <label class="loc-toggle"><input type="checkbox" id="isWeightless" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+            <div class="is-slider-row" id="isWeightMultRow">
+              <span>Weight multiplier</span>
+              <input type="range" id="isWeightMult" min="0.01" max="2" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isWeightMultVal')">
+              <span class="is-slider-val" id="isWeightMultVal">1.00x</span>
+            </div>
+            <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px">
+              <div class="is-toggle-row">
+                <span>Auto-examine all items</span>
+                <label class="loc-toggle"><input type="checkbox" id="isAutoExamineAll" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+              </div>
+              <div class="is-toggle-row">
+                <span>Auto-examine keys only</span>
+                <label class="loc-toggle"><input type="checkbox" id="isAutoExamineKeys" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px">
+              <div class="is-slider-row">
+                <span>Handbook price mult</span>
+                <input type="range" id="isHandbookMult" min="0.01" max="10" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isHandbookMultVal')">
+                <span class="is-slider-val" id="isHandbookMultVal">1.00x</span>
+              </div>
+              <div class="is-slider-row">
+                <span>Loot XP multiplier</span>
+                <input type="range" id="isLootXpMult" min="0.1" max="10" step="0.1" value="1" oninput="window.isSliderUpdate(this,'isLootXpMultVal')">
+                <span class="is-slider-val" id="isLootXpMultVal">1.0x</span>
+              </div>
+              <div class="is-slider-row">
+                <span>Examine XP multiplier</span>
+                <input type="range" id="isExamineXpMult" min="0.1" max="10" step="0.1" value="1" oninput="window.isSliderUpdate(this,'isExamineXpMultVal')">
+                <span class="is-slider-val" id="isExamineXpMultVal">1.0x</span>
+              </div>
+              <div class="is-slider-row">
+                <span>Ammo load speed mult</span>
+                <input type="range" id="isLoadSpeedMult" min="0.1" max="5" step="0.1" value="1" oninput="window.isSliderUpdate(this,'isLoadSpeedMultVal')">
+                <span class="is-slider-val" id="isLoadSpeedMultVal">1.0x</span>
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px">
+              <div class="is-toggle-row">
+                <span>Remove raid item restrictions <span style="font-size:10px;color:var(--text-dim)" id="isRaidRestInfo"></span></span>
+                <label class="loc-toggle"><input type="checkbox" id="isRemoveRaidRestrict" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+              </div>
+              <div class="is-field" style="max-width:220px;margin-top:8px">
+                <div class="is-field-label">Backpack stacking limit <span class="is-default" id="isBpLimitDefault"></span></div>
+                <input type="number" id="isBpLimit" min="0" max="99" step="1" placeholder="Default" onchange="window.isMarkDirty()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- D. KEY & KEYCARD DURABILITY -->
+        <div class="is-section" id="isSecKeys">
+          <div class="is-section-header" onclick="window.isToggleSection('isSecKeys')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Key & Keycard Durability</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-master-toggle">
+              <label class="loc-toggle"><input type="checkbox" id="isEnableKeys" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+              <label>Enable key/keycard changes</label>
+            </div>
+            <div class="is-sub-heading">Keys</div>
+            <div class="is-toggle-row">
+              <span>Infinite keys</span>
+              <label class="loc-toggle"><input type="checkbox" id="isInfiniteKeys" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+            <div class="is-field-grid" style="margin-bottom:8px">
+              <div class="is-field">
+                <div class="is-field-label">Key use multiplier</div>
+                <input type="number" id="isKeyUseMult" min="0.1" max="100" step="0.1" value="1" onchange="window.isMarkDirty()">
+              </div>
+              <div class="is-field">
+                <div class="is-field-label">Key durability threshold</div>
+                <input type="number" id="isKeyThreshold" min="1" max="1000" step="1" value="100" onchange="window.isMarkDirty()">
+              </div>
+            </div>
+            <div class="is-toggle-row">
+              <span>Exclude single-use keys</span>
+              <label class="loc-toggle"><input type="checkbox" id="isExcludeSingleKeys" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+            <div class="is-toggle-row">
+              <span>Exclude marked room keys</span>
+              <label class="loc-toggle"><input type="checkbox" id="isExcludeMarkedKeys" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+
+            <div class="is-sub-heading">Keycards</div>
+            <div class="is-toggle-row">
+              <span>Infinite keycards</span>
+              <label class="loc-toggle"><input type="checkbox" id="isInfiniteKeycards" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+            <div class="is-field-grid" style="margin-bottom:8px">
+              <div class="is-field">
+                <div class="is-field-label">Keycard use multiplier</div>
+                <input type="number" id="isKeycardUseMult" min="0.1" max="100" step="0.1" value="1" onchange="window.isMarkDirty()">
+              </div>
+              <div class="is-field">
+                <div class="is-field-label">Keycard durability threshold</div>
+                <input type="number" id="isKeycardThreshold" min="1" max="1000" step="1" value="100" onchange="window.isMarkDirty()">
+              </div>
+            </div>
+            <div class="is-toggle-row">
+              <span>Exclude access keycard</span>
+              <label class="loc-toggle"><input type="checkbox" id="isExcludeAccess" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+            <div class="is-toggle-row">
+              <span>Exclude residential keycard</span>
+              <label class="loc-toggle"><input type="checkbox" id="isExcludeResidential" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+            <div class="is-toggle-row">
+              <span>Exclude single-use keycards</span>
+              <label class="loc-toggle"><input type="checkbox" id="isExcludeSingleKeycards" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- E. WEAPON MECHANICS -->
+        <div class="is-section" id="isSecWeapons">
+          <div class="is-section-header" onclick="window.isToggleSection('isSecWeapons')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Weapon Mechanics</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-slider-row">
+              <span>Malfunction mult</span>
+              <input type="range" id="isMalfMult" min="0" max="3" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isMalfMultVal')">
+              <span class="is-slider-val" id="isMalfMultVal">1.00x</span>
+            </div>
+            <div class="is-slider-row">
+              <span>Misfire mult</span>
+              <input type="range" id="isMisfireMult" min="0" max="3" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isMisfireMultVal')">
+              <span class="is-slider-val" id="isMisfireMultVal">1.00x</span>
+            </div>
+            <div class="is-slider-row">
+              <span>Fragmentation mult</span>
+              <input type="range" id="isFragMult" min="0" max="5" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isFragMultVal')">
+              <span class="is-slider-val" id="isFragMultVal">1.00x</span>
+            </div>
+            <div class="is-slider-row">
+              <span>Heat factor mult</span>
+              <input type="range" id="isHeatMult" min="0" max="3" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isHeatMultVal')">
+              <span class="is-slider-val" id="isHeatMultVal">1.00x</span>
+            </div>
+            <div class="is-toggle-row" style="margin-top:8px">
+              <span>Disable weapon overheat</span>
+              <label class="loc-toggle"><input type="checkbox" id="isDisableOverheat" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- F. GEAR & RESTRICTIONS -->
+        <div class="is-section" id="isSecGear">
+          <div class="is-section-header" onclick="window.isToggleSection('isSecGear')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Gear & Restrictions</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-toggle-row">
+              <span>Remove gear penalties <span style="font-size:10px;color:var(--text-dim)">(mouse, speed, ergo)</span></span>
+              <label class="loc-toggle"><input type="checkbox" id="isRemoveGearPen" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+            <div class="is-toggle-row">
+              <span>Remove backpack restrictions</span>
+              <label class="loc-toggle"><input type="checkbox" id="isRemoveBpRestrict" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+            <div class="is-toggle-row">
+              <span>Remove secure container filters</span>
+              <label class="loc-toggle"><input type="checkbox" id="isRemoveSecConFilters" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+            <div class="is-toggle-row">
+              <span>Allow rig + armor vest</span>
+              <label class="loc-toggle"><input type="checkbox" id="isAllowRigArmor" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+            <div class="is-toggle-row">
+              <span>Remove discard limits</span>
+              <label class="loc-toggle"><input type="checkbox" id="isRemoveDiscard" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CONTAINERS SUB-TAB ═══ -->
+    <div class="tab-panel" id="tab-containers">
+      <div class="gv-restart-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Changes require a <strong>client restart</strong> to take effect
+      </div>
+
+      <div class="is-toolbar">
+        <button class="btn btn-accent btn-sm" onclick="window.cntApply()">Apply Changes</button>
+        <button class="btn btn-sm" onclick="window.cntReset()">Reset to Defaults</button>
+        <span class="is-status" id="cntStatus"></span>
+      </div>
+
+      <div id="cntLoading" style="color:var(--text-dim);text-align:center;padding:40px;font-family:var(--font-mono)">Loading containers...</div>
+      <div id="cntContent" style="display:none">
+        <!-- Secure Containers -->
+        <div class="is-section" id="cntSecSecure">
+          <div class="is-section-header" onclick="window.isToggleSection('cntSecSecure')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Secure Containers</span>
+            <span class="is-section-badge" id="cntSecureCount"></span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-master-toggle">
+              <label class="loc-toggle"><input type="checkbox" id="cntEnableSecure" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+              <label>Enable secure container size overrides</label>
+            </div>
+            <div class="cnt-grid" id="cntSecureGrid"></div>
+          </div>
+        </div>
+
+        <!-- Cases -->
+        <div class="is-section" id="cntSecCases">
+          <div class="is-section-header" onclick="window.isToggleSection('cntSecCases')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Cases</span>
+            <span class="is-section-badge" id="cntCaseCount"></span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-master-toggle">
+              <label class="loc-toggle"><input type="checkbox" id="cntEnableCases" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
+              <label>Enable case size overrides</label>
+            </div>
+            <div class="cnt-grid" id="cntCaseGrid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ═══════ DASHBOARD ═══════ -->
@@ -9366,6 +9780,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.tab === tab); });
     document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.toggle('active', p.id === 'tab-' + tab); });
     if (tab === 'cart') renderCart();
+    if (tab === 'stacks' && !window._isLoaded) window.isLoadConfig();
+    if (tab === 'containers' && !window._cntLoaded) window.cntLoadContainers();
   };
 
   // ═══════════════════════════════════════════════════════
@@ -22638,6 +23054,431 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
   };
 
+})();
+
+// ═══════════════════════════════════════════════════════
+// ITEMS & STACKS + CONTAINERS
+// ═══════════════════════════════════════════════════════
+(function() {
+  'use strict';
+
+  var api = window.api;
+  var toast = window.toast;
+  var _isData = null; // { config, defaults }
+  var _cntData = null; // { secureContainers, cases }
+  var _isDirty = false;
+  window._isLoaded = false;
+  window._cntLoaded = false;
+
+  // ── Section collapse ──
+  window.isToggleSection = function(id) {
+    document.getElementById(id).classList.toggle('collapsed');
+  };
+
+  window.isMarkDirty = function() { _isDirty = true; };
+
+  window.isSliderUpdate = function(el, valId) {
+    var v = parseFloat(el.value);
+    var dp = el.step && el.step.indexOf('.') !== -1 ? (el.step.split('.')[1] || '').length : 1;
+    document.getElementById(valId).textContent = v.toFixed(dp) + 'x';
+    _isDirty = true;
+  };
+
+  // ── STACKS: Load config ──
+  window.isLoadConfig = function() {
+    api('items/stack-config').then(function(data) {
+      _isData = data;
+      window._isLoaded = true;
+      renderStacksUI(data);
+      document.getElementById('isLoading').style.display = 'none';
+      document.getElementById('isContent').style.display = '';
+    }).catch(function(e) {
+      document.getElementById('isLoading').textContent = 'Error loading: ' + e.message;
+    });
+  };
+
+  function renderStacksUI(data) {
+    var c = data.config;
+    var d = data.defaults;
+
+    // A. Ammo stacks
+    document.getElementById('isEnableAmmo').checked = c.enableAmmoStacks;
+    var ammoInfo = d.ammoCategories || [];
+    document.getElementById('isAmmoCount').textContent = ammoInfo.reduce(function(s, a) { return s + a.count; }, 0) + ' items';
+    var ammoGrid = document.getElementById('isAmmoFields');
+    ammoGrid.innerHTML = '';
+    var ammoFields = [
+      { key: 'pistol', label: 'Pistol', val: c.ammoStacks.pistol, def: d.ammoStacks.pistol },
+      { key: 'rifle', label: 'Assault Rifle', val: c.ammoStacks.rifle, def: d.ammoStacks.rifle },
+      { key: 'shotgun', label: 'Shotgun', val: c.ammoStacks.shotgun, def: d.ammoStacks.shotgun },
+      { key: 'marksman', label: 'Marksman', val: c.ammoStacks.marksman, def: d.ammoStacks.marksman },
+      { key: 'largeCaliber', label: 'Large Caliber', val: c.ammoStacks.largeCaliber, def: d.ammoStacks.largeCaliber },
+      { key: 'other', label: 'Other', val: c.ammoStacks.other, def: d.ammoStacks.other }
+    ];
+    ammoFields.forEach(function(f) {
+      var cat = ammoInfo.find(function(a) { return a.category === f.key; });
+      var countText = cat ? ' (' + cat.count + ')' : '';
+      var examples = cat && cat.examples.length ? cat.examples.slice(0, 3).join(', ') : '';
+      var div = document.createElement('div');
+      div.className = 'is-field';
+      div.innerHTML = '<div class="is-field-label">' + f.label + countText +
+        '<span class="is-default">default: ' + f.def + '</span></div>' +
+        '<input type="number" data-ammo="' + f.key + '" min="1" max="99999" value="' + f.val + '" onchange="window.isMarkDirty()" title="' + examples + '">';
+      ammoGrid.appendChild(div);
+    });
+
+    // B. Currency stacks
+    document.getElementById('isEnableCurrency').checked = c.enableCurrencyStacks;
+    var curGrid = document.getElementById('isCurrencyFields');
+    curGrid.innerHTML = '';
+    var curFields = [
+      { key: 'roubles', label: 'Roubles', val: c.currencyStacks.roubles, def: d.currencyStacks.roubles },
+      { key: 'dollars', label: 'Dollars', val: c.currencyStacks.dollars, def: d.currencyStacks.dollars },
+      { key: 'euros', label: 'Euros', val: c.currencyStacks.euros, def: d.currencyStacks.euros },
+      { key: 'gpCoins', label: 'GP Coins', val: c.currencyStacks.gpCoins, def: d.currencyStacks.gpCoins }
+    ];
+    curFields.forEach(function(f) {
+      var div = document.createElement('div');
+      div.className = 'is-field';
+      div.innerHTML = '<div class="is-field-label">' + f.label +
+        '<span class="is-default">default: ' + f.def.toLocaleString() + '</span></div>' +
+        '<input type="number" data-currency="' + f.key + '" min="1" max="9999999" value="' + f.val + '" onchange="window.isMarkDirty()">';
+      curGrid.appendChild(div);
+    });
+
+    // C. Global properties
+    setCheck('isWeightless', c.weightless);
+    setSlider('isWeightMult', c.weightMult, 'isWeightMultVal', 2);
+    setCheck('isAutoExamineAll', c.autoExamineAll);
+    setCheck('isAutoExamineKeys', c.autoExamineKeysOnly);
+    setSlider('isHandbookMult', c.handbookPriceMult, 'isHandbookMultVal', 2);
+    setSlider('isLootXpMult', c.lootXpMult, 'isLootXpMultVal', 1);
+    setSlider('isExamineXpMult', c.examineXpMult, 'isExamineXpMultVal', 1);
+    setSlider('isLoadSpeedMult', c.ammoLoadSpeedMult, 'isLoadSpeedMultVal', 1);
+    setCheck('isRemoveRaidRestrict', c.removeRaidRestrictions);
+    document.getElementById('isRaidRestInfo').textContent = '(' + d.raidRestrictionCount + ' restrictions)';
+    document.getElementById('isBpLimitDefault').textContent = 'default: ' + d.maxBackpackInserting;
+    document.getElementById('isBpLimit').value = c.backpackStackingLimit != null ? c.backpackStackingLimit : '';
+    var gcText = d.totalItemCount + ' items tracked';
+    document.getElementById('isGlobalCount').textContent = gcText;
+
+    // D. Keys
+    setCheck('isEnableKeys', c.enableKeyChanges);
+    setCheck('isInfiniteKeys', c.infiniteKeys);
+    document.getElementById('isKeyUseMult').value = c.keyUseMult;
+    document.getElementById('isKeyThreshold').value = c.keyDurabilityThreshold;
+    setCheck('isExcludeSingleKeys', c.excludeSingleUseKeys);
+    setCheck('isExcludeMarkedKeys', c.excludeMarkedKeys);
+    setCheck('isInfiniteKeycards', c.infiniteKeycards);
+    document.getElementById('isKeycardUseMult').value = c.keycardUseMult;
+    document.getElementById('isKeycardThreshold').value = c.keycardDurabilityThreshold;
+    setCheck('isExcludeAccess', c.excludeAccessKeycard);
+    setCheck('isExcludeResidential', c.excludeResidentialKeycard);
+    setCheck('isExcludeSingleKeycards', c.excludeSingleUseKeycards);
+
+    // E. Weapon mechanics
+    setSlider('isMalfMult', c.malfunctionMult, 'isMalfMultVal', 2);
+    setSlider('isMisfireMult', c.misfireMult, 'isMisfireMultVal', 2);
+    setSlider('isFragMult', c.fragmentationMult, 'isFragMultVal', 2);
+    setSlider('isHeatMult', c.heatFactorMult, 'isHeatMultVal', 2);
+    setCheck('isDisableOverheat', c.disableOverheat);
+
+    // F. Gear
+    setCheck('isRemoveGearPen', c.removeGearPenalties);
+    setCheck('isRemoveBpRestrict', c.removeBackpackRestrictions);
+    setCheck('isRemoveSecConFilters', c.removeSecureContainerFilters);
+    setCheck('isAllowRigArmor', c.allowRigWithArmor);
+    setCheck('isRemoveDiscard', c.removeDiscardLimits);
+
+    _isDirty = false;
+  }
+
+  function setCheck(id, val) { document.getElementById(id).checked = !!val; }
+  function setSlider(id, val, valId, dp) {
+    var el = document.getElementById(id);
+    el.value = val;
+    document.getElementById(valId).textContent = parseFloat(val).toFixed(dp) + 'x';
+  }
+
+  // ── STACKS: Gather config from UI ──
+  function gatherStackConfig() {
+    var ammo = {};
+    document.querySelectorAll('#isAmmoFields input[data-ammo]').forEach(function(el) {
+      ammo[el.dataset.ammo] = parseInt(el.value) || 0;
+    });
+    var currency = {};
+    document.querySelectorAll('#isCurrencyFields input[data-currency]').forEach(function(el) {
+      currency[el.dataset.currency] = parseInt(el.value) || 0;
+    });
+    var bpVal = document.getElementById('isBpLimit').value;
+
+    // Gather container sizes from Containers tab if loaded
+    var secSizes = {};
+    var caseSizes = {};
+    if (_cntData) {
+      document.querySelectorAll('#cntSecureGrid .cnt-card').forEach(function(card) {
+        var id = card.dataset.id;
+        var w = parseInt(card.querySelector('[data-dim="w"]').value) || 0;
+        var h = parseInt(card.querySelector('[data-dim="h"]').value) || 0;
+        var rf = card.querySelector('[data-dim="rf"]');
+        var removeFilter = rf ? rf.checked : false;
+        var def = _cntData.secureContainers.find(function(c) { return c.id === id; });
+        if (def && (w !== def.defaultW || h !== def.defaultH || removeFilter)) {
+          secSizes[id] = { w: w, h: h, removeFilter: removeFilter };
+        }
+      });
+      document.querySelectorAll('#cntCaseGrid .cnt-card').forEach(function(card) {
+        var id = card.dataset.id;
+        var w = parseInt(card.querySelector('[data-dim="w"]').value) || 0;
+        var h = parseInt(card.querySelector('[data-dim="h"]').value) || 0;
+        var rf = card.querySelector('[data-dim="rf"]');
+        var removeFilter = rf ? rf.checked : false;
+        var def = _cntData.cases.find(function(c) { return c.id === id; });
+        if (def && (w !== def.defaultW || h !== def.defaultH || removeFilter)) {
+          caseSizes[id] = { w: w, h: h, removeFilter: removeFilter };
+        }
+      });
+    }
+
+    return {
+      enableAmmoStacks: document.getElementById('isEnableAmmo').checked,
+      ammoStacks: ammo,
+      perItemStackOverrides: (_isData && _isData.config.perItemStackOverrides) || {},
+      enableCurrencyStacks: document.getElementById('isEnableCurrency').checked,
+      currencyStacks: currency,
+      weightless: document.getElementById('isWeightless').checked,
+      weightMult: parseFloat(document.getElementById('isWeightMult').value) || 1,
+      examineTimeOverride: null,
+      autoExamineAll: document.getElementById('isAutoExamineAll').checked,
+      autoExamineKeysOnly: document.getElementById('isAutoExamineKeys').checked,
+      handbookPriceMult: parseFloat(document.getElementById('isHandbookMult').value) || 1,
+      lootXpMult: parseFloat(document.getElementById('isLootXpMult').value) || 1,
+      examineXpMult: parseFloat(document.getElementById('isExamineXpMult').value) || 1,
+      ammoLoadSpeedMult: parseFloat(document.getElementById('isLoadSpeedMult').value) || 1,
+      removeRaidRestrictions: document.getElementById('isRemoveRaidRestrict').checked,
+      backpackStackingLimit: bpVal !== '' ? parseInt(bpVal) : null,
+      enableKeyChanges: document.getElementById('isEnableKeys').checked,
+      infiniteKeys: document.getElementById('isInfiniteKeys').checked,
+      keyUseMult: parseFloat(document.getElementById('isKeyUseMult').value) || 1,
+      keyDurabilityThreshold: parseInt(document.getElementById('isKeyThreshold').value) || 100,
+      excludeSingleUseKeys: document.getElementById('isExcludeSingleKeys').checked,
+      excludeMarkedKeys: document.getElementById('isExcludeMarkedKeys').checked,
+      infiniteKeycards: document.getElementById('isInfiniteKeycards').checked,
+      keycardUseMult: parseFloat(document.getElementById('isKeycardUseMult').value) || 1,
+      keycardDurabilityThreshold: parseInt(document.getElementById('isKeycardThreshold').value) || 100,
+      excludeAccessKeycard: document.getElementById('isExcludeAccess').checked,
+      excludeResidentialKeycard: document.getElementById('isExcludeResidential').checked,
+      excludeSingleUseKeycards: document.getElementById('isExcludeSingleKeycards').checked,
+      malfunctionMult: parseFloat(document.getElementById('isMalfMult').value) || 1,
+      misfireMult: parseFloat(document.getElementById('isMisfireMult').value) || 1,
+      fragmentationMult: parseFloat(document.getElementById('isFragMult').value) || 1,
+      heatFactorMult: parseFloat(document.getElementById('isHeatMult').value) || 1,
+      disableOverheat: document.getElementById('isDisableOverheat').checked,
+      removeGearPenalties: document.getElementById('isRemoveGearPen').checked,
+      removeBackpackRestrictions: document.getElementById('isRemoveBpRestrict').checked,
+      removeSecureContainerFilters: document.getElementById('isRemoveSecConFilters').checked,
+      allowRigWithArmor: document.getElementById('isAllowRigArmor').checked,
+      removeDiscardLimits: document.getElementById('isRemoveDiscard').checked,
+      enableSecureContainerSizes: document.getElementById('cntEnableSecure') ? document.getElementById('cntEnableSecure').checked : false,
+      secureContainerSizes: secSizes,
+      enableCaseSizes: document.getElementById('cntEnableCases') ? document.getElementById('cntEnableCases').checked : false,
+      caseSizes: caseSizes
+    };
+  }
+
+  // ── STACKS: Apply ──
+  window.isApply = function() {
+    var config = gatherStackConfig();
+    var statusEl = document.getElementById('isStatus');
+    statusEl.textContent = 'Applying...';
+    statusEl.style.color = 'var(--accent)';
+    api('items/stack-apply', 'POST', config).then(function(res) {
+      statusEl.textContent = res.changes + ' change(s) applied';
+      statusEl.style.color = '#4caf50';
+      _isDirty = false;
+      toast('Item stacks applied (' + res.changes + ' changes)', 'success');
+      setTimeout(function() { statusEl.textContent = ''; }, 4000);
+    }).catch(function(e) {
+      statusEl.textContent = 'Error: ' + e.message;
+      statusEl.style.color = '#f44336';
+      toast('Error applying: ' + e.message, 'error');
+    });
+  };
+
+  // ── STACKS: Reset ──
+  window.isReset = function() {
+    if (!confirm('Reset all item stack settings to defaults?')) return;
+    var statusEl = document.getElementById('isStatus');
+    statusEl.textContent = 'Resetting...';
+    api('items/stack-reset', 'POST').then(function() {
+      statusEl.textContent = 'Reset to defaults';
+      statusEl.style.color = '#4caf50';
+      toast('Item stacks reset to defaults', 'success');
+      window._isLoaded = false;
+      window._cntLoaded = false;
+      window.isLoadConfig();
+      if (_cntData) window.cntLoadContainers();
+      setTimeout(function() { statusEl.textContent = ''; }, 4000);
+    }).catch(function(e) {
+      statusEl.textContent = 'Error: ' + e.message;
+      statusEl.style.color = '#f44336';
+    });
+  };
+
+  // ── CONTAINERS: Load ──
+  window.cntLoadContainers = function() {
+    Promise.all([
+      api('items/containers'),
+      window._isLoaded ? Promise.resolve(_isData) : api('items/stack-config')
+    ]).then(function(results) {
+      _cntData = results[0];
+      if (!window._isLoaded) {
+        _isData = results[1];
+        window._isLoaded = true;
+      }
+      window._cntLoaded = true;
+      renderContainersUI(_cntData, _isData.config);
+      document.getElementById('cntLoading').style.display = 'none';
+      document.getElementById('cntContent').style.display = '';
+    }).catch(function(e) {
+      document.getElementById('cntLoading').textContent = 'Error loading: ' + e.message;
+    });
+  };
+
+  function renderContainersUI(cnt, config) {
+    document.getElementById('cntEnableSecure').checked = config.enableSecureContainerSizes;
+    document.getElementById('cntEnableCases').checked = config.enableCaseSizes;
+    document.getElementById('cntSecureCount').textContent = cnt.secureContainers.length + ' containers';
+    document.getElementById('cntCaseCount').textContent = cnt.cases.length + ' cases';
+
+    renderContainerGrid('cntSecureGrid', cnt.secureContainers, config.secureContainerSizes || {});
+    renderContainerGrid('cntCaseGrid', cnt.cases, config.caseSizes || {});
+  }
+
+  function renderContainerGrid(gridId, containers, sizeOverrides) {
+    var grid = document.getElementById(gridId);
+    grid.innerHTML = '';
+    containers.forEach(function(c) {
+      var override = sizeOverrides[c.id];
+      var w = override ? override.w : c.defaultW;
+      var h = override ? override.h : c.defaultH;
+      var rf = override ? override.removeFilter : false;
+      var isModified = override ? true : false;
+
+      var card = document.createElement('div');
+      card.className = 'cnt-card' + (isModified ? ' cnt-modified' : '');
+      card.dataset.id = c.id;
+
+      card.innerHTML =
+        '<div class="cnt-card-name" title="' + c.id + '">' + escHtml(c.name) + '</div>' +
+        '<div class="cnt-size-row">' +
+          '<div class="cnt-size-field"><label>Width</label><input type="number" data-dim="w" min="1" max="99" value="' + w + '" onchange="window.cntCardChanged(this)"></div>' +
+          '<span class="cnt-size-x">&times;</span>' +
+          '<div class="cnt-size-field"><label>Height</label><input type="number" data-dim="h" min="1" max="99" value="' + h + '" onchange="window.cntCardChanged(this)"></div>' +
+        '</div>' +
+        '<div class="cnt-defaults">Default: ' + c.defaultW + ' &times; ' + c.defaultH + '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-top:6px">' +
+          '<label class="loc-toggle" style="transform:scale(0.85)"><input type="checkbox" data-dim="rf"' + (rf ? ' checked' : '') + ' onchange="window.cntCardChanged(this)"><span class="loc-toggle-slider"></span></label>' +
+          '<span style="font-size:11px;color:var(--text-dim)">Remove filter</span>' +
+        '</div>' +
+        '<div class="cnt-preview" data-pw="' + w + '" data-ph="' + h + '"></div>';
+
+      grid.appendChild(card);
+      renderMiniGrid(card.querySelector('.cnt-preview'), w, h);
+    });
+  }
+
+  function renderMiniGrid(el, w, h) {
+    // Limit preview to reasonable size
+    var pw = Math.min(w, 16);
+    var ph = Math.min(h, 16);
+    el.innerHTML = '';
+    var g = document.createElement('div');
+    g.className = 'cnt-mini-grid';
+    g.style.gridTemplateColumns = 'repeat(' + pw + ', 8px)';
+    for (var i = 0; i < pw * ph; i++) {
+      var cell = document.createElement('div');
+      cell.className = 'cnt-mini-cell';
+      g.appendChild(cell);
+    }
+    el.appendChild(g);
+  }
+
+  window.cntCardChanged = function(el) {
+    _isDirty = true;
+    var card = el.closest('.cnt-card');
+    var id = card.dataset.id;
+    var w = parseInt(card.querySelector('[data-dim="w"]').value) || 1;
+    var h = parseInt(card.querySelector('[data-dim="h"]').value) || 1;
+    renderMiniGrid(card.querySelector('.cnt-preview'), w, h);
+
+    // Check if modified vs default
+    var allContainers = (_cntData.secureContainers || []).concat(_cntData.cases || []);
+    var def = allContainers.find(function(c) { return c.id === id; });
+    var rf = card.querySelector('[data-dim="rf"]').checked;
+    if (def && (w !== def.defaultW || h !== def.defaultH || rf)) {
+      card.classList.add('cnt-modified');
+    } else {
+      card.classList.remove('cnt-modified');
+    }
+  };
+
+  // ── CONTAINERS: Apply (shares config with stacks) ──
+  window.cntApply = function() {
+    // Ensure stacks config is loaded
+    if (!_isData) {
+      api('items/stack-config').then(function(data) {
+        _isData = data;
+        window._isLoaded = true;
+        renderStacksUI(data);
+        doApply();
+      });
+    } else {
+      doApply();
+    }
+    function doApply() {
+      var config = gatherStackConfig();
+      var statusEl = document.getElementById('cntStatus');
+      statusEl.textContent = 'Applying...';
+      statusEl.style.color = 'var(--accent)';
+      api('items/stack-apply', 'POST', config).then(function(res) {
+        statusEl.textContent = res.changes + ' change(s) applied';
+        statusEl.style.color = '#4caf50';
+        _isDirty = false;
+        toast('Container sizes applied (' + res.changes + ' changes)', 'success');
+        setTimeout(function() { statusEl.textContent = ''; }, 4000);
+      }).catch(function(e) {
+        statusEl.textContent = 'Error: ' + e.message;
+        statusEl.style.color = '#f44336';
+        toast('Error applying: ' + e.message, 'error');
+      });
+    }
+  };
+
+  // ── CONTAINERS: Reset (shares reset with stacks) ──
+  window.cntReset = function() {
+    if (!confirm('Reset all item stack and container settings to defaults?')) return;
+    var statusEl = document.getElementById('cntStatus');
+    statusEl.textContent = 'Resetting...';
+    api('items/stack-reset', 'POST').then(function() {
+      statusEl.textContent = 'Reset to defaults';
+      statusEl.style.color = '#4caf50';
+      toast('All item stacks and containers reset to defaults', 'success');
+      window._isLoaded = false;
+      window._cntLoaded = false;
+      window.cntLoadContainers();
+      setTimeout(function() { statusEl.textContent = ''; }, 4000);
+    }).catch(function(e) {
+      statusEl.textContent = 'Error: ' + e.message;
+      statusEl.style.color = '#f44336';
+    });
+  };
+
+  function escHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
 })();
 </script>
 </body>
