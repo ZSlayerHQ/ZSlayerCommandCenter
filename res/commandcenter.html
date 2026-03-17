@@ -224,9 +224,9 @@ body {
 .nav-bar::-webkit-scrollbar { height: 3px; }
 
 .nav-bar-inner {
-  display: inline-flex;
+  display: flex;
+  justify-content: center;
   gap: 0;
-  min-width: 100%;
 }
 
 .nav-btn {
@@ -271,6 +271,17 @@ body {
 .nav-icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 3px; opacity: 0.5; filter: brightness(0) invert(1); transition: opacity 0.15s, filter 0.15s; }
 .nav-btn:hover .nav-icon { opacity: 0.7; }
 .nav-btn.active .nav-icon { opacity: 1; filter: brightness(0) invert(1) brightness(1.2) sepia(1) saturate(2) hue-rotate(10deg); }
+
+.cat-sub-bar { border-top: 1px solid var(--border); padding: 0 20px; background: var(--bg-dark); }
+.cat-sub-group { display: flex; gap: 2px; }
+.cat-sub-btn {
+  padding: 7px 18px; background: none; border: none;
+  border-bottom: 2px solid transparent; color: var(--text-muted);
+  cursor: pointer; font-size: 12px; font-weight: 500;
+  font-family: var(--font-mono); transition: color 0.15s, border-color 0.15s; white-space: nowrap;
+}
+.cat-sub-btn:hover { color: var(--text); }
+.cat-sub-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
 /* ── Buttons ── */
 .btn {
@@ -4894,23 +4905,35 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 <!-- ═══════ NAVIGATION BAR ═══════ -->
 <div class="nav-bar" id="navBar">
   <div class="nav-bar-inner">
-    <button class="nav-btn active" data-nav="dashboard" onclick="switchMainTab('dashboard')"><img class="nav-icon" src="ui-icons/icon_gear.png" alt="">Dashboard</button>
-    <button class="nav-btn" data-nav="admin" onclick="switchMainTab('admin')"><img class="nav-icon" src="ui-icons/icon_attention.png" alt="">Admin</button>
-    <button class="nav-btn" data-nav="raidinfo" onclick="switchMainTab('raidinfo')"><img class="nav-icon" src="ui-icons/icon_difficulty.png" alt="">Raid Info</button>
-    <button class="nav-btn" data-nav="items" onclick="switchMainTab('items')"><img class="nav-icon" src="ui-icons/items_icon.png" alt="">Items</button>
-    <button class="nav-btn" data-nav="players" onclick="switchMainTab('players')"><img class="nav-icon" src="ui-icons/icon_players.png" alt="">Players</button>
-    <button class="nav-btn" data-nav="flea" onclick="switchMainTab('flea')"><img class="nav-icon" src="ui-icons/icon_exchange.png" alt="">Flea Market</button>
-    <button class="nav-btn" data-nav="traders" onclick="switchMainTab('traders')"><img class="nav-icon" src="ui-icons/icon_traders.png" alt="">Traders</button>
-    <button class="nav-btn" data-nav="quests" onclick="switchMainTab('quests')"><img class="nav-icon" src="ui-icons/icon_quest.png" alt="">Quests</button>
-    <button class="nav-btn" data-nav="progression" onclick="switchMainTab('progression')"><img class="nav-icon" src="ui-icons/icon_star.png" alt="">Progression</button>
-    <button class="nav-btn" data-nav="events" onclick="switchMainTab('events')"><img class="nav-icon" src="ui-icons/icon_time_big.png" alt="">Events</button>
-    <button class="nav-btn" data-nav="gamevalues" onclick="switchMainTab('gamevalues')"><img class="nav-icon" src="ui-icons/icon_edit.png" alt="">Game Values</button>
-    <button class="nav-btn" data-nav="fir" onclick="switchMainTab('fir')"><img class="nav-icon" src="ui-icons/icon_foundinraid_quest_small.png" alt="">FIR / Economy</button>
-    <button class="nav-btn" data-nav="hideout" onclick="switchMainTab('hideout')"><img class="nav-icon" src="ui-icons/hideout_taskbar_icon.png" alt="">Hideout</button>
-    <button class="nav-btn disabled" data-nav="profiles" onclick="switchMainTab('profiles')">Profiles <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
-    <button class="nav-btn disabled" data-nav="loadouts" onclick="switchMainTab('loadouts')">Loadouts <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
-    <button class="nav-btn disabled" data-nav="bounties" onclick="switchMainTab('bounties')">Bounties <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
-    <button class="nav-btn disabled" data-nav="clans" onclick="switchMainTab('clans')">Clans <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
+    <button class="nav-btn active" data-cat="dashboard" onclick="switchCategory('dashboard')"><img class="nav-icon" src="ui-icons/icon_gear.png" alt="">Dashboard</button>
+    <button class="nav-btn" data-cat="server" onclick="switchCategory('server')"><img class="nav-icon" src="ui-icons/icon_attention.png" alt="">Server</button>
+    <button class="nav-btn" data-cat="raids" onclick="switchCategory('raids')"><img class="nav-icon" src="ui-icons/icon_difficulty.png" alt="">Raids</button>
+    <button class="nav-btn" data-cat="players-cat" onclick="switchCategory('players-cat')"><img class="nav-icon" src="ui-icons/icon_players.png" alt="">Players</button>
+    <button class="nav-btn" data-cat="economy" onclick="switchCategory('economy')"><img class="nav-icon" src="ui-icons/icon_exchange.png" alt="">Economy</button>
+    <button class="nav-btn" data-cat="gameworld" onclick="switchCategory('gameworld')"><img class="nav-icon" src="ui-icons/icon_edit.png" alt="">Game World</button>
+    <button class="nav-btn disabled" data-cat="profiles-cat" onclick="switchCategory('profiles-cat')">Profiles <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
+    <button class="nav-btn disabled" data-cat="community" onclick="switchCategory('community')">Community <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
+  </div>
+  <div class="cat-sub-bar" id="catSubBar" style="display:none">
+    <div class="cat-sub-group" data-cat="server" style="display:none">
+      <button class="cat-sub-btn" data-panel="admin" onclick="switchMainTab('admin')">Admin</button>
+      <button class="cat-sub-btn" data-panel="events" onclick="switchMainTab('events')">Events</button>
+    </div>
+    <div class="cat-sub-group" data-cat="players-cat" style="display:none">
+      <button class="cat-sub-btn" data-panel="players" onclick="switchMainTab('players')">Management</button>
+      <button class="cat-sub-btn" data-panel="items" onclick="switchMainTab('items')">Items</button>
+      <button class="cat-sub-btn" data-panel="quests" onclick="switchMainTab('quests')">Quests</button>
+      <button class="cat-sub-btn" data-panel="progression" onclick="switchMainTab('progression')">Progression</button>
+    </div>
+    <div class="cat-sub-group" data-cat="economy" style="display:none">
+      <button class="cat-sub-btn" data-panel="traders" onclick="switchMainTab('traders')">Traders</button>
+      <button class="cat-sub-btn" data-panel="flea" onclick="switchMainTab('flea')">Flea Market</button>
+      <button class="cat-sub-btn" data-panel="fir" onclick="switchMainTab('fir')">FIR &amp; Rules</button>
+    </div>
+    <div class="cat-sub-group" data-cat="gameworld" style="display:none">
+      <button class="cat-sub-btn" data-panel="gamevalues" onclick="switchMainTab('gamevalues')">Database</button>
+      <button class="cat-sub-btn" data-panel="hideout" onclick="switchMainTab('hideout')">Hideout</button>
+    </div>
   </div>
 </div>
 
@@ -5604,7 +5627,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
               Headless Client <span id="hlManagerLabel" class="wd-name-label"></span>
             </span>
-            <span id="headlessStatusBadge" class="hl-status-pill pill-unavailable">Unknown</span>
+            <span id="headlessStatusBadge" class="hl-status-pill pill-unavailable">Offline</span>
           </div>
           <div class="dash-widget-body" id="headlessCardBody">
             <div style="text-align:center;color:var(--text-muted);padding:8px;font-size:12px">No Watchdog connected</div>
@@ -8838,6 +8861,25 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var currentMainTab = localStorage.getItem('zslayer_cc_tab') || 'dashboard';
 
   // ═══════════════════════════════════════════════════════
+  // NAV CATEGORY MAP
+  // ═══════════════════════════════════════════════════════
+  var NAV_CATEGORIES = {
+    'dashboard':    { panels: ['dashboard'] },
+    'server':       { panels: ['admin', 'events'], subLabels: { 'admin': 'Admin', 'events': 'Events' } },
+    'raids':        { panels: ['raidinfo'] },
+    'players-cat':  { panels: ['players', 'items', 'quests', 'progression'], subLabels: { 'players': 'Management', 'items': 'Items', 'quests': 'Quests', 'progression': 'Progression' } },
+    'economy':      { panels: ['traders', 'flea', 'fir'], subLabels: { 'traders': 'Traders', 'flea': 'Flea Market', 'fir': 'FIR & Rules' } },
+    'gameworld':    { panels: ['gamevalues', 'hideout'], subLabels: { 'gamevalues': 'Database', 'hideout': 'Hideout' } },
+    'profiles-cat': { panels: ['profiles'], locked: true },
+    'community':    { panels: ['bounties'], locked: true }
+  };
+  var PANEL_TO_CATEGORY = {};
+  Object.keys(NAV_CATEGORIES).forEach(function(catId) {
+    NAV_CATEGORIES[catId].panels.forEach(function(p) { PANEL_TO_CATEGORY[p] = catId; });
+  });
+  var categoryMemory = {};
+
+  // ═══════════════════════════════════════════════════════
   // API
   // ═══════════════════════════════════════════════════════
   var BASE = '/zslayer/cc/';
@@ -9243,16 +9285,37 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   // ═══════════════════════════════════════════════════════
-  // MAIN NAV TABS (14-tab bar)
+  // MAIN NAV TABS (category-based)
   // ═══════════════════════════════════════════════════════
   window.switchMainTab = function(tab) {
+    // Guard unknown/stale panels (e.g. old localStorage 'loadouts', 'clans')
+    if (!PANEL_TO_CATEGORY[tab]) tab = 'dashboard';
+
     currentMainTab = tab;
     localStorage.setItem('zslayer_cc_tab', tab);
     window.location.hash = tab;
 
-    // Update nav buttons
-    document.querySelectorAll('.nav-btn').forEach(function(b) {
-      b.classList.toggle('active', b.dataset.nav === tab);
+    var catId = PANEL_TO_CATEGORY[tab];
+    categoryMemory[catId] = tab;
+
+    // Update category nav buttons
+    document.querySelectorAll('.nav-btn[data-cat]').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.cat === catId);
+    });
+
+    // Show/hide sub-tab bar + activate correct group
+    var cat = NAV_CATEGORIES[catId];
+    var subBar = document.getElementById('catSubBar');
+    if (subBar) {
+      subBar.style.display = (cat && cat.subLabels) ? 'block' : 'none';
+      document.querySelectorAll('.cat-sub-group').forEach(function(g) {
+        g.style.display = g.dataset.cat === catId ? 'flex' : 'none';
+      });
+    }
+
+    // Update sub-tab active state
+    document.querySelectorAll('.cat-sub-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.panel === tab);
     });
 
     // Show/hide main panels
@@ -9265,7 +9328,6 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'admin') {
       loadActivity();
       updateAdminMetrics();
-      // Re-trigger fade-in animations
       document.querySelectorAll('#main-admin .admin-fade-in, #main-admin .admin-metric-card').forEach(function(el) {
         el.style.animation = 'none';
         el.offsetHeight; // reflow
@@ -9283,12 +9345,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'fir' && !window.firLoaded) window.firInit && window.firInit();
     if (tab === 'hideout' && !window._hideoutLoaded) window.hideoutInit && window.hideoutInit();
 
-    // Manage raid info polling — start when on tab, stop when leaving
+    // Manage raid info polling
     if (tab === 'raidinfo') {
       startRaidInfoPolling();
     } else {
       stopRaidInfoPolling();
     }
+  };
+
+  window.switchCategory = function(catId) {
+    var cat = NAV_CATEGORIES[catId];
+    if (!cat || cat.locked) return;
+    switchMainTab(categoryMemory[catId] || cat.panels[0]);
   };
 
   // ═══════════════════════════════════════════════════════
@@ -11895,7 +11963,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     badge.className = 'hl-status-pill';
     if (!wd) {
       badge.classList.add('pill-unavailable');
-      badge.textContent = 'Unknown';
+      badge.textContent = 'Offline';
     } else if (action) {
       badge.classList.add('pill-transition');
       badge.innerHTML = '<span class="hl-spinner"></span> ' + action.charAt(0).toUpperCase() + action.slice(1) + '\u2026';
@@ -11957,7 +12025,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (hlWatchdogs.length === 0) {
       // No watchdog — degraded state
       badge.className = 'hl-status-pill pill-unavailable';
-      badge.textContent = 'Unknown';
+      badge.textContent = 'Offline';
       label.textContent = '';
       body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:8px;font-size:12px">No Watchdog connected</div>';
       // Show settings card anyway (uses CC server config)
@@ -16195,7 +16263,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     btn.disabled = !fleaDirty;
     btn.classList.toggle('dirty', fleaDirty);
     // Update nav unsaved indicator
-    var navBtn = document.querySelector('.nav-btn[data-nav="flea"]');
+    var navBtn = document.querySelector('.cat-sub-btn[data-panel="flea"]');
     if (navBtn) {
       var dot = navBtn.querySelector('.flea-unsaved-dot');
       if (!dot) {
