@@ -133,6 +133,15 @@ public record ScavQuickConfig
 
     [JsonPropertyName("karmaLossMultiplier")]
     public double KarmaLossMultiplier { get; set; } = 1.0;
+
+    [JsonPropertyName("syncSkills")]
+    public bool SyncSkills { get; set; }
+
+    [JsonPropertyName("syncMastering")]
+    public bool SyncMastering { get; set; }
+
+    [JsonPropertyName("syncEncyclopedia")]
+    public bool SyncEncyclopedia { get; set; }
 }
 
 public record HealthQuickConfig

@@ -7201,6 +7201,21 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <div class="prog-override-row" data-key="scav.cooldownSeconds"><label>Cooldown</label><input type="number" min="1" max="86400" step="1" value="" placeholder="seconds (blank = default)" class="prog-override" oninput="progOverrideSync(this)" /><span class="prog-unit">sec</span></div>
         <div class="prog-slider-row" data-key="scav.karmaGainMultiplier"><label>Karma Gain</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
         <div class="prog-slider-row" data-key="scav.karmaLossMultiplier"><label>Karma Loss</label><input type="range" min="0" max="10" step="0.1" value="1" class="prog-slider" oninput="progSliderSync(this)" /><input type="number" min="0" max="10" step="0.1" value="1" class="prog-num" oninput="progNumSync(this)" /><span class="prog-unit">x</span></div>
+        <div style="margin-top:8px;padding:10px 12px;background:var(--bg-base);border:1px solid var(--border);border-radius:6px;display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">PMC ↔ Scav Sync <span style="font-weight:normal;text-transform:none;letter-spacing:0">(runs on Apply)</span></div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary);margin:0">
+            <input type="checkbox" id="progSyncSkills" onchange="progUpdateDirty()" style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer" />
+            Sync skills <span style="font-size:11px;color:var(--text-dim)">(bidirectional, takes highest progress)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary);margin:0">
+            <input type="checkbox" id="progSyncMastering" onchange="progUpdateDirty()" style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer" />
+            Sync weapon mastering <span style="font-size:11px;color:var(--text-dim)">(bidirectional)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary);margin:0">
+            <input type="checkbox" id="progSyncEncyclopedia" onchange="progUpdateDirty()" style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer" />
+            Sync examined items <span style="font-size:11px;color:var(--text-dim)">(encyclopedia merge)</span>
+          </label>
+        </div>
       </div>
     </div>
 
@@ -17724,6 +17739,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (ihCb) ihCb.checked = !!(config.health && config.health.instantOutOfRaidHealing);
     progUpdateInstantHealingDisable();
 
+    // Scav sync checkboxes
+    var syncSkillsCb = document.getElementById('progSyncSkills');
+    if (syncSkillsCb) syncSkillsCb.checked = !!(config.scav && config.scav.syncSkills);
+    var syncMastCb = document.getElementById('progSyncMastering');
+    if (syncMastCb) syncMastCb.checked = !!(config.scav && config.scav.syncMastering);
+    var syncEncCb = document.getElementById('progSyncEncyclopedia');
+    if (syncEncCb) syncEncCb.checked = !!(config.scav && config.scav.syncEncyclopedia);
+
     // Per-skill multipliers from config
     if (config.skills && config.skills.perSkillMultipliers) {
       window._perSkillOverrides = Object.assign({}, config.skills.perSkillMultipliers);
@@ -17768,6 +17791,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     // Include instant healing toggle
     var ihCb = document.getElementById('progInstantHealing');
     config.health.instantOutOfRaidHealing = ihCb ? ihCb.checked : false;
+
+    // Scav sync toggles
+    config.scav.syncSkills = !!document.getElementById('progSyncSkills')?.checked;
+    config.scav.syncMastering = !!document.getElementById('progSyncMastering')?.checked;
+    config.scav.syncEncyclopedia = !!document.getElementById('progSyncEncyclopedia')?.checked;
 
     return config;
   }
@@ -17875,6 +17903,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     check(config.insurance.returnTimeOverrideHours, null); check(config.insurance.returnChanceMultiplier, 1);
     check(config.repair.costMultiplier, 1); check(config.repair.durabilityLossMultiplier, 1);
     check(config.scav.cooldownSeconds, null); check(config.scav.karmaGainMultiplier, 1); check(config.scav.karmaLossMultiplier, 1);
+    if (config.scav.syncSkills) count++;
+    if (config.scav.syncMastering) count++;
+    if (config.scav.syncEncyclopedia) count++;
     check(config.health.energyDrainMultiplier, 1); check(config.health.hydrationDrainMultiplier, 1); check(config.health.outOfRaidHealingSpeedMultiplier, 1);
     check(config.stamina.capacityMultiplier, 1); check(config.stamina.recoveryMultiplier, 1);
     check(config.stamina.sprintDrainMultiplier, 1); check(config.stamina.jumpCostMultiplier, 1);

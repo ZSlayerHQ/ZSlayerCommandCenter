@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Eft.Common;
+using SPTarkov.Server.Core.Models.Eft.Common.Tables;
+using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Servers;
@@ -14,6 +16,7 @@ public class ProgressionControlService(
     DatabaseService databaseService,
     ConfigServer configServer,
     ConfigService configService,
+    SaveServer saveServer,
     ISptLogger<ProgressionControlService> logger)
 {
     private readonly object _lock = new();
@@ -778,6 +781,114 @@ public class ProgressionControlService(
 
         if (Math.Abs(scav.KarmaGainMultiplier - 1.0) > 0.001) count++;
         if (Math.Abs(scav.KarmaLossMultiplier - 1.0) > 0.001) count++;
+
+        // ── PMC ↔ Scav sync ──
+        if (scav.SyncSkills || scav.SyncMastering || scav.SyncEncyclopedia)
+        {
+            var profiles = saveServer.GetProfiles();
+            int synced = 0;
+            foreach (var (sid, profile) in profiles)
+            {
+                var pmc = profile.CharacterData?.PmcData;
+                var scavData = profile.CharacterData?.ScavData;
+                if (pmc == null || scavData == null) continue;
+                bool changed = false;
+
+                // ── Skill sync (bidirectional max-merge) ──
+                if (scav.SyncSkills && pmc.Skills?.Common != null)
+                {
+                    var pmcList = pmc.Skills.Common.ToList();
+                    var scavList = (scavData.Skills?.Common ?? []).ToList();
+                    var scavMap = scavList.ToDictionary(s => s.Id, s => s);
+
+                    foreach (var pmcSkill in pmcList)
+                    {
+                        if (scavMap.TryGetValue(pmcSkill.Id, out var scavSkill))
+                        {
+                            var max = Math.Max(pmcSkill.Progress, scavSkill.Progress);
+                            pmcSkill.Progress = max;
+                            scavSkill.Progress = max;
+                        }
+                        else
+                        {
+                            scavList.Add(new CommonSkill
+                            {
+                                Id = pmcSkill.Id, Progress = pmcSkill.Progress,
+                                PointsEarnedDuringSession = 0, LastAccess = pmcSkill.LastAccess,
+                                Max = pmcSkill.Max, Min = pmcSkill.Min
+                            });
+                        }
+                    }
+
+                    var pmcIds = new HashSet<SkillTypes>(pmcList.Select(s => s.Id));
+                    foreach (var scavSkill in scavList)
+                    {
+                        if (!pmcIds.Contains(scavSkill.Id))
+                            pmcList.Add(new CommonSkill
+                            {
+                                Id = scavSkill.Id, Progress = scavSkill.Progress,
+                                PointsEarnedDuringSession = 0, LastAccess = scavSkill.LastAccess,
+                                Max = scavSkill.Max, Min = scavSkill.Min
+                            });
+                    }
+
+                    pmc.Skills.Common = pmcList;
+                    scavData.Skills ??= new Skills();
+                    scavData.Skills.Common = scavList;
+                    changed = true;
+                }
+
+                // ── Mastery sync (bidirectional max-merge) ──
+                if (scav.SyncMastering && pmc.Skills?.Mastering != null)
+                {
+                    var pmcMast = pmc.Skills.Mastering.ToList();
+                    var scavMast = (scavData.Skills?.Mastering ?? []).ToList();
+                    var scavMastMap = scavMast.ToDictionary(m => m.Id, m => m);
+
+                    foreach (var pm in pmcMast)
+                    {
+                        if (scavMastMap.TryGetValue(pm.Id, out var sm))
+                        {
+                            var max = Math.Max(pm.Progress, sm.Progress);
+                            pm.Progress = max;
+                            sm.Progress = max;
+                        }
+                        else
+                            scavMast.Add(new MasterySkill { Id = pm.Id, Progress = pm.Progress });
+                    }
+                    var pmcMastIds = new HashSet<string>(pmcMast.Select(m => m.Id));
+                    foreach (var sm in scavMast)
+                        if (!pmcMastIds.Contains(sm.Id))
+                            pmcMast.Add(new MasterySkill { Id = sm.Id, Progress = sm.Progress });
+
+                    pmc.Skills.Mastering = pmcMast;
+                    scavData.Skills ??= new Skills();
+                    scavData.Skills.Mastering = scavMast;
+                    changed = true;
+                }
+
+                // ── Encyclopedia sync (merge both ways) ──
+                if (scav.SyncEncyclopedia)
+                {
+                    pmc.Encyclopedia ??= new();
+                    scavData.Encyclopedia ??= new();
+
+                    foreach (var kvp in scavData.Encyclopedia)
+                        pmc.Encyclopedia.TryAdd(kvp.Key, kvp.Value);
+                    foreach (var kvp in pmc.Encyclopedia)
+                        scavData.Encyclopedia.TryAdd(kvp.Key, kvp.Value);
+
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    _ = saveServer.SaveProfileAsync(sid);
+                    synced++;
+                }
+            }
+            if (synced > 0) count++;
+        }
 
         return count;
     }
