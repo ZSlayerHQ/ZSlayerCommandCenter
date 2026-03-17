@@ -5470,6 +5470,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         Changes require a <strong>client restart</strong> to take effect
       </div>
 
+      <!-- Presets -->
+      <div class="gv-presets-row" style="margin-bottom:10px">
+        <div class="gv-presets-left">
+          <select id="isPresetSelect" class="gv-select" style="min-width:220px"><option value="">-- Select Preset --</option></select>
+          <button class="btn btn-sm" onclick="window.isPresetLoad()">Load</button>
+          <button class="btn btn-sm" onclick="window.isPresetDelete()">Delete</button>
+          <button class="btn btn-sm" onclick="window.isPresetExport()">Export</button>
+        </div>
+        <div class="gv-presets-right">
+          <input id="isPresetName" class="gv-input" placeholder="Preset name" style="width:140px">
+          <button class="btn btn-sm" onclick="window.isPresetSave()">Save</button>
+          <button class="btn btn-sm" onclick="document.getElementById('isPresetImportFile').click()">Import</button>
+          <input type="file" id="isPresetImportFile" accept=".json" style="display:none" onchange="window.isPresetImport(event)">
+        </div>
+      </div>
+
       <div class="is-toolbar">
         <button class="btn btn-accent btn-sm" onclick="window.isApply()">Apply Changes</button>
         <button class="btn btn-sm" onclick="window.isReset()">Reset to Defaults</button>
@@ -5708,6 +5724,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <div class="gv-restart-banner">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         Changes require a <strong>client restart</strong> to take effect
+      </div>
+
+      <!-- Presets (shared with Stacks) -->
+      <div class="gv-presets-row" style="margin-bottom:10px">
+        <div class="gv-presets-left">
+          <select id="cntPresetSelect" class="gv-select" style="min-width:220px"><option value="">-- Select Preset --</option></select>
+          <button class="btn btn-sm" onclick="window.isPresetLoad('cntPresetSelect')">Load</button>
+          <button class="btn btn-sm" onclick="window.isPresetDelete('cntPresetSelect')">Delete</button>
+          <button class="btn btn-sm" onclick="window.isPresetExport('cntPresetSelect')">Export</button>
+        </div>
+        <div class="gv-presets-right">
+          <input id="cntPresetName" class="gv-input" placeholder="Preset name" style="width:140px">
+          <button class="btn btn-sm" onclick="window.isPresetSave('cntPresetName')">Save</button>
+          <button class="btn btn-sm" onclick="document.getElementById('cntPresetImportFile').click()">Import</button>
+          <input type="file" id="cntPresetImportFile" accept=".json" style="display:none" onchange="window.isPresetImport(event)">
+        </div>
       </div>
 
       <div class="is-toolbar">
@@ -23472,6 +23504,105 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       statusEl.textContent = 'Error: ' + e.message;
       statusEl.style.color = '#f44336';
     });
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // PRESETS (shared between Stacks + Containers tabs)
+  // ═══════════════════════════════════════════════════════
+
+  function refreshPresetSelects() {
+    api('items/stack-presets').then(function(data) {
+      var html = '<option value="">-- Select Preset --</option>';
+      data.presets.forEach(function(p) {
+        var sel = (data.activePreset === p.name) ? ' selected' : '';
+        var label = p.name + (p.builtIn ? ' (built-in)' : '');
+        html += '<option value="' + escHtml(p.name) + '"' + sel + '>' + escHtml(label) + '</option>';
+      });
+      var s1 = document.getElementById('isPresetSelect');
+      var s2 = document.getElementById('cntPresetSelect');
+      if (s1) s1.innerHTML = html;
+      if (s2) s2.innerHTML = html;
+    });
+  }
+
+  window.isPresetLoad = function(selectId) {
+    var sel = document.getElementById(selectId || 'isPresetSelect');
+    var name = sel ? sel.value : '';
+    if (!name) { toast('Select a preset first', 'error'); return; }
+    api('items/stack-presets/load', 'POST', { name: name }).then(function(res) {
+      toast('Loaded preset "' + name + '" (' + res.changes + ' changes)', 'success');
+      window._isLoaded = false;
+      window._cntLoaded = false;
+      window.isLoadConfig();
+      window.cntLoadContainers();
+      refreshPresetSelects();
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  window.isPresetSave = function(nameInputId) {
+    var nameEl = document.getElementById(nameInputId || 'isPresetName');
+    var name = nameEl ? nameEl.value.trim() : '';
+    if (!name) { toast('Enter a preset name', 'error'); return; }
+    api('items/stack-presets/save', 'POST', { name: name, description: '' }).then(function() {
+      toast('Saved preset "' + name + '"', 'success');
+      nameEl.value = '';
+      refreshPresetSelects();
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  window.isPresetDelete = function(selectId) {
+    var sel = document.getElementById(selectId || 'isPresetSelect');
+    var name = sel ? sel.value : '';
+    if (!name) { toast('Select a preset first', 'error'); return; }
+    if (!confirm('Delete preset "' + name + '"?')) return;
+    api('items/stack-presets/' + encodeURIComponent(name), 'DELETE').then(function() {
+      toast('Deleted preset "' + name + '"', 'success');
+      refreshPresetSelects();
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  window.isPresetExport = function(selectId) {
+    var sel = document.getElementById(selectId || 'isPresetSelect');
+    var name = sel ? sel.value : '';
+    if (!name) { toast('Select a preset first', 'error'); return; }
+    var url = '/zslayer/cc/items/stack-presets/' + encodeURIComponent(name) + '/download';
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  window.isPresetImport = function(evt) {
+    var file = evt.target.files[0];
+    if (!file) return;
+    evt.target.value = '';
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var preset = JSON.parse(e.target.result);
+        if (!preset.name && !preset.Name) { toast('Invalid preset file', 'error'); return; }
+        api('items/stack-presets/upload', 'POST', preset).then(function() {
+          toast('Imported preset "' + (preset.name || preset.Name) + '"', 'success');
+          refreshPresetSelects();
+        }).catch(function(err) { toast('Import failed: ' + err.message, 'error'); });
+      } catch (ex) { toast('Invalid JSON file', 'error'); }
+    };
+    reader.readAsText(file);
+  };
+
+  // Load presets on first tab visit
+  var _presetsLoaded = false;
+  var origIsLoad = window.isLoadConfig;
+  window.isLoadConfig = function() {
+    origIsLoad();
+    if (!_presetsLoaded) { _presetsLoaded = true; refreshPresetSelects(); }
+  };
+  var origCntLoad = window.cntLoadContainers;
+  window.cntLoadContainers = function() {
+    origCntLoad();
+    if (!_presetsLoaded) { _presetsLoaded = true; refreshPresetSelects(); }
   };
 
   function escHtml(s) {

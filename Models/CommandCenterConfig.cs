@@ -73,6 +73,9 @@ public record CommandCenterConfig
     [JsonPropertyName("activeHideoutPreset")]
     public string? ActiveHideoutPreset { get; set; }
 
+    [JsonPropertyName("activeItemStackPreset")]
+    public string? ActiveItemStackPreset { get; set; }
+
     [JsonPropertyName("itemStacks")]
     public ItemStackConfig ItemStacks { get; set; } = new();
 }

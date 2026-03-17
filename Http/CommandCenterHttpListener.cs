@@ -3171,9 +3171,97 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, 200, itemStackService.GetContainers());
                 break;
             }
+            case "items/stack-presets" when method == "GET":
+            {
+                await WriteJson(context, 200, itemStackService.ListPresets());
+                break;
+            }
+            case "items/stack-presets/save" when method == "POST":
+            {
+                var body = await ReadBody<ItemStackPresetSaveRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Name is required" });
+                    break;
+                }
+                var preset = itemStackService.SavePreset(body.Name.Trim(), body.Description?.Trim() ?? "");
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Items & Stacks: saved preset '{body.Name}'");
+                await WriteJson(context, 200, new { success = true, preset });
+                break;
+            }
+            case "items/stack-presets/load" when method == "POST":
+            {
+                var body = await ReadBody<ItemStackPresetNameRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Name is required" });
+                    break;
+                }
+                var changes = itemStackService.LoadPreset(body.Name.Trim());
+                if (changes < 0)
+                {
+                    await WriteJson(context, 404, new { error = "Preset not found" });
+                    break;
+                }
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Items & Stacks: loaded preset '{body.Name}' ({changes} changes)");
+                await WriteJson(context, 200, new { success = true, changes });
+                break;
+            }
+            case "items/stack-presets/upload" when method == "POST":
+            {
+                var body = await ReadBody<ItemStackPreset>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Invalid preset data" });
+                    break;
+                }
+                var result = itemStackService.ImportPreset(body);
+                if (result == null)
+                {
+                    await WriteJson(context, 400, new { error = "Import failed" });
+                    break;
+                }
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Items & Stacks: imported preset '{body.Name}'");
+                await WriteJson(context, 200, new { success = true, preset = result });
+                break;
+            }
             default:
+            {
+                // Handle parameterized preset routes: items/stack-presets/{name}/download, DELETE items/stack-presets/{name}
+                if (path.StartsWith("items/stack-presets/") && path != "items/stack-presets/save"
+                    && path != "items/stack-presets/load" && path != "items/stack-presets/upload")
+                {
+                    var remainder = path["items/stack-presets/".Length..];
+                    if (remainder.EndsWith("/download") && method == "GET")
+                    {
+                        var name = Uri.UnescapeDataString(remainder[..^"/download".Length]);
+                        var json = itemStackService.ExportPreset(name);
+                        if (json == null)
+                        {
+                            await WriteJson(context, 404, new { error = "Preset not found" });
+                            return;
+                        }
+                        context.Response.ContentType = "application/json";
+                        context.Response.StatusCode = 200;
+                        await context.Response.WriteAsync(json);
+                        return;
+                    }
+                    if (method == "DELETE")
+                    {
+                        var name = Uri.UnescapeDataString(remainder);
+                        if (!itemStackService.DeletePreset(name))
+                        {
+                            await WriteJson(context, 404, new { error = "Preset not found or is built-in" });
+                            return;
+                        }
+                        activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Items & Stacks: deleted preset '{name}'");
+                        await WriteJson(context, 200, new { success = true });
+                        return;
+                    }
+                }
                 await WriteJson(context, 404, new { error = "Unknown item stack route" });
                 break;
+            }
         }
     }
 

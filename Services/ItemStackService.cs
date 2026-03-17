@@ -1,10 +1,16 @@
+using System.Reflection;
+using System.Text.Json;
+using System.Reflection;
+using System.Text.Json;
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Services;
 using ZSlayerCommandCenter.Models;
+using IOPath = System.IO.Path;
 
 namespace ZSlayerCommandCenter.Services;
 
@@ -13,6 +19,7 @@ public class ItemStackService(
     DatabaseService databaseService,
     LocaleService localeService,
     ConfigService configService,
+    ModHelper modHelper,
     ISptLogger<ItemStackService> logger)
 {
     private readonly object _lock = new();
@@ -1290,6 +1297,192 @@ public class ItemStackService(
                 Cases = cases
             };
         }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // PRESETS
+    // ═══════════════════════════════════════════════════════
+
+    private static readonly JsonSerializerOptions PresetJsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
+    private static readonly Dictionary<string, ItemStackConfig> BuiltInPresets = new()
+    {
+        ["Vanilla"] = new ItemStackConfig(),
+        ["Hoarder"] = new ItemStackConfig
+        {
+            EnableAmmoStacks = true,
+            AmmoStacks = new AmmoStackConfig { Pistol = 300, Rifle = 300, Shotgun = 100, Marksman = 200, LargeCaliber = 50, Other = 300 },
+            EnableCurrencyStacks = true,
+            CurrencyStacks = new CurrencyStackConfig { Roubles = 5_000_000, Dollars = 500_000, Euros = 500_000, GpCoins = 1000 },
+            RemoveBackpackRestrictions = true,
+            RemoveSecureContainerFilters = true,
+            RemoveDiscardLimits = true,
+            BackpackStackingLimit = 10
+        },
+        ["Easy Mode"] = new ItemStackConfig
+        {
+            EnableAmmoStacks = true,
+            AmmoStacks = new AmmoStackConfig { Pistol = 200, Rifle = 200, Shotgun = 60, Marksman = 120, LargeCaliber = 30, Other = 200 },
+            EnableCurrencyStacks = true,
+            CurrencyStacks = new CurrencyStackConfig { Roubles = 2_000_000, Dollars = 200_000, Euros = 200_000, GpCoins = 500 },
+            WeightMult = 0.5,
+            AutoExamineAll = true,
+            EnableKeyChanges = true,
+            InfiniteKeys = true,
+            InfiniteKeycards = true,
+            RemoveGearPenalties = true,
+            RemoveDiscardLimits = true,
+            MalfunctionMult = 0.0,
+            DisableOverheat = true
+        },
+        ["Hardcore"] = new ItemStackConfig
+        {
+            WeightMult = 1.5,
+            MalfunctionMult = 2.0,
+            MisfireMult = 2.0,
+            HeatFactorMult = 1.5,
+            FragmentationMult = 1.5
+        }
+    };
+
+    private string GetPresetsDir()
+    {
+        var modPath = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
+        var dir = IOPath.Combine(modPath, "config", "itemstack-presets");
+        if (!Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = IOPath.GetInvalidFileNameChars();
+        var clean = new string(name.Where(c => !invalid.Contains(c)).ToArray()).Trim();
+        return string.IsNullOrEmpty(clean) ? "preset" : clean;
+    }
+
+    public ItemStackPresetListResponse ListPresets()
+    {
+        var dir = GetPresetsDir();
+        var presets = new List<ItemStackPresetSummary>();
+
+        foreach (var (name, _) in BuiltInPresets)
+        {
+            presets.Add(new ItemStackPresetSummary
+            {
+                Name = name, Description = "(built-in)",
+                CreatedUtc = DateTime.MinValue, BuiltIn = true
+            });
+        }
+
+        foreach (var file in Directory.GetFiles(dir, "*.json"))
+        {
+            try
+            {
+                var json = File.ReadAllText(file);
+                var preset = JsonSerializer.Deserialize<ItemStackPreset>(json, PresetJsonOptions);
+                if (preset != null)
+                {
+                    presets.Add(new ItemStackPresetSummary
+                    {
+                        Name = preset.Name, Description = preset.Description,
+                        CreatedUtc = preset.CreatedUtc
+                    });
+                }
+            }
+            catch { /* skip invalid files */ }
+        }
+
+        presets.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        return new ItemStackPresetListResponse
+        {
+            Presets = presets,
+            ActivePreset = configService.GetConfig().ActiveItemStackPreset
+        };
+    }
+
+    public ItemStackPreset SavePreset(string name, string description)
+    {
+        var preset = new ItemStackPreset
+        {
+            Name = name, Description = description,
+            CreatedUtc = DateTime.UtcNow,
+            Config = configService.GetConfig().ItemStacks
+        };
+        var filePath = IOPath.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+        File.WriteAllText(filePath, JsonSerializer.Serialize(preset, PresetJsonOptions));
+        logger.Info($"[ZSlayerHQ] Items & Stacks: saved preset '{name}'");
+        return preset;
+    }
+
+    public int LoadPreset(string name)
+    {
+        lock (_lock)
+        {
+            if (!_snapshotTaken) EnsureSnapshot();
+
+            ItemStackConfig cfg;
+            if (BuiltInPresets.TryGetValue(name, out var builtIn))
+            {
+                cfg = builtIn;
+            }
+            else
+            {
+                var filePath = IOPath.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+                if (!File.Exists(filePath)) return -1;
+                var json = File.ReadAllText(filePath);
+                var preset = JsonSerializer.Deserialize<ItemStackPreset>(json, PresetJsonOptions);
+                if (preset == null) return -1;
+                cfg = preset.Config;
+            }
+
+            var config = configService.GetConfig();
+            config.ItemStacks = cfg;
+            config.ActiveItemStackPreset = name;
+            configService.SaveConfig();
+
+            return ApplyAll();
+        }
+    }
+
+    public bool DeletePreset(string name)
+    {
+        if (BuiltInPresets.ContainsKey(name)) return false;
+        var filePath = IOPath.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+        if (!File.Exists(filePath)) return false;
+        File.Delete(filePath);
+        if (configService.GetConfig().ActiveItemStackPreset == name)
+        {
+            configService.GetConfig().ActiveItemStackPreset = null;
+            configService.SaveConfig();
+        }
+        logger.Info($"[ZSlayerHQ] Items & Stacks: deleted preset '{name}'");
+        return true;
+    }
+
+    public string? ExportPreset(string name)
+    {
+        if (BuiltInPresets.TryGetValue(name, out var builtIn))
+        {
+            var bp = new ItemStackPreset { Name = name, Description = "(built-in)", CreatedUtc = DateTime.UtcNow, Config = builtIn };
+            return JsonSerializer.Serialize(bp, PresetJsonOptions);
+        }
+        var filePath = IOPath.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+        return File.Exists(filePath) ? File.ReadAllText(filePath) : null;
+    }
+
+    public ItemStackPreset? ImportPreset(ItemStackPreset preset)
+    {
+        if (string.IsNullOrWhiteSpace(preset.Name)) return null;
+        preset.CreatedUtc = DateTime.UtcNow;
+        var filePath = IOPath.Combine(GetPresetsDir(), SanitizeFileName(preset.Name) + ".json");
+        File.WriteAllText(filePath, JsonSerializer.Serialize(preset, PresetJsonOptions));
+        logger.Info($"[ZSlayerHQ] Items & Stacks: imported preset '{preset.Name}'");
+        return preset;
     }
 
     // ═══════════════════════════════════════════════════════

@@ -147,3 +147,40 @@ public record ContainersResponse
     [JsonPropertyName("secureContainers")] public List<ContainerDto> SecureContainers { get; set; } = [];
     [JsonPropertyName("cases")] public List<ContainerDto> Cases { get; set; } = [];
 }
+
+// ═══════════════════════════════════════════════════════
+// PRESET DTOs
+// ═══════════════════════════════════════════════════════
+
+public record ItemStackPreset
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("description")] public string Description { get; set; } = "";
+    [JsonPropertyName("createdUtc")] public DateTime CreatedUtc { get; set; }
+    [JsonPropertyName("config")] public ItemStackConfig Config { get; set; } = new();
+}
+
+public record ItemStackPresetSummary
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("description")] public string Description { get; set; } = "";
+    [JsonPropertyName("createdUtc")] public DateTime CreatedUtc { get; set; }
+    [JsonPropertyName("builtIn")] public bool BuiltIn { get; set; }
+}
+
+public record ItemStackPresetListResponse
+{
+    [JsonPropertyName("presets")] public List<ItemStackPresetSummary> Presets { get; set; } = [];
+    [JsonPropertyName("activePreset")] public string? ActivePreset { get; set; }
+}
+
+public record ItemStackPresetSaveRequest
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("description")] public string? Description { get; set; }
+}
+
+public record ItemStackPresetNameRequest
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+}
