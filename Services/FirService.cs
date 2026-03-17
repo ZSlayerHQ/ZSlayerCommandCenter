@@ -1,4 +1,5 @@
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Eft.Hideout;
 using SPTarkov.Server.Core.Models.Enums;
@@ -15,6 +16,7 @@ public class FirService(
     DatabaseService databaseService,
     ConfigServer configServer,
     ConfigService configService,
+    LocaleService localeService,
     ISptLogger<FirService> logger)
 {
     private readonly object _lock = new();
@@ -30,6 +32,12 @@ public class FirService(
     private bool _snapDiscardLimitsEnabled;
     private bool _snapSkillAtrophy;
     private bool _snapTieredFleaEnabled;
+
+    // ── Tiered Flea snapshots ──
+    private bool _snapAmmoTiersEnabled;
+    private Dictionary<string, int> _snapUnlocksTpl = new();
+    private Dictionary<string, int> _snapUnlocksType = new();
+    private Dictionary<string, int> _snapAmmoTplUnlocks = new();
 
     // ── Lost on Death snapshots ──
     private bool _snapLodHeadwear, _snapLodEarpiece, _snapLodFaceCover, _snapLodArmorVest;
@@ -63,6 +71,19 @@ public class FirService(
         var ragfairConfig = configServer.GetConfig<RagfairConfig>();
         _snapFleaPurchasesFir = ragfairConfig.Dynamic.PurchasesAreFoundInRaid;
         _snapTieredFleaEnabled = ragfairConfig.TieredFlea.Enabled;
+        _snapAmmoTiersEnabled = ragfairConfig.TieredFlea.AmmoTiersEnabled;
+
+        // Snapshot tier dictionaries (MongoId key → string key for safe storage)
+        _snapUnlocksTpl.Clear();
+        foreach (var (k, v) in ragfairConfig.TieredFlea.UnlocksTpl)
+            _snapUnlocksTpl[k.ToString()] = v;
+        _snapUnlocksType.Clear();
+        foreach (var (k, v) in ragfairConfig.TieredFlea.UnlocksType)
+            _snapUnlocksType[k.ToString()] = v;
+        _snapAmmoTplUnlocks.Clear();
+        if (ragfairConfig.TieredFlea.AmmoTplUnlocks != null)
+            foreach (var (k, v) in ragfairConfig.TieredFlea.AmmoTplUnlocks)
+                _snapAmmoTplUnlocks[k.ToString()] = v;
 
         var traderConfig = configServer.GetConfig<TraderConfig>();
         _snapTraderPurchasesFir = traderConfig.PurchasesAreFoundInRaid;
@@ -155,6 +176,21 @@ public class FirService(
         var ragfairConfig = configServer.GetConfig<RagfairConfig>();
         ragfairConfig.Dynamic.PurchasesAreFoundInRaid = _snapFleaPurchasesFir;
         ragfairConfig.TieredFlea.Enabled = _snapTieredFleaEnabled;
+        ragfairConfig.TieredFlea.AmmoTiersEnabled = _snapAmmoTiersEnabled;
+
+        // Restore tier dictionaries from snapshot
+        ragfairConfig.TieredFlea.UnlocksTpl.Clear();
+        foreach (var (k, v) in _snapUnlocksTpl)
+            ragfairConfig.TieredFlea.UnlocksTpl[new MongoId(k)] = v;
+        ragfairConfig.TieredFlea.UnlocksType.Clear();
+        foreach (var (k, v) in _snapUnlocksType)
+            ragfairConfig.TieredFlea.UnlocksType[new MongoId(k)] = v;
+        if (ragfairConfig.TieredFlea.AmmoTplUnlocks != null)
+        {
+            ragfairConfig.TieredFlea.AmmoTplUnlocks.Clear();
+            foreach (var (k, v) in _snapAmmoTplUnlocks)
+                ragfairConfig.TieredFlea.AmmoTplUnlocks[new MongoId(k)] = v;
+        }
 
         var traderConfig = configServer.GetConfig<TraderConfig>();
         traderConfig.PurchasesAreFoundInRaid = _snapTraderPurchasesFir;
@@ -350,6 +386,62 @@ public class FirService(
             changes.Add("Tiered flea market: OFF");
         }
 
+        // ── Tiered Flea customization ──
+        if (cfg.AmmoTiersEnabled == true)
+        {
+            ragfairConfig.TieredFlea.AmmoTiersEnabled = true;
+            changes.Add("Ammo tiers: ON");
+        }
+        else if (cfg.AmmoTiersEnabled == false)
+        {
+            ragfairConfig.TieredFlea.AmmoTiersEnabled = false;
+            changes.Add("Ammo tiers: OFF");
+        }
+
+        if (cfg.ClearDefaultTiers)
+        {
+            ragfairConfig.TieredFlea.UnlocksTpl.Clear();
+            ragfairConfig.TieredFlea.UnlocksType.Clear();
+            ragfairConfig.TieredFlea.AmmoTplUnlocks?.Clear();
+            changes.Add("Cleared all default tier definitions");
+        }
+
+        if (cfg.TieredFleaCategoryOverrides.Count > 0)
+        {
+            foreach (var (id, level) in cfg.TieredFleaCategoryOverrides)
+            {
+                if (level <= 0)
+                    ragfairConfig.TieredFlea.UnlocksType.Remove(new MongoId(id));
+                else
+                    ragfairConfig.TieredFlea.UnlocksType[new MongoId(id)] = level;
+            }
+            changes.Add($"Tiered flea: {cfg.TieredFleaCategoryOverrides.Count} category override(s)");
+        }
+
+        if (cfg.TieredFleaItemOverrides.Count > 0)
+        {
+            foreach (var (id, level) in cfg.TieredFleaItemOverrides)
+            {
+                if (level <= 0)
+                    ragfairConfig.TieredFlea.UnlocksTpl.Remove(new MongoId(id));
+                else
+                    ragfairConfig.TieredFlea.UnlocksTpl[new MongoId(id)] = level;
+            }
+            changes.Add($"Tiered flea: {cfg.TieredFleaItemOverrides.Count} item override(s)");
+        }
+
+        if (cfg.TieredFleaAmmoOverrides.Count > 0 && ragfairConfig.TieredFlea.AmmoTplUnlocks != null)
+        {
+            foreach (var (id, level) in cfg.TieredFleaAmmoOverrides)
+            {
+                if (level <= 0)
+                    ragfairConfig.TieredFlea.AmmoTplUnlocks.Remove(new MongoId(id));
+                else
+                    ragfairConfig.TieredFlea.AmmoTplUnlocks[new MongoId(id)] = level;
+            }
+            changes.Add($"Tiered flea: {cfg.TieredFleaAmmoOverrides.Count} ammo override(s)");
+        }
+
         // ── Lost on Death ──
         if (cfg.LostOnDeath is { Enabled: true })
         {
@@ -415,4 +507,78 @@ public class FirService(
     }
 
     public FirStatusResponse GetStatus() => new() { Config = configService.GetConfig().Fir };
+
+    public TieredFleaResponse GetTiers()
+    {
+        lock (_lock)
+        {
+            if (!_snapshotTaken) TakeSnapshot();
+
+            var ragfairConfig = configServer.GetConfig<RagfairConfig>();
+            var cfg = configService.GetConfig().Fir;
+            var locales = localeService.GetLocaleDb("en");
+
+            string ResolveName(string tpl)
+            {
+                if (locales.TryGetValue($"{tpl} Name", out var name) && !string.IsNullOrEmpty(name)) return name;
+                if (locales.TryGetValue($"{tpl} ShortName", out var sn) && !string.IsNullOrEmpty(sn)) return sn;
+                return tpl;
+            }
+
+            // Category tiers (UnlocksType)
+            var categoryTiers = new List<TierEntryDto>();
+            foreach (var (k, v) in _snapUnlocksType)
+            {
+                var overrideLevel = cfg.TieredFleaCategoryOverrides.TryGetValue(k, out var ol) ? (int?)ol : null;
+                categoryTiers.Add(new TierEntryDto
+                {
+                    Id = k,
+                    Name = ResolveName(k),
+                    DefaultLevel = v,
+                    OverrideLevel = overrideLevel
+                });
+            }
+            categoryTiers.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+
+            // Item tiers (UnlocksTpl)
+            var itemTiers = new List<TierEntryDto>();
+            foreach (var (k, v) in _snapUnlocksTpl)
+            {
+                var overrideLevel = cfg.TieredFleaItemOverrides.TryGetValue(k, out var ol) ? (int?)ol : null;
+                itemTiers.Add(new TierEntryDto
+                {
+                    Id = k,
+                    Name = ResolveName(k),
+                    DefaultLevel = v,
+                    OverrideLevel = overrideLevel
+                });
+            }
+            itemTiers.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+
+            // Ammo tiers (AmmoTplUnlocks)
+            var ammoTiers = new List<TierEntryDto>();
+            foreach (var (k, v) in _snapAmmoTplUnlocks)
+            {
+                var overrideLevel = cfg.TieredFleaAmmoOverrides.TryGetValue(k, out var ol) ? (int?)ol : null;
+                ammoTiers.Add(new TierEntryDto
+                {
+                    Id = k,
+                    Name = ResolveName(k),
+                    DefaultLevel = v,
+                    OverrideLevel = overrideLevel
+                });
+            }
+            ammoTiers.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+
+            return new TieredFleaResponse
+            {
+                Enabled = ragfairConfig.TieredFlea.Enabled,
+                AmmoTiersEnabled = ragfairConfig.TieredFlea.AmmoTiersEnabled,
+                CategoryTiers = categoryTiers,
+                ItemTiers = itemTiers,
+                AmmoTiers = ammoTiers,
+                Config = cfg
+            };
+        }
+    }
 }

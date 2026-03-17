@@ -50,6 +50,7 @@ public class CommandCenterHttpListener(
     GameValuesService gameValuesService,
     LocationService locationService,
     FirService firService,
+    HideoutService hideoutService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -224,6 +225,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("fir/") || path == "fir")
             {
                 await HandleFirRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle hideout routes
+            if (path.StartsWith("hideout/") || path == "hideout")
+            {
+                await HandleHideoutRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -3078,6 +3086,12 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, 200, status);
                 break;
             }
+            case "tiers" when method == "GET":
+            {
+                var tiers = firService.GetTiers();
+                await WriteJson(context, 200, tiers);
+                break;
+            }
             case "apply" when method == "POST":
             {
                 var body = await ReadBody<FirConfig>(context);
@@ -3105,6 +3119,237 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, 404, new { error = "Not found" });
                 break;
         }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // HIDEOUT ROUTES
+    // ═══════════════════════════════════════════════════════
+
+    private async Task HandleHideoutRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        var sub = path == "hideout" ? "" : path["hideout/".Length..];
+
+        // Prefix matching for parameterized routes
+        if (sub.StartsWith("presets/"))
+        {
+            await HandleHideoutPresetsRoute(context, headerSessionId, sub, method);
+            return;
+        }
+        if (sub.StartsWith("player/"))
+        {
+            await HandleHideoutPlayerRoute(context, headerSessionId, sub, method);
+            return;
+        }
+
+        switch (sub)
+        {
+            case "config" when method == "GET":
+            {
+                var result = hideoutService.GetConfig();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "apply" when method == "POST":
+            {
+                var body = await ReadBody<HideoutEditorConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                var count = hideoutService.ApplyConfig(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    $"Hideout: applied {count} override(s)");
+                await WriteJson(context, 200, new { success = true, changes = count });
+                break;
+            }
+            case "reset" when method == "POST":
+            {
+                hideoutService.ResetConfig();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Hideout: reset to defaults");
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+            case "areas" when method == "GET":
+            {
+                var result = hideoutService.GetAreas();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "bonuses" when method == "GET":
+            {
+                var result = hideoutService.GetBonuses();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "recipes" when method == "GET":
+            {
+                var qs = context.Request.Query;
+                var station = qs["station"].FirstOrDefault();
+                var search = qs["search"].FirstOrDefault();
+                var result = hideoutService.GetRecipes(station, search);
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "presets" when method == "GET":
+            {
+                var result = hideoutService.ListPresets();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "presets/save" when method == "POST":
+            {
+                var body = await ReadBody<HideoutPresetSaveRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Name is required" });
+                    break;
+                }
+                var preset = hideoutService.SavePreset(body.Name, body.Description ?? "");
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Hideout: saved preset '{body.Name}'");
+                await WriteJson(context, 200, new { success = true, preset });
+                break;
+            }
+            case "presets/load" when method == "POST":
+            {
+                var body = await ReadBody<HideoutPresetNameRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Name is required" });
+                    break;
+                }
+                var changes = hideoutService.LoadPreset(body.Name);
+                if (changes < 0)
+                {
+                    await WriteJson(context, 404, new { error = "Preset not found" });
+                    break;
+                }
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Hideout: loaded preset '{body.Name}' ({changes} changes)");
+                await WriteJson(context, 200, new { success = true, changes });
+                break;
+            }
+            case "presets/upload" when method == "POST":
+            {
+                var body = await ReadBody<HideoutPreset>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Invalid preset data" });
+                    break;
+                }
+                var result = hideoutService.ImportPreset(body);
+                if (result == null)
+                {
+                    await WriteJson(context, 400, new { error = "Import failed" });
+                    break;
+                }
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Hideout: imported preset '{body.Name}'");
+                await WriteJson(context, 200, new { success = true, preset = result });
+                break;
+            }
+            case "progression" when method == "GET":
+            {
+                var result = hideoutService.GetHideoutProgression();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            default:
+                await WriteJson(context, 404, new { error = "Not found" });
+                break;
+        }
+    }
+
+    private async Task HandleHideoutPresetsRoute(HttpContext context, string headerSessionId, string sub, string method)
+    {
+        // sub = "presets/{name}/download" or "presets/{name}" (DELETE)
+        var remainder = sub["presets/".Length..];
+
+        if (remainder.EndsWith("/download") && method == "GET")
+        {
+            var name = Uri.UnescapeDataString(remainder[..^"/download".Length]);
+            var json = hideoutService.ExportPreset(name);
+            if (json == null)
+            {
+                await WriteJson(context, 404, new { error = "Preset not found" });
+                return;
+            }
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = 200;
+            await context.Response.WriteAsync(json);
+            return;
+        }
+
+        if (method == "DELETE")
+        {
+            var name = Uri.UnescapeDataString(remainder);
+            if (!hideoutService.DeletePreset(name))
+            {
+                await WriteJson(context, 404, new { error = "Preset not found or is built-in" });
+                return;
+            }
+            activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Hideout: deleted preset '{name}'");
+            await WriteJson(context, 200, new { success = true });
+            return;
+        }
+
+        await WriteJson(context, 404, new { error = "Not found" });
+    }
+
+    private async Task HandleHideoutPlayerRoute(HttpContext context, string headerSessionId, string sub, string method)
+    {
+        // sub = "player/{sid}" or "player/{sid}/set" or "player/{sid}/unlock-all"
+        var remainder = sub["player/".Length..];
+        var slashIdx = remainder.IndexOf('/');
+        var sid = slashIdx >= 0 ? remainder[..slashIdx] : remainder;
+        var action = slashIdx >= 0 ? remainder[(slashIdx + 1)..] : "";
+
+        switch (action)
+        {
+            case "" when method == "GET":
+            {
+                var result = hideoutService.GetPlayerHideout(sid);
+                if (result == null)
+                {
+                    await WriteJson(context, 404, new { error = "Profile not found" });
+                    return;
+                }
+                await WriteJson(context, 200, result);
+                return;
+            }
+            case "set" when method == "POST":
+            {
+                var body = await ReadBody<HideoutSetAreaRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.AreaType))
+                {
+                    await WriteJson(context, 400, new { error = "areaType and level required" });
+                    return;
+                }
+                if (!hideoutService.SetPlayerArea(sid, body.AreaType, body.Level))
+                {
+                    await WriteJson(context, 404, new { error = "Profile or area not found" });
+                    return;
+                }
+                activityLogService.LogAction(ActionType.PlayerModify, headerSessionId,
+                    $"Hideout: set {body.AreaType} to level {body.Level} for {sid}");
+                await WriteJson(context, 200, new { success = true });
+                return;
+            }
+            case "unlock-all" when method == "POST":
+            {
+                if (!hideoutService.UnlockAllAreas(sid))
+                {
+                    await WriteJson(context, 404, new { error = "Profile not found" });
+                    return;
+                }
+                activityLogService.LogAction(ActionType.PlayerModify, headerSessionId,
+                    $"Hideout: unlocked all areas for {sid}");
+                await WriteJson(context, 200, new { success = true });
+                return;
+            }
+        }
+
+        await WriteJson(context, 404, new { error = "Not found" });
     }
 
     // ═══════════════════════════════════════════════════════

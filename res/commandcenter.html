@@ -4905,7 +4905,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <button class="nav-btn" data-nav="progression" onclick="switchMainTab('progression')"><img class="nav-icon" src="ui-icons/icon_star.png" alt="">Progression</button>
     <button class="nav-btn" data-nav="events" onclick="switchMainTab('events')"><img class="nav-icon" src="ui-icons/icon_time_big.png" alt="">Events</button>
     <button class="nav-btn" data-nav="gamevalues" onclick="switchMainTab('gamevalues')"><img class="nav-icon" src="ui-icons/icon_edit.png" alt="">Game Values</button>
-    <button class="nav-btn" data-nav="fir" onclick="switchMainTab('fir')"><img class="nav-icon" src="ui-icons/icon_search.png" alt="">FIR / Economy</button>
+    <button class="nav-btn" data-nav="fir" onclick="switchMainTab('fir')"><img class="nav-icon" src="ui-icons/icon_foundinraid_quest_small.png" alt="">FIR / Economy</button>
+    <button class="nav-btn" data-nav="hideout" onclick="switchMainTab('hideout')"><img class="nav-icon" src="ui-icons/hideout_taskbar_icon.png" alt="">Hideout</button>
     <button class="nav-btn disabled" data-nav="profiles" onclick="switchMainTab('profiles')">Profiles <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="loadouts" onclick="switchMainTab('loadouts')">Loadouts <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
     <button class="nav-btn disabled" data-nav="bounties" onclick="switchMainTab('bounties')">Bounties <span class="nav-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span></button>
@@ -8525,15 +8526,54 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       </div>
 
       <!-- Tiered Flea Market -->
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0">
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Tiered Flea Market</div>
-          <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Enable level-gated flea market where items unlock at specific player levels. Higher-tier items (armor, ammo, weapons) require higher levels to list and buy.</div>
+      <div style="padding:14px 0">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Tiered Flea Market</div>
+            <div style="font-size:12px;color:var(--text-dim);line-height:1.5">Enable level-gated flea market where items unlock at specific player levels. Higher-tier items (armor, ammo, weapons) require higher levels to list and buy.</div>
+          </div>
+          <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
+            <input type="checkbox" id="firTieredFlea" onchange="firTieredToggle();firCheckDirty()">
+            <span class="cc-toggle-slider"></span>
+          </label>
         </div>
-        <label class="cc-toggle" style="flex-shrink:0;margin-top:2px">
-          <input type="checkbox" id="firTieredFlea" onchange="firCheckDirty()">
-          <span class="cc-toggle-slider"></span>
-        </label>
+
+        <!-- Tiered Flea Editor (shown when enabled) -->
+        <div id="firTieredEditor" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+          <!-- Sub-toggles -->
+          <div style="display:flex;gap:20px;margin-bottom:14px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text)">
+              <input type="checkbox" id="firAmmoTiers" onchange="firCheckDirty()" style="accent-color:var(--accent)"> Ammo-Specific Tiers
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--error-bright)">
+              <input type="checkbox" id="firClearTiers" onchange="firCheckDirty()" style="accent-color:#c44"> Clear All Default Tiers
+            </label>
+          </div>
+
+          <!-- Tier sub-tabs -->
+          <div style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap">
+            <button onclick="firTierTab('categories')" id="firTierTabCategories" class="gv-sub-tab active" style="padding:5px 14px;font-size:11px;border-radius:4px;cursor:pointer;font-family:var(--font-mono)">Categories</button>
+            <button onclick="firTierTab('items')" id="firTierTabItems" class="gv-sub-tab" style="padding:5px 14px;font-size:11px;border-radius:4px;cursor:pointer;font-family:var(--font-mono)">Items</button>
+            <button onclick="firTierTab('ammo')" id="firTierTabAmmo" class="gv-sub-tab" style="padding:5px 14px;font-size:11px;border-radius:4px;cursor:pointer;font-family:var(--font-mono)">Ammo</button>
+            <span id="firTierCount" style="font-size:11px;color:var(--text-dim);margin-left:8px;align-self:center"></span>
+          </div>
+
+          <!-- Search -->
+          <div style="margin-bottom:10px">
+            <input type="text" id="firTierSearch" oninput="firTierFilter()" placeholder="Search by name..." style="width:100%;max-width:300px;padding:6px 10px;background:var(--bg-dark);color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:12px;font-family:var(--font-mono)">
+          </div>
+
+          <!-- Tier tables -->
+          <div id="firTierCategories" style="max-height:400px;overflow-y:auto"></div>
+          <div id="firTierItems" style="display:none;max-height:400px;overflow-y:auto"></div>
+          <div id="firTierAmmo" style="display:none;max-height:400px;overflow-y:auto"></div>
+
+          <!-- Load button -->
+          <div style="margin-top:10px">
+            <button onclick="firLoadTiers()" style="padding:5px 14px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font-mono)">Reload Tier Data</button>
+            <span id="firTierStatus" style="font-size:11px;color:var(--text-dim);margin-left:8px"></span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -8587,6 +8627,76 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <button id="firApplyBtn" onclick="firApply()" style="padding:9px 22px;background:rgba(200,170,110,0.15);color:var(--accent);border:1px solid rgba(200,170,110,0.4);border-radius:5px;cursor:pointer;font-family:var(--font-mono);font-size:13px;font-weight:600">Apply</button>
       <button onclick="firReset()" style="padding:9px 18px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-family:var(--font-mono);font-size:12px">Reset to Defaults</button>
       <span id="firStatus" style="font-size:12px;color:var(--text-dim);margin-left:6px"></span>
+    </div>
+  </div>
+
+  <!-- ═══ HIDEOUT TAB ═══ -->
+  <div class="main-tab-panel" id="main-hideout">
+    <!-- Sub-tab bar -->
+    <div class="gv-sub-tabs" style="margin-bottom:12px">
+      <button class="gv-sub-tab active" data-hotab="settings" onclick="window.hoSwitchTab('settings')">Settings</button>
+      <button class="gv-sub-tab" data-hotab="recipes" onclick="window.hoSwitchTab('recipes')">Recipes</button>
+      <button class="gv-sub-tab" data-hotab="bonuses" onclick="window.hoSwitchTab('bonuses')">Bonuses</button>
+      <button class="gv-sub-tab" data-hotab="presets" onclick="window.hoSwitchTab('presets')">Presets</button>
+      <button class="gv-sub-tab" data-hotab="players" onclick="window.hoSwitchTab('players')">Player Hideout</button>
+    </div>
+
+    <!-- Settings sub-tab -->
+    <div id="ho-sub-settings">
+      <div style="background:rgba(200,122,62,0.1);border:1px solid rgba(200,122,62,0.3);border-radius:6px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--warning)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Some settings (stash sizes, health regen) require a <strong>client restart</strong> to take effect. Look for the ⚠ icon.
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="margin:0;color:var(--gold)">Hideout Editor</h3>
+        <div style="display:flex;gap:8px">
+          <button class="action-btn" onclick="window.hideoutApply()" style="background:var(--gold);color:#111;font-weight:600;padding:6px 18px;border:none;border-radius:4px;cursor:pointer">Apply</button>
+          <button class="action-btn" onclick="window.hideoutReset()" style="background:transparent;color:var(--text-dim);border:1px solid var(--border);padding:6px 14px;border-radius:4px;cursor:pointer">Reset</button>
+        </div>
+      </div>
+      <div id="hideoutContent" style="display:flex;flex-direction:column;gap:12px">
+        <div style="color:var(--text-dim);text-align:center;padding:40px">Loading hideout settings...</div>
+      </div>
+    </div>
+
+    <!-- Recipes sub-tab -->
+    <div id="ho-sub-recipes" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;color:var(--gold)">Recipe Management</h3>
+        <button class="action-btn" onclick="window.hoApplyRecipes()" style="background:var(--gold);color:#111;font-weight:600;padding:6px 18px;border:none;border-radius:4px;cursor:pointer">Apply Recipe Changes</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="gv-sub-tab active" data-horecipefilter="All" onclick="window.hoFilterRecipes('All',this)">All</button>
+        <button class="gv-sub-tab" data-horecipefilter="WaterCloset" onclick="window.hoFilterRecipes('WaterCloset',this)">Lavatory</button>
+        <button class="gv-sub-tab" data-horecipefilter="MedStation" onclick="window.hoFilterRecipes('MedStation',this)">Medstation</button>
+        <button class="gv-sub-tab" data-horecipefilter="Workbench" onclick="window.hoFilterRecipes('Workbench',this)">Workbench</button>
+        <button class="gv-sub-tab" data-horecipefilter="Kitchen" onclick="window.hoFilterRecipes('Kitchen',this)">Nutrition Unit</button>
+        <button class="gv-sub-tab" data-horecipefilter="ScavCase" onclick="window.hoFilterRecipes('ScavCase',this)">Scav Case</button>
+        <button class="gv-sub-tab" data-horecipefilter="Other" onclick="window.hoFilterRecipes('Other',this)">Other</button>
+      </div>
+      <input type="text" id="hoRecipeSearch" placeholder="Search by product name..." oninput="window.hoSearchRecipes()" style="width:100%;max-width:400px;padding:6px 12px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;color:var(--text-main);font-size:13px;margin-bottom:12px">
+      <div id="hoRecipeTable" style="color:var(--text-dim);text-align:center;padding:40px">Loading recipes...</div>
+    </div>
+
+    <!-- Bonuses sub-tab -->
+    <div id="ho-sub-bonuses" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;color:var(--gold)">Bonus Value Editor</h3>
+        <button class="action-btn" onclick="window.hoApplyBonuses()" style="background:var(--gold);color:#111;font-weight:600;padding:6px 18px;border:none;border-radius:4px;cursor:pointer">Apply Bonus Overrides</button>
+      </div>
+      <div id="hoBonusContent" style="color:var(--text-dim);text-align:center;padding:40px">Loading bonuses...</div>
+    </div>
+
+    <!-- Presets sub-tab -->
+    <div id="ho-sub-presets" style="display:none">
+      <h3 style="margin:0 0 12px;color:var(--gold)">Hideout Presets</h3>
+      <div id="hoPresetContent" style="color:var(--text-dim);text-align:center;padding:40px">Loading presets...</div>
+    </div>
+
+    <!-- Player Hideout sub-tab -->
+    <div id="ho-sub-players" style="display:none">
+      <h3 style="margin:0 0 12px;color:var(--gold)">Player Hideout Control</h3>
+      <div id="hoPlayerContent" style="color:var(--text-dim);text-align:center;padding:40px">Loading players...</div>
     </div>
   </div>
 
@@ -8752,6 +8862,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     c.appendChild(el);
     setTimeout(function() { el.classList.add('toast-fade-out'); setTimeout(function() { el.remove(); }, 300); }, 3500);
   }
+
+  // Expose for FIR / Hideout IIFEs
+  window.api = api;
+  window.toast = toast;
 
   // ═══════════════════════════════════════════════════════
   // AUTH — Profile Selector
@@ -9158,6 +9272,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'events' && !eventsLoaded) eventsInit();
     if (tab === 'gamevalues' && !gamevaluesLoaded) gameValuesInit();
     if (tab === 'fir' && !window.firLoaded) window.firInit && window.firInit();
+    if (tab === 'hideout' && !window._hideoutLoaded) window.hideoutInit && window.hideoutInit();
 
     // Manage raid info polling — start when on tab, stop when leaving
     if (tab === 'raidinfo') {
@@ -21334,6 +21449,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       discardLimitsDisabled: document.getElementById('firNoDiscardLimits')?.checked ? true : null,
       skillAtrophyDisabled: document.getElementById('firNoSkillDecay')?.checked ? true : null,
       tieredFleaEnabled: document.getElementById('firTieredFlea')?.checked ? true : null,
+      ammoTiersEnabled: document.getElementById('firAmmoTiers')?.checked ? true : null,
+      clearDefaultTiers: !!(document.getElementById('firClearTiers') || {}).checked,
+      tieredFleaItemOverrides: window._firTierItemOverrides || {},
+      tieredFleaCategoryOverrides: window._firTierCategoryOverrides || {},
+      tieredFleaAmmoOverrides: window._firTierAmmoOverrides || {},
       lostOnDeath: lodEnabled ? {
         enabled: true,
         headwear: !!(document.getElementById('firLodHeadwear') || {}).checked,
@@ -21396,6 +21516,15 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (ns) ns.checked = !!cfg.skillAtrophyDisabled;
     var tf = document.getElementById('firTieredFlea');
     if (tf) tf.checked = !!cfg.tieredFleaEnabled;
+    var at = document.getElementById('firAmmoTiers');
+    if (at) at.checked = !!cfg.ammoTiersEnabled;
+    var ct = document.getElementById('firClearTiers');
+    if (ct) ct.checked = !!cfg.clearDefaultTiers;
+    // Restore override dicts
+    window._firTierItemOverrides = cfg.tieredFleaItemOverrides || {};
+    window._firTierCategoryOverrides = cfg.tieredFleaCategoryOverrides || {};
+    window._firTierAmmoOverrides = cfg.tieredFleaAmmoOverrides || {};
+    firTieredToggle();
     // Lost on Death
     var lodCfg = cfg.lostOnDeath || {};
     var lodEn = document.getElementById('firLodEnabled');
@@ -21490,8 +21619,928 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     firCheckDirty();
   };
 
+  // ── Tiered Flea Editor ──
+  var firTierData = null;
+  var firActiveTierTab = 'categories';
+  window._firTierItemOverrides = {};
+  window._firTierCategoryOverrides = {};
+  window._firTierAmmoOverrides = {};
+
+  window.firTieredToggle = function() {
+    var en = !!(document.getElementById('firTieredFlea') || {}).checked;
+    var editor = document.getElementById('firTieredEditor');
+    if (editor) editor.style.display = en ? 'block' : 'none';
+    if (en && !firTierData) firLoadTiers();
+  };
+
+  window.firTierTab = function(tab) {
+    firActiveTierTab = tab;
+    ['categories','items','ammo'].forEach(function(t) {
+      var el = document.getElementById('firTier' + t.charAt(0).toUpperCase() + t.slice(1));
+      var btn = document.getElementById('firTierTab' + t.charAt(0).toUpperCase() + t.slice(1));
+      if (el) el.style.display = t === tab ? 'block' : 'none';
+      if (btn) { btn.classList.toggle('active', t === tab); }
+    });
+    firTierFilter();
+  };
+
+  window.firLoadTiers = function() {
+    var st = document.getElementById('firTierStatus');
+    if (st) st.textContent = 'Loading...';
+    api('fir/tiers', 'GET').then(function(data) {
+      firTierData = data;
+      firRenderTierTable('categories', data.categoryTiers || [], window._firTierCategoryOverrides);
+      firRenderTierTable('items', data.itemTiers || [], window._firTierItemOverrides);
+      firRenderTierTable('ammo', data.ammoTiers || [], window._firTierAmmoOverrides);
+      if (st) st.textContent = 'Loaded ' + ((data.categoryTiers||[]).length + (data.itemTiers||[]).length + (data.ammoTiers||[]).length) + ' tier entries';
+      firTierFilter();
+    }).catch(function(e) {
+      if (st) st.textContent = 'Error: ' + (e.message || e);
+    });
+  };
+
+  function firRenderTierTable(type, entries, overrides) {
+    var containerId = 'firTier' + type.charAt(0).toUpperCase() + type.slice(1);
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    if (!entries.length) { container.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:12px">No tier entries found.</div>'; return; }
+
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>'
+      + '<th style="text-align:left;padding:6px 8px;color:var(--accent);font-weight:600;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px">Name</th>'
+      + '<th style="text-align:center;padding:6px 8px;color:var(--accent);font-weight:600;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px;width:80px">Default</th>'
+      + '<th style="text-align:center;padding:6px 8px;color:var(--accent);font-weight:600;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px;width:100px">Override</th>'
+      + '<th style="width:40px;border-bottom:1px solid var(--border)"></th>'
+      + '</tr></thead><tbody>';
+
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      var hasOverride = overrides.hasOwnProperty(e.id);
+      var overrideVal = hasOverride ? overrides[e.id] : '';
+      var modified = hasOverride && overrides[e.id] !== e.defaultLevel;
+      var rowBg = modified ? 'rgba(200,170,110,0.06)' : 'transparent';
+      html += '<tr data-tier-name="' + (e.name||'').toLowerCase() + '" style="background:' + rowBg + '">'
+        + '<td style="padding:5px 8px;color:var(--text);border-bottom:1px solid rgba(255,255,255,0.03)">'
+        + '<span style="font-size:12px">' + (e.name || e.id) + '</span>'
+        + (modified ? ' <span style="color:var(--accent);font-size:10px">*</span>' : '')
+        + '</td>'
+        + '<td style="text-align:center;padding:5px 8px;color:var(--text-dim);border-bottom:1px solid rgba(255,255,255,0.03);font-family:var(--font-mono)">' + e.defaultLevel + '</td>'
+        + '<td style="text-align:center;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.03)">'
+        + '<input type="number" min="0" max="79" step="1" value="' + overrideVal + '" placeholder="' + e.defaultLevel + '"'
+        + ' data-tier-type="' + type + '" data-tier-id="' + e.id + '" data-tier-default="' + e.defaultLevel + '"'
+        + ' onchange="firTierChanged(this)" oninput="firTierChanged(this)"'
+        + ' style="width:60px;text-align:center;background:var(--bg-dark);color:var(--text);border:1px solid ' + (modified ? 'var(--accent)' : 'var(--border)') + ';border-radius:3px;padding:3px 4px;font-family:var(--font-mono);font-size:12px">'
+        + '</td>'
+        + '<td style="text-align:center;padding:5px 4px;border-bottom:1px solid rgba(255,255,255,0.03)">'
+        + (hasOverride ? '<button onclick="firTierReset(this,\'' + type + '\',\'' + e.id + '\')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:11px;padding:2px 4px" title="Reset to default">x</button>' : '')
+        + '</td>'
+        + '</tr>';
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  window.firTierChanged = function(input) {
+    var type = input.dataset.tierType;
+    var id = input.dataset.tierId;
+    var defVal = parseInt(input.dataset.tierDefault, 10);
+    var val = input.value.trim();
+    var overrides = type === 'categories' ? window._firTierCategoryOverrides : type === 'ammo' ? window._firTierAmmoOverrides : window._firTierItemOverrides;
+
+    if (val === '' || val === String(defVal)) {
+      delete overrides[id];
+      input.style.borderColor = 'var(--border)';
+    } else {
+      overrides[id] = parseInt(val, 10);
+      input.style.borderColor = 'var(--accent)';
+    }
+
+    // Update row highlight
+    var row = input.closest('tr');
+    if (row) row.style.background = overrides.hasOwnProperty(id) ? 'rgba(200,170,110,0.06)' : 'transparent';
+
+    // Update modified indicator
+    var nameCell = row ? row.querySelector('td:first-child') : null;
+    if (nameCell) {
+      var star = nameCell.querySelector('span[style*="accent"]');
+      if (overrides.hasOwnProperty(id) && !star) {
+        nameCell.innerHTML += ' <span style="color:var(--accent);font-size:10px">*</span>';
+      } else if (!overrides.hasOwnProperty(id) && star) {
+        star.remove();
+      }
+    }
+
+    // Update reset button
+    var resetCell = row ? row.querySelector('td:last-child') : null;
+    if (resetCell) {
+      if (overrides.hasOwnProperty(id) && !resetCell.querySelector('button')) {
+        resetCell.innerHTML = '<button onclick="firTierReset(this,\'' + type + '\',\'' + id + '\')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:11px;padding:2px 4px" title="Reset to default">x</button>';
+      } else if (!overrides.hasOwnProperty(id)) {
+        resetCell.innerHTML = '';
+      }
+    }
+
+    firCheckDirty();
+  };
+
+  window.firTierReset = function(btn, type, id) {
+    var overrides = type === 'categories' ? window._firTierCategoryOverrides : type === 'ammo' ? window._firTierAmmoOverrides : window._firTierItemOverrides;
+    delete overrides[id];
+    // Re-render the whole table for consistency
+    if (firTierData) {
+      var entries = type === 'categories' ? firTierData.categoryTiers : type === 'ammo' ? firTierData.ammoTiers : firTierData.itemTiers;
+      firRenderTierTable(type, entries || [], overrides);
+      firTierFilter();
+    }
+    firCheckDirty();
+  };
+
+  window.firTierFilter = function() {
+    var search = (document.getElementById('firTierSearch')?.value || '').toLowerCase();
+    var container = document.getElementById('firTier' + firActiveTierTab.charAt(0).toUpperCase() + firActiveTierTab.slice(1));
+    if (!container) return;
+    var rows = container.querySelectorAll('tbody tr');
+    var visible = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var name = rows[i].dataset.tierName || '';
+      var show = !search || name.indexOf(search) !== -1;
+      rows[i].style.display = show ? '' : 'none';
+      if (show) visible++;
+    }
+    var countEl = document.getElementById('firTierCount');
+    if (countEl) countEl.textContent = visible + ' / ' + rows.length + ' shown';
+  };
+
   // Make firInit accessible to switchMainTab
   window.firInit = firInit;
+})();
+
+// ═══════════════════════════════════════════════════════
+// HIDEOUT TAB
+// ═══════════════════════════════════════════════════════
+(function() {
+  'use strict';
+
+  window._hideoutLoaded = false;
+  var _hideoutCfg = null;
+  var _hideoutDefaults = null;
+  var _hoCurrentTab = 'settings';
+  var _hoRecipesLoaded = false;
+  var _hoBonusesLoaded = false;
+  var _hoPresetsLoaded = false;
+  var _hoPlayersLoaded = false;
+  var _hoAllRecipes = [];
+  var _hoRecipeFilter = 'All';
+  var _hoAllBonuses = [];
+  var _hoAreas = [];
+
+  var KNOWN_STATIONS = ['WaterCloset','MedStation','Workbench','Kitchen','ScavCase','BitcoinFarm','BoozeGenerator','IntelligenceCenter'];
+
+  function escH(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function hideoutInit() {
+    window._hideoutLoaded = true;
+    hideoutLoad();
+  }
+  window.hideoutInit = hideoutInit;
+
+  // ── Sub-tab switching ──
+  window.hoSwitchTab = function(tab) {
+    _hoCurrentTab = tab;
+    var tabs = ['settings','recipes','bonuses','presets','players'];
+    tabs.forEach(function(t) {
+      var el = document.getElementById('ho-sub-' + t);
+      if (el) el.style.display = t === tab ? '' : 'none';
+    });
+    document.querySelectorAll('[data-hotab]').forEach(function(btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-hotab') === tab);
+    });
+    // Lazy load
+    if (tab === 'recipes' && !_hoRecipesLoaded) loadRecipes();
+    if (tab === 'bonuses' && !_hoBonusesLoaded) loadBonuses();
+    if (tab === 'presets' && !_hoPresetsLoaded) loadPresets();
+    if (tab === 'players' && !_hoPlayersLoaded) loadPlayers();
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // SETTINGS SUB-TAB
+  // ═══════════════════════════════════════════════════════
+
+  function hideoutLoad() {
+    api('hideout/config', 'GET')
+      .then(function(data) {
+        _hideoutCfg = data.config;
+        _hideoutDefaults = data.defaults;
+        renderHideout();
+      })
+      .catch(function(e) {
+        document.getElementById('hideoutContent').innerHTML = '<div style="color:var(--danger);text-align:center;padding:40px">Failed to load hideout settings: ' + e.message + '</div>';
+      });
+    // Also load areas for per-area overrides
+    api('hideout/areas', 'GET').then(function(data) { _hoAreas = data || []; }).catch(function() {});
+  }
+
+  function renderHideout() {
+    var c = _hideoutCfg;
+    var d = _hideoutDefaults;
+    var container = document.getElementById('hideoutContent');
+
+    container.innerHTML = ''
+      + renderSection('Construction', ''
+        + sliderRow('constructionTimeMult', 'Construction Time Multiplier', c.constructionTimeMult, 1.0, 0.1, 10, 0.1, 'x')
+        + sliderRow('constructionCostMult', 'Construction Cost Multiplier', c.constructionCostMult, 1.0, 0.1, 5, 0.1, 'x')
+        + toggleRow('removeItemRequirements', 'Remove Item Requirements', c.removeItemRequirements)
+        + toggleRow('removeFirRequirements', 'Remove FIR Requirements', c.removeFirRequirements)
+        + toggleRow('removeSkillRequirements', 'Remove Skill Requirements', c.removeSkillRequirements)
+        + toggleRow('removeTraderRequirements', 'Remove Trader Level Requirements', c.removeTraderRequirements)
+        + toggleRow('removeCustomizationRequirements', 'Remove Customization Requirements', c.removeCustomizationRequirements)
+        + renderPerAreaOverrides('perAreaConstructionMult', 'Per-Area Construction Overrides', c.perAreaConstructionMult || {})
+      )
+      + renderSection('Production & Crafting', ''
+        + sliderRow('productionSpeedMult', 'Production Speed Multiplier', c.productionSpeedMult, 1.0, 0.1, 10, 0.1, 'x')
+        + sliderRow('scavCaseTimeMult', 'Scav Case Time Multiplier', c.scavCaseTimeMult, 1.0, 0.1, 10, 0.1, 'x')
+        + sliderRow('scavCasePriceMult', 'Scav Case Price Multiplier', c.scavCasePriceMult, 1.0, 0.1, 10, 0.1, 'x')
+        + sliderRow('cultistCircleTimeMult', 'Cultist Circle Time Multiplier', c.cultistCircleTimeMult, 1.0, 0.1, 10, 0.1, 'x')
+        + numRow('cultistCircleMaxRewards', 'Cultist Circle Max Rewards', c.cultistCircleMaxRewards, d.cultistCircleMaxRewards, 1, 50)
+        + toggleRow('removeArenaCrafts', 'Remove Arena Crate Crafts', c.removeArenaCrafts)
+        + renderPerStationOverrides('perStationProductionMult', 'Per-Station Production Overrides', c.perStationProductionMult || {})
+      )
+      + renderSection('Fuel & Power', ''
+        + sliderRow('fuelConsumptionMult', 'Fuel Consumption Rate', c.fuelConsumptionMult, 1.0, 0.1, 10, 0.1, 'x', 'Original: ' + (d.fuelFlowRate || 0).toFixed(4))
+        + sliderRow('generatorNoFuelMult', 'Generator Speed Without Fuel', c.generatorNoFuelMult, 1.0, 0, 5, 0.1, 'x', 'Original: ' + (d.generatorSpeedWithoutFuel || 0).toFixed(4))
+        + sliderRow('airFilterMult', 'Air Filter Flow Rate', c.airFilterMult, 1.0, 0.1, 10, 0.1, 'x', 'Original: ' + (d.airFilterFlowRate || 0).toFixed(4))
+        + sliderRow('gpuBoostMult', 'GPU Farm Boost Rate', c.gpuBoostMult, 1.0, 0.1, 10, 0.1, 'x', 'Original: ' + (d.gpuBoostRate || 0).toFixed(4))
+      )
+      + renderSection('Farming', ''
+        + numRow('bitcoinTimeMinutes', 'Bitcoin Craft Time (minutes)', c.bitcoinTimeMinutes, d.bitcoinTimeMinutes, 1, 9999)
+        + numRow('maxBitcoins', 'Max Bitcoins Producible', c.maxBitcoins, d.maxBitcoins, 1, 100)
+        + numRow('waterFilterTimeMinutes', 'Water Filter Time (minutes)', c.waterFilterTimeMinutes, d.waterFilterTimeMinutes, 1, 9999)
+        + numRow('waterFilterRate', 'Water Filter Fill Rate', c.waterFilterRate, d.waterFilterRate, 1, 999)
+      )
+      + renderSection('Stash Size ⚠', ''
+        + numRow('stash_standard', 'Standard Edition', c.stashHeights.standard, (d.stashHeights||{}).standard || 30, 10, 300)
+        + numRow('stash_leftBehind', 'Left Behind Edition', c.stashHeights.leftBehind, (d.stashHeights||{}).leftBehind || 40, 10, 300)
+        + numRow('stash_prepareForEscape', 'Prepare for Escape', c.stashHeights.prepareForEscape, (d.stashHeights||{}).prepareForEscape || 50, 10, 300)
+        + numRow('stash_edgeOfDarkness', 'Edge of Darkness', c.stashHeights.edgeOfDarkness, (d.stashHeights||{}).edgeOfDarkness || 68, 10, 300)
+        + numRow('stash_unheardEdition', 'The Unheard Edition', c.stashHeights.unheardEdition, (d.stashHeights||{}).unheardEdition || 72, 10, 300)
+        + '<div style="font-size:11px;color:var(--warning);margin-top:4px">⚠ Stash size changes require a client restart</div>'
+      )
+      + renderSection('Health Regeneration ⚠', ''
+        + sliderRow('healthRegenMult', 'Health Regen Multiplier (all body parts)', c.healthRegenMult, 1.0, 0.1, 10, 0.1, 'x', origRegenStr(d))
+        + numRowF('energyRegenRate', 'Energy Regen Rate', c.energyRegenRate, d.energyRegenRate, 0, 100, 0.01)
+        + numRowF('hydrationRegenRate', 'Hydration Regen Rate', c.hydrationRegenRate, d.hydrationRegenRate, 0, 100, 0.01)
+        + toggleRow('disableHideoutHealthRegen', 'Disable Hideout Health Regen Bonus', c.disableHideoutHealthRegen)
+        + toggleRow('disableHideoutEnergyRegen', 'Disable Hideout Energy Regen Bonus', c.disableHideoutEnergyRegen)
+        + toggleRow('disableHideoutHydrationRegen', 'Disable Hideout Hydration Regen Bonus', c.disableHideoutHydrationRegen)
+        + '<div style="font-size:11px;color:var(--warning);margin-top:4px">⚠ Health/energy/hydration regen rates require a client restart</div>'
+      );
+  }
+
+  function origRegenStr(d) {
+    if (!d.healthRegenValues) return '';
+    var parts = [];
+    for (var k in d.healthRegenValues) parts.push(k + ': ' + d.healthRegenValues[k].toFixed(4));
+    return parts.join(', ');
+  }
+
+  function renderPerAreaOverrides(key, title, existing) {
+    var rows = '';
+    for (var at in existing) {
+      var name = _hoAreas.find(function(a) { return a.areaType === at; });
+      rows += '<div style="display:flex;align-items:center;gap:8px;padding:2px 0" data-ho-parow="' + at + '">'
+        + '<span style="min-width:150px;font-size:12px;color:var(--gold)">' + escH(name ? name.areaName : at) + '</span>'
+        + '<input type="range" data-ho-pa="' + at + '" min="0.1" max="10" step="0.1" value="' + existing[at] + '" style="flex:1;accent-color:var(--gold)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
+        + '<span style="min-width:40px;text-align:right;font-size:12px">' + parseFloat(existing[at]).toFixed(1) + 'x</span>'
+        + '<span style="font-size:11px;color:var(--text-dim)">overrides global</span>'
+        + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:0 4px">×</button>'
+        + '</div>';
+    }
+    return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'
+      + '<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px">' + title + '</div>'
+      + '<div id="ho-pa-rows">' + rows + '</div>'
+      + '<div style="display:flex;gap:8px;margin-top:4px">'
+      + '<select id="ho-pa-add" style="background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:3px 8px;color:var(--text-main);font-size:12px">'
+      + '<option value="">Add area...</option>'
+      + _hoAreas.map(function(a) { return '<option value="' + a.areaType + '">' + escH(a.areaName) + '</option>'; }).join('')
+      + '</select>'
+      + '<button onclick="window.hoAddPerArea()" style="background:var(--gold);color:#111;border:none;border-radius:4px;padding:3px 10px;font-size:12px;cursor:pointer">Add</button>'
+      + '</div></div>';
+  }
+
+  window.hoAddPerArea = function() {
+    var sel = document.getElementById('ho-pa-add');
+    if (!sel || !sel.value) return;
+    var at = sel.value;
+    if (document.querySelector('[data-ho-pa="' + at + '"]')) { sel.value = ''; return; }
+    var name = _hoAreas.find(function(a) { return a.areaType === at; });
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:2px 0';
+    row.setAttribute('data-ho-parow', at);
+    row.innerHTML = '<span style="min-width:150px;font-size:12px;color:var(--gold)">' + escH(name ? name.areaName : at) + '</span>'
+      + '<input type="range" data-ho-pa="' + at + '" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--gold)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
+      + '<span style="min-width:40px;text-align:right;font-size:12px">1.0x</span>'
+      + '<span style="font-size:11px;color:var(--text-dim)">overrides global</span>'
+      + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:0 4px">×</button>';
+    document.getElementById('ho-pa-rows').appendChild(row);
+    sel.value = '';
+  };
+
+  function renderPerStationOverrides(key, title, existing) {
+    var stations = [
+      {type:'WaterCloset',name:'Lavatory'},{type:'MedStation',name:'Medstation'},
+      {type:'Workbench',name:'Workbench'},{type:'Kitchen',name:'Nutrition Unit'}
+    ];
+    var rows = '';
+    for (var st in existing) {
+      var sn = stations.find(function(s) { return s.type === st; });
+      rows += '<div style="display:flex;align-items:center;gap:8px;padding:2px 0" data-ho-psrow="' + st + '">'
+        + '<span style="min-width:150px;font-size:12px;color:var(--gold)">' + escH(sn ? sn.name : st) + '</span>'
+        + '<input type="range" data-ho-ps="' + st + '" min="0.1" max="10" step="0.1" value="' + existing[st] + '" style="flex:1;accent-color:var(--gold)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
+        + '<span style="min-width:40px;text-align:right;font-size:12px">' + parseFloat(existing[st]).toFixed(1) + 'x</span>'
+        + '<span style="font-size:11px;color:var(--text-dim)">overrides global</span>'
+        + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:0 4px">×</button>'
+        + '</div>';
+    }
+    return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'
+      + '<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px">' + title + '</div>'
+      + '<div id="ho-ps-rows">' + rows + '</div>'
+      + '<div style="display:flex;gap:8px;margin-top:4px">'
+      + '<select id="ho-ps-add" style="background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:3px 8px;color:var(--text-main);font-size:12px">'
+      + '<option value="">Add station...</option>'
+      + stations.map(function(s) { return '<option value="' + s.type + '">' + escH(s.name) + '</option>'; }).join('')
+      + '</select>'
+      + '<button onclick="window.hoAddPerStation()" style="background:var(--gold);color:#111;border:none;border-radius:4px;padding:3px 10px;font-size:12px;cursor:pointer">Add</button>'
+      + '</div></div>';
+  }
+
+  window.hoAddPerStation = function() {
+    var sel = document.getElementById('ho-ps-add');
+    if (!sel || !sel.value) return;
+    var st = sel.value;
+    if (document.querySelector('[data-ho-ps="' + st + '"]')) { sel.value = ''; return; }
+    var stations = [{type:'WaterCloset',name:'Lavatory'},{type:'MedStation',name:'Medstation'},{type:'Workbench',name:'Workbench'},{type:'Kitchen',name:'Nutrition Unit'}];
+    var sn = stations.find(function(s) { return s.type === st; });
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:2px 0';
+    row.setAttribute('data-ho-psrow', st);
+    row.innerHTML = '<span style="min-width:150px;font-size:12px;color:var(--gold)">' + escH(sn ? sn.name : st) + '</span>'
+      + '<input type="range" data-ho-ps="' + st + '" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--gold)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
+      + '<span style="min-width:40px;text-align:right;font-size:12px">1.0x</span>'
+      + '<span style="font-size:11px;color:var(--text-dim)">overrides global</span>'
+      + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:0 4px">×</button>';
+    document.getElementById('ho-ps-rows').appendChild(row);
+    sel.value = '';
+  };
+
+  // ── UI Helpers ──
+  function renderSection(title, content) {
+    return '<div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;overflow:hidden">'
+      + '<div onclick="this.parentElement.querySelector(\'.ho-body\').style.display=this.parentElement.querySelector(\'.ho-body\').style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.ho-arrow\').textContent=this.parentElement.querySelector(\'.ho-body\').style.display===\'none\'?\'▸\':\'▾\'" style="padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)">'
+      + '<span class="ho-arrow" style="color:var(--gold);font-size:12px">▾</span>'
+      + '<span style="color:var(--gold);font-weight:600;font-size:14px">' + title + '</span>'
+      + '</div>'
+      + '<div class="ho-body" style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">' + content + '</div>'
+      + '</div>';
+  }
+
+  function sliderRow(key, label, value, defaultVal, min, max, step, suffix, note) {
+    var val = value != null ? value : defaultVal;
+    var isModified = val !== defaultVal;
+    return '<div style="display:flex;align-items:center;gap:12px;padding:4px 0">'
+      + '<span style="min-width:260px;font-size:13px;color:' + (isModified ? 'var(--gold)' : 'var(--text-dim)') + '">' + label + '</span>'
+      + '<input type="range" data-ho="' + key + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" style="flex:1;accent-color:var(--gold)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'' + (suffix||'') + '\'">'
+      + '<span style="min-width:40px;text-align:right;font-size:13px;color:var(--text-main)">' + parseFloat(val).toFixed(1) + (suffix||'') + '</span>'
+      + '<span style="font-size:11px;color:var(--text-dim);min-width:50px">(def: ' + defaultVal + ')</span>'
+      + (note ? '<span style="font-size:10px;color:var(--text-dim)">' + note + '</span>' : '')
+      + '</div>';
+  }
+
+  function toggleRow(key, label, value) {
+    var checked = value ? 'checked' : '';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:4px 0">'
+      + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:' + (value ? 'var(--gold)' : 'var(--text-dim)') + '">'
+      + '<input type="checkbox" data-ho="' + key + '" ' + checked + ' style="accent-color:var(--gold)">'
+      + label
+      + '</label>'
+      + '</div>';
+  }
+
+  function numRow(key, label, value, defaultVal, min, max) {
+    var val = value != null ? value : '';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:4px 0">'
+      + '<span style="min-width:260px;font-size:13px;color:' + (value != null ? 'var(--gold)' : 'var(--text-dim)') + '">' + label + '</span>'
+      + '<input type="number" data-ho="' + key + '" value="' + val + '" min="' + min + '" max="' + max + '" placeholder="' + (defaultVal||'default') + '" style="width:80px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-main);font-size:13px">'
+      + '<span style="font-size:11px;color:var(--text-dim)">(default: ' + (defaultVal||'—') + ')</span>'
+      + '</div>';
+  }
+
+  function numRowF(key, label, value, defaultVal, min, max, step) {
+    var val = value != null ? value : '';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:4px 0">'
+      + '<span style="min-width:260px;font-size:13px;color:' + (value != null ? 'var(--gold)' : 'var(--text-dim)') + '">' + label + '</span>'
+      + '<input type="number" data-ho="' + key + '" value="' + val + '" min="' + min + '" max="' + max + '" step="' + (step||0.01) + '" placeholder="' + (defaultVal != null ? defaultVal.toFixed(4) : 'default') + '" style="width:100px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-main);font-size:13px">'
+      + '<span style="font-size:11px;color:var(--text-dim)">(default: ' + (defaultVal != null ? defaultVal.toFixed(4) : '—') + ')</span>'
+      + '</div>';
+  }
+
+  // ── Collect form state ──
+  function collectConfig() {
+    var paOverrides = {};
+    document.querySelectorAll('[data-ho-pa]').forEach(function(el) {
+      paOverrides[el.getAttribute('data-ho-pa')] = parseFloat(el.value);
+    });
+    var psOverrides = {};
+    document.querySelectorAll('[data-ho-ps]').forEach(function(el) {
+      psOverrides[el.getAttribute('data-ho-ps')] = parseFloat(el.value);
+    });
+    var cfg = {
+      constructionTimeMult: getSlider('constructionTimeMult', 1.0),
+      constructionCostMult: getSlider('constructionCostMult', 1.0),
+      removeItemRequirements: getToggle('removeItemRequirements'),
+      removeFirRequirements: getToggle('removeFirRequirements'),
+      removeSkillRequirements: getToggle('removeSkillRequirements'),
+      removeTraderRequirements: getToggle('removeTraderRequirements'),
+      removeCustomizationRequirements: getToggle('removeCustomizationRequirements'),
+      perAreaConstructionMult: paOverrides,
+      productionSpeedMult: getSlider('productionSpeedMult', 1.0),
+      scavCaseTimeMult: getSlider('scavCaseTimeMult', 1.0),
+      scavCasePriceMult: getSlider('scavCasePriceMult', 1.0),
+      cultistCircleTimeMult: getSlider('cultistCircleTimeMult', 1.0),
+      cultistCircleMaxRewards: getNum('cultistCircleMaxRewards'),
+      removeArenaCrafts: getToggle('removeArenaCrafts'),
+      perStationProductionMult: psOverrides,
+      fuelConsumptionMult: getSlider('fuelConsumptionMult', 1.0),
+      generatorNoFuelMult: getSlider('generatorNoFuelMult', 1.0),
+      airFilterMult: getSlider('airFilterMult', 1.0),
+      gpuBoostMult: getSlider('gpuBoostMult', 1.0),
+      bitcoinTimeMinutes: getNum('bitcoinTimeMinutes'),
+      maxBitcoins: getNum('maxBitcoins'),
+      waterFilterTimeMinutes: getNum('waterFilterTimeMinutes'),
+      waterFilterRate: getNum('waterFilterRate'),
+      stashHeights: {
+        standard: getNum('stash_standard'),
+        leftBehind: getNum('stash_leftBehind'),
+        prepareForEscape: getNum('stash_prepareForEscape'),
+        edgeOfDarkness: getNum('stash_edgeOfDarkness'),
+        unheardEdition: getNum('stash_unheardEdition')
+      },
+      healthRegenMult: getSlider('healthRegenMult', 1.0),
+      energyRegenRate: getNumF('energyRegenRate'),
+      hydrationRegenRate: getNumF('hydrationRegenRate'),
+      disableHideoutHealthRegen: getToggle('disableHideoutHealthRegen'),
+      disableHideoutEnergyRegen: getToggle('disableHideoutEnergyRegen'),
+      disableHideoutHydrationRegen: getToggle('disableHideoutHydrationRegen'),
+      recipeLockOverrides: _hideoutCfg ? (_hideoutCfg.recipeLockOverrides || {}) : {},
+      bonusValueOverrides: _hideoutCfg ? (_hideoutCfg.bonusValueOverrides || {}) : {}
+    };
+    return cfg;
+  }
+
+  function getSlider(key, def) {
+    var el = document.querySelector('[data-ho="' + key + '"]');
+    return el ? parseFloat(el.value) : def;
+  }
+  function getToggle(key) {
+    var el = document.querySelector('[data-ho="' + key + '"]');
+    return el ? el.checked : false;
+  }
+  function getNum(key) {
+    var el = document.querySelector('[data-ho="' + key + '"]');
+    if (!el || el.value === '') return null;
+    return parseInt(el.value, 10);
+  }
+  function getNumF(key) {
+    var el = document.querySelector('[data-ho="' + key + '"]');
+    if (!el || el.value === '') return null;
+    return parseFloat(el.value);
+  }
+
+  // ── Apply / Reset ──
+  window.hideoutApply = function() {
+    var cfg = collectConfig();
+    api('hideout/apply', 'POST', cfg)
+    .then(function(data) {
+      toast('Hideout settings applied (' + (data.changes || 0) + ' changes)', 'success');
+      hideoutLoad();
+    })
+    .catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  window.hideoutReset = function() {
+    if (!confirm('Reset all hideout settings to defaults?')) return;
+    api('hideout/reset', 'POST')
+    .then(function() {
+      toast('Hideout settings reset to defaults', 'success');
+      hideoutLoad();
+      _hoRecipesLoaded = false;
+      _hoBonusesLoaded = false;
+      _hoPresetsLoaded = false;
+    })
+    .catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // RECIPES SUB-TAB
+  // ═══════════════════════════════════════════════════════
+
+  function loadRecipes() {
+    _hoRecipesLoaded = true;
+    api('hideout/recipes', 'GET').then(function(data) {
+      _hoAllRecipes = data || [];
+      renderRecipes();
+    }).catch(function(e) {
+      document.getElementById('hoRecipeTable').innerHTML = '<div style="color:var(--danger)">Failed: ' + e.message + '</div>';
+    });
+  }
+
+  function fmtTime(sec) {
+    if (sec < 60) return sec + 's';
+    if (sec < 3600) return Math.round(sec / 60) + 'm';
+    return (sec / 3600).toFixed(1) + 'h';
+  }
+
+  function renderRecipes() {
+    var search = (document.getElementById('hoRecipeSearch') || {}).value || '';
+    search = search.toLowerCase();
+    var filtered = _hoAllRecipes.filter(function(r) {
+      if (_hoRecipeFilter !== 'All') {
+        if (_hoRecipeFilter === 'Other') {
+          if (KNOWN_STATIONS.indexOf(r.stationAreaType) >= 0) return false;
+        } else if (r.stationAreaType !== _hoRecipeFilter) return false;
+      }
+      if (search && r.productName.toLowerCase().indexOf(search) < 0) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      document.getElementById('hoRecipeTable').innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No recipes found</div>';
+      return;
+    }
+
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+      + '<thead><tr style="border-bottom:1px solid var(--border);color:var(--text-dim);text-align:left">'
+      + '<th style="padding:6px 8px">Product</th><th style="padding:6px 8px">Station</th>'
+      + '<th style="padding:6px 8px">Time</th><th style="padding:6px 8px">Locked</th>'
+      + '<th style="padding:6px 8px">Info</th></tr></thead><tbody>';
+
+    filtered.forEach(function(r) {
+      var lockChecked = r.locked ? ' checked' : '';
+      var origLockChanged = r.locked !== r.originalLocked;
+      var timeChanged = Math.abs(r.productionTime - r.originalTime) > 1;
+      html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">'
+        + '<td style="padding:6px 8px;color:' + (timeChanged ? 'var(--gold)' : 'var(--text-main)') + '">' + escH(r.productName) + '</td>'
+        + '<td style="padding:6px 8px;color:var(--text-dim)">' + escH(r.stationName) + '</td>'
+        + '<td style="padding:6px 8px;color:var(--text-main)">' + fmtTime(r.productionTime) + (timeChanged ? ' <span style="color:var(--text-dim);font-size:11px">(orig: ' + fmtTime(r.originalTime) + ')</span>' : '') + '</td>'
+        + '<td style="padding:6px 8px"><input type="checkbox" data-ho-lock="' + r.id + '"' + lockChecked + ' style="accent-color:var(--gold)"'
+        + (origLockChanged ? ' title="Modified from default"' : '') + '></td>'
+        + '<td style="padding:6px 8px;color:var(--text-dim);font-size:11px">'
+        + (r.continuous ? '<span style="background:rgba(200,170,110,0.15);color:var(--gold);padding:1px 6px;border-radius:3px;font-size:10px">Continuous</span> ' : '')
+        + (r.limitCount != null ? 'Limit: ' + r.limitCount : '')
+        + '</td></tr>';
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('hoRecipeTable').innerHTML = html;
+  }
+
+  window.hoFilterRecipes = function(filter, btn) {
+    _hoRecipeFilter = filter;
+    document.querySelectorAll('[data-horecipefilter]').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-horecipefilter') === filter);
+    });
+    renderRecipes();
+  };
+
+  window.hoSearchRecipes = function() { renderRecipes(); };
+
+  window.hoApplyRecipes = function() {
+    var overrides = {};
+    document.querySelectorAll('[data-ho-lock]').forEach(function(el) {
+      var id = el.getAttribute('data-ho-lock');
+      var orig = _hoAllRecipes.find(function(r) { return r.id === id; });
+      if (orig && el.checked !== orig.originalLocked)
+        overrides[id] = el.checked;
+    });
+    if (!_hideoutCfg) return;
+    _hideoutCfg.recipeLockOverrides = overrides;
+    var cfg = collectConfig();
+    cfg.recipeLockOverrides = overrides;
+    api('hideout/apply', 'POST', cfg).then(function(data) {
+      toast('Recipe overrides applied (' + (data.changes || 0) + ' changes)', 'success');
+      _hoRecipesLoaded = false;
+      loadRecipes();
+      hideoutLoad();
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // BONUSES SUB-TAB
+  // ═══════════════════════════════════════════════════════
+
+  function loadBonuses() {
+    _hoBonusesLoaded = true;
+    api('hideout/bonuses', 'GET').then(function(data) {
+      _hoAllBonuses = data || [];
+      renderBonuses();
+    }).catch(function(e) {
+      document.getElementById('hoBonusContent').innerHTML = '<div style="color:var(--danger)">Failed: ' + e.message + '</div>';
+    });
+  }
+
+  function renderBonuses() {
+    if (_hoAllBonuses.length === 0) {
+      document.getElementById('hoBonusContent').innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No editable bonuses found</div>';
+      return;
+    }
+    // Group by area
+    var groups = {};
+    _hoAllBonuses.forEach(function(b) {
+      if (!groups[b.areaName]) groups[b.areaName] = [];
+      groups[b.areaName].push(b);
+    });
+
+    var html = '';
+    var sortedAreas = Object.keys(groups).sort();
+    sortedAreas.forEach(function(areaName) {
+      var bonuses = groups[areaName];
+      html += '<div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:8px">'
+        + '<div onclick="this.parentElement.querySelector(\'.ho-bonus-body\').style.display=this.parentElement.querySelector(\'.ho-bonus-body\').style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.ho-arrow\').textContent=this.parentElement.querySelector(\'.ho-bonus-body\').style.display===\'none\'?\'▸\':\'▾\'" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)">'
+        + '<span class="ho-arrow" style="color:var(--gold);font-size:12px">▾</span>'
+        + '<span style="color:var(--gold);font-weight:600;font-size:13px">' + escH(areaName) + '</span>'
+        + '<span style="color:var(--text-dim);font-size:11px">(' + bonuses.length + ' bonuses)</span>'
+        + '</div>'
+        + '<div class="ho-bonus-body" style="padding:8px 14px">';
+
+      bonuses.forEach(function(b) {
+        var isModified = Math.abs(b.currentMultiplier - 1.0) > 0.001;
+        html += '<div style="display:flex;align-items:center;gap:10px;padding:3px 0;font-size:12px">'
+          + '<span style="min-width:180px;color:' + (isModified ? 'var(--gold)' : 'var(--text-dim)') + '">' + escH(b.bonusType) + ' (L' + b.stageKey + ')</span>'
+          + '<span style="min-width:80px;color:var(--text-dim)">Orig: ' + b.originalValue.toFixed(2) + '</span>'
+          + '<input type="number" data-ho-bonus="' + b.key + '" value="' + b.currentMultiplier.toFixed(2) + '" min="0" max="100" step="0.1" style="width:70px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-main);font-size:12px">'
+          + '<span style="color:var(--text-dim)">x mult</span>'
+          + '</div>';
+      });
+
+      html += '</div></div>';
+    });
+
+    document.getElementById('hoBonusContent').innerHTML = html;
+  }
+
+  window.hoApplyBonuses = function() {
+    var overrides = {};
+    document.querySelectorAll('[data-ho-bonus]').forEach(function(el) {
+      var key = el.getAttribute('data-ho-bonus');
+      var val = parseFloat(el.value);
+      if (!isNaN(val) && Math.abs(val - 1.0) > 0.001) overrides[key] = val;
+    });
+    if (!_hideoutCfg) return;
+    _hideoutCfg.bonusValueOverrides = overrides;
+    var cfg = collectConfig();
+    cfg.bonusValueOverrides = overrides;
+    api('hideout/apply', 'POST', cfg).then(function(data) {
+      toast('Bonus overrides applied (' + (data.changes || 0) + ' changes)', 'success');
+      _hoBonusesLoaded = false;
+      loadBonuses();
+      hideoutLoad();
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // PRESETS SUB-TAB
+  // ═══════════════════════════════════════════════════════
+
+  function loadPresets() {
+    _hoPresetsLoaded = true;
+    api('hideout/presets', 'GET').then(function(data) {
+      renderPresets(data);
+    }).catch(function(e) {
+      document.getElementById('hoPresetContent').innerHTML = '<div style="color:var(--danger)">Failed: ' + e.message + '</div>';
+    });
+  }
+
+  function renderPresets(data) {
+    var presets = data.presets || [];
+    var active = data.activePreset || '';
+    var opts = presets.map(function(p) {
+      var sel = p.name === active ? ' selected' : '';
+      var suffix = p.description === '(built-in)' ? ' (built-in)' : '';
+      return '<option value="' + escH(p.name) + '"' + sel + '>' + escH(p.name) + suffix + '</option>';
+    }).join('');
+
+    var html = '<div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px">'
+      + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      + '<select id="hoPresetSelect" style="flex:1;min-width:200px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text-main);font-size:13px"><option value="">Select a preset...</option>' + opts + '</select>'
+      + '<button onclick="window.hoLoadPreset()" style="background:var(--gold);color:#111;border:none;border-radius:4px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer">Load</button>'
+      + '<button onclick="window.hoDeletePreset()" style="background:transparent;color:var(--danger);border:1px solid var(--danger);border-radius:4px;padding:6px 14px;font-size:13px;cursor:pointer">Delete</button>'
+      + '</div>'
+      + (active ? '<div style="font-size:12px;color:var(--gold)">Active preset: ' + escH(active) + '</div>' : '')
+      + '<div style="border-top:1px solid var(--border);padding-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      + '<input type="text" id="hoPresetName" placeholder="Preset name" style="flex:1;min-width:200px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text-main);font-size:13px">'
+      + '<button onclick="window.hoSavePreset()" style="background:var(--gold);color:#111;border:none;border-radius:4px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer">Save Current</button>'
+      + '</div>'
+      + '<div style="border-top:1px solid var(--border);padding-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      + '<button onclick="window.hoExportPreset()" style="background:transparent;color:var(--text-dim);border:1px solid var(--border);border-radius:4px;padding:6px 14px;font-size:13px;cursor:pointer">Export Selected</button>'
+      + '<button onclick="window.hoImportPreset()" style="background:transparent;color:var(--text-dim);border:1px solid var(--border);border-radius:4px;padding:6px 14px;font-size:13px;cursor:pointer">Import from Clipboard</button>'
+      + '</div>'
+      + '<textarea id="hoPresetJson" style="display:none;width:100%;height:150px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:8px;color:var(--text-main);font-size:11px;font-family:monospace;resize:vertical"></textarea>'
+      + '</div>';
+
+    document.getElementById('hoPresetContent').innerHTML = html;
+  }
+
+  window.hoLoadPreset = function() {
+    var sel = document.getElementById('hoPresetSelect');
+    if (!sel || !sel.value) { toast('Select a preset first', 'error'); return; }
+    api('hideout/presets/load', 'POST', { name: sel.value }).then(function(data) {
+      toast('Loaded preset "' + sel.value + '" (' + (data.changes || 0) + ' changes)', 'success');
+      hideoutLoad();
+      loadPresets();
+      _hoRecipesLoaded = false;
+      _hoBonusesLoaded = false;
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  window.hoDeletePreset = function() {
+    var sel = document.getElementById('hoPresetSelect');
+    if (!sel || !sel.value) { toast('Select a preset first', 'error'); return; }
+    if (!confirm('Delete preset "' + sel.value + '"?')) return;
+    api('hideout/presets/' + encodeURIComponent(sel.value), 'DELETE').then(function() {
+      toast('Deleted preset', 'success');
+      loadPresets();
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  window.hoSavePreset = function() {
+    var name = (document.getElementById('hoPresetName') || {}).value || '';
+    if (!name.trim()) { toast('Enter a preset name', 'error'); return; }
+    api('hideout/presets/save', 'POST', { name: name.trim(), description: '' }).then(function() {
+      toast('Saved preset "' + name.trim() + '"', 'success');
+      loadPresets();
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  window.hoExportPreset = function() {
+    var sel = document.getElementById('hoPresetSelect');
+    if (!sel || !sel.value) { toast('Select a preset first', 'error'); return; }
+    api('hideout/presets/' + encodeURIComponent(sel.value) + '/download', 'GET').then(function(data) {
+      var ta = document.getElementById('hoPresetJson');
+      ta.style.display = 'block';
+      ta.value = JSON.stringify(data, null, 2);
+      toast('Exported — copy from the text area below', 'success');
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  window.hoImportPreset = function() {
+    var ta = document.getElementById('hoPresetJson');
+    ta.style.display = 'block';
+    ta.placeholder = 'Paste preset JSON here, then click Import again...';
+    if (!ta.value.trim()) return;
+    try {
+      var preset = JSON.parse(ta.value);
+      if (!preset.name) { toast('Invalid preset: missing name', 'error'); return; }
+      api('hideout/presets/upload', 'POST', preset).then(function() {
+        toast('Imported preset "' + preset.name + '"', 'success');
+        ta.value = '';
+        ta.style.display = 'none';
+        loadPresets();
+      }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+    } catch (ex) {
+      toast('Invalid JSON: ' + ex.message, 'error');
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // PLAYER HIDEOUT SUB-TAB
+  // ═══════════════════════════════════════════════════════
+
+  function loadPlayers() {
+    _hoPlayersLoaded = true;
+    Promise.all([
+      api('hideout/progression', 'GET'),
+      api('profiles', 'GET')
+    ]).then(function(results) {
+      renderPlayerHideout(results[0], results[1]);
+    }).catch(function(e) {
+      document.getElementById('hoPlayerContent').innerHTML = '<div style="color:var(--danger)">Failed: ' + e.message + '</div>';
+    });
+  }
+
+  function renderPlayerHideout(progression, profiles) {
+    if (!progression || progression.length === 0) {
+      document.getElementById('hoPlayerContent').innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No player profiles found</div>';
+      return;
+    }
+
+    var profileList = (profiles || []).map(function(p) { return { id: p.sessionId || p.id, name: p.name || p.nickname || '' }; });
+    var opts = profileList.map(function(p) { return '<option value="' + escH(p.id) + '">' + escH(p.name || p.id) + '</option>'; }).join('');
+
+    var html = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">'
+      + '<select id="hoPlayerSelect" style="min-width:200px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text-main);font-size:13px" onchange="window.hoLoadPlayer(this.value)"><option value="">Select player...</option>' + opts + '</select>'
+      + '<button onclick="window.hoUnlockAll()" style="background:var(--gold);color:#111;border:none;border-radius:4px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer">Unlock All</button>'
+      + '</div>'
+      + '<div id="hoPlayerAreas"></div>'
+      + '<h4 style="color:var(--gold);margin:16px 0 8px">Progression Dashboard</h4>'
+      + renderProgressionGrid(progression);
+
+    document.getElementById('hoPlayerContent').innerHTML = html;
+  }
+
+  function renderProgressionGrid(progression) {
+    if (!progression || progression.length === 0) return '<div style="color:var(--text-dim);font-size:12px">No data</div>';
+    // Collect all area types
+    var allAreas = {};
+    progression.forEach(function(p) {
+      for (var at in p.areas) {
+        if (!allAreas[at]) allAreas[at] = true;
+      }
+    });
+    var areaKeys = Object.keys(allAreas).sort();
+
+    var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">'
+      + '<thead><tr style="border-bottom:1px solid var(--border);color:var(--text-dim)">'
+      + '<th style="padding:4px 6px;text-align:left;position:sticky;left:0;background:var(--bg-main)">Player</th>'
+      + '<th style="padding:4px 6px">Lvl</th>'
+      + areaKeys.map(function(at) {
+        var name = _hoAreas.find(function(a) { return a.areaType === at; });
+        var short = (name ? name.areaName : at).substring(0, 6);
+        return '<th style="padding:4px 4px;text-align:center" title="' + escH(name ? name.areaName : at) + '">' + escH(short) + '</th>';
+      }).join('')
+      + '</tr></thead><tbody>';
+
+    progression.forEach(function(p) {
+      html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.03)">'
+        + '<td style="padding:4px 6px;color:var(--text-main);position:sticky;left:0;background:var(--bg-main)">' + escH(p.profileName) + '</td>'
+        + '<td style="padding:4px 6px;color:var(--gold);text-align:center">' + (p.level || 0) + '</td>';
+      areaKeys.forEach(function(at) {
+        var lv = (p.areas || {})[at] || 0;
+        var maxLv = (_hoAreas.find(function(a) { return a.areaType === at; }) || {}).maxLevel || 0;
+        var color = lv >= maxLv && maxLv > 0 ? 'var(--gold)' : lv > 0 ? 'var(--text-main)' : 'var(--text-dim)';
+        html += '<td style="padding:4px 4px;text-align:center;color:' + color + '">' + lv + '</td>';
+      });
+      html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  window.hoLoadPlayer = function(sid) {
+    if (!sid) { document.getElementById('hoPlayerAreas').innerHTML = ''; return; }
+    api('hideout/player/' + sid, 'GET').then(function(data) {
+      renderPlayerAreas(data);
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  function renderPlayerAreas(data) {
+    if (!data || !data.areas) return;
+    var html = '<div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">'
+      + '<div style="font-size:13px;color:var(--gold);margin-bottom:8px">' + escH(data.profileName) + '</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+      + '<thead><tr style="border-bottom:1px solid var(--border);color:var(--text-dim)">'
+      + '<th style="padding:4px 8px;text-align:left">Area</th>'
+      + '<th style="padding:4px 8px">Current</th>'
+      + '<th style="padding:4px 8px">Max</th>'
+      + '<th style="padding:4px 8px">Set Level</th>'
+      + '<th style="padding:4px 8px"></th></tr></thead><tbody>';
+
+    data.areas.forEach(function(a) {
+      var isMax = a.level >= a.maxLevel && a.maxLevel > 0;
+      html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.03)">'
+        + '<td style="padding:4px 8px;color:var(--text-main)">' + escH(a.areaName) + '</td>'
+        + '<td style="padding:4px 8px;text-align:center;color:' + (isMax ? 'var(--gold)' : 'var(--text-main)') + '">' + a.level + '</td>'
+        + '<td style="padding:4px 8px;text-align:center;color:var(--text-dim)">' + a.maxLevel + '</td>'
+        + '<td style="padding:4px 8px;text-align:center"><input type="number" data-ho-plvl="' + a.areaType + '" value="' + a.level + '" min="0" max="' + a.maxLevel + '" style="width:60px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-main);font-size:12px;text-align:center"></td>'
+        + '<td style="padding:4px 8px;text-align:center"><button onclick="window.hoSetArea(\'' + data.sessionId + '\',\'' + a.areaType + '\',this)" style="background:var(--gold);color:#111;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer">Set</button></td>'
+        + '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    document.getElementById('hoPlayerAreas').innerHTML = html;
+  }
+
+  window.hoSetArea = function(sid, areaType, btn) {
+    var input = document.querySelector('[data-ho-plvl="' + areaType + '"]');
+    if (!input) return;
+    var level = parseInt(input.value, 10);
+    if (isNaN(level)) return;
+    api('hideout/player/' + sid + '/set', 'POST', { areaType: areaType, level: level }).then(function() {
+      toast('Set ' + areaType + ' to level ' + level, 'success');
+      window.hoLoadPlayer(sid);
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
+  window.hoUnlockAll = function() {
+    var sel = document.getElementById('hoPlayerSelect');
+    if (!sel || !sel.value) { toast('Select a player first', 'error'); return; }
+    if (!confirm('Unlock all hideout areas for this player?')) return;
+    api('hideout/player/' + sel.value + '/unlock-all', 'POST').then(function() {
+      toast('All areas unlocked', 'success');
+      window.hoLoadPlayer(sel.value);
+      _hoPlayersLoaded = false;
+      loadPlayers();
+    }).catch(function(e) { toast('Error: ' + e.message, 'error'); });
+  };
+
 })();
 </script>
 </body>

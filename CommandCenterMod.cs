@@ -27,6 +27,7 @@ public class CommandCenterMod(
     GameValuesService gameValuesService,
     LocationService locationService,
     FirService firService,
+    HideoutService hideoutService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
     ISptLogger<CommandCenterMod> logger) : IOnLoad
@@ -140,6 +141,9 @@ public class CommandCenterMod(
 
         // Initialize location/weather editor (snapshot locations, apply overrides after progression)
         locationService.Initialize();
+
+        // Initialize hideout editor (snapshot hideout/production/stash/regen, apply overrides)
+        hideoutService.Initialize();
 
         // Initialize FIR toggles (snapshot barter/hideout/config values, apply saved state)
         firService.Initialize();

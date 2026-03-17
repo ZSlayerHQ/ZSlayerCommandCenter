@@ -66,6 +66,12 @@ public record CommandCenterConfig
 
     [JsonPropertyName("fir")]
     public FirConfig Fir { get; set; } = new();
+
+    [JsonPropertyName("hideout")]
+    public HideoutEditorConfig Hideout { get; set; } = new();
+
+    [JsonPropertyName("activeHideoutPreset")]
+    public string? ActiveHideoutPreset { get; set; }
 }
 
 public record HeadlessConfig

@@ -74,6 +74,28 @@ public record FirConfig
     [JsonPropertyName("tieredFleaEnabled")]
     public bool? TieredFleaEnabled { get; set; }
 
+    // ── Tiered Flea Customization ──
+
+    /// <summary>Enable separate ammo-specific tier system.</summary>
+    [JsonPropertyName("ammoTiersEnabled")]
+    public bool? AmmoTiersEnabled { get; set; }
+
+    /// <summary>Clear all default tier definitions before applying overrides.</summary>
+    [JsonPropertyName("clearDefaultTiers")]
+    public bool ClearDefaultTiers { get; set; }
+
+    /// <summary>Per-item template level overrides (tpl → required level).</summary>
+    [JsonPropertyName("tieredFleaItemOverrides")]
+    public Dictionary<string, int> TieredFleaItemOverrides { get; set; } = new();
+
+    /// <summary>Per-category level overrides (category tpl → required level).</summary>
+    [JsonPropertyName("tieredFleaCategoryOverrides")]
+    public Dictionary<string, int> TieredFleaCategoryOverrides { get; set; } = new();
+
+    /// <summary>Per-ammo template level overrides (tpl → required level).</summary>
+    [JsonPropertyName("tieredFleaAmmoOverrides")]
+    public Dictionary<string, int> TieredFleaAmmoOverrides { get; set; } = new();
+
     // ── Lost on Death ──
 
     /// <summary>Override lost-on-death settings. Null = use server default.</summary>
@@ -123,4 +145,27 @@ public record FirApplyResult
 
     [JsonPropertyName("changes")]
     public List<string> Changes { get; set; } = [];
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TIERED FLEA DTOs
+// ═══════════════════════════════════════════════════════════════
+
+public record TieredFleaResponse
+{
+    [JsonPropertyName("enabled")] public bool Enabled { get; set; }
+    [JsonPropertyName("ammoTiersEnabled")] public bool AmmoTiersEnabled { get; set; }
+    [JsonPropertyName("categoryTiers")] public List<TierEntryDto> CategoryTiers { get; set; } = [];
+    [JsonPropertyName("itemTiers")] public List<TierEntryDto> ItemTiers { get; set; } = [];
+    [JsonPropertyName("ammoTiers")] public List<TierEntryDto> AmmoTiers { get; set; } = [];
+    [JsonPropertyName("config")] public FirConfig Config { get; set; } = new();
+}
+
+public record TierEntryDto
+{
+    [JsonPropertyName("id")] public string Id { get; set; } = "";
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("defaultLevel")] public int DefaultLevel { get; set; }
+    [JsonPropertyName("overrideLevel")] public int? OverrideLevel { get; set; }
+    [JsonPropertyName("category")] public string? Category { get; set; }
 }

@@ -5,7 +5,7 @@
 **The ultimate browser-based admin toolkit for SPT 4.0 / FIKA**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-c8aa6e.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/v2.15.0-c8aa6e.svg)](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
+[![Version](https://img.shields.io/badge/v2.16.0-c8aa6e.svg)](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
 [![Phases](https://img.shields.io/badge/Phases_Complete-9%2F16-c8aa6e.svg)]()
 [![SPT](https://img.shields.io/badge/SPT-4.0.x-c8aa6e.svg)]()
 [![FIKA](https://img.shields.io/badge/FIKA-Compatible-4a7c59.svg)]()
@@ -358,7 +358,7 @@ Start your SPT server. The startup banner displays your Command Center URLs:
 
 ```
 ╔════════════════════════════════════════════════════╗
-║          ZSLAYER COMMAND CENTER v2.15.0            ║
+║          ZSLAYER COMMAND CENTER v2.16.0            ║
 ║                                                    ║
 ║  Local:  https://127.0.0.1:6969/zslayer/cc/        ║
 ║  LAN:    https://192.168.x.x:6969/zslayer/cc/      ║
