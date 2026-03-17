@@ -22,6 +22,9 @@ public class ZombieConfigDto
     [JsonPropertyName("lootModifiers")] public ZombieLootModifiersDto LootModifiers { get; set; } = new();
     [JsonPropertyName("rewards")] public ZombieRewardsDto Rewards { get; set; } = new();
     [JsonPropertyName("difficultyScaling")] public ZombieDifficultyScalingDto DifficultyScaling { get; set; } = new();
+    [JsonPropertyName("zombieAI")] public ZombieAIDto ZombieAI { get; set; } = new();
+    [JsonPropertyName("zombieHealth")] public ZombieHealthDto ZombieHealth { get; set; } = new();
+    [JsonPropertyName("spawnControl")] public ZombieSpawnControlDto SpawnControl { get; set; } = new();
     [JsonPropertyName("advancedMaps")] public Dictionary<string, ZombieAdvancedMapDto> AdvancedMaps { get; set; } = new();
 }
 
@@ -175,6 +178,81 @@ public class ZombieAdvancedMapDto
     [JsonPropertyName("infectedLookCoeff")] public double? InfectedLookCoeff { get; set; }
     [JsonPropertyName("minInfectionPercentage")] public int? MinInfectionPercentage { get; set; }
     [JsonPropertyName("lootModifiers")] public ZombieLootModifiersDto? LootModifiers { get; set; }
+}
+
+// ═══════════════════════════════════════════════════════
+// ZOMBIE AI DTOs
+// ═══════════════════════════════════════════════════════
+
+public class ZombieDifficultyFloatDto
+{
+    [JsonPropertyName("easy")] public float Easy { get; set; }
+    [JsonPropertyName("normal")] public float Normal { get; set; }
+    [JsonPropertyName("hard")] public float Hard { get; set; }
+}
+
+public class ZombieAIDto
+{
+    [JsonPropertyName("enabled")] public bool Enabled { get; set; }
+    [JsonPropertyName("sightRange")] public ZombieDifficultyFloatDto SightRange { get; set; } = new();
+    [JsonPropertyName("fieldOfView")] public ZombieDifficultyFloatDto FieldOfView { get; set; } = new();
+    [JsonPropertyName("hearingSensitivity")] public ZombieDifficultyFloatDto HearingSensitivity { get; set; } = new();
+    [JsonPropertyName("hearingChance")] public ZombieDifficultyFloatDto HearingChance { get; set; } = new();
+    [JsonPropertyName("aggressionChance")] public ZombieDifficultyFloatDto AggressionChance { get; set; } = new();
+    [JsonPropertyName("rotateSpeed")] public float RotateSpeed { get; set; }
+    [JsonPropertyName("reactionTime")] public ZombieDifficultyFloatDto ReactionTime { get; set; } = new();
+    [JsonPropertyName("scatteringPerMeter")] public ZombieDifficultyFloatDto ScatteringPerMeter { get; set; } = new();
+    [JsonPropertyName("affectedTypes")] public List<string> AffectedTypes { get; set; } = [];
+}
+
+// ═══════════════════════════════════════════════════════
+// ZOMBIE HEALTH DTOs
+// ═══════════════════════════════════════════════════════
+
+public class ZombieBodyPartHealthDto
+{
+    [JsonPropertyName("head")] public double Head { get; set; }
+    [JsonPropertyName("chest")] public double Chest { get; set; }
+    [JsonPropertyName("stomach")] public double Stomach { get; set; }
+    [JsonPropertyName("arms")] public double Arms { get; set; }
+    [JsonPropertyName("legs")] public double Legs { get; set; }
+}
+
+public class ZombieHealthDto
+{
+    [JsonPropertyName("enabled")] public bool Enabled { get; set; }
+    [JsonPropertyName("standard")] public ZombieBodyPartHealthDto Standard { get; set; } = new();
+    [JsonPropertyName("tagilla")] public ZombieBodyPartHealthDto Tagilla { get; set; } = new();
+    [JsonPropertyName("cursedAssault")] public ZombieBodyPartHealthDto CursedAssault { get; set; } = new();
+    [JsonPropertyName("standardTypes")] public List<string> StandardTypes { get; set; } = [];
+}
+
+// ═══════════════════════════════════════════════════════
+// SPAWN CONTROL DTOs
+// ═══════════════════════════════════════════════════════
+
+public class ZombieSpawnControlDto
+{
+    [JsonPropertyName("overrideBotCaps")] public bool OverrideBotCaps { get; set; }
+    [JsonPropertyName("maxBotCap")] public Dictionary<string, int> MaxBotCap { get; set; } = new();
+    [JsonPropertyName("maxBotsPerZone")] public int MaxBotsPerZone { get; set; }
+    [JsonPropertyName("ignoreMaxBots")] public bool IgnoreMaxBots { get; set; }
+    [JsonPropertyName("forceSpawn")] public bool ForceSpawn { get; set; }
+    [JsonPropertyName("injectBossZombies")] public bool InjectBossZombies { get; set; }
+    [JsonPropertyName("enableExtraWaves")] public bool EnableExtraWaves { get; set; }
+    [JsonPropertyName("extraWavesPerMap")] public int ExtraWavesPerMap { get; set; }
+    [JsonPropertyName("zombiesPerWave")] public int ZombiesPerWave { get; set; }
+    [JsonPropertyName("waveSpawnChance")] public int WaveSpawnChance { get; set; }
+    [JsonPropertyName("waveDifficulty")] public string WaveDifficulty { get; set; } = "normal";
+    [JsonPropertyName("mapWaveOverrides")] public Dictionary<string, ZombieMapWaveOverrideDto> MapWaveOverrides { get; set; } = new();
+}
+
+public class ZombieMapWaveOverrideDto
+{
+    [JsonPropertyName("extraWaves")] public int? ExtraWaves { get; set; }
+    [JsonPropertyName("zombiesPerWave")] public int? ZombiesPerWave { get; set; }
+    [JsonPropertyName("waveSpawnChance")] public int? WaveSpawnChance { get; set; }
+    [JsonPropertyName("maxBotsPerZone")] public int? MaxBotsPerZone { get; set; }
 }
 
 // ═══════════════════════════════════════════════════════
