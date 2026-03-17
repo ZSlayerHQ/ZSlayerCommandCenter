@@ -68,6 +68,7 @@ Running an SPT / FIKA server means juggling dozens of JSON config files, restart
 | **Access Control** | Whitelist, blacklist, and ban system with password protection and session-based authentication |
 | **Raid History** | Searchable archive of completed raids with full player scoreboards, kill timelines, and combat breakdowns |
 | **Profile Customization** | Icon picker with persistent avatars, profile cards on the login screen with faction/level/raid stats |
+| **Mod Integrations** | Auto-detects [ZSlayer Zombies](https://github.com/ZSlayerHQ/ZSlayerZombies) and [ABPS/APBS](https://github.com/acidphantasm) — full zombie config control from the browser, ABPS conflict warnings in Location editor |
 
 ---
 
@@ -337,6 +338,43 @@ Centralized administration hub for server infrastructure, process management, an
 
 ---
 
+## Mod Integrations
+
+Command Center auto-detects compatible mods at startup and surfaces their controls directly in the admin UI. No manual configuration needed — if the mod is installed, Command Center finds it.
+
+### ZSlayer Zombies
+
+When [ZSlayer Zombies](https://github.com/ZSlayerHQ/ZSlayerZombies) is installed alongside Command Center, a dedicated **Zombies** tab appears in the UI with full control over the zombie apocalypse:
+
+- **Per-map infection rates** — slide infection percentage (0-100%) for every map independently
+- **Zombie AI tuning** — sight range, hearing sensitivity, reaction time, aggression, shot scatter
+- **Spawn weights** — control the ratio of zombie difficulty tiers (easy/normal/hard)
+- **Boss zombies** — configure infectedTagilla and cursedAssault spawn chance, map targeting, max per raid
+- **Zombie health pools** — customize body part HP for standard zombies and boss variants
+- **Spawn control** — bot cap overrides, extra waves, per-map spawn settings
+- **Infection effects** — bleed chance, dehydration, hearing debuff for infected players
+- **Night mode** — infection multiplier and forced weather during night raids
+- **Wave escalation** — horde events and infection ramp curves over raid duration
+- **Loot modifiers** — per-category loot multipliers (medical, ammo, valuable, loose, containers)
+- **XP & rewards** — zombie kill XP multiplier, survival bonus, raid XP scaling
+- **Difficulty scaling** — infection scales with player count or player level
+- **Live apply** — all changes apply immediately without server restart
+
+Command Center proxies all configuration through its own API at `/zslayer/cc/zombies/*`, so you manage everything from the same browser tab as every other server setting.
+
+### ABPS (Acid's Bot Placement System)
+
+When [ABPS](https://github.com/acidphantasm/acidphantasm-botplacementsystem) is detected, Command Center shows contextual warnings in the **Location & Raid Settings** tab:
+
+- **Boss spawn section** — displays a warning banner explaining that ABPS manages boss spawns at raid start, and changes made through Command Center may be overwritten. Includes a direct link to the ABPS Web UI for boss configuration
+- **Conflict prevention** — helps admins understand which tool controls what, preventing confusion from overlapping settings
+
+### APBS (Acid's Progressive Bot System)
+
+When [APBS](https://github.com/acidphantasm/acidphantasm-progressivebotsystem) is detected, Command Center includes it in the detected mods list on the Location tab, with version info and a link to its Web UI. This gives admins a single dashboard that acknowledges all installed bot management mods and their configuration endpoints.
+
+---
+
 ## Quick Start
 
 ### 1. Install the Server Mod
@@ -474,7 +512,9 @@ All settings are managed through the web UI. The config file at `config/config.j
 │       ├── RaidTrackingService      Raid data tracking        │
 │       ├── AccessControlService     Whitelist / blacklist     │
 │       ├── ProfileActivityService   Login/online tracking     │
-│       └── ActivityLogService       Audit trail               │
+│       ├── ActivityLogService       Audit trail               │
+│       ├── ZombieIntegrationService ZSlayer Zombies proxy     │
+│       └── LocationService          Map settings + ABPS detect│
 │                                                              │
 │  Entry: CommandCenterMod.cs (PostSptModLoader + 1)           │
 │  DI: [Injectable(InjectionType.Singleton)]                   │
@@ -760,6 +800,23 @@ All endpoints are prefixed with `/zslayer/cc/`. Authentication via `X-Session-Id
 
 </details>
 
+<details>
+<summary><strong>Zombies Integration</strong></summary>
+
+<br />
+
+> Only available when [ZSlayer Zombies](https://github.com/ZSlayerHQ/ZSlayerZombies) is installed.
+
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| `GET` | `/zombies` | Detection info (installed, version, config, status) |
+| `GET` | `/zombies/config` | Get zombie mod configuration |
+| `POST` | `/zombies/config` | Update zombie mod configuration |
+| `GET` | `/zombies/status` | Get live zombie mod status |
+| `POST` | `/zombies/reset` | Reset zombie mod to defaults |
+
+</details>
+
 ---
 
 ## Roadmap
@@ -777,7 +834,8 @@ Development is organized into phases. Each phase is fully completed and tested b
 | **Done** | 6 | **Progression & Skills** | XP rates, skill speed, loot multipliers, insurance, stamina, health regen |
 | **Done** | 7 | **Backup & Restore** | Profile backups, selective restore, server wipe tools |
 | **Done** | 8A | **Scheduler & Events** | Cron scheduling, Double XP / Trader Sale / Loot Boost events, automated tasks |
-| | 9 | **Game Values Editor** | Ammo, armor, weapons, health, bots, loot, airdrops |
+| **Done** | 9 | **Game Values Editor** | Ammo, armor, weapons, medical, food & drink, backpacks, stim effects. Compare mode, presets |
+| **Done** | 9B | **Location & Raid Settings** | Per-map editor, weather/season, ABPS/APBS detection, scav/extract settings, 6 presets |
 | | 10 | **Config Profiles** | Save / load / export / share config presets |
 | | 11 | **Gear Presets** | Loadout templates, weapon builds, kit distribution |
 | | 12 | **Bounty Board** | Player bounties, kill targets, challenges |
@@ -838,7 +896,7 @@ Yes. Dashboard, Items, Players, Quests, Progression, Flea, Traders, Events, and 
 
 <br />
 
-Unlikely. The command center loads after other mods (`PostSptModLoader + 1`) and makes changes through the same SPT APIs the game uses. It doesn't replace any core server files. Changes are applied on top of whatever other mods have done. Modded traders are automatically discovered and fully manageable.
+Unlikely. The command center loads after other mods (`PostSptModLoader + 1`) and makes changes through the same SPT APIs the game uses. It doesn't replace any core server files. Changes are applied on top of whatever other mods have done. Modded traders are automatically discovered and fully manageable. For mods that manage overlapping settings (like ABPS for bot spawns), Command Center auto-detects them and shows contextual warnings to prevent conflicts.
 
 </details>
 

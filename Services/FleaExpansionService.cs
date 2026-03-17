@@ -153,8 +153,8 @@ public class FleaExpansionService(
         _snapBarterChance = ragfairConfig.Dynamic.Barter.ChancePercent;
         _snapBundleChance = ragfairConfig.Dynamic.Pack.ChancePercent;
         _snapExpiredOfferThreshold = ragfairConfig.Dynamic.ExpiredOfferThreshold;
-        _snapOfferItemCountMin = ragfairConfig.Dynamic.OfferItemCount[new MongoId("default")].Min;
-        _snapOfferItemCountMax = ragfairConfig.Dynamic.OfferItemCount[new MongoId("default")].Max;
+        _snapOfferItemCountMin = ragfairConfig.Dynamic.OfferItemCount["default"].Min;
+        _snapOfferItemCountMax = ragfairConfig.Dynamic.OfferItemCount["default"].Max;
         _snapPriceRangeDefaultMin = ragfairConfig.Dynamic.PriceRanges.Default.Min;
         _snapPriceRangeDefaultMax = ragfairConfig.Dynamic.PriceRanges.Default.Max;
         _snapPriceRangePresetMin = ragfairConfig.Dynamic.PriceRanges.Preset.Min;
@@ -234,8 +234,8 @@ public class FleaExpansionService(
         ragfairConfig.Dynamic.Barter.ChancePercent = _snapBarterChance;
         ragfairConfig.Dynamic.Pack.ChancePercent = _snapBundleChance;
         ragfairConfig.Dynamic.ExpiredOfferThreshold = _snapExpiredOfferThreshold;
-        ragfairConfig.Dynamic.OfferItemCount[new MongoId("default")].Min = _snapOfferItemCountMin;
-        ragfairConfig.Dynamic.OfferItemCount[new MongoId("default")].Max = _snapOfferItemCountMax;
+        ragfairConfig.Dynamic.OfferItemCount["default"].Min = _snapOfferItemCountMin;
+        ragfairConfig.Dynamic.OfferItemCount["default"].Max = _snapOfferItemCountMax;
         ragfairConfig.Dynamic.PriceRanges.Default.Min = _snapPriceRangeDefaultMin;
         ragfairConfig.Dynamic.PriceRanges.Default.Max = _snapPriceRangeDefaultMax;
         ragfairConfig.Dynamic.PriceRanges.Preset.Min = _snapPriceRangePresetMin;
@@ -354,11 +354,10 @@ public class FleaExpansionService(
         if (cfg.ExpiredOfferThreshold.HasValue)
             ragfairConfig.Dynamic.ExpiredOfferThreshold = cfg.ExpiredOfferThreshold.Value;
 
-        var defaultKey = new MongoId("default");
         if (cfg.OfferItemCountMin.HasValue)
-            ragfairConfig.Dynamic.OfferItemCount[defaultKey].Min = cfg.OfferItemCountMin.Value;
+            ragfairConfig.Dynamic.OfferItemCount["default"].Min = cfg.OfferItemCountMin.Value;
         if (cfg.OfferItemCountMax.HasValue)
-            ragfairConfig.Dynamic.OfferItemCount[defaultKey].Max = cfg.OfferItemCountMax.Value;
+            ragfairConfig.Dynamic.OfferItemCount["default"].Max = cfg.OfferItemCountMax.Value;
 
         if (cfg.PriceRangeDefaultMin.HasValue)
             ragfairConfig.Dynamic.PriceRanges.Default.Min = cfg.PriceRangeDefaultMin.Value;
