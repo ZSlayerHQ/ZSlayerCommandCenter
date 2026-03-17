@@ -8220,6 +8220,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <button class="gv-sub-tab" data-gvtab="fooddrink" onclick="window.gvSwitchTab('fooddrink')">Food & Drink</button>
       <button class="gv-sub-tab" data-gvtab="backpacks" onclick="window.gvSwitchTab('backpacks')">Backpacks</button>
       <button class="gv-sub-tab" data-gvtab="locations" onclick="window.gvSwitchTab('locations')">Locations</button>
+      <button class="gv-sub-tab" data-gvtab="raidrules" onclick="window.gvSwitchTab('raidrules')">Raid Rules</button>
+      <button class="gv-sub-tab" data-gvtab="services" onclick="window.gvSwitchTab('services')">Services</button>
     </div>
 
     <!-- Presets row -->
@@ -8801,6 +8803,424 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </div>
       </div>
 
+    </div>
+
+    <!-- ═══ RAID RULES SUB-TAB ═══ -->
+    <div class="gv-panel" id="gvPanel-raidrules">
+      <div class="is-toolbar">
+        <button class="btn btn-accent btn-sm" onclick="window.rrApply()">Apply Changes</button>
+        <button class="btn btn-sm" onclick="window.rrReset()">Reset to Defaults</button>
+        <span class="is-status" id="rrStatus"></span>
+      </div>
+      <div style="background:rgba(200,122,62,0.1);border:1px solid rgba(200,122,62,0.3);border-radius:6px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--warning)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Fields marked <strong>⟳</strong> require a <strong>client restart</strong> to take effect
+      </div>
+      <div id="rrLoading" style="color:var(--text-dim);text-align:center;padding:40px;font-family:var(--font-mono)">Loading raid rules...</div>
+      <div id="rrContent" style="display:none">
+
+        <!-- A. RAID OUTCOMES -->
+        <div class="is-section" id="rrSecOutcomes">
+          <div class="is-section-header" onclick="window.isToggleSection('rrSecOutcomes')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Raid Outcomes</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-toggle-row"><span>No run-through ⟳ <span class="is-default" id="rrDefRunthrough"></span></span><label class="loc-toggle"><input type="checkbox" id="rrNoRunThrough"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Save quest items on death <span class="is-default" id="rrDefQuestItems"></span></span><label class="loc-toggle"><input type="checkbox" id="rrSaveQuestItems"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Keep FiR in secure container on death</span><label class="loc-toggle"><input type="checkbox" id="rrKeepFirSecure"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Always keep FiR on raid end</span><label class="loc-toggle"><input type="checkbox" id="rrAlwaysKeepFir"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-slider-row">
+              <span>Sandbox (GZ) access level <span class="is-default" id="rrDefSandbox"></span></span>
+              <input type="number" id="rrSandboxLevel" min="1" max="79" style="width:70px;background:var(--bg-base);border:1px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text);font-size:13px">
+            </div>
+          </div>
+        </div>
+
+        <!-- B. LAB SETTINGS -->
+        <div class="is-section" id="rrSecLab">
+          <div class="is-section-header" onclick="window.isToggleSection('rrSecLab')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Lab Access</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-toggle-row"><span>Lab insurance enabled <span class="is-default" id="rrDefLabIns"></span></span><label class="loc-toggle"><input type="checkbox" id="rrLabInsurance"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Remove lab keycard requirement <span class="is-default" id="rrDefLabKey"></span></span><label class="loc-toggle"><input type="checkbox" id="rrRemoveLabKey"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Allow scav access to lab <span class="is-default" id="rrDefLabScav"></span></span><label class="loc-toggle"><input type="checkbox" id="rrScavLabAccess"><span class="loc-toggle-slider"></span></label></div>
+          </div>
+        </div>
+
+        <!-- C. EXTRACT RULES -->
+        <div class="is-section" id="rrSecExtracts">
+          <div class="is-section-header" onclick="window.isToggleSection('rrSecExtracts')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Extract Rules</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-toggle-row"><span>Guaranteed extracts (100% chance)</span><label class="loc-toggle"><input type="checkbox" id="rrGuaranteedExtracts"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Remove backpack extract requirement</span><label class="loc-toggle"><input type="checkbox" id="rrRemoveBackpackReq"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Remove gear/armor extract requirement</span><label class="loc-toggle"><input type="checkbox" id="rrRemoveGearReq"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Free car extracts</span><label class="loc-toggle"><input type="checkbox" id="rrFreeCarExtracts"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Free coop extracts</span><label class="loc-toggle"><input type="checkbox" id="rrFreeCoopExtracts"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-slider-row">
+              <span>Car extract wait time (sec)</span>
+              <input type="number" id="rrCarExtractWait" min="0" max="300" style="width:70px;background:var(--bg-base);border:1px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text);font-size:13px">
+            </div>
+            <div class="is-toggle-row"><span>Disable transits</span><label class="loc-toggle"><input type="checkbox" id="rrDisableTransits"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Fence coop extract gift <span class="is-default" id="rrDefCoopGift"></span></span><label class="loc-toggle"><input type="checkbox" id="rrFenceCoopGift"><span class="loc-toggle-slider"></span></label></div>
+          </div>
+        </div>
+
+        <!-- D. BTR SETTINGS -->
+        <div class="is-section collapsed" id="rrSecBtr">
+          <div class="is-section-header" onclick="window.isToggleSection('rrSecBtr')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">BTR Settings</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-master-toggle">
+              <label class="loc-toggle"><input type="checkbox" id="rrEnableBtr"><span class="loc-toggle-slider"></span></label>
+              <label>Enable BTR modifications</label>
+            </div>
+            <div id="rrBtrFields">
+              <div class="is-sub-heading">Spawn Settings</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px">
+                <div class="is-field"><div class="is-field-label">Woods spawn % <span class="is-default" id="rrDefBtrWoodsC"></span></div><input type="number" id="rrBtrWoodsChance" min="0" max="100" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Streets spawn % <span class="is-default" id="rrDefBtrStreetsC"></span></div><input type="number" id="rrBtrStreetsChance" min="0" max="100" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Woods spawn min (sec) <span class="is-default" id="rrDefBtrWTMin"></span></div><input type="number" id="rrBtrWoodsTimeMin" min="0" max="9999" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Woods spawn max (sec) <span class="is-default" id="rrDefBtrWTMax"></span></div><input type="number" id="rrBtrWoodsTimeMax" min="0" max="9999" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Streets spawn min (sec) <span class="is-default" id="rrDefBtrSTMin"></span></div><input type="number" id="rrBtrStreetsTimeMin" min="0" max="9999" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Streets spawn max (sec) <span class="is-default" id="rrDefBtrSTMax"></span></div><input type="number" id="rrBtrStreetsTimeMax" min="0" max="9999" step="1"></div>
+              </div>
+              <div class="is-sub-heading">Pricing ⟳</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px 24px">
+                <div class="is-field"><div class="is-field-label">Taxi price <span class="is-default" id="rrDefBtrTaxi"></span></div><input type="number" id="rrBtrTaxiPrice" min="0" step="100"></div>
+                <div class="is-field"><div class="is-field-label">Cover/cleanup price <span class="is-default" id="rrDefBtrCover"></span></div><input type="number" id="rrBtrCoverPrice" min="0" step="100"></div>
+                <div class="is-field"><div class="is-field-label">BEAR price mod <span class="is-default" id="rrDefBtrBear"></span></div><input type="number" id="rrBtrBearMod" min="0" max="10" step="0.01"></div>
+                <div class="is-field"><div class="is-field-label">USEC price mod <span class="is-default" id="rrDefBtrUsec"></span></div><input type="number" id="rrBtrUsecMod" min="0" max="10" step="0.01"></div>
+                <div class="is-field"><div class="is-field-label">Scav price mod <span class="is-default" id="rrDefBtrScav"></span></div><input type="number" id="rrBtrScavMod" min="0" max="10" step="0.01"></div>
+              </div>
+              <div class="is-sub-heading">Delivery Grid ⟳</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;max-width:400px">
+                <div class="is-field"><div class="is-field-label">Width <span class="is-default" id="rrDefBtrDW"></span></div><input type="number" id="rrBtrDeliveryW" min="1" max="20" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Height <span class="is-default" id="rrDefBtrDH"></span></div><input type="number" id="rrBtrDeliveryH" min="1" max="20" step="1"></div>
+              </div>
+              <div style="margin-top:10px" class="is-toggle-row"><span>Force BTR friendly (all fence levels) ⟳</span><label class="loc-toggle"><input type="checkbox" id="rrForceBtrFriendly"><span class="loc-toggle-slider"></span></label></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- E. TRANSIT SETTINGS -->
+        <div class="is-section collapsed" id="rrSecTransit">
+          <div class="is-section-header" onclick="window.isToggleSection('rrSecTransit')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Transit Stash ⟳</span>
+          </div>
+          <div class="is-section-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;max-width:400px">
+              <div class="is-field"><div class="is-field-label">Stash width <span class="is-default" id="rrDefTransitW"></span></div><input type="number" id="rrTransitStashW" min="1" max="20" step="1"></div>
+              <div class="is-field"><div class="is-field-label">Stash height <span class="is-default" id="rrDefTransitH"></span></div><input type="number" id="rrTransitStashH" min="1" max="20" step="1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- F. PRE-RAID MENU DEFAULTS -->
+        <div class="is-section" id="rrSecPreRaid">
+          <div class="is-section-header" onclick="window.isToggleSection('rrSecPreRaid')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Pre-Raid Menu Defaults</span>
+          </div>
+          <div class="is-section-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px">
+              <div class="is-field">
+                <div class="is-field-label">AI Amount <span class="is-default" id="rrDefAiAmount"></span></div>
+                <select id="rrAiAmount" style="background:var(--bg-base);border:1px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text);font-size:13px">
+                  <option value="">— Default —</option>
+                  <option value="AsOnline">As Online</option><option value="NoBots">No Bots</option>
+                  <option value="Low">Low</option><option value="Medium">Medium</option>
+                  <option value="High">High</option><option value="Horde">Horde</option>
+                </select>
+              </div>
+              <div class="is-field">
+                <div class="is-field-label">AI Difficulty <span class="is-default" id="rrDefAiDiff"></span></div>
+                <select id="rrAiDifficulty" style="background:var(--bg-base);border:1px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text);font-size:13px">
+                  <option value="">— Default —</option>
+                  <option value="AsOnline">As Online</option><option value="Easy">Easy</option>
+                  <option value="Medium">Medium</option><option value="Hard">Hard</option>
+                  <option value="Impossible">Impossible</option><option value="Random">Random</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:10px">
+              <div class="is-toggle-row"><span>Boss enabled default <span class="is-default" id="rrDefBoss"></span></span><label class="loc-toggle"><input type="checkbox" id="rrBossEnabled"><span class="loc-toggle-slider"></span></label></div>
+              <div class="is-toggle-row"><span>Scav wars default</span><label class="loc-toggle"><input type="checkbox" id="rrScavWars"><span class="loc-toggle-slider"></span></label></div>
+              <div class="is-toggle-row"><span>Tagged and cursed default</span><label class="loc-toggle"><input type="checkbox" id="rrTaggedAndCursed"><span class="loc-toggle-slider"></span></label></div>
+              <div class="is-toggle-row"><span>Random weather default</span><label class="loc-toggle"><input type="checkbox" id="rrRandomWeather"><span class="loc-toggle-slider"></span></label></div>
+              <div class="is-toggle-row"><span>Random time default</span><label class="loc-toggle"><input type="checkbox" id="rrRandomTime"><span class="loc-toggle-slider"></span></label></div>
+            </div>
+            <div class="is-sub-heading">Other</div>
+            <div class="is-slider-row">
+              <span>Time before deploy (sec) ⟳ <span class="is-default" id="rrDefDeployTime"></span></span>
+              <input type="number" id="rrTimeBeforeDeploy" min="0" max="120" step="1" style="width:70px;background:var(--bg-base);border:1px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text);font-size:13px">
+            </div>
+            <div class="is-slider-row">
+              <span>Scav hostile chance % <span class="is-default" id="rrDefScavHostile"></span></span>
+              <input type="range" id="rrScavHostileChance" min="0" max="100" step="1" value="0" oninput="document.getElementById('rrScavHostileVal').textContent=this.value+'%'">
+              <span class="is-slider-val" id="rrScavHostileVal">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- G. AIRDROPS -->
+        <div class="is-section collapsed" id="rrSecAirdrops">
+          <div class="is-section-header" onclick="window.isToggleSection('rrSecAirdrops')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Airdrops</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-master-toggle">
+              <label class="loc-toggle"><input type="checkbox" id="rrEnableAirdrops"><span class="loc-toggle-slider"></span></label>
+              <label>Enable airdrop modifications</label>
+            </div>
+            <div id="rrAirdropFields">
+              <div class="is-sub-heading">Type Weightings</div>
+              <div id="rrAirdropTypes"></div>
+              <div class="is-sub-heading">Loot Counts</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px">
+                <div class="is-field"><div class="is-field-label">Weapon presets min <span class="is-default" id="rrDefAdWpnMin"></span></div><input type="number" id="rrAdWeaponMin" min="0" max="50" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Weapon presets max <span class="is-default" id="rrDefAdWpnMax"></span></div><input type="number" id="rrAdWeaponMax" min="0" max="50" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Armor presets min <span class="is-default" id="rrDefAdArmMin"></span></div><input type="number" id="rrAdArmorMin" min="0" max="50" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Armor presets max <span class="is-default" id="rrDefAdArmMax"></span></div><input type="number" id="rrAdArmorMax" min="0" max="50" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Item count min <span class="is-default" id="rrDefAdItemMin"></span></div><input type="number" id="rrAdItemMin" min="0" max="100" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Item count max <span class="is-default" id="rrDefAdItemMax"></span></div><input type="number" id="rrAdItemMax" min="0" max="100" step="1"></div>
+              </div>
+              <div style="margin-top:10px" class="is-toggle-row"><span>Allow boss items in airdrops</span><label class="loc-toggle"><input type="checkbox" id="rrAdAllowBoss"><span class="loc-toggle-slider"></span></label></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- H. RAID TIME -->
+        <div class="is-section" id="rrSecRaidTime">
+          <div class="is-section-header" onclick="window.isToggleSection('rrSecRaidTime')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Raid Time</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-slider-row">
+              <span>Add time to all raids (min)</span>
+              <input type="range" id="rrRaidTimeAdd" min="0" max="120" step="5" value="0" oninput="document.getElementById('rrRaidTimeVal').textContent=this.value+' min'">
+              <span class="is-slider-val" id="rrRaidTimeVal">0 min</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- I. EXTRACT REWARDS -->
+        <div class="is-section" id="rrSecRewards">
+          <div class="is-section-header" onclick="window.isToggleSection('rrSecRewards')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Extract Rewards</span>
+          </div>
+          <div class="is-section-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px 24px">
+              <div class="is-field"><div class="is-field-label">Car extract standing <span class="is-default" id="rrDefCarStand"></span></div><input type="number" id="rrCarStanding" min="0" max="10" step="0.01"></div>
+              <div class="is-field"><div class="is-field-label">Coop extract standing <span class="is-default" id="rrDefCoopStand"></span></div><input type="number" id="rrCoopStanding" min="0" max="10" step="0.01"></div>
+              <div class="is-field"><div class="is-field-label">Scav extract standing <span class="is-default" id="rrDefScavStand"></span></div><input type="number" id="rrScavStanding" min="0" max="10" step="0.01"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- J. SEASONAL EVENTS -->
+        <div class="is-section collapsed" id="rrSecSeasonal">
+          <div class="is-section-header" onclick="window.isToggleSection('rrSecSeasonal')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Seasonal Events</span>
+            <span class="is-section-badge" id="rrSeasonalCount"></span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-toggle-row"><span>Enable seasonal event detection</span><label class="loc-toggle"><input type="checkbox" id="rrSeasonalDetection"><span class="loc-toggle-slider"></span></label></div>
+            <div id="rrSeasonalEvents" style="margin-top:10px"></div>
+          </div>
+        </div>
+
+        <!-- K. PMC SETTINGS -->
+        <div class="is-section collapsed" id="rrSecPmc">
+          <div class="is-section-header" onclick="window.isToggleSection('rrSecPmc')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">PMC Settings</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-master-toggle">
+              <label class="loc-toggle"><input type="checkbox" id="rrEnablePmc"><span class="loc-toggle-slider"></span></label>
+              <label>Enable PMC modifications</label>
+            </div>
+            <div id="rrPmcFields">
+              <div class="is-slider-row">
+                <span>USEC spawn ratio % <span class="is-default" id="rrDefPmcUsec"></span></span>
+                <input type="range" id="rrPmcUsecRatio" min="0" max="100" step="1" value="50" oninput="document.getElementById('rrPmcUsecVal').textContent=this.value+'%'">
+                <span class="is-slider-val" id="rrPmcUsecVal">50%</span>
+              </div>
+              <div class="is-toggle-row"><span>Use difficulty override <span class="is-default" id="rrDefPmcDiffO"></span></span><label class="loc-toggle"><input type="checkbox" id="rrPmcUseDiffOverride"><span class="loc-toggle-slider"></span></label></div>
+              <div class="is-field" style="max-width:300px;margin-bottom:10px">
+                <div class="is-field-label">PMC difficulty <span class="is-default" id="rrDefPmcDiff"></span></div>
+                <select id="rrPmcDifficulty" style="background:var(--bg-base);border:1px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text);font-size:13px">
+                  <option value="">— Default —</option>
+                  <option value="AsOnline">As Online</option><option value="Easy">Easy</option>
+                  <option value="Medium">Medium</option><option value="Hard">Hard</option>
+                  <option value="Impossible">Impossible</option>
+                </select>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;max-width:400px">
+                <div class="is-field"><div class="is-field-label">Level delta min <span class="is-default" id="rrDefPmcLvlMin"></span></div><input type="number" id="rrPmcLevelDeltaMin" min="-100" max="100" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Level delta max <span class="is-default" id="rrDefPmcLvlMax"></span></div><input type="number" id="rrPmcLevelDeltaMax" min="-100" max="100" step="1"></div>
+              </div>
+              <div style="margin-top:10px">
+                <div class="is-slider-row">
+                  <span>Weapon in backpack % <span class="is-default" id="rrDefPmcWpnBp"></span></span>
+                  <input type="range" id="rrPmcWeaponInBp" min="0" max="100" step="1" value="0" oninput="document.getElementById('rrPmcWpnBpVal').textContent=this.value+'%'">
+                  <span class="is-slider-val" id="rrPmcWpnBpVal">0%</span>
+                </div>
+                <div class="is-slider-row">
+                  <span>Weapon enhancement % <span class="is-default" id="rrDefPmcEnh"></span></span>
+                  <input type="range" id="rrPmcWeaponEnhance" min="0" max="100" step="1" value="0" oninput="document.getElementById('rrPmcEnhVal').textContent=this.value+'%'">
+                  <span class="is-slider-val" id="rrPmcEnhVal">0%</span>
+                </div>
+                <div class="is-toggle-row"><span>Force healing items in secure <span class="is-default" id="rrDefPmcHeal"></span></span><label class="loc-toggle"><input type="checkbox" id="rrPmcForceHealSecure"><span class="loc-toggle-slider"></span></label></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══ SERVICES SUB-TAB ═══ -->
+    <div class="gv-panel" id="gvPanel-services">
+      <div class="is-toolbar">
+        <button class="btn btn-accent btn-sm" onclick="window.svcApply()">Apply Changes</button>
+        <button class="btn btn-sm" onclick="window.svcReset()">Reset to Defaults</button>
+        <span class="is-status" id="svcStatus"></span>
+      </div>
+      <div style="background:rgba(200,122,62,0.1);border:1px solid rgba(200,122,62,0.3);border-radius:6px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--warning)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Fields marked <strong>⟳</strong> require a <strong>client restart</strong> to take effect
+      </div>
+      <div id="svcLoading" style="color:var(--text-dim);text-align:center;padding:40px;font-family:var(--font-mono)">Loading service settings...</div>
+      <div id="svcContent" style="display:none">
+
+        <!-- L. INSURANCE -->
+        <div class="is-section" id="svcSecInsurance">
+          <div class="is-section-header" onclick="window.isToggleSection('svcSecInsurance')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Insurance</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-master-toggle">
+              <label class="loc-toggle"><input type="checkbox" id="svcEnableInsurance"><span class="loc-toggle-slider"></span></label>
+              <label>Enable insurance modifications</label>
+            </div>
+            <div id="svcInsFields">
+              <div class="is-sub-heading">Return Chances</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;max-width:400px">
+                <div class="is-field"><div class="is-field-label">Prapor return % <span class="is-default" id="svcDefPrapRet"></span></div><input type="number" id="svcPraporReturn" min="0" max="100" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Therapist return % <span class="is-default" id="svcDefTherapRet"></span></div><input type="number" id="svcTherapistReturn" min="0" max="100" step="1"></div>
+              </div>
+              <div class="is-sub-heading">Storage & Return Time (hours)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px">
+                <div class="is-field"><div class="is-field-label">Prapor storage time <span class="is-default" id="svcDefPrapStor"></span></div><input type="number" id="svcPraporStorage" min="0" max="999" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Therapist storage time <span class="is-default" id="svcDefTherapStor"></span></div><input type="number" id="svcTherapistStorage" min="0" max="999" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Prapor min return <span class="is-default" id="svcDefPrapRetMin"></span></div><input type="number" id="svcPraporRetMin" min="0" max="999" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Prapor max return <span class="is-default" id="svcDefPrapRetMax"></span></div><input type="number" id="svcPraporRetMax" min="0" max="999" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Therapist min return <span class="is-default" id="svcDefTherapRetMin"></span></div><input type="number" id="svcTherapistRetMin" min="0" max="999" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Therapist max return <span class="is-default" id="svcDefTherapRetMax"></span></div><input type="number" id="svcTherapistRetMax" min="0" max="999" step="1"></div>
+              </div>
+              <div class="is-sub-heading">Global Insurance Settings</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;max-width:500px">
+                <div class="is-field"><div class="is-field-label">Attachment recovery % <span class="is-default" id="svcDefAttach"></span></div><input type="number" id="svcAttachRecovery" min="0" max="100" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Run interval (sec) <span class="is-default" id="svcDefInsInterval"></span></div><input type="number" id="svcInsInterval" min="0" max="99999" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Return time override (sec) <span class="is-default" id="svcDefRetOverride"></span></div><input type="number" id="svcInsReturnOverride" min="0" max="99999" step="1"></div>
+              </div>
+              <div class="is-sub-heading">Prapor Price per Loyalty Level</div>
+              <div id="svcPraporPriceLl" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px 12px;max-width:500px"></div>
+              <div class="is-sub-heading">Therapist Price per Loyalty Level</div>
+              <div id="svcTherapistPriceLl" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px 12px;max-width:500px"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- M. HEALING -->
+        <div class="is-section" id="svcSecHealing">
+          <div class="is-section-header" onclick="window.isToggleSection('svcSecHealing')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Healing</span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-master-toggle">
+              <label class="loc-toggle"><input type="checkbox" id="svcEnableHealing"><span class="loc-toggle-slider"></span></label>
+              <label>Enable healing modifications</label>
+            </div>
+            <div id="svcHealFields">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;max-width:400px">
+                <div class="is-field"><div class="is-field-label">Free heal raids ⟳ <span class="is-default" id="svcDefHealRaids"></span></div><input type="number" id="svcFreeHealRaids" min="0" max="999" step="1"></div>
+                <div class="is-field"><div class="is-field-label">Free heal level ⟳ <span class="is-default" id="svcDefHealLevel"></span></div><input type="number" id="svcFreeHealLevel" min="0" max="79" step="1"></div>
+              </div>
+              <div class="is-sub-heading">Therapist Heal Price per Loyalty Level</div>
+              <div id="svcTherapistHealLl" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px 12px;max-width:500px"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- N. REPAIR -->
+        <div class="is-section" id="svcSecRepair">
+          <div class="is-section-header" onclick="window.isToggleSection('svcSecRepair')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Repair</span>
+            <span class="is-section-badge" id="svcRepairInfo"></span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-master-toggle">
+              <label class="loc-toggle"><input type="checkbox" id="svcEnableRepair"><span class="loc-toggle-slider"></span></label>
+              <label>Enable repair modifications</label>
+            </div>
+            <div id="svcRepairFields">
+              <div class="is-sub-heading">Global Repair</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px 24px">
+                <div class="is-field"><div class="is-field-label">Price multiplier <span class="is-default" id="svcDefRepairMult"></span></div><input type="number" id="svcRepairPriceMult" min="0" max="10" step="0.01"></div>
+                <div class="is-field"><div class="is-field-label">Min durability to sell ⟳ <span class="is-default" id="svcDefMinDurab"></span></div><input type="number" id="svcMinDurabilitySell" min="0" max="100" step="0.01"></div>
+              </div>
+              <div class="is-sub-heading">Degradation Toggles</div>
+              <div class="is-toggle-row"><span>No armor repair degradation ⟳ <span class="is-default" id="svcDefArmorDeg"></span></span><label class="loc-toggle"><input type="checkbox" id="svcNoArmorDeg"><span class="loc-toggle-slider"></span></label></div>
+              <div class="is-toggle-row"><span>No weapon repair degradation ⟳ <span class="is-default" id="svcDefWeaponDeg"></span></span><label class="loc-toggle"><input type="checkbox" id="svcNoWeaponDeg"><span class="loc-toggle-slider"></span></label></div>
+              <div class="is-toggle-row"><span>No random durability loss</span><label class="loc-toggle"><input type="checkbox" id="svcNoRandomLoss"><span class="loc-toggle-slider"></span></label></div>
+              <div class="is-sub-heading">Skill Multipliers</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px">
+                <div class="is-field"><div class="is-field-label">Armor kit skill mult <span class="is-default" id="svcDefArmorSkill"></span></div><input type="number" id="svcArmorKitSkill" min="0" max="100" step="0.01"></div>
+                <div class="is-field"><div class="is-field-label">Weapon maintenance mult <span class="is-default" id="svcDefWeaponSkill"></span></div><input type="number" id="svcWeaponMaintSkill" min="0" max="100" step="0.01"></div>
+                <div class="is-field"><div class="is-field-label">Intellect (weapon kit) <span class="is-default" id="svcDefIntWeapon"></span></div><input type="number" id="svcIntellectWeapon" min="0" max="100" step="0.01"></div>
+                <div class="is-field"><div class="is-field-label">Intellect (armor kit) <span class="is-default" id="svcDefIntArmor"></span></div><input type="number" id="svcIntellectArmor" min="0" max="100" step="0.01"></div>
+                <div class="is-field"><div class="is-field-label">Max intellect/repair (kit) <span class="is-default" id="svcDefMaxIntKit"></span></div><input type="number" id="svcMaxIntellectKit" min="0" max="100" step="0.01"></div>
+                <div class="is-field"><div class="is-field-label">Max intellect/repair (trader) <span class="is-default" id="svcDefMaxIntTrader"></span></div><input type="number" id="svcMaxIntellectTrader" min="0" max="100" step="0.01"></div>
+              </div>
+              <div class="is-sub-heading">Per-Trader Repair Price per LL</div>
+              <div id="svcRepairTraders"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- O. CLOTHING -->
+        <div class="is-section" id="svcSecClothing">
+          <div class="is-section-header" onclick="window.isToggleSection('svcSecClothing')">
+            <svg class="is-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="is-section-title">Clothing ⟳</span>
+            <span class="is-section-badge" id="svcClothingInfo"></span>
+          </div>
+          <div class="is-section-body">
+            <div class="is-toggle-row"><span>Clothes available for any faction</span><label class="loc-toggle"><input type="checkbox" id="svcClothesAnyFaction"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Free clothes (remove item cost)</span><label class="loc-toggle"><input type="checkbox" id="svcClothesFree"><span class="loc-toggle-slider"></span></label></div>
+            <div class="is-toggle-row"><span>Remove clothing requirements</span><label class="loc-toggle"><input type="checkbox" id="svcClothesRemoveReqs"><span class="loc-toggle-slider"></span></label></div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <!-- Compare overlay -->
@@ -19759,6 +20179,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'fooddrink') { if (_gvFoodData.length === 0) gvLoadFood(); else gvFilterFood(); }
     if (tab === 'backpacks' && _gvBackpackData.length === 0) gvLoadBackpacks();
     if (tab === 'locations') gvLoadLocations();
+    if (tab === 'raidrules' && !window._rrLoaded) window.rrLoadConfig();
+    if (tab === 'services' && !window._svcLoaded) window.svcLoadConfig();
   };
 
   // ── Helper: penetration color class ──
@@ -23610,6 +24032,576 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     d.textContent = s;
     return d.innerHTML;
   }
+})();
+
+// ═══════════════════════════════════════════════════════
+// RAID RULES & SERVICES
+// ═══════════════════════════════════════════════════════
+(function() {
+  'use strict';
+  var api = window.api;
+  var toast = window.toast;
+
+  var _rrData = null; // { config, defaults }
+  var _svcData = null; // { config, defaults }
+  window._rrLoaded = false;
+  window._svcLoaded = false;
+
+  // ── Helpers ──
+  function setVal(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.value = v != null ? v : '';
+  }
+  function setCheck(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.checked = !!v;
+  }
+  function getVal(id) {
+    var el = document.getElementById(id);
+    if (!el || el.value === '') return null;
+    return parseFloat(el.value);
+  }
+  function getInt(id) {
+    var el = document.getElementById(id);
+    if (!el || el.value === '') return null;
+    return parseInt(el.value, 10);
+  }
+  function getCheck(id) {
+    var el = document.getElementById(id);
+    return el ? el.checked : false;
+  }
+  function getSel(id) {
+    var el = document.getElementById(id);
+    return (el && el.value) ? el.value : null;
+  }
+  function defText(v, suffix) { return v != null ? 'default: ' + v + (suffix || '') : ''; }
+
+  // ── RAID RULES: Load ──
+  window.rrLoadConfig = function() {
+    api('raid-rules/config').then(function(data) {
+      _rrData = data;
+      window._rrLoaded = true;
+      rrRenderUI(data);
+      document.getElementById('rrLoading').style.display = 'none';
+      document.getElementById('rrContent').style.display = '';
+    }).catch(function(e) {
+      document.getElementById('rrLoading').textContent = 'Error loading: ' + e.message;
+    });
+  };
+
+  function rrRenderUI(data) {
+    var c = data.config;
+    var d = data.defaults;
+
+    // A. Raid Outcomes
+    setCheck('rrNoRunThrough', c.noRunThrough);
+    setCheck('rrSaveQuestItems', c.saveQuestItemsOnDeath);
+    setCheck('rrKeepFirSecure', c.keepFirSecureOnDeath != null ? c.keepFirSecureOnDeath : d.keepFirSecure);
+    setCheck('rrAlwaysKeepFir', c.alwaysKeepFirOnRaidEnd != null ? c.alwaysKeepFirOnRaidEnd : d.alwaysKeepFir);
+    setVal('rrSandboxLevel', c.sandboxAccessLevel != null ? c.sandboxAccessLevel : d.sandboxLevel);
+    document.getElementById('rrDefRunthrough').textContent = 'XP req: ' + d.survivedXpReq + ', Sec req: ' + d.survivedSecReq;
+    document.getElementById('rrDefQuestItems').textContent = d.questItemsLost ? '(lost by default)' : '(kept by default)';
+    document.getElementById('rrDefSandbox').textContent = defText(d.sandboxLevel);
+
+    // B. Lab
+    setCheck('rrLabInsurance', c.labInsurance);
+    setCheck('rrRemoveLabKey', c.removeLabKey);
+    setCheck('rrScavLabAccess', c.scavLabAccess);
+    document.getElementById('rrDefLabIns').textContent = d.labInsurance ? '(on)' : '(off)';
+    document.getElementById('rrDefLabKey').textContent = d.labAccessKeyCount > 0 ? '(' + d.labAccessKeyCount + ' keys)' : '(no keys)';
+    document.getElementById('rrDefLabScav').textContent = d.labDisabledForScav ? '(disabled)' : '(allowed)';
+
+    // C. Extracts
+    setCheck('rrGuaranteedExtracts', c.guaranteedExtracts);
+    setCheck('rrRemoveBackpackReq', c.removeBackpackExtractReq);
+    setCheck('rrRemoveGearReq', c.removeGearExtractReq);
+    setCheck('rrFreeCarExtracts', c.freeCarExtracts);
+    setCheck('rrFreeCoopExtracts', c.freeCoopExtracts);
+    setVal('rrCarExtractWait', c.carExtractWaitTime);
+    setCheck('rrDisableTransits', c.disableTransits);
+    setCheck('rrFenceCoopGift', c.fenceCoopGift != null ? c.fenceCoopGift : d.fenceCoopGift);
+    document.getElementById('rrDefCoopGift').textContent = d.fenceCoopGift ? '(on)' : '(off)';
+
+    // D. BTR
+    setCheck('rrEnableBtr', c.enableBtr);
+    setVal('rrBtrWoodsChance', c.btrWoodsChance != null ? c.btrWoodsChance : d.btrWoodsChance);
+    setVal('rrBtrStreetsChance', c.btrStreetsChance != null ? c.btrStreetsChance : d.btrStreetsChance);
+    setVal('rrBtrWoodsTimeMin', c.btrWoodsTimeMin != null ? c.btrWoodsTimeMin : d.btrWoodsTimeMin);
+    setVal('rrBtrWoodsTimeMax', c.btrWoodsTimeMax != null ? c.btrWoodsTimeMax : d.btrWoodsTimeMax);
+    setVal('rrBtrStreetsTimeMin', c.btrStreetsTimeMin != null ? c.btrStreetsTimeMin : d.btrStreetsTimeMin);
+    setVal('rrBtrStreetsTimeMax', c.btrStreetsTimeMax != null ? c.btrStreetsTimeMax : d.btrStreetsTimeMax);
+    setVal('rrBtrTaxiPrice', c.btrTaxiPrice != null ? c.btrTaxiPrice : d.btrTaxiPrice);
+    setVal('rrBtrCoverPrice', c.btrCoverPrice != null ? c.btrCoverPrice : d.btrCoverPrice);
+    setVal('rrBtrBearMod', c.btrBearMod != null ? c.btrBearMod : d.btrBearMod);
+    setVal('rrBtrUsecMod', c.btrUsecMod != null ? c.btrUsecMod : d.btrUsecMod);
+    setVal('rrBtrScavMod', c.btrScavMod != null ? c.btrScavMod : d.btrScavMod);
+    setVal('rrBtrDeliveryW', c.btrDeliveryW != null ? c.btrDeliveryW : d.btrDeliveryW);
+    setVal('rrBtrDeliveryH', c.btrDeliveryH != null ? c.btrDeliveryH : d.btrDeliveryH);
+    setCheck('rrForceBtrFriendly', c.forceBtrFriendly);
+    document.getElementById('rrDefBtrWoodsC').textContent = defText(d.btrWoodsChance, '%');
+    document.getElementById('rrDefBtrStreetsC').textContent = defText(d.btrStreetsChance, '%');
+    document.getElementById('rrDefBtrWTMin').textContent = defText(d.btrWoodsTimeMin);
+    document.getElementById('rrDefBtrWTMax').textContent = defText(d.btrWoodsTimeMax);
+    document.getElementById('rrDefBtrSTMin').textContent = defText(d.btrStreetsTimeMin);
+    document.getElementById('rrDefBtrSTMax').textContent = defText(d.btrStreetsTimeMax);
+    document.getElementById('rrDefBtrTaxi').textContent = defText(d.btrTaxiPrice);
+    document.getElementById('rrDefBtrCover').textContent = defText(d.btrCoverPrice);
+    document.getElementById('rrDefBtrBear').textContent = defText(d.btrBearMod);
+    document.getElementById('rrDefBtrUsec').textContent = defText(d.btrUsecMod);
+    document.getElementById('rrDefBtrScav').textContent = defText(d.btrScavMod);
+    document.getElementById('rrDefBtrDW').textContent = defText(d.btrDeliveryW);
+    document.getElementById('rrDefBtrDH').textContent = defText(d.btrDeliveryH);
+
+    // E. Transit
+    setVal('rrTransitStashW', c.transitStashW != null ? c.transitStashW : d.transitStashW);
+    setVal('rrTransitStashH', c.transitStashH != null ? c.transitStashH : d.transitStashH);
+    document.getElementById('rrDefTransitW').textContent = defText(d.transitStashW);
+    document.getElementById('rrDefTransitH').textContent = defText(d.transitStashH);
+
+    // F. Pre-Raid
+    var aiAmEl = document.getElementById('rrAiAmount');
+    if (aiAmEl) aiAmEl.value = c.defaultAiAmount || '';
+    var aiDifEl = document.getElementById('rrAiDifficulty');
+    if (aiDifEl) aiDifEl.value = c.defaultAiDifficulty || '';
+    setCheck('rrBossEnabled', c.defaultBossEnabled != null ? c.defaultBossEnabled : d.bossEnabled);
+    setCheck('rrScavWars', c.defaultScavWars != null ? c.defaultScavWars : d.scavWars);
+    setCheck('rrTaggedAndCursed', c.defaultTaggedAndCursed != null ? c.defaultTaggedAndCursed : d.taggedAndCursed);
+    setCheck('rrRandomWeather', c.defaultRandomWeather != null ? c.defaultRandomWeather : d.randomWeather);
+    setCheck('rrRandomTime', c.defaultRandomTime != null ? c.defaultRandomTime : d.randomTime);
+    setVal('rrTimeBeforeDeploy', c.timeBeforeDeploy != null ? c.timeBeforeDeploy : d.timeBeforeDeploy);
+    var scavH = c.scavHostileChance != null ? c.scavHostileChance : d.scavHostileChance;
+    document.getElementById('rrScavHostileChance').value = scavH;
+    document.getElementById('rrScavHostileVal').textContent = Math.round(scavH) + '%';
+    document.getElementById('rrDefAiAmount').textContent = defText(d.aiAmount);
+    document.getElementById('rrDefAiDiff').textContent = defText(d.aiDifficulty);
+    document.getElementById('rrDefBoss').textContent = d.bossEnabled ? '(on)' : '(off)';
+    document.getElementById('rrDefDeployTime').textContent = defText(d.timeBeforeDeploy);
+    document.getElementById('rrDefScavHostile').textContent = defText(d.scavHostileChance, '%');
+
+    // G. Airdrops
+    setCheck('rrEnableAirdrops', c.enableAirdrops);
+    setVal('rrAdWeaponMin', c.airdropWeaponCountMin != null ? c.airdropWeaponCountMin : d.airdropWeaponCountMin);
+    setVal('rrAdWeaponMax', c.airdropWeaponCountMax != null ? c.airdropWeaponCountMax : d.airdropWeaponCountMax);
+    setVal('rrAdArmorMin', c.airdropArmorCountMin != null ? c.airdropArmorCountMin : d.airdropArmorCountMin);
+    setVal('rrAdArmorMax', c.airdropArmorCountMax != null ? c.airdropArmorCountMax : d.airdropArmorCountMax);
+    setVal('rrAdItemMin', c.airdropItemCountMin != null ? c.airdropItemCountMin : d.airdropItemCountMin);
+    setVal('rrAdItemMax', c.airdropItemCountMax != null ? c.airdropItemCountMax : d.airdropItemCountMax);
+    setCheck('rrAdAllowBoss', c.airdropAllowBossItems != null ? c.airdropAllowBossItems : d.airdropAllowBossItems);
+    document.getElementById('rrDefAdWpnMin').textContent = defText(d.airdropWeaponCountMin);
+    document.getElementById('rrDefAdWpnMax').textContent = defText(d.airdropWeaponCountMax);
+    document.getElementById('rrDefAdArmMin').textContent = defText(d.airdropArmorCountMin);
+    document.getElementById('rrDefAdArmMax').textContent = defText(d.airdropArmorCountMax);
+    document.getElementById('rrDefAdItemMin').textContent = defText(d.airdropItemCountMin);
+    document.getElementById('rrDefAdItemMax').textContent = defText(d.airdropItemCountMax);
+    // Airdrop type weightings
+    var typesDiv = document.getElementById('rrAirdropTypes');
+    typesDiv.innerHTML = '';
+    (d.airdropTypes || []).forEach(function(t) {
+      var row = document.createElement('div');
+      row.className = 'is-slider-row';
+      row.innerHTML = '<span>' + t.type + ' <span class="is-default">default: ' + t.weight.toFixed(1) + '</span></span>' +
+        '<input type="range" data-airdrop-type="' + t.type + '" min="0" max="100" step="1" value="' + t.weight + '" oninput="this.nextElementSibling.textContent=this.value">' +
+        '<span class="is-slider-val">' + t.weight.toFixed(0) + '</span>';
+      typesDiv.appendChild(row);
+    });
+
+    // H. Raid Time
+    var rtVal = c.raidTimeAddMinutes || 0;
+    document.getElementById('rrRaidTimeAdd').value = rtVal;
+    document.getElementById('rrRaidTimeVal').textContent = rtVal + ' min';
+
+    // I. Extract Rewards
+    setVal('rrCarStanding', c.carExtractStanding != null ? c.carExtractStanding : d.carExtractStanding);
+    setVal('rrCoopStanding', c.coopExtractStanding != null ? c.coopExtractStanding : d.coopExtractStanding);
+    setVal('rrScavStanding', c.scavExtractStanding != null ? c.scavExtractStanding : d.scavExtractStanding);
+    document.getElementById('rrDefCarStand').textContent = defText(d.carExtractStanding);
+    document.getElementById('rrDefCoopStand').textContent = defText(d.coopExtractStanding);
+    document.getElementById('rrDefScavStand').textContent = defText(d.scavExtractStanding);
+
+    // J. Seasonal Events
+    setCheck('rrSeasonalDetection', c.enableSeasonalDetection != null ? c.enableSeasonalDetection : d.seasonalDetection);
+    var sevDiv = document.getElementById('rrSeasonalEvents');
+    sevDiv.innerHTML = '';
+    var events = d.seasonalEvents || [];
+    document.getElementById('rrSeasonalCount').textContent = events.length + ' events';
+    var disabledList = c.disabledEvents || [];
+    events.forEach(function(ev) {
+      var isEnabled = disabledList.indexOf(ev.type) === -1;
+      var row = document.createElement('div');
+      row.className = 'is-toggle-row';
+      row.innerHTML = '<span>' + ev.name + ' (' + ev.type + ')</span>' +
+        '<label class="loc-toggle"><input type="checkbox" data-seasonal-type="' + ev.type + '"' + (isEnabled ? ' checked' : '') + '><span class="loc-toggle-slider"></span></label>';
+      sevDiv.appendChild(row);
+    });
+
+    // K. PMC
+    setCheck('rrEnablePmc', c.enablePmc);
+    var usecR = c.pmcUsecRatio != null ? c.pmcUsecRatio : d.pmcUsecRatio;
+    document.getElementById('rrPmcUsecRatio').value = usecR;
+    document.getElementById('rrPmcUsecVal').textContent = Math.round(usecR) + '%';
+    setCheck('rrPmcUseDiffOverride', c.pmcUseDifficultyOverride != null ? c.pmcUseDifficultyOverride : d.pmcUseDifficultyOverride);
+    var pmcDifEl = document.getElementById('rrPmcDifficulty');
+    if (pmcDifEl) pmcDifEl.value = c.pmcDifficulty || d.pmcDifficulty || '';
+    setVal('rrPmcLevelDeltaMin', c.pmcLevelDeltaMin != null ? c.pmcLevelDeltaMin : d.pmcLevelDeltaMin);
+    setVal('rrPmcLevelDeltaMax', c.pmcLevelDeltaMax != null ? c.pmcLevelDeltaMax : d.pmcLevelDeltaMax);
+    var wpnBp = c.pmcWeaponInBackpackChance != null ? c.pmcWeaponInBackpackChance : d.pmcWeaponInBackpackChance;
+    document.getElementById('rrPmcWeaponInBp').value = wpnBp;
+    document.getElementById('rrPmcWpnBpVal').textContent = Math.round(wpnBp) + '%';
+    var wpnEnh = c.pmcWeaponEnhancementChance != null ? c.pmcWeaponEnhancementChance : d.pmcWeaponEnhancementChance;
+    document.getElementById('rrPmcWeaponEnhance').value = wpnEnh;
+    document.getElementById('rrPmcEnhVal').textContent = Math.round(wpnEnh) + '%';
+    setCheck('rrPmcForceHealSecure', c.pmcForceHealingInSecure != null ? c.pmcForceHealingInSecure : d.pmcForceHealingInSecure);
+    document.getElementById('rrDefPmcUsec').textContent = defText(Math.round(d.pmcUsecRatio), '%');
+    document.getElementById('rrDefPmcDiffO').textContent = d.pmcUseDifficultyOverride ? '(on)' : '(off)';
+    document.getElementById('rrDefPmcDiff').textContent = defText(d.pmcDifficulty);
+    document.getElementById('rrDefPmcLvlMin').textContent = defText(d.pmcLevelDeltaMin);
+    document.getElementById('rrDefPmcLvlMax').textContent = defText(d.pmcLevelDeltaMax);
+    document.getElementById('rrDefPmcWpnBp').textContent = defText(Math.round(d.pmcWeaponInBackpackChance), '%');
+    document.getElementById('rrDefPmcEnh').textContent = defText(Math.round(d.pmcWeaponEnhancementChance), '%');
+    document.getElementById('rrDefPmcHeal').textContent = d.pmcForceHealingInSecure ? '(on)' : '(off)';
+  }
+
+  function rrGatherConfig() {
+    var cfg = {};
+    // A
+    cfg.noRunThrough = getCheck('rrNoRunThrough');
+    cfg.saveQuestItemsOnDeath = getCheck('rrSaveQuestItems');
+    cfg.keepFirSecureOnDeath = getCheck('rrKeepFirSecure');
+    cfg.alwaysKeepFirOnRaidEnd = getCheck('rrAlwaysKeepFir');
+    cfg.sandboxAccessLevel = getInt('rrSandboxLevel');
+    // B
+    cfg.labInsurance = getCheck('rrLabInsurance');
+    cfg.removeLabKey = getCheck('rrRemoveLabKey');
+    cfg.scavLabAccess = getCheck('rrScavLabAccess');
+    // C
+    cfg.guaranteedExtracts = getCheck('rrGuaranteedExtracts');
+    cfg.removeBackpackExtractReq = getCheck('rrRemoveBackpackReq');
+    cfg.removeGearExtractReq = getCheck('rrRemoveGearReq');
+    cfg.freeCarExtracts = getCheck('rrFreeCarExtracts');
+    cfg.freeCoopExtracts = getCheck('rrFreeCoopExtracts');
+    cfg.carExtractWaitTime = getInt('rrCarExtractWait');
+    cfg.disableTransits = getCheck('rrDisableTransits');
+    cfg.fenceCoopGift = getCheck('rrFenceCoopGift');
+    // D
+    cfg.enableBtr = getCheck('rrEnableBtr');
+    cfg.btrWoodsChance = getVal('rrBtrWoodsChance');
+    cfg.btrStreetsChance = getVal('rrBtrStreetsChance');
+    cfg.btrWoodsTimeMin = getVal('rrBtrWoodsTimeMin');
+    cfg.btrWoodsTimeMax = getVal('rrBtrWoodsTimeMax');
+    cfg.btrStreetsTimeMin = getVal('rrBtrStreetsTimeMin');
+    cfg.btrStreetsTimeMax = getVal('rrBtrStreetsTimeMax');
+    cfg.btrTaxiPrice = getVal('rrBtrTaxiPrice');
+    cfg.btrCoverPrice = getVal('rrBtrCoverPrice');
+    cfg.btrBearMod = getVal('rrBtrBearMod');
+    cfg.btrUsecMod = getVal('rrBtrUsecMod');
+    cfg.btrScavMod = getVal('rrBtrScavMod');
+    cfg.btrDeliveryW = getInt('rrBtrDeliveryW');
+    cfg.btrDeliveryH = getInt('rrBtrDeliveryH');
+    cfg.forceBtrFriendly = getCheck('rrForceBtrFriendly');
+    // E
+    cfg.transitStashW = getInt('rrTransitStashW');
+    cfg.transitStashH = getInt('rrTransitStashH');
+    // F
+    cfg.defaultAiAmount = getSel('rrAiAmount');
+    cfg.defaultAiDifficulty = getSel('rrAiDifficulty');
+    cfg.defaultBossEnabled = getCheck('rrBossEnabled');
+    cfg.defaultScavWars = getCheck('rrScavWars');
+    cfg.defaultTaggedAndCursed = getCheck('rrTaggedAndCursed');
+    cfg.defaultRandomWeather = getCheck('rrRandomWeather');
+    cfg.defaultRandomTime = getCheck('rrRandomTime');
+    cfg.timeBeforeDeploy = getVal('rrTimeBeforeDeploy');
+    cfg.scavHostileChance = getVal('rrScavHostileChance');
+    // G
+    cfg.enableAirdrops = getCheck('rrEnableAirdrops');
+    cfg.airdropWeaponCountMin = getInt('rrAdWeaponMin');
+    cfg.airdropWeaponCountMax = getInt('rrAdWeaponMax');
+    cfg.airdropArmorCountMin = getInt('rrAdArmorMin');
+    cfg.airdropArmorCountMax = getInt('rrAdArmorMax');
+    cfg.airdropItemCountMin = getInt('rrAdItemMin');
+    cfg.airdropItemCountMax = getInt('rrAdItemMax');
+    cfg.airdropAllowBossItems = getCheck('rrAdAllowBoss');
+    // H
+    cfg.raidTimeAddMinutes = parseInt(document.getElementById('rrRaidTimeAdd').value, 10) || 0;
+    // I
+    cfg.carExtractStanding = getVal('rrCarStanding');
+    cfg.coopExtractStanding = getVal('rrCoopStanding');
+    cfg.scavExtractStanding = getVal('rrScavStanding');
+    // J
+    cfg.enableSeasonalDetection = getCheck('rrSeasonalDetection');
+    var disabled = [];
+    document.querySelectorAll('[data-seasonal-type]').forEach(function(cb) {
+      if (!cb.checked) disabled.push(cb.dataset.seasonalType);
+    });
+    cfg.disabledEvents = disabled;
+    // K
+    cfg.enablePmc = getCheck('rrEnablePmc');
+    cfg.pmcUsecRatio = getVal('rrPmcUsecRatio');
+    cfg.pmcUseDifficultyOverride = getCheck('rrPmcUseDiffOverride');
+    cfg.pmcDifficulty = getSel('rrPmcDifficulty');
+    cfg.pmcLevelDeltaMin = getInt('rrPmcLevelDeltaMin');
+    cfg.pmcLevelDeltaMax = getInt('rrPmcLevelDeltaMax');
+    cfg.pmcWeaponInBackpackChance = getVal('rrPmcWeaponInBp');
+    cfg.pmcWeaponEnhancementChance = getVal('rrPmcWeaponEnhance');
+    cfg.pmcForceHealingInSecure = getCheck('rrPmcForceHealSecure');
+    return cfg;
+  }
+
+  // ── RAID RULES: Apply ──
+  window.rrApply = function() {
+    var config = rrGatherConfig();
+    var st = document.getElementById('rrStatus');
+    st.textContent = 'Applying...'; st.style.color = 'var(--accent)';
+    api('raid-rules/apply', 'POST', config).then(function(res) {
+      st.textContent = res.message || 'Applied';
+      st.style.color = '#4caf50';
+      toast('Raid rules applied', 'success');
+      setTimeout(function() { st.textContent = ''; }, 4000);
+    }).catch(function(e) {
+      st.textContent = 'Error: ' + e.message;
+      st.style.color = '#f44336';
+      toast('Error applying raid rules: ' + e.message, 'error');
+    });
+  };
+
+  // ── RAID RULES: Reset ──
+  window.rrReset = function() {
+    if (!confirm('Reset all raid rules to defaults?')) return;
+    var st = document.getElementById('rrStatus');
+    st.textContent = 'Resetting...';
+    api('raid-rules/reset', 'POST').then(function() {
+      st.textContent = 'Reset to defaults';
+      st.style.color = '#4caf50';
+      toast('Raid rules reset to defaults', 'success');
+      window._rrLoaded = false;
+      window.rrLoadConfig();
+      setTimeout(function() { st.textContent = ''; }, 4000);
+    }).catch(function(e) {
+      st.textContent = 'Error: ' + e.message;
+      st.style.color = '#f44336';
+    });
+  };
+
+  // ── SERVICES: Load ──
+  window.svcLoadConfig = function() {
+    api('services/config').then(function(data) {
+      _svcData = data;
+      window._svcLoaded = true;
+      svcRenderUI(data);
+      document.getElementById('svcLoading').style.display = 'none';
+      document.getElementById('svcContent').style.display = '';
+    }).catch(function(e) {
+      document.getElementById('svcLoading').textContent = 'Error loading: ' + e.message;
+    });
+  };
+
+  function svcRenderUI(data) {
+    var c = data.config;
+    var d = data.defaults;
+
+    // L. Insurance
+    setCheck('svcEnableInsurance', c.enableInsurance);
+    setVal('svcPraporReturn', c.praporReturnChance != null ? c.praporReturnChance : d.praporReturnChance);
+    setVal('svcTherapistReturn', c.therapistReturnChance != null ? c.therapistReturnChance : d.therapistReturnChance);
+    setVal('svcPraporStorage', c.praporStorageTime != null ? c.praporStorageTime : d.praporStorageTime);
+    setVal('svcTherapistStorage', c.therapistStorageTime != null ? c.therapistStorageTime : d.therapistStorageTime);
+    setVal('svcPraporRetMin', c.praporReturnMin != null ? c.praporReturnMin : d.praporReturnMin);
+    setVal('svcPraporRetMax', c.praporReturnMax != null ? c.praporReturnMax : d.praporReturnMax);
+    setVal('svcTherapistRetMin', c.therapistReturnMin != null ? c.therapistReturnMin : d.therapistReturnMin);
+    setVal('svcTherapistRetMax', c.therapistReturnMax != null ? c.therapistReturnMax : d.therapistReturnMax);
+    setVal('svcAttachRecovery', c.attachmentRecoveryChance != null ? c.attachmentRecoveryChance : d.attachmentRecoveryChance);
+    setVal('svcInsInterval', c.insuranceInterval != null ? c.insuranceInterval : d.insuranceInterval);
+    setVal('svcInsReturnOverride', c.insuranceReturnOverride != null ? c.insuranceReturnOverride : d.insuranceReturnOverride);
+
+    document.getElementById('svcDefPrapRet').textContent = defText(d.praporReturnChance, '%');
+    document.getElementById('svcDefTherapRet').textContent = defText(d.therapistReturnChance, '%');
+    document.getElementById('svcDefPrapStor').textContent = defText(d.praporStorageTime, 'h');
+    document.getElementById('svcDefTherapStor').textContent = defText(d.therapistStorageTime, 'h');
+    document.getElementById('svcDefPrapRetMin').textContent = defText(d.praporReturnMin, 'h');
+    document.getElementById('svcDefPrapRetMax').textContent = defText(d.praporReturnMax, 'h');
+    document.getElementById('svcDefTherapRetMin').textContent = defText(d.therapistReturnMin, 'h');
+    document.getElementById('svcDefTherapRetMax').textContent = defText(d.therapistReturnMax, 'h');
+    document.getElementById('svcDefAttach').textContent = defText(d.attachmentRecoveryChance, '%');
+    document.getElementById('svcDefInsInterval').textContent = defText(d.insuranceInterval, 's');
+    document.getElementById('svcDefRetOverride').textContent = defText(d.insuranceReturnOverride, 's');
+
+    // Price per LL grids
+    renderLlGrid('svcPraporPriceLl', c.praporPricePerLl, d.praporPricePerLl, 'prapor-ins-ll');
+    renderLlGrid('svcTherapistPriceLl', c.therapistPricePerLl, d.therapistPricePerLl, 'therapist-ins-ll');
+
+    // M. Healing
+    setCheck('svcEnableHealing', c.enableHealing);
+    setVal('svcFreeHealRaids', c.freeHealRaids != null ? c.freeHealRaids : d.freeHealRaids);
+    setVal('svcFreeHealLevel', c.freeHealLevel != null ? c.freeHealLevel : d.freeHealLevel);
+    document.getElementById('svcDefHealRaids').textContent = defText(d.freeHealRaids);
+    document.getElementById('svcDefHealLevel').textContent = defText(d.freeHealLevel);
+    renderLlGrid('svcTherapistHealLl', c.therapistHealPerLl, d.therapistHealPerLl, 'therapist-heal-ll');
+
+    // N. Repair
+    setCheck('svcEnableRepair', c.enableRepair);
+    setVal('svcRepairPriceMult', c.repairPriceMult != null ? c.repairPriceMult : d.repairPriceMult);
+    setVal('svcMinDurabilitySell', c.minDurabilitySell != null ? c.minDurabilitySell : d.minDurabilitySell);
+    setCheck('svcNoArmorDeg', c.noArmorRepairDegradation);
+    setCheck('svcNoWeaponDeg', c.noWeaponRepairDegradation);
+    setCheck('svcNoRandomLoss', c.noRandomRepairLoss);
+    setVal('svcArmorKitSkill', c.armorKitSkillMult != null ? c.armorKitSkillMult : d.armorKitSkillMult);
+    setVal('svcWeaponMaintSkill', c.weaponMaintenanceSkillMult != null ? c.weaponMaintenanceSkillMult : d.weaponMaintenanceSkillMult);
+    setVal('svcIntellectWeapon', c.intellectWeaponKitMult != null ? c.intellectWeaponKitMult : d.intellectWeaponKitMult);
+    setVal('svcIntellectArmor', c.intellectArmorKitMult != null ? c.intellectArmorKitMult : d.intellectArmorKitMult);
+    setVal('svcMaxIntellectKit', c.maxIntellectKit != null ? c.maxIntellectKit : d.maxIntellectKit);
+    setVal('svcMaxIntellectTrader', c.maxIntellectTrader != null ? c.maxIntellectTrader : d.maxIntellectTrader);
+
+    document.getElementById('svcDefRepairMult').textContent = defText(d.repairPriceMult, 'x');
+    document.getElementById('svcDefMinDurab').textContent = defText(d.minDurabilitySell);
+    document.getElementById('svcDefArmorDeg').textContent = '(' + d.armorMaterialCount + ' materials)';
+    document.getElementById('svcDefWeaponDeg').textContent = '(' + d.weaponRepairCount + ' weapons)';
+    document.getElementById('svcDefArmorSkill').textContent = defText(d.armorKitSkillMult);
+    document.getElementById('svcDefWeaponSkill').textContent = defText(d.weaponMaintenanceSkillMult);
+    document.getElementById('svcDefIntWeapon').textContent = defText(d.intellectWeaponKitMult);
+    document.getElementById('svcDefIntArmor').textContent = defText(d.intellectArmorKitMult);
+    document.getElementById('svcDefMaxIntKit').textContent = defText(d.maxIntellectKit);
+    document.getElementById('svcDefMaxIntTrader').textContent = defText(d.maxIntellectTrader);
+
+    document.getElementById('svcRepairInfo').textContent = d.armorMaterialCount + ' materials, ' + d.weaponRepairCount + ' weapons';
+
+    // Per-trader repair price per LL
+    var repDiv = document.getElementById('svcRepairTraders');
+    repDiv.innerHTML = '';
+    var repairTraders = d.repairTraders || [];
+    var repairLlConfig = c.repairPricePerLl || {};
+    repairTraders.forEach(function(t) {
+      var sub = document.createElement('div');
+      sub.className = 'is-sub-heading';
+      sub.textContent = t.name;
+      repDiv.appendChild(sub);
+      var grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px 12px;max-width:500px;margin-bottom:10px';
+      var configVals = repairLlConfig[t.id] || [];
+      for (var i = 0; i < t.pricePerLl.length; i++) {
+        var val = (configVals.length > i && configVals[i] != null) ? configVals[i] : t.pricePerLl[i];
+        var div = document.createElement('div');
+        div.className = 'is-field';
+        div.innerHTML = '<div class="is-field-label">LL' + (i + 1) + ' <span class="is-default">default: ' + t.pricePerLl[i] + '</span></div>' +
+          '<input type="number" data-repair-trader="' + t.id + '" data-repair-ll="' + i + '" min="0" max="999" step="0.01" value="' + val + '">';
+        grid.appendChild(div);
+      }
+      repDiv.appendChild(grid);
+    });
+
+    // O. Clothing
+    setCheck('svcClothesAnyFaction', c.clothesAnyFaction);
+    setCheck('svcClothesFree', c.clothesFree);
+    setCheck('svcClothesRemoveReqs', c.clothesRemoveReqs);
+    document.getElementById('svcClothingInfo').textContent = d.suitCount + ' suits';
+  }
+
+  function renderLlGrid(containerId, configVals, defaultVals, dataPrefix) {
+    var container = document.getElementById(containerId);
+    container.innerHTML = '';
+    var vals = configVals || defaultVals || [];
+    var defs = defaultVals || [];
+    for (var i = 0; i < defs.length; i++) {
+      var v = (vals.length > i && vals[i] != null) ? vals[i] : defs[i];
+      var div = document.createElement('div');
+      div.className = 'is-field';
+      div.innerHTML = '<div class="is-field-label">LL' + (i + 1) + ' <span class="is-default">default: ' + defs[i] + '</span></div>' +
+        '<input type="number" data-ll-key="' + dataPrefix + '" data-ll-idx="' + i + '" min="0" max="9999" step="0.01" value="' + v + '">';
+      container.appendChild(div);
+    }
+  }
+
+  function gatherLlValues(dataPrefix) {
+    var result = [];
+    document.querySelectorAll('[data-ll-key="' + dataPrefix + '"]').forEach(function(inp) {
+      result.push(parseFloat(inp.value) || 0);
+    });
+    return result.length > 0 ? result : null;
+  }
+
+  function svcGatherConfig() {
+    var cfg = {};
+    // L
+    cfg.enableInsurance = getCheck('svcEnableInsurance');
+    cfg.praporReturnChance = getVal('svcPraporReturn');
+    cfg.therapistReturnChance = getVal('svcTherapistReturn');
+    cfg.praporStorageTime = getInt('svcPraporStorage');
+    cfg.therapistStorageTime = getInt('svcTherapistStorage');
+    cfg.praporReturnMin = getInt('svcPraporRetMin');
+    cfg.praporReturnMax = getInt('svcPraporRetMax');
+    cfg.therapistReturnMin = getInt('svcTherapistRetMin');
+    cfg.therapistReturnMax = getInt('svcTherapistRetMax');
+    cfg.attachmentRecoveryChance = getVal('svcAttachRecovery');
+    cfg.insuranceInterval = getVal('svcInsInterval');
+    cfg.insuranceReturnOverride = getVal('svcInsReturnOverride');
+    cfg.praporPricePerLl = gatherLlValues('prapor-ins-ll');
+    cfg.therapistPricePerLl = gatherLlValues('therapist-ins-ll');
+    // M
+    cfg.enableHealing = getCheck('svcEnableHealing');
+    cfg.freeHealRaids = getInt('svcFreeHealRaids');
+    cfg.freeHealLevel = getInt('svcFreeHealLevel');
+    cfg.therapistHealPerLl = gatherLlValues('therapist-heal-ll');
+    // N
+    cfg.enableRepair = getCheck('svcEnableRepair');
+    cfg.repairPriceMult = getVal('svcRepairPriceMult');
+    cfg.noArmorRepairDegradation = getCheck('svcNoArmorDeg');
+    cfg.noWeaponRepairDegradation = getCheck('svcNoWeaponDeg');
+    cfg.noRandomRepairLoss = getCheck('svcNoRandomLoss');
+    cfg.armorKitSkillMult = getVal('svcArmorKitSkill');
+    cfg.weaponMaintenanceSkillMult = getVal('svcWeaponMaintSkill');
+    cfg.intellectWeaponKitMult = getVal('svcIntellectWeapon');
+    cfg.intellectArmorKitMult = getVal('svcIntellectArmor');
+    cfg.maxIntellectKit = getVal('svcMaxIntellectKit');
+    cfg.maxIntellectTrader = getVal('svcMaxIntellectTrader');
+    cfg.minDurabilitySell = getVal('svcMinDurabilitySell');
+    // gather per-trader repair LL
+    var repairMap = {};
+    document.querySelectorAll('[data-repair-trader]').forEach(function(inp) {
+      var tid = inp.dataset.repairTrader;
+      if (!repairMap[tid]) repairMap[tid] = [];
+      repairMap[tid].push(parseFloat(inp.value) || 0);
+    });
+    cfg.repairPricePerLl = Object.keys(repairMap).length > 0 ? repairMap : null;
+    // O
+    cfg.clothesAnyFaction = getCheck('svcClothesAnyFaction');
+    cfg.clothesFree = getCheck('svcClothesFree');
+    cfg.clothesRemoveReqs = getCheck('svcClothesRemoveReqs');
+    return cfg;
+  }
+
+  // ── SERVICES: Apply ──
+  window.svcApply = function() {
+    var config = svcGatherConfig();
+    var st = document.getElementById('svcStatus');
+    st.textContent = 'Applying...'; st.style.color = 'var(--accent)';
+    api('services/apply', 'POST', config).then(function(res) {
+      st.textContent = res.message || 'Applied';
+      st.style.color = '#4caf50';
+      toast('Service settings applied', 'success');
+      setTimeout(function() { st.textContent = ''; }, 4000);
+    }).catch(function(e) {
+      st.textContent = 'Error: ' + e.message;
+      st.style.color = '#f44336';
+      toast('Error applying services: ' + e.message, 'error');
+    });
+  };
+
+  // ── SERVICES: Reset ──
+  window.svcReset = function() {
+    if (!confirm('Reset all service settings to defaults?')) return;
+    var st = document.getElementById('svcStatus');
+    st.textContent = 'Resetting...';
+    api('services/reset', 'POST').then(function() {
+      st.textContent = 'Reset to defaults';
+      st.style.color = '#4caf50';
+      toast('Service settings reset to defaults', 'success');
+      window._svcLoaded = false;
+      window.svcLoadConfig();
+      setTimeout(function() { st.textContent = ''; }, 4000);
+    }).catch(function(e) {
+      st.textContent = 'Error: ' + e.message;
+      st.style.color = '#f44336';
+    });
+  };
+
 })();
 </script>
 </body>

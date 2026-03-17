@@ -4587,7 +4587,7 @@ public class CommandCenterHttpListener(
                 raidRulesService.Apply(body);
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     "Raid Rules: applied changes");
-                await WriteJson(context, 200, new { success = true });
+                await WriteJson(context, 200, new { success = true, message = "Raid rules applied" });
                 break;
             }
             case "reset" when method == "POST":
@@ -4632,7 +4632,7 @@ public class CommandCenterHttpListener(
                 servicesSettingsService.Apply(body);
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     "Services: applied changes");
-                await WriteJson(context, 200, new { success = true });
+                await WriteJson(context, 200, new { success = true, message = "Service settings applied" });
                 break;
             }
             case "reset" when method == "POST":
