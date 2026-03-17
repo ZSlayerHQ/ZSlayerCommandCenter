@@ -903,6 +903,8 @@ This is a solo project by [**ZSlayerHQ**](https://github.com/ZSlayerHQ), but fee
 
 - **[AcidPhantasm](https://github.com/acidphantasm)** — Map images used in the Locations editor and live minimap
 
+A special thank you to the **SPT & FIKA team** — this level of complexity in a mod wouldn't be possible without their extensive documentation & resources.
+
 ---
 
 <div align="center">
