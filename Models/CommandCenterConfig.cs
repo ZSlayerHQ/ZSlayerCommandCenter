@@ -78,6 +78,12 @@ public record CommandCenterConfig
 
     [JsonPropertyName("itemStacks")]
     public ItemStackConfig ItemStacks { get; set; } = new();
+
+    [JsonPropertyName("raidRules")]
+    public RaidRulesConfig RaidRules { get; set; } = new();
+
+    [JsonPropertyName("serviceSettings")]
+    public ServiceSettingsConfig ServiceSettings { get; set; } = new();
 }
 
 public record HeadlessConfig

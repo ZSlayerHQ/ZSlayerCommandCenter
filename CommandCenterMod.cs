@@ -29,6 +29,7 @@ public class CommandCenterMod(
     FirService firService,
     HideoutService hideoutService,
     ItemStackService itemStackService,
+    RaidRulesService raidRulesService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
     ISptLogger<CommandCenterMod> logger) : IOnLoad
@@ -151,6 +152,9 @@ public class CommandCenterMod(
 
         // Initialize item stack/container editor (snapshot item templates, apply saved overrides)
         itemStackService.Initialize();
+
+        // Initialize raid rules (snapshot exits/BTR/transit/airdrops/PMC, apply saved overrides)
+        raidRulesService.Initialize();
 
         // Detect bound IP and build URLs based on bind mode
         var httpCfg = configServer.GetConfig<HttpConfig>();

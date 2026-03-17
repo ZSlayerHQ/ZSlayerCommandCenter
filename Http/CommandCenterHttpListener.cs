@@ -52,6 +52,7 @@ public class CommandCenterHttpListener(
     FirService firService,
     HideoutService hideoutService,
     ItemStackService itemStackService,
+    RaidRulesService raidRulesService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -240,6 +241,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("items/stack") || path.StartsWith("items/containers"))
             {
                 await HandleItemStackRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle raid rules routes
+            if (path.StartsWith("raid-rules/") || path == "raid-rules")
+            {
+                await HandleRaidRulesRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -4539,6 +4547,51 @@ public class CommandCenterHttpListener(
                 await WriteJson(context, 404, new { error = "Unknown scheduler route" });
                 break;
             }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // RAID RULES ROUTES
+    // ═══════════════════════════════════════════════════════
+
+    private async Task HandleRaidRulesRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        var sub = path == "raid-rules" ? "" : path["raid-rules/".Length..];
+
+        switch (sub)
+        {
+            case "config" when method == "GET":
+            {
+                var result = raidRulesService.GetConfig();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "apply" when method == "POST":
+            {
+                var body = await ReadBody<RaidRulesConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                raidRulesService.Apply(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Raid Rules: applied changes");
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+            case "reset" when method == "POST":
+            {
+                raidRulesService.Reset();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Raid Rules: reset to defaults");
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+            default:
+                await WriteJson(context, 404, new { error = "Unknown raid rules route" });
+                break;
         }
     }
 }
