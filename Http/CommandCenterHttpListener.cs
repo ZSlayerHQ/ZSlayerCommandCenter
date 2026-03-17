@@ -54,6 +54,10 @@ public class CommandCenterHttpListener(
     ItemStackService itemStackService,
     RaidRulesService raidRulesService,
     ServicesSettingsService servicesSettingsService,
+    PmcBotService pmcBotService,
+    FleaExpansionService fleaExpansionService,
+    RepeatableQuestService repeatableQuestService,
+    MiscToggleService miscToggleService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -151,7 +155,7 @@ public class CommandCenterHttpListener(
                 {
                     var firstSeg = segments[1];
                     // Skip known fixed routes — let them fall through to the switch-case
-                    if (firstSeg is not ("config" or "apply" or "reset" or "status" or "tree" or "traders" or "locations" or "presets" or "bulk-state" or "reward-summary" or "objective-types"))
+                    if (firstSeg is not ("config" or "apply" or "reset" or "status" or "tree" or "traders" or "locations" or "presets" or "bulk-state" or "reward-summary" or "objective-types" or "repeatable-config" or "repeatable-apply" or "repeatable-reset"))
                     {
                         var questId = firstSeg;
                         var action = segments.Length >= 3 ? segments[2] : "";
@@ -256,6 +260,20 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("services/") || path == "services")
             {
                 await HandleServicesRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle PMC & Bot routes
+            if (path.StartsWith("pmc-bot/") || path == "pmc-bot")
+            {
+                await HandlePmcBotRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle misc toggle routes
+            if (path.StartsWith("misc/") || path == "misc")
+            {
+                await HandleMiscRoute(context, headerSessionId, path, method);
                 return;
             }
 
@@ -429,6 +447,16 @@ public class CommandCenterHttpListener(
                     break;
                 case "quests/bulk-state" when method == "POST":
                     await HandleQuestBulkState(context, headerSessionId);
+                    break;
+                // Repeatable quest routes
+                case "quests/repeatable-config" when method == "GET":
+                    await HandleRepeatableQuestRoute(context, headerSessionId, "config", method);
+                    break;
+                case "quests/repeatable-apply" when method == "POST":
+                    await HandleRepeatableQuestRoute(context, headerSessionId, "apply", method);
+                    break;
+                case "quests/repeatable-reset" when method == "POST":
+                    await HandleRepeatableQuestRoute(context, headerSessionId, "reset", method);
                     break;
                 // Player management routes
                 case "players" when method == "GET":
@@ -2102,6 +2130,29 @@ public class CommandCenterHttpListener(
                 var result = fleaPriceService.ImportPreset(body);
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, $"Flea: imported preset '{body.Name}'");
                 await WriteJson(context, 200, result);
+                break;
+            }
+            // ── Flea Market Expansion ──
+            case "flea/expanded-config" when method == "GET":
+            {
+                var resp = fleaExpansionService.GetConfig();
+                await WriteJson(context, 200, resp);
+                break;
+            }
+            case "flea/expanded-apply" when method == "POST":
+            {
+                var body = await ReadBody<FleaExpansionConfig>(context);
+                if (body == null) { await WriteJson(context, 400, new { error = "Invalid request body" }); return; }
+                fleaExpansionService.Apply(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Flea Expansion: applied changes");
+                await WriteJson(context, 200, new { success = true, message = "Flea expansion settings applied" });
+                break;
+            }
+            case "flea/expanded-reset" when method == "POST":
+            {
+                fleaExpansionService.Reset();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Flea Expansion: reset to defaults");
+                await WriteJson(context, 200, new { success = true });
                 break;
             }
             default:
@@ -4644,6 +4695,139 @@ public class CommandCenterHttpListener(
             }
             default:
                 await WriteJson(context, 404, new { error = "Unknown services route" });
+                break;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // PMC & BOT ROUTES
+    // ═══════════════════════════════════════════════════════
+
+    private async Task HandlePmcBotRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        var sub = path == "pmc-bot" ? "" : path["pmc-bot/".Length..];
+
+        switch (sub)
+        {
+            case "config" when method == "GET":
+            {
+                var result = pmcBotService.GetConfig();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "apply" when method == "POST":
+            {
+                var body = await ReadBody<PmcBotConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                pmcBotService.Apply(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "PMC & Bots: applied changes");
+                await WriteJson(context, 200, new { success = true, message = "PMC & Bot settings applied" });
+                break;
+            }
+            case "reset" when method == "POST":
+            {
+                pmcBotService.Reset();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "PMC & Bots: reset to defaults");
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+            default:
+                await WriteJson(context, 404, new { error = "Unknown PMC/Bot route" });
+                break;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // REPEATABLE QUEST ROUTES
+    // ═══════════════════════════════════════════════════════
+
+    private async Task HandleRepeatableQuestRoute(HttpContext context, string headerSessionId, string sub, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        switch (sub)
+        {
+            case "config" when method == "GET":
+            {
+                var result = repeatableQuestService.GetConfig();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "apply" when method == "POST":
+            {
+                var body = await ReadBody<RepeatableQuestEditorConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                repeatableQuestService.Apply(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Repeatable Quests: applied changes");
+                await WriteJson(context, 200, new { success = true, message = "Repeatable quest settings applied" });
+                break;
+            }
+            case "reset" when method == "POST":
+            {
+                repeatableQuestService.Reset();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Repeatable Quests: reset to defaults");
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+            default:
+                await WriteJson(context, 404, new { error = "Unknown repeatable quest route" });
+                break;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // MISC TOGGLE ROUTES
+    // ═══════════════════════════════════════════════════════
+
+    private async Task HandleMiscRoute(HttpContext context, string headerSessionId, string path, string method)
+    {
+        if (!await ValidateAccess(context, headerSessionId)) return;
+
+        var sub = path == "misc" ? "" : path["misc/".Length..];
+
+        switch (sub)
+        {
+            case "config" when method == "GET":
+            {
+                var result = miscToggleService.GetConfig();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "apply" when method == "POST":
+            {
+                var body = await ReadBody<MiscToggleConfig>(context);
+                if (body == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid request body" });
+                    break;
+                }
+                miscToggleService.Apply(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    "Misc Toggles: applied changes");
+                await WriteJson(context, 200, new { success = true, message = "Misc toggle settings applied" });
+                break;
+            }
+            case "reset" when method == "POST":
+            {
+                miscToggleService.Reset();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Misc Toggles: reset to defaults");
+                await WriteJson(context, 200, new { success = true });
+                break;
+            }
+            default:
+                await WriteJson(context, 404, new { error = "Unknown misc route" });
                 break;
         }
     }

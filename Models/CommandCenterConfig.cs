@@ -84,6 +84,18 @@ public record CommandCenterConfig
 
     [JsonPropertyName("serviceSettings")]
     public ServiceSettingsConfig ServiceSettings { get; set; } = new();
+
+    [JsonPropertyName("pmcBot")]
+    public PmcBotConfig PmcBot { get; set; } = new();
+
+    [JsonPropertyName("fleaExpansion")]
+    public FleaExpansionConfig FleaExpansion { get; set; } = new();
+
+    [JsonPropertyName("repeatableQuests")]
+    public RepeatableQuestEditorConfig RepeatableQuests { get; set; } = new();
+
+    [JsonPropertyName("miscToggles")]
+    public MiscToggleConfig MiscToggles { get; set; } = new();
 }
 
 public record HeadlessConfig

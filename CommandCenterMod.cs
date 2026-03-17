@@ -31,6 +31,10 @@ public class CommandCenterMod(
     ItemStackService itemStackService,
     RaidRulesService raidRulesService,
     ServicesSettingsService servicesSettingsService,
+    PmcBotService pmcBotService,
+    FleaExpansionService fleaExpansionService,
+    RepeatableQuestService repeatableQuestService,
+    MiscToggleService miscToggleService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
     ISptLogger<CommandCenterMod> logger) : IOnLoad
@@ -159,6 +163,18 @@ public class CommandCenterMod(
 
         // Initialize service settings (snapshot insurance/healing/repair/clothing, apply saved overrides)
         servicesSettingsService.Initialize();
+
+        // Initialize PMC & Bot tuning (snapshot hostility/durability/melee, apply saved overrides)
+        pmcBotService.Initialize();
+
+        // Initialize flea expansion (snapshot FIR/sell/dynamic/conditions, apply saved overrides)
+        fleaExpansionService.Initialize();
+
+        // Initialize repeatable quest editor (snapshot daily/weekly/scav settings, apply saved overrides)
+        repeatableQuestService.Initialize();
+
+        // Initialize misc toggles (snapshot chatbots/traders/quests, apply saved overrides)
+        miscToggleService.Initialize();
 
         // Detect bound IP and build URLs based on bind mode
         var httpCfg = configServer.GetConfig<HttpConfig>();
