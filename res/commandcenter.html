@@ -22459,7 +22459,8 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       return;
     }
 
-    var profileList = (profiles || []).map(function(p) { return { id: p.sessionId || p.id, name: p.name || p.nickname || '' }; });
+    var profileArr = Array.isArray(profiles) ? profiles : (profiles && profiles.profiles ? profiles.profiles : []);
+    var profileList = profileArr.map(function(p) { return { id: p.sessionId || p.id, name: p.name || p.nickname || '' }; });
     var opts = profileList.map(function(p) { return '<option value="' + escH(p.id) + '">' + escH(p.name || p.id) + '</option>'; }).join('');
 
     var html = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">'
