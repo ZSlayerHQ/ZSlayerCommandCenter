@@ -64,6 +64,16 @@ public record FleaExpansionConfigResponse
 {
     [JsonPropertyName("config")] public FleaExpansionConfig Config { get; set; } = new();
     [JsonPropertyName("defaults")] public FleaExpansionDefaults Defaults { get; set; } = new();
+
+    /// <summary>Fields that modify globals cached by the client — players must restart client to see changes.</summary>
+    [JsonPropertyName("clientRestartFields")] public List<string> ClientRestartFields { get; set; } =
+    [
+        "minUserLevel",
+        "maxActiveOfferCount",
+        "allowNonFirSales",
+        "repGainPerSale",
+        "repLossPerCancel"
+    ];
 }
 
 public record FleaExpansionDefaults

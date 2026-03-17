@@ -70,6 +70,9 @@ public record RepeatableQuestConfigResponse
 {
     [JsonPropertyName("config")] public RepeatableQuestEditorConfig Config { get; set; } = new();
     [JsonPropertyName("defaults")] public RepeatableQuestDefaults Defaults { get; set; } = new();
+
+    /// <summary>All repeatable quest settings are server-side — no client restart needed.</summary>
+    [JsonPropertyName("clientRestartFields")] public List<string> ClientRestartFields { get; set; } = [];
 }
 
 public record RepeatableQuestDefaults

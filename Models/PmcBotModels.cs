@@ -40,6 +40,9 @@ public record PmcBotConfigResponse
 {
     [JsonPropertyName("config")] public PmcBotConfig Config { get; set; } = new();
     [JsonPropertyName("defaults")] public PmcBotDefaults Defaults { get; set; } = new();
+
+    /// <summary>All PMC/Bot settings are server-side — no client restart needed.</summary>
+    [JsonPropertyName("clientRestartFields")] public List<string> ClientRestartFields { get; set; } = [];
 }
 
 public record PmcBotDefaults

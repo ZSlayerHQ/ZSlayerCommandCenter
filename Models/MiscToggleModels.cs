@@ -61,6 +61,22 @@ public record MiscToggleConfigResponse
 {
     [JsonPropertyName("config")] public MiscToggleConfig Config { get; set; } = new();
     [JsonPropertyName("defaults")] public MiscToggleDefaults Defaults { get; set; } = new();
+
+    /// <summary>Fields that modify globals cached by the client — players must restart client to see changes.</summary>
+    [JsonPropertyName("clientRestartFields")] public List<string> ClientRestartFields { get; set; } =
+    [
+        "questPlantTimeMult",
+        "noWeaponMalfunctions",
+        "unlimitedStamina",
+        "noFallDamage",
+        "noSkillFatigue",
+        "allQuestsAvailable",
+        "removeQuestTimeConditions",
+        "removeQuestFirReqs",
+        "minDurabilityToSell",
+        "lightKeeperAccessTime",
+        "lightKeeperKickNotifTime"
+    ];
 }
 
 public record MiscToggleDefaults
