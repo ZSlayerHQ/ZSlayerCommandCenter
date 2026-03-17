@@ -8658,19 +8658,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     <!-- Settings sub-tab -->
     <div id="ho-sub-settings">
-      <div style="background:rgba(200,122,62,0.1);border:1px solid rgba(200,122,62,0.3);border-radius:6px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--warning)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        Some settings (stash sizes, health regen) require a <strong>client restart</strong> to take effect. Look for the ⚠ icon.
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <h3 style="margin:0;color:var(--gold)">Hideout Editor</h3>
-        <div style="display:flex;gap:8px">
-          <button class="action-btn" onclick="window.hideoutApply()" style="background:var(--gold);color:#111;font-weight:600;padding:6px 18px;border:none;border-radius:4px;cursor:pointer">Apply</button>
-          <button class="action-btn" onclick="window.hideoutReset()" style="background:transparent;color:var(--text-dim);border:1px solid var(--border);padding:6px 14px;border-radius:4px;cursor:pointer">Reset</button>
-        </div>
-      </div>
-      <div id="hideoutContent" style="display:flex;flex-direction:column;gap:12px">
+      <div id="hideoutContent" style="display:flex;flex-direction:column;gap:14px">
         <div style="color:var(--text-dim);text-align:center;padding:40px">Loading hideout settings...</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:14px">
+        <button onclick="window.hideoutApply()" style="padding:9px 22px;background:rgba(200,170,110,0.15);color:var(--accent);border:1px solid rgba(200,170,110,0.4);border-radius:5px;cursor:pointer;font-family:var(--font-mono);font-size:13px;font-weight:600">Apply</button>
+        <button onclick="window.hideoutReset()" style="padding:9px 18px;background:var(--bg-dark);color:var(--text-dim);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-family:var(--font-mono);font-size:12px">Reset to Defaults</button>
+        <span id="hoStatus" style="font-size:12px;color:var(--text-dim);margin-left:6px"></span>
       </div>
     </div>
 
@@ -21876,85 +21870,83 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var container = document.getElementById('hideoutContent');
 
     container.innerHTML = ''
-      + renderSection('Construction', ''
-        + sliderRow('constructionTimeMult', 'Construction Time Multiplier', c.constructionTimeMult, 1.0, 0.1, 10, 0.1, 'x')
-        + sliderRow('constructionCostMult', 'Construction Cost Multiplier', c.constructionCostMult, 1.0, 0.1, 5, 0.1, 'x')
-        + toggleRow('removeItemRequirements', 'Remove Item Requirements', c.removeItemRequirements)
-        + toggleRow('removeFirRequirements', 'Remove FIR Requirements', c.removeFirRequirements)
-        + toggleRow('removeSkillRequirements', 'Remove Skill Requirements', c.removeSkillRequirements)
-        + toggleRow('removeTraderRequirements', 'Remove Trader Level Requirements', c.removeTraderRequirements)
-        + toggleRow('removeCustomizationRequirements', 'Remove Customization Requirements', c.removeCustomizationRequirements)
-        + renderPerAreaOverrides('perAreaConstructionMult', 'Per-Area Construction Overrides', c.perAreaConstructionMult || {})
+      // ── Construction & Upgrades ──
+      + hoPanel('Construction & Upgrades', ''
+        + hoSlider('constructionTimeMult', 'Construction Time', 'Scale how long hideout area upgrades take. Lower values mean faster construction.', c.constructionTimeMult, 1.0, 0.1, 10, 0.1, 'x')
+        + hoSlider('constructionCostMult', 'Construction Cost', 'Scale the ruble cost of hideout area upgrades. Does not affect item requirements.', c.constructionCostMult, 1.0, 0.1, 5, 0.1, 'x')
+        + hoToggle('removeItemRequirements', 'Remove Item Requirements', 'Skip all item requirements for hideout upgrades. Only ruble costs remain.', c.removeItemRequirements)
+        + hoToggle('removeFirRequirements', 'Remove FIR Requirements', 'Items used for hideout construction no longer need to be Found in Raid.', c.removeFirRequirements)
+        + hoToggle('removeSkillRequirements', 'Remove Skill Requirements', 'Skip skill level requirements for hideout area upgrades.', c.removeSkillRequirements)
+        + hoToggle('removeTraderRequirements', 'Remove Trader Requirements', 'Skip trader loyalty level requirements for hideout area upgrades.', c.removeTraderRequirements)
+        + hoToggle('removeCustomizationRequirements', 'Remove Customization Requirements', 'Skip customization and clothing requirements for hideout area upgrades.', c.removeCustomizationRequirements)
+        + renderPerAreaOverrides('perAreaConstructionMult', 'Per-Area Construction Time Overrides', c.perAreaConstructionMult || {})
       )
-      + renderSection('Production & Crafting', ''
-        + sliderRow('productionSpeedMult', 'Production Speed Multiplier', c.productionSpeedMult, 1.0, 0.1, 10, 0.1, 'x')
-        + sliderRow('scavCaseTimeMult', 'Scav Case Time Multiplier', c.scavCaseTimeMult, 1.0, 0.1, 10, 0.1, 'x')
-        + sliderRow('scavCasePriceMult', 'Scav Case Price Multiplier', c.scavCasePriceMult, 1.0, 0.1, 10, 0.1, 'x')
-        + sliderRow('cultistCircleTimeMult', 'Cultist Circle Time Multiplier', c.cultistCircleTimeMult, 1.0, 0.1, 10, 0.1, 'x')
-        + numRow('cultistCircleMaxRewards', 'Cultist Circle Max Rewards', c.cultistCircleMaxRewards, d.cultistCircleMaxRewards, 1, 50)
-        + toggleRow('removeArenaCrafts', 'Remove Arena Crate Crafts', c.removeArenaCrafts)
-        + renderPerStationOverrides('perStationProductionMult', 'Per-Station Production Overrides', c.perStationProductionMult || {})
+      // ── Production & Crafting ──
+      + hoPanel('Production & Crafting', ''
+        + hoSlider('productionSpeedMult', 'Production Speed', 'Scale crafting speed for all hideout workstations. Lower values mean faster crafts.', c.productionSpeedMult, 1.0, 0.1, 10, 0.1, 'x')
+        + hoSlider('scavCaseTimeMult', 'Scav Case Time', 'Scale how long scav case intelligence runs take to complete.', c.scavCaseTimeMult, 1.0, 0.1, 10, 0.1, 'x')
+        + hoSlider('scavCasePriceMult', 'Scav Case Price', 'Scale the ruble or item cost of scav case runs.', c.scavCasePriceMult, 1.0, 0.1, 10, 0.1, 'x')
+        + hoSlider('cultistCircleTimeMult', 'Cultist Circle Time', 'Scale how long cultist circle sacrifices take to process.', c.cultistCircleTimeMult, 1.0, 0.1, 10, 0.1, 'x')
+        + hoNum('cultistCircleMaxRewards', 'Cultist Circle Max Rewards', 'Maximum number of items returned from a cultist circle sacrifice.', c.cultistCircleMaxRewards, d.cultistCircleMaxRewards, 1, 50)
+        + hoToggle('removeArenaCrafts', 'Remove Arena Crate Crafts', 'Remove Arena crate craft recipes from all workstations. Prevents crafting arena-exclusive items.', c.removeArenaCrafts)
+        + renderPerStationOverrides('perStationProductionMult', 'Per-Station Production Speed Overrides', c.perStationProductionMult || {})
       )
-      + renderSection('Fuel & Power', ''
-        + sliderRow('fuelConsumptionMult', 'Fuel Consumption Rate', c.fuelConsumptionMult, 1.0, 0.1, 10, 0.1, 'x', 'Original: ' + (d.fuelFlowRate || 0).toFixed(4))
-        + sliderRow('generatorNoFuelMult', 'Generator Speed Without Fuel', c.generatorNoFuelMult, 1.0, 0, 5, 0.1, 'x', 'Original: ' + (d.generatorSpeedWithoutFuel || 0).toFixed(4))
-        + sliderRow('airFilterMult', 'Air Filter Flow Rate', c.airFilterMult, 1.0, 0.1, 10, 0.1, 'x', 'Original: ' + (d.airFilterFlowRate || 0).toFixed(4))
-        + sliderRow('gpuBoostMult', 'GPU Farm Boost Rate', c.gpuBoostMult, 1.0, 0.1, 10, 0.1, 'x', 'Original: ' + (d.gpuBoostRate || 0).toFixed(4))
+      // ── Fuel & Power ──
+      + hoPanel('Fuel & Power', ''
+        + hoSlider('fuelConsumptionMult', 'Fuel Consumption Rate', 'Scale how fast the generator burns fuel. Lower values make fuel last longer.', c.fuelConsumptionMult, 1.0, 0.1, 10, 0.1, 'x')
+        + hoSlider('generatorNoFuelMult', 'Generator Speed Without Fuel', 'Scale production speed when the generator is off or out of fuel.', c.generatorNoFuelMult, 1.0, 0, 5, 0.1, 'x')
+        + hoSlider('airFilterMult', 'Air Filter Flow Rate', 'Scale the effectiveness of the air filtering unit for skill leveling bonuses.', c.airFilterMult, 1.0, 0.1, 10, 0.1, 'x')
+        + hoSlider('gpuBoostMult', 'GPU Farm Boost Rate', 'Scale the bitcoin production speed boost from installed graphics cards.', c.gpuBoostMult, 1.0, 0.1, 10, 0.1, 'x')
       )
-      + renderSection('Farming', ''
-        + numRow('bitcoinTimeMinutes', 'Bitcoin Craft Time (minutes)', c.bitcoinTimeMinutes, d.bitcoinTimeMinutes, 1, 9999)
-        + numRow('maxBitcoins', 'Max Bitcoins Producible', c.maxBitcoins, d.maxBitcoins, 1, 100)
-        + numRow('waterFilterTimeMinutes', 'Water Filter Time (minutes)', c.waterFilterTimeMinutes, d.waterFilterTimeMinutes, 1, 9999)
-        + numRow('waterFilterRate', 'Water Filter Fill Rate', c.waterFilterRate, d.waterFilterRate, 1, 999)
+      // ── Farming ──
+      + hoPanel('Farming', ''
+        + hoNum('bitcoinTimeMinutes', 'Bitcoin Craft Time', 'How long a single bitcoin takes to produce, in minutes.', c.bitcoinTimeMinutes, d.bitcoinTimeMinutes, 1, 9999)
+        + hoNum('maxBitcoins', 'Max Bitcoins', 'Maximum number of bitcoins that can be queued for production at once.', c.maxBitcoins, d.maxBitcoins, 1, 100)
+        + hoNum('waterFilterTimeMinutes', 'Water Filter Time', 'How long the water collector filter takes to complete one cycle, in minutes.', c.waterFilterTimeMinutes, d.waterFilterTimeMinutes, 1, 9999)
+        + hoNum('waterFilterRate', 'Water Filter Fill Rate', 'Water collection rate per filter cycle. Higher values produce more water.', c.waterFilterRate, d.waterFilterRate, 1, 999)
       )
-      + renderSection('Stash Size ⚠', ''
-        + numRow('stash_standard', 'Standard Edition', c.stashHeights.standard, (d.stashHeights||{}).standard || 30, 10, 300)
-        + numRow('stash_leftBehind', 'Left Behind Edition', c.stashHeights.leftBehind, (d.stashHeights||{}).leftBehind || 40, 10, 300)
-        + numRow('stash_prepareForEscape', 'Prepare for Escape', c.stashHeights.prepareForEscape, (d.stashHeights||{}).prepareForEscape || 50, 10, 300)
-        + numRow('stash_edgeOfDarkness', 'Edge of Darkness', c.stashHeights.edgeOfDarkness, (d.stashHeights||{}).edgeOfDarkness || 68, 10, 300)
-        + numRow('stash_unheardEdition', 'The Unheard Edition', c.stashHeights.unheardEdition, (d.stashHeights||{}).unheardEdition || 72, 10, 300)
-        + '<div style="font-size:11px;color:var(--warning);margin-top:4px">⚠ Stash size changes require a client restart</div>'
+      // ── Stash Size ──
+      + hoPanel('Stash Size \u26A0', ''
+        + hoNum('stash_standard', 'Standard Edition', 'Stash height in grid rows for Standard Edition accounts.', c.stashHeights.standard, (d.stashHeights||{}).standard || 30, 10, 300)
+        + hoNum('stash_leftBehind', 'Left Behind Edition', 'Stash height in grid rows for Left Behind Edition accounts.', c.stashHeights.leftBehind, (d.stashHeights||{}).leftBehind || 40, 10, 300)
+        + hoNum('stash_prepareForEscape', 'Prepare for Escape', 'Stash height in grid rows for Prepare for Escape Edition.', c.stashHeights.prepareForEscape, (d.stashHeights||{}).prepareForEscape || 50, 10, 300)
+        + hoNum('stash_edgeOfDarkness', 'Edge of Darkness', 'Stash height in grid rows for Edge of Darkness Edition.', c.stashHeights.edgeOfDarkness, (d.stashHeights||{}).edgeOfDarkness || 68, 10, 300)
+        + hoNum('stash_unheardEdition', 'The Unheard Edition', 'Stash height in grid rows for The Unheard Edition.', c.stashHeights.unheardEdition, (d.stashHeights||{}).unheardEdition || 72, 10, 300)
+        + '<div style="font-size:12px;color:var(--warning);padding:10px 0 0;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Stash size changes require a client restart</div>'
       )
-      + renderSection('Health Regeneration ⚠', ''
-        + sliderRow('healthRegenMult', 'Health Regen Multiplier (all body parts)', c.healthRegenMult, 1.0, 0.1, 10, 0.1, 'x', origRegenStr(d))
-        + numRowF('energyRegenRate', 'Energy Regen Rate', c.energyRegenRate, d.energyRegenRate, 0, 100, 0.01)
-        + numRowF('hydrationRegenRate', 'Hydration Regen Rate', c.hydrationRegenRate, d.hydrationRegenRate, 0, 100, 0.01)
-        + toggleRow('disableHideoutHealthRegen', 'Disable Hideout Health Regen Bonus', c.disableHideoutHealthRegen)
-        + toggleRow('disableHideoutEnergyRegen', 'Disable Hideout Energy Regen Bonus', c.disableHideoutEnergyRegen)
-        + toggleRow('disableHideoutHydrationRegen', 'Disable Hideout Hydration Regen Bonus', c.disableHideoutHydrationRegen)
-        + '<div style="font-size:11px;color:var(--warning);margin-top:4px">⚠ Health/energy/hydration regen rates require a client restart</div>'
+      // ── Health Regeneration ──
+      + hoPanel('Health Regeneration \u26A0', ''
+        + hoSlider('healthRegenMult', 'Health Regen Multiplier', 'Scale all body part health regeneration speed in the hideout.', c.healthRegenMult, 1.0, 0.1, 10, 0.1, 'x')
+        + hoNumF('energyRegenRate', 'Energy Regen Rate', 'Energy regeneration rate per tick while resting in the hideout.', c.energyRegenRate, d.energyRegenRate, 0, 100, 0.01)
+        + hoNumF('hydrationRegenRate', 'Hydration Regen Rate', 'Hydration regeneration rate per tick while resting in the hideout.', c.hydrationRegenRate, d.hydrationRegenRate, 0, 100, 0.01)
+        + hoToggle('disableHideoutHealthRegen', 'Disable Health Regen Bonus', 'Prevent hideout upgrades from adding health regeneration bonuses to your character.', c.disableHideoutHealthRegen)
+        + hoToggle('disableHideoutEnergyRegen', 'Disable Energy Regen Bonus', 'Prevent hideout upgrades from adding energy regeneration bonuses.', c.disableHideoutEnergyRegen)
+        + hoToggle('disableHideoutHydrationRegen', 'Disable Hydration Regen Bonus', 'Prevent hideout upgrades from adding hydration regeneration bonuses.', c.disableHideoutHydrationRegen)
+        + '<div style="font-size:12px;color:var(--warning);padding:10px 0 0;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Health and regen rate changes require a client restart</div>'
       );
-  }
-
-  function origRegenStr(d) {
-    if (!d.healthRegenValues) return '';
-    var parts = [];
-    for (var k in d.healthRegenValues) parts.push(k + ': ' + d.healthRegenValues[k].toFixed(4));
-    return parts.join(', ');
   }
 
   function renderPerAreaOverrides(key, title, existing) {
     var rows = '';
     for (var at in existing) {
       var name = _hoAreas.find(function(a) { return a.areaType === at; });
-      rows += '<div style="display:flex;align-items:center;gap:8px;padding:2px 0" data-ho-parow="' + at + '">'
-        + '<span style="min-width:150px;font-size:12px;color:var(--gold)">' + escH(name ? name.areaName : at) + '</span>'
-        + '<input type="range" data-ho-pa="' + at + '" min="0.1" max="10" step="0.1" value="' + existing[at] + '" style="flex:1;accent-color:var(--gold)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
-        + '<span style="min-width:40px;text-align:right;font-size:12px">' + parseFloat(existing[at]).toFixed(1) + 'x</span>'
-        + '<span style="font-size:11px;color:var(--text-dim)">overrides global</span>'
-        + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:0 4px">×</button>'
+      rows += '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(200,170,110,0.08)" data-ho-parow="' + at + '">'
+        + '<span style="min-width:160px;font-size:12px;font-weight:600;color:var(--text)">' + escH(name ? name.areaName : at) + '</span>'
+        + '<input type="range" data-ho-pa="' + at + '" min="0.1" max="10" step="0.1" value="' + existing[at] + '" style="flex:1;max-width:180px;accent-color:var(--accent)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
+        + '<span style="min-width:40px;text-align:right;font-size:13px;font-weight:600;color:var(--accent)">' + parseFloat(existing[at]).toFixed(1) + 'x</span>'
+        + '<span style="font-size:11px;color:var(--text-dim)">(overrides global)</span>'
+        + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:2px 6px;line-height:1">×</button>'
         + '</div>';
     }
-    return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'
-      + '<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px">' + title + '</div>'
+    return '<div style="font-size:13px;font-weight:600;color:var(--accent);margin:20px 0 12px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;border-top:1px solid rgba(200,170,110,0.15);padding-top:16px">' + title + '</div>'
       + '<div id="ho-pa-rows">' + rows + '</div>'
-      + '<div style="display:flex;gap:8px;margin-top:4px">'
-      + '<select id="ho-pa-add" style="background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:3px 8px;color:var(--text-main);font-size:12px">'
+      + '<div style="display:flex;gap:8px;margin-top:8px;align-items:center">'
+      + '<select id="ho-pa-add" style="background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:5px 10px;color:var(--text-main);font-size:12px">'
       + '<option value="">Add area...</option>'
       + _hoAreas.map(function(a) { return '<option value="' + a.areaType + '">' + escH(a.areaName) + '</option>'; }).join('')
       + '</select>'
-      + '<button onclick="window.hoAddPerArea()" style="background:var(--gold);color:#111;border:none;border-radius:4px;padding:3px 10px;font-size:12px;cursor:pointer">Add</button>'
-      + '</div></div>';
+      + '<button onclick="window.hoAddPerArea()" style="padding:5px 14px;background:rgba(200,170,110,0.15);color:var(--accent);border:1px solid rgba(200,170,110,0.4);border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">Add</button>'
+      + '</div>';
   }
 
   window.hoAddPerArea = function() {
@@ -21964,13 +21956,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (document.querySelector('[data-ho-pa="' + at + '"]')) { sel.value = ''; return; }
     var name = _hoAreas.find(function(a) { return a.areaType === at; });
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:2px 0';
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(200,170,110,0.08)';
     row.setAttribute('data-ho-parow', at);
-    row.innerHTML = '<span style="min-width:150px;font-size:12px;color:var(--gold)">' + escH(name ? name.areaName : at) + '</span>'
-      + '<input type="range" data-ho-pa="' + at + '" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--gold)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
-      + '<span style="min-width:40px;text-align:right;font-size:12px">1.0x</span>'
-      + '<span style="font-size:11px;color:var(--text-dim)">overrides global</span>'
-      + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:0 4px">×</button>';
+    row.innerHTML = '<span style="min-width:160px;font-size:12px;font-weight:600;color:var(--text)">' + escH(name ? name.areaName : at) + '</span>'
+      + '<input type="range" data-ho-pa="' + at + '" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;max-width:180px;accent-color:var(--accent)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
+      + '<span style="min-width:40px;text-align:right;font-size:13px;font-weight:600;color:var(--accent)">1.0x</span>'
+      + '<span style="font-size:11px;color:var(--text-dim)">(overrides global)</span>'
+      + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:2px 6px;line-height:1">×</button>';
     document.getElementById('ho-pa-rows').appendChild(row);
     sel.value = '';
   };
@@ -21983,24 +21975,23 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var rows = '';
     for (var st in existing) {
       var sn = stations.find(function(s) { return s.type === st; });
-      rows += '<div style="display:flex;align-items:center;gap:8px;padding:2px 0" data-ho-psrow="' + st + '">'
-        + '<span style="min-width:150px;font-size:12px;color:var(--gold)">' + escH(sn ? sn.name : st) + '</span>'
-        + '<input type="range" data-ho-ps="' + st + '" min="0.1" max="10" step="0.1" value="' + existing[st] + '" style="flex:1;accent-color:var(--gold)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
-        + '<span style="min-width:40px;text-align:right;font-size:12px">' + parseFloat(existing[st]).toFixed(1) + 'x</span>'
-        + '<span style="font-size:11px;color:var(--text-dim)">overrides global</span>'
-        + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:0 4px">×</button>'
+      rows += '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(200,170,110,0.08)" data-ho-psrow="' + st + '">'
+        + '<span style="min-width:160px;font-size:12px;font-weight:600;color:var(--text)">' + escH(sn ? sn.name : st) + '</span>'
+        + '<input type="range" data-ho-ps="' + st + '" min="0.1" max="10" step="0.1" value="' + existing[st] + '" style="flex:1;max-width:180px;accent-color:var(--accent)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
+        + '<span style="min-width:40px;text-align:right;font-size:13px;font-weight:600;color:var(--accent)">' + parseFloat(existing[st]).toFixed(1) + 'x</span>'
+        + '<span style="font-size:11px;color:var(--text-dim)">(overrides global)</span>'
+        + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:2px 6px;line-height:1">×</button>'
         + '</div>';
     }
-    return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'
-      + '<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px">' + title + '</div>'
+    return '<div style="font-size:13px;font-weight:600;color:var(--accent);margin:20px 0 12px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;border-top:1px solid rgba(200,170,110,0.15);padding-top:16px">' + title + '</div>'
       + '<div id="ho-ps-rows">' + rows + '</div>'
-      + '<div style="display:flex;gap:8px;margin-top:4px">'
-      + '<select id="ho-ps-add" style="background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:3px 8px;color:var(--text-main);font-size:12px">'
+      + '<div style="display:flex;gap:8px;margin-top:8px;align-items:center">'
+      + '<select id="ho-ps-add" style="background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:5px 10px;color:var(--text-main);font-size:12px">'
       + '<option value="">Add station...</option>'
       + stations.map(function(s) { return '<option value="' + s.type + '">' + escH(s.name) + '</option>'; }).join('')
       + '</select>'
-      + '<button onclick="window.hoAddPerStation()" style="background:var(--gold);color:#111;border:none;border-radius:4px;padding:3px 10px;font-size:12px;cursor:pointer">Add</button>'
-      + '</div></div>';
+      + '<button onclick="window.hoAddPerStation()" style="padding:5px 14px;background:rgba(200,170,110,0.15);color:var(--accent);border:1px solid rgba(200,170,110,0.4);border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">Add</button>'
+      + '</div>';
   }
 
   window.hoAddPerStation = function() {
@@ -22011,66 +22002,72 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var stations = [{type:'WaterCloset',name:'Lavatory'},{type:'MedStation',name:'Medstation'},{type:'Workbench',name:'Workbench'},{type:'Kitchen',name:'Nutrition Unit'}];
     var sn = stations.find(function(s) { return s.type === st; });
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:2px 0';
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(200,170,110,0.08)';
     row.setAttribute('data-ho-psrow', st);
-    row.innerHTML = '<span style="min-width:150px;font-size:12px;color:var(--gold)">' + escH(sn ? sn.name : st) + '</span>'
-      + '<input type="range" data-ho-ps="' + st + '" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;accent-color:var(--gold)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
-      + '<span style="min-width:40px;text-align:right;font-size:12px">1.0x</span>'
-      + '<span style="font-size:11px;color:var(--text-dim)">overrides global</span>'
-      + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:0 4px">×</button>';
+    row.innerHTML = '<span style="min-width:160px;font-size:12px;font-weight:600;color:var(--text)">' + escH(sn ? sn.name : st) + '</span>'
+      + '<input type="range" data-ho-ps="' + st + '" min="0.1" max="10" step="0.1" value="1.0" style="flex:1;max-width:180px;accent-color:var(--accent)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'x\'">'
+      + '<span style="min-width:40px;text-align:right;font-size:13px;font-weight:600;color:var(--accent)">1.0x</span>'
+      + '<span style="font-size:11px;color:var(--text-dim)">(overrides global)</span>'
+      + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:2px 6px;line-height:1">×</button>';
     document.getElementById('ho-ps-rows').appendChild(row);
     sel.value = '';
   };
 
-  // ── UI Helpers ──
-  function renderSection(title, content) {
-    return '<div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-      + '<div onclick="this.parentElement.querySelector(\'.ho-body\').style.display=this.parentElement.querySelector(\'.ho-body\').style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.ho-arrow\').textContent=this.parentElement.querySelector(\'.ho-body\').style.display===\'none\'?\'▸\':\'▾\'" style="padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)">'
-      + '<span class="ho-arrow" style="color:var(--gold);font-size:12px">▾</span>'
-      + '<span style="color:var(--gold);font-weight:600;font-size:14px">' + title + '</span>'
-      + '</div>'
-      + '<div class="ho-body" style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">' + content + '</div>'
+  // ── UI Helpers (FIR-style layout) ──
+  function hoPanel(title, content) {
+    return '<div class="cc-panel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:20px 24px">'
+      + '<div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:18px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">' + title + '</div>'
+      + content
       + '</div>';
   }
 
-  function sliderRow(key, label, value, defaultVal, min, max, step, suffix, note) {
+  function hoSlider(key, title, desc, value, defaultVal, min, max, step, suffix) {
     var val = value != null ? value : defaultVal;
-    var isModified = val !== defaultVal;
-    return '<div style="display:flex;align-items:center;gap:12px;padding:4px 0">'
-      + '<span style="min-width:260px;font-size:13px;color:' + (isModified ? 'var(--gold)' : 'var(--text-dim)') + '">' + label + '</span>'
-      + '<input type="range" data-ho="' + key + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" style="flex:1;accent-color:var(--gold)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'' + (suffix||'') + '\'">'
-      + '<span style="min-width:40px;text-align:right;font-size:13px;color:var(--text-main)">' + parseFloat(val).toFixed(1) + (suffix||'') + '</span>'
-      + '<span style="font-size:11px;color:var(--text-dim);min-width:50px">(def: ' + defaultVal + ')</span>'
-      + (note ? '<span style="font-size:10px;color:var(--text-dim)">' + note + '</span>' : '')
-      + '</div>';
+    return '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">'
+      + '<div style="flex:1">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">' + title + '</div>'
+      + '<div style="font-size:12px;color:var(--text-dim);line-height:1.5">' + desc + '</div>'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-top:8px">'
+      + '<input type="range" data-ho="' + key + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" style="flex:1;max-width:200px;accent-color:var(--accent)" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+\'' + (suffix||'') + '\'">'
+      + '<span style="font-size:13px;font-weight:600;color:var(--accent);min-width:40px">' + parseFloat(val).toFixed(1) + (suffix||'') + '</span>'
+      + '<span style="font-size:11px;color:var(--text-dim)">(default: ' + defaultVal + (suffix||'') + ')</span>'
+      + '</div></div></div>';
   }
 
-  function toggleRow(key, label, value) {
-    var checked = value ? 'checked' : '';
-    return '<div style="display:flex;align-items:center;gap:12px;padding:4px 0">'
-      + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:' + (value ? 'var(--gold)' : 'var(--text-dim)') + '">'
-      + '<input type="checkbox" data-ho="' + key + '" ' + checked + ' style="accent-color:var(--gold)">'
-      + label
-      + '</label>'
-      + '</div>';
+  function hoToggle(key, title, desc, value) {
+    return '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">'
+      + '<div style="flex:1">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">' + title + '</div>'
+      + '<div style="font-size:12px;color:var(--text-dim);line-height:1.5">' + desc + '</div>'
+      + '</div>'
+      + '<label class="cc-toggle" style="flex-shrink:0;margin-top:2px">'
+      + '<input type="checkbox" data-ho="' + key + '"' + (value ? ' checked' : '') + '>'
+      + '<span class="cc-toggle-slider"></span>'
+      + '</label></div>';
   }
 
-  function numRow(key, label, value, defaultVal, min, max) {
+  function hoNum(key, title, desc, value, defaultVal, min, max) {
     var val = value != null ? value : '';
-    return '<div style="display:flex;align-items:center;gap:12px;padding:4px 0">'
-      + '<span style="min-width:260px;font-size:13px;color:' + (value != null ? 'var(--gold)' : 'var(--text-dim)') + '">' + label + '</span>'
-      + '<input type="number" data-ho="' + key + '" value="' + val + '" min="' + min + '" max="' + max + '" placeholder="' + (defaultVal||'default') + '" style="width:80px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-main);font-size:13px">'
-      + '<span style="font-size:11px;color:var(--text-dim)">(default: ' + (defaultVal||'—') + ')</span>'
-      + '</div>';
+    return '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">'
+      + '<div style="flex:1">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">' + title + '</div>'
+      + '<div style="font-size:12px;color:var(--text-dim);line-height:1.5">' + desc + '</div>'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-top:8px">'
+      + '<input type="number" data-ho="' + key + '" value="' + val + '" min="' + min + '" max="' + max + '" placeholder="' + (defaultVal||'default') + '" style="width:100px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-main);font-size:13px;font-family:var(--font-mono)">'
+      + '<span style="font-size:11px;color:var(--text-dim)">(default: ' + (defaultVal||'\u2014') + ')</span>'
+      + '</div></div></div>';
   }
 
-  function numRowF(key, label, value, defaultVal, min, max, step) {
+  function hoNumF(key, title, desc, value, defaultVal, min, max, step) {
     var val = value != null ? value : '';
-    return '<div style="display:flex;align-items:center;gap:12px;padding:4px 0">'
-      + '<span style="min-width:260px;font-size:13px;color:' + (value != null ? 'var(--gold)' : 'var(--text-dim)') + '">' + label + '</span>'
-      + '<input type="number" data-ho="' + key + '" value="' + val + '" min="' + min + '" max="' + max + '" step="' + (step||0.01) + '" placeholder="' + (defaultVal != null ? defaultVal.toFixed(4) : 'default') + '" style="width:100px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-main);font-size:13px">'
-      + '<span style="font-size:11px;color:var(--text-dim)">(default: ' + (defaultVal != null ? defaultVal.toFixed(4) : '—') + ')</span>'
-      + '</div>';
+    return '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">'
+      + '<div style="flex:1">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">' + title + '</div>'
+      + '<div style="font-size:12px;color:var(--text-dim);line-height:1.5">' + desc + '</div>'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-top:8px">'
+      + '<input type="number" data-ho="' + key + '" value="' + val + '" min="' + min + '" max="' + max + '" step="' + (step||0.01) + '" placeholder="' + (defaultVal != null ? defaultVal.toFixed(4) : 'default') + '" style="width:100px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-main);font-size:13px;font-family:var(--font-mono)">'
+      + '<span style="font-size:11px;color:var(--text-dim)">(default: ' + (defaultVal != null ? defaultVal.toFixed(4) : '\u2014') + ')</span>'
+      + '</div></div></div>';
   }
 
   // ── Collect form state ──
