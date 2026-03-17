@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-c8aa6e.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/v2.20.0-c8aa6e.svg)](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
-[![Phases](https://img.shields.io/badge/Phases_Complete-9%2F16-c8aa6e.svg)]()
+[![Phases](https://img.shields.io/badge/Phases_Complete-12%2F16-c8aa6e.svg)]()
 [![SPT](https://img.shields.io/badge/SPT-4.0.x-c8aa6e.svg)]()
 [![FIKA](https://img.shields.io/badge/FIKA-Compatible-4a7c59.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-9.0-512bd4.svg)]()
@@ -41,7 +41,7 @@ Running an SPT / FIKA server means juggling dozens of JSON config files, restart
 |:----------|:-----|:--------:|:--------|
 | **Server Mod** | This repo | Yes | C# mod running inside the SPT server — powers the entire admin panel |
 | **Headless Telemetry Plugin** | [ZSlayerHeadlessTelemetry](https://github.com/ZSlayerHQ/ZSlayerHeadlessTelemetry) | No | BepInEx plugin for FIKA headless clients — streams live raid data, positions, kills |
-| **Watchdog** | [ZSlayerWatchdog](https://github.com/ZSlayerHQ/ZSlayerWatchdog) | No | WPF desktop app — auto-starts and monitors server + headless processes with crash recovery |
+| **Watchdog** | [ZSlayerWatchdog](https://github.com/ZSlayerHQ/ZSlayerWatchdog) | No | Desktop app — auto-starts and monitors server + headless processes with crash recovery |
 
 ---
 
@@ -57,7 +57,11 @@ Running an SPT / FIKA server means juggling dozens of JSON config files, restart
 | **Progression & Skills** | XP multipliers, skill speed, loot rates, insurance, stamina, health regen — all adjustable in real time |
 | **Flea Market Control** | Global/category/per-item price multipliers, tax control, offer settings, NPC regeneration, live preview |
 | **Trader Control** | Auto-discovers all traders (vanilla + modded), per-trader buy/sell/stock multipliers, restock timers, loyalty shifts, currency override, disabled items, per-item price overrides, add custom items to any trader, custom avatars and display names, saveable presets |
-| **Scheduler & Events** | Cron-based scheduling for Double XP, Trader Sales, Loot Boost events with multiplicative stacking. Automated tasks for broadcasts, backups, and restarts |
+| **Game Values Editor** | Full database editor for ammo, armor, weapons, medical, food & drink, backpacks, and stim effects. Compare mode (2-8 items), presets, modified indicators |
+| **Hideout Editor** | Construction time, production speed, fuel & power, farming rates, per-edition stash heights, health regeneration — 6 feature groups with snapshot-and-restore |
+| **Location & Raid Settings** | Per-map editor for bot counts, loot, boss spawns, exits, weather, seasons. ABPS/APBS mod detection. 6 built-in presets (Easy, Hardcore, Horde, etc.) |
+| **FIR & Economy Rules** | Non-FIR sell penalties, purchase limits, death tax, global gameplay toggles, lost-on-death controls, secure container settings |
+| **Scheduler & Events** | Cron-based scheduling with event types (Double XP, Trader Sale, Loot Boost, and more), templates, calendar view, history, advanced options |
 | **Backup & Restore** | Full profile backup system with timestamped snapshots, selective restore, and server wipe tools |
 | **Admin Panel** | Centralized server/headless management, watchdog monitoring, FIKA settings, security controls, system metrics |
 | **Headless Client Manager** | Auto-start, auto-restart on crash, Start/Stop/Restart from the browser, status + uptime monitoring |
