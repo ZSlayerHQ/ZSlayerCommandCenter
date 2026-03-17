@@ -4842,7 +4842,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   font-size: 11px; color: var(--text-muted); display: flex;
   justify-content: space-between; align-items: center;
 }
-.is-field-label .is-default { font-size: 10px; color: var(--text-dim); }
+.is-default { font-size: 10px; color: var(--text-dim); }
 .is-field input[type="number"] {
   background: var(--bg-base); border: 1px solid var(--border); border-radius: 4px;
   padding: 5px 8px; color: var(--text); font-size: 13px; width: 100%;
@@ -5539,7 +5539,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
               <label class="loc-toggle"><input type="checkbox" id="isWeightless" onchange="window.isMarkDirty()"><span class="loc-toggle-slider"></span></label>
             </div>
             <div class="is-slider-row" id="isWeightMultRow">
-              <span>Weight multiplier</span>
+              <span>Weight multiplier <span class="is-default">default: 1.0x</span></span>
               <input type="range" id="isWeightMult" min="0.01" max="2" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isWeightMultVal')">
               <span class="is-slider-val" id="isWeightMultVal">1.00x</span>
             </div>
@@ -5555,22 +5555,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             </div>
             <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px">
               <div class="is-slider-row">
-                <span>Handbook price mult</span>
+                <span>Handbook price mult <span class="is-default">default: 1.0x</span></span>
                 <input type="range" id="isHandbookMult" min="0.01" max="10" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isHandbookMultVal')">
                 <span class="is-slider-val" id="isHandbookMultVal">1.00x</span>
               </div>
               <div class="is-slider-row">
-                <span>Loot XP multiplier</span>
+                <span>Loot XP multiplier <span class="is-default">default: 1.0x</span></span>
                 <input type="range" id="isLootXpMult" min="0.1" max="10" step="0.1" value="1" oninput="window.isSliderUpdate(this,'isLootXpMultVal')">
                 <span class="is-slider-val" id="isLootXpMultVal">1.0x</span>
               </div>
               <div class="is-slider-row">
-                <span>Examine XP multiplier</span>
+                <span>Examine XP multiplier <span class="is-default">default: 1.0x</span></span>
                 <input type="range" id="isExamineXpMult" min="0.1" max="10" step="0.1" value="1" oninput="window.isSliderUpdate(this,'isExamineXpMultVal')">
                 <span class="is-slider-val" id="isExamineXpMultVal">1.0x</span>
               </div>
               <div class="is-slider-row">
-                <span>Ammo load speed mult</span>
+                <span>Ammo load speed mult <span class="is-default">default: 1.0x</span></span>
                 <input type="range" id="isLoadSpeedMult" min="0.1" max="5" step="0.1" value="1" oninput="window.isSliderUpdate(this,'isLoadSpeedMultVal')">
                 <span class="is-slider-val" id="isLoadSpeedMultVal">1.0x</span>
               </div>
@@ -5606,11 +5606,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             </div>
             <div class="is-field-grid" style="margin-bottom:8px">
               <div class="is-field">
-                <div class="is-field-label">Key use multiplier</div>
+                <div class="is-field-label">Key use multiplier <span class="is-default">default: 1.0</span></div>
                 <input type="number" id="isKeyUseMult" min="0.1" max="100" step="0.1" value="1" onchange="window.isMarkDirty()">
               </div>
               <div class="is-field">
-                <div class="is-field-label">Key durability threshold</div>
+                <div class="is-field-label">Key durability threshold <span class="is-default">default: 100</span></div>
                 <input type="number" id="isKeyThreshold" min="1" max="1000" step="1" value="100" onchange="window.isMarkDirty()">
               </div>
             </div>
@@ -5630,11 +5630,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             </div>
             <div class="is-field-grid" style="margin-bottom:8px">
               <div class="is-field">
-                <div class="is-field-label">Keycard use multiplier</div>
+                <div class="is-field-label">Keycard use multiplier <span class="is-default">default: 1.0</span></div>
                 <input type="number" id="isKeycardUseMult" min="0.1" max="100" step="0.1" value="1" onchange="window.isMarkDirty()">
               </div>
               <div class="is-field">
-                <div class="is-field-label">Keycard durability threshold</div>
+                <div class="is-field-label">Keycard durability threshold <span class="is-default">default: 100</span></div>
                 <input type="number" id="isKeycardThreshold" min="1" max="1000" step="1" value="100" onchange="window.isMarkDirty()">
               </div>
             </div>
@@ -5661,22 +5661,22 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           </div>
           <div class="is-section-body">
             <div class="is-slider-row">
-              <span>Malfunction mult</span>
+              <span>Malfunction mult <span class="is-default">default: 1.0x</span></span>
               <input type="range" id="isMalfMult" min="0" max="3" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isMalfMultVal')">
               <span class="is-slider-val" id="isMalfMultVal">1.00x</span>
             </div>
             <div class="is-slider-row">
-              <span>Misfire mult</span>
+              <span>Misfire mult <span class="is-default">default: 1.0x</span></span>
               <input type="range" id="isMisfireMult" min="0" max="3" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isMisfireMultVal')">
               <span class="is-slider-val" id="isMisfireMultVal">1.00x</span>
             </div>
             <div class="is-slider-row">
-              <span>Fragmentation mult</span>
+              <span>Fragmentation mult <span class="is-default">default: 1.0x</span></span>
               <input type="range" id="isFragMult" min="0" max="5" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isFragMultVal')">
               <span class="is-slider-val" id="isFragMultVal">1.00x</span>
             </div>
             <div class="is-slider-row">
-              <span>Heat factor mult</span>
+              <span>Heat factor mult <span class="is-default">default: 1.0x</span></span>
               <input type="range" id="isHeatMult" min="0" max="3" step="0.01" value="1" oninput="window.isSliderUpdate(this,'isHeatMultVal')">
               <span class="is-slider-val" id="isHeatMultVal">1.00x</span>
             </div>
