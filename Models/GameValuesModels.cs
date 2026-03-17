@@ -26,9 +26,6 @@ public record GameValuesConfig
     [JsonPropertyName("stimBuffOverrides")]
     public Dictionary<string, StimBuffOverride> StimBuffOverrides { get; set; } = new();
 
-    [JsonPropertyName("presets")]
-    public Dictionary<string, GameValuesPresetEntry> Presets { get; set; } = new();
-
     [JsonPropertyName("locationOverrides")]
     public Dictionary<string, LocationOverride> LocationOverrides { get; set; } = new();
 
@@ -459,6 +456,21 @@ public record GameValuesPresetEntry
 {
     [JsonPropertyName("description")] public string Description { get; set; } = "";
     [JsonPropertyName("category")] public string Category { get; set; } = "all";
+    [JsonPropertyName("ammoOverrides")] public Dictionary<string, AmmoOverride>? AmmoOverrides { get; set; }
+    [JsonPropertyName("armorOverrides")] public Dictionary<string, ArmorOverride>? ArmorOverrides { get; set; }
+    [JsonPropertyName("weaponOverrides")] public Dictionary<string, WeaponOverride>? WeaponOverrides { get; set; }
+    [JsonPropertyName("medicalOverrides")] public Dictionary<string, MedicalOverride>? MedicalOverrides { get; set; }
+    [JsonPropertyName("backpackOverrides")] public Dictionary<string, BackpackOverride>? BackpackOverrides { get; set; }
+    [JsonPropertyName("stimBuffOverrides")] public Dictionary<string, StimBuffOverride>? StimBuffOverrides { get; set; }
+}
+
+/// <summary>File-based game values preset (saved to config/gamevalues-presets/*.json)</summary>
+public record GameValuesPresetFile
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("description")] public string Description { get; set; } = "";
+    [JsonPropertyName("category")] public string Category { get; set; } = "all";
+    [JsonPropertyName("createdUtc")] public DateTime CreatedUtc { get; set; }
     [JsonPropertyName("ammoOverrides")] public Dictionary<string, AmmoOverride>? AmmoOverrides { get; set; }
     [JsonPropertyName("armorOverrides")] public Dictionary<string, ArmorOverride>? ArmorOverrides { get; set; }
     [JsonPropertyName("weaponOverrides")] public Dictionary<string, WeaponOverride>? WeaponOverrides { get; set; }

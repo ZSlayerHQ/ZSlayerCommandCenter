@@ -4978,6 +4978,15 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .loc-diff-increase { color: #4caf50; }
 .loc-diff-decrease { color: #f44336; }
 
+/* ═══ Zombie Tab ═══ */
+.toggle-row { display:flex; align-items:center; gap:8px; margin-bottom:4px; font-size:0.85rem; color:var(--text); cursor:pointer; }
+.toggle-row input[type="checkbox"] { accent-color:var(--accent); }
+.slider-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.slider-row label { font-size:0.8rem; color:var(--text-dim); min-width:140px; flex-shrink:0; }
+.slider-row input[type="range"] { flex:1; height:5px; appearance:none; background:var(--border); border-radius:3px; cursor:pointer; min-width:80px; }
+.slider-row input[type="range"]::-webkit-slider-thumb { appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent); border:2px solid var(--bg-panel); cursor:pointer; }
+.slider-row .slider-val, .slider-val { font-size:0.8rem; color:var(--accent); font-weight:600; min-width:40px; text-align:right; font-family:var(--font-mono, monospace); }
+
 </style>
 </head>
 <body>
@@ -5055,6 +5064,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     <div class="cat-sub-group" data-cat="gameworld" style="display:none">
       <button class="cat-sub-btn" data-panel="gamevalues" onclick="switchMainTab('gamevalues')">Database</button>
       <button class="cat-sub-btn" data-panel="hideout" onclick="switchMainTab('hideout')">Hideout</button>
+      <button class="cat-sub-btn" data-panel="zombies" onclick="switchMainTab('zombies')" id="zombiesSubBtn" style="display:none">☣ Zombies</button>
     </div>
   </div>
 </div>
@@ -9633,6 +9643,216 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       <span class="phase-badge">Phase 13</span>
     </div>
   </div>
+
+  <!-- ═══════ ZOMBIES TAB ═══════ -->
+  <div class="main-tab-panel" id="main-zombies">
+    <div id="zombiesNotDetected" style="display:none">
+      <div class="coming-soon">
+        <div class="coming-soon-icon" style="font-size:3rem">☣</div>
+        <h2>ZSlayer Zombies Not Detected</h2>
+        <p>Install the ZSlayer Zombies mod to enable zombie event controls.</p>
+        <p style="color:var(--text-dim);font-size:0.85rem;margin-top:8px">Place the ZSlayerZombies folder in your SPT/user/mods/ directory and restart the server.</p>
+      </div>
+    </div>
+    <div id="zombiesContent" style="display:none">
+      <!-- Header bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:1.8rem">☣</span>
+          <div>
+            <h2 style="margin:0;color:#c8aa6e;font-size:1.3rem">Zombie Control</h2>
+            <span id="zombieModVersion" style="color:var(--text-dim);font-size:0.8rem"></span>
+          </div>
+          <label class="toggle-switch" style="margin-left:12px" title="Master Enable/Disable">
+            <input type="checkbox" id="zombieMasterToggle" onchange="window.zombieToggleMaster()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span id="zombieStatusBadge" class="tag" style="font-size:0.75rem"></span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <select id="zombiePresetSelect" onchange="window.zombieApplyPreset(this.value)" style="background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:0.8rem">
+            <option value="">Load Preset...</option>
+            <option value="vanilla">Vanilla (All Off)</option>
+            <option value="light">Light Infection (25%)</option>
+            <option value="full">Full Outbreak (100%)</option>
+            <option value="labsonly">Labs Only</option>
+            <option value="nightterror">Night Terror</option>
+            <option value="horde">Horde Mode</option>
+            <option value="apocalypse">Apocalypse</option>
+            <option value="survival">Survival</option>
+          </select>
+          <button class="btn btn-sm" onclick="window.zombieApplyConfig()" style="background:#c8aa6e;color:#000;font-weight:600">Apply Changes</button>
+          <button class="btn btn-sm" onclick="window.zombieResetDefaults()" style="background:var(--bg-surface);border:1px solid var(--border)">Reset</button>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Map Infection Grid ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem">☣ Map Infection Levels</h3>
+        <div id="zombieMapGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
+      </div>
+
+      <!-- ═══ SECTION: Zombie Behaviour / AI ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieBehaviourBody')">🧠 Zombie Behaviour & AI <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieBehaviourBody">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:12px">
+            <label class="toggle-row"><input type="checkbox" id="zb_replaceBotHostility"><span>Replace Bot Hostility</span></label>
+            <label class="toggle-row"><input type="checkbox" id="zb_enableSummoning"><span>Enable Summoning</span></label>
+            <label class="toggle-row"><input type="checkbox" id="zb_removeLabsKeycard"><span>Remove Labs Keycard</span></label>
+            <label class="toggle-row"><input type="checkbox" id="zb_disableNormalScavWaves"><span>Disable Normal Scav Waves</span></label>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+            <div class="slider-row"><label>Zombie Multiplier</label><input type="range" min="1" max="20" id="zb_zombieMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_zombieMultiplier_val"></span></div>
+            <div class="slider-row"><label>Crowds Limit</label><input type="range" min="1" max="10" id="zb_crowdsLimit" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_crowdsLimit_val"></span></div>
+            <div class="slider-row"><label>Max Crowd Spawn</label><input type="range" min="1" max="30" id="zb_maxCrowdAttackSpawnLimit" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_maxCrowdAttackSpawnLimit_val"></span></div>
+            <div class="slider-row"><label>Crowd Cooldown (sec)</label><input type="range" min="30" max="600" step="10" id="zb_crowdCooldownPerPlayerSec" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_crowdCooldownPerPlayerSec_val"></span></div>
+            <div class="slider-row"><label>Block Radius</label><input type="range" min="10" max="200" id="zb_crowdAttackBlockRadius" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_crowdAttackBlockRadius_val"></span></div>
+            <div class="slider-row"><label>Min Spawn Distance</label><input type="range" min="10" max="100" id="zb_minSpawnDistToPlayer" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_minSpawnDistToPlayer_val"></span></div>
+            <div class="slider-row"><label>Search Radius Limit</label><input type="range" min="20" max="200" id="zb_targetPointSearchRadiusLimit" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_targetPointSearchRadiusLimit_val"></span></div>
+            <div class="slider-row"><label>Zombie Call Delta</label><input type="range" min="5" max="50" id="zb_zombieCallDeltaRadius" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_zombieCallDeltaRadius_val"></span></div>
+            <div class="slider-row"><label>Call Period (sec)</label><input type="range" min="1" max="10" id="zb_zombieCallPeriodSec" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_zombieCallPeriodSec_val"></span></div>
+            <div class="slider-row"><label>Call Radius Limit</label><input type="range" min="10" max="100" id="zb_zombieCallRadiusLimit" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_zombieCallRadiusLimit_val"></span></div>
+            <div class="slider-row"><label>Infected Look Coeff</label><input type="range" min="0" max="1" step="0.05" id="zb_infectedLookCoeff" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_infectedLookCoeff_val"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Spawn Weights & Boss Zombies ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieSpawnBody')">⚔ Spawn Weights & Boss Zombies <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieSpawnBody">
+          <div id="zombieSpawnWeightsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-bottom:16px"></div>
+          <h4 style="color:var(--text);margin:12px 0 8px;font-size:0.9rem">Boss Zombies</h4>
+          <div id="zombieBossGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px"></div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Infection Effects ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieEffectsBody')">🩸 Infection Effects <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieEffectsBody">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:8px">
+            <label class="toggle-row"><input type="checkbox" id="ze_enabled"><span>Enable Infection Effects</span></label>
+            <label class="toggle-row"><input type="checkbox" id="ze_displayUI"><span>Display UI Indicator</span></label>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+            <div class="slider-row"><label>Zombie Bleed Multiplier</label><input type="range" min="1" max="30" step="0.5" id="ze_zombieBleedMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="ze_zombieBleedMultiplier_val"></span></div>
+            <div class="slider-row"><label>Dehydration Rate</label><input type="range" min="-3" max="0" step="0.01" id="ze_dehydrationRate" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="ze_dehydrationRate_val"></span></div>
+            <div class="slider-row"><label>Hearing Debuff %</label><input type="range" min="0" max="1" step="0.05" id="ze_hearingDebuffPercentage" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="ze_hearingDebuffPercentage_val"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Night Mode ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieNightBody')">🌙 Night Mode <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieNightBody">
+          <label class="toggle-row" style="margin-bottom:8px"><input type="checkbox" id="zn_enabled"><span>Enable Night Mode</span></label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+            <div class="slider-row"><label>Night Infection Multiplier</label><input type="range" min="1" max="3" step="0.1" id="zn_nightInfectionMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zn_nightInfectionMultiplier_val"></span></div>
+            <label class="toggle-row"><input type="checkbox" id="zn_forceNightWeather"><span>Force Foggy/Overcast Weather</span></label>
+            <div class="slider-row"><label>Night Boss Chance Mult</label><input type="range" min="1" max="5" step="0.5" id="zn_nightBossChanceMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zn_nightBossChanceMultiplier_val"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Raid Settings ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieRaidBody')">⏱ Raid Settings <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieRaidBody">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:8px">
+            <label class="toggle-row"><input type="checkbox" id="zr_extendRaidTime"><span>Extend Raid Time</span></label>
+            <label class="toggle-row"><input type="checkbox" id="zr_scavsAffected"><span>Scavs Affected</span></label>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+            <div class="slider-row"><label>Raid Time Multiplier</label><input type="range" min="1" max="3" step="0.1" id="zr_raidTimeMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zr_raidTimeMultiplier_val"></span></div>
+            <div class="slider-row"><label>Scav Cooldown Multiplier</label><input type="range" min="0.1" max="2" step="0.1" id="zr_scavCooldownMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zr_scavCooldownMultiplier_val"></span></div>
+            <div>
+              <label style="font-size:0.8rem;color:var(--text-dim)">Force Weather</label>
+              <select id="zr_forceWeather" style="background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:0.85rem;width:100%">
+                <option value="none">None</option><option value="foggy">Foggy</option><option value="rainy">Rainy</option><option value="clear">Clear</option><option value="overcast">Overcast</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.8rem;color:var(--text-dim)">Force Season</label>
+              <select id="zr_forceSeason" style="background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:0.85rem;width:100%">
+                <option value="none">None</option><option value="summer">Summer</option><option value="autumn">Autumn</option><option value="winter">Winter</option><option value="spring">Spring</option><option value="storm">Storm</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Loot Modifiers ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieLootBody')">💰 Loot Modifiers <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieLootBody">
+          <label class="toggle-row" style="margin-bottom:8px"><input type="checkbox" id="zl_enabled"><span>Enable Loot Modifiers</span></label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+            <div class="slider-row"><label>Global Loot</label><input type="range" min="0.1" max="5" step="0.1" id="zl_globalLootMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zl_globalLootMultiplier_val"></span></div>
+            <div class="slider-row"><label>Medical Loot</label><input type="range" min="0.1" max="5" step="0.1" id="zl_medicalLootMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zl_medicalLootMultiplier_val"></span></div>
+            <div class="slider-row"><label>Ammo Loot</label><input type="range" min="0.1" max="5" step="0.1" id="zl_ammoLootMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zl_ammoLootMultiplier_val"></span></div>
+            <div class="slider-row"><label>Valuable Loot</label><input type="range" min="0.1" max="5" step="0.1" id="zl_valuableLootMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zl_valuableLootMultiplier_val"></span></div>
+            <div class="slider-row"><label>Loose Loot</label><input type="range" min="0.1" max="5" step="0.1" id="zl_looseLootMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zl_looseLootMultiplier_val"></span></div>
+            <div class="slider-row"><label>Container Loot</label><input type="range" min="0.1" max="5" step="0.1" id="zl_containerLootMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zl_containerLootMultiplier_val"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: XP & Rewards ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieRewardsBody')">⭐ XP & Rewards <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieRewardsBody">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+            <div class="slider-row"><label>Zombie Kill XP Mult</label><input type="range" min="0.5" max="5" step="0.1" id="zx_zombieKillXpMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zx_zombieKillXpMultiplier_val"></span></div>
+            <div class="slider-row"><label>Survival Bonus XP</label><input type="range" min="0" max="10000" step="100" id="zx_survivalBonusXp" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zx_survivalBonusXp_val"></span></div>
+            <div class="slider-row"><label>Raid XP Multiplier</label><input type="range" min="0.5" max="5" step="0.1" id="zx_raidXpMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zx_raidXpMultiplier_val"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Difficulty Scaling ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieDiffBody')">📈 Difficulty Scaling (FIKA) <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieDiffBody">
+          <label class="toggle-row" style="margin-bottom:8px"><input type="checkbox" id="zd_enabled"><span>Enable Difficulty Scaling</span></label>
+          <div style="margin-bottom:8px">
+            <label style="font-size:0.8rem;color:var(--text-dim)">Scaling Mode</label>
+            <select id="zd_scalingMode" style="background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:0.85rem">
+              <option value="playerCount">Player Count</option><option value="averageLevel">Average Level</option><option value="both">Both</option>
+            </select>
+          </div>
+          <div id="zombieDiffScalePreview" style="font-size:0.85rem;color:var(--text-dim);padding:6px 10px;background:var(--bg-panel);border-radius:6px;border:1px solid var(--border)"></div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Wave Escalation ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieEscalationBody')">📊 Wave Escalation <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieEscalationBody">
+          <label class="toggle-row" style="margin-bottom:8px"><input type="checkbox" id="zw_enabled"><span>Enable Wave Escalation</span></label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-bottom:8px">
+            <div class="slider-row"><label>Start Infection %</label><input type="range" min="0" max="100" id="zw_startInfectionPercent" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zw_startInfectionPercent_val"></span></div>
+            <div class="slider-row"><label>End Infection %</label><input type="range" min="50" max="300" id="zw_endInfectionPercent" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zw_endInfectionPercent_val"></span></div>
+            <div>
+              <label style="font-size:0.8rem;color:var(--text-dim)">Escalation Curve</label>
+              <select id="zw_escalationCurve" style="background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:0.85rem;width:100%">
+                <option value="linear">Linear</option><option value="exponential">Exponential</option><option value="sudden">Sudden (midpoint spike)</option>
+              </select>
+            </div>
+          </div>
+          <label class="toggle-row" style="margin-bottom:8px"><input type="checkbox" id="zw_hordeEventEnabled"><span>Enable Horde Events</span></label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+            <div class="slider-row"><label>Horde Interval (min)</label><input type="range" min="2" max="30" id="zw_hordeIntervalMinutes" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zw_hordeIntervalMinutes_val"></span></div>
+            <div class="slider-row"><label>Horde Multiplier</label><input type="range" min="1" max="10" step="0.5" id="zw_hordeMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zw_hordeMultiplier_val"></span></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end zombiesContent -->
+  </div><!-- end main-zombies -->
+
 </div>
 
 <!-- Global Alert Widget -->
@@ -9735,7 +9955,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     'raids':        { panels: ['raidinfo'] },
     'players-cat':  { panels: ['players', 'items', 'quests', 'progression'], subLabels: { 'players': 'Management', 'items': 'Items', 'quests': 'Quests', 'progression': 'Progression' } },
     'economy':      { panels: ['traders', 'flea', 'fir'], subLabels: { 'traders': 'Traders', 'flea': 'Flea Market', 'fir': 'FIR & Rules' } },
-    'gameworld':    { panels: ['gamevalues', 'hideout'], subLabels: { 'gamevalues': 'Database', 'hideout': 'Hideout' } },
+    'gameworld':    { panels: ['gamevalues', 'hideout', 'zombies'], subLabels: { 'gamevalues': 'Database', 'hideout': 'Hideout', 'zombies': 'Zombies' } },
     'profiles-cat': { panels: ['profiles'], locked: true },
     'community':    { panels: ['bounties'], locked: true }
   };
@@ -10210,6 +10430,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (tab === 'gamevalues' && !gamevaluesLoaded) gameValuesInit();
     if (tab === 'fir' && !window.firLoaded) window.firInit && window.firInit();
     if (tab === 'hideout' && !window._hideoutLoaded) window.hideoutInit && window.hideoutInit();
+    if (tab === 'zombies' && !window._zombiesLoaded) window.zombiesInit && window.zombiesInit();
 
     // Manage raid info polling
     if (tab === 'raidinfo') {
@@ -24601,6 +24822,505 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       st.style.color = '#f44336';
     });
   };
+
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ZOMBIES TAB SCRIPT                                      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  var BASE = '/zslayer/cc/';
+  var _zombieConfig = null;
+  window._zombiesLoaded = false;
+
+  var MAP_NAMES = ['Labs','Customs','Factory','Interchange','Lighthouse','Reserve','GroundZero','Shoreline','Streets','Woods'];
+  var MAP_DISPLAY = { Labs:'Labs', Customs:'Customs', Factory:'Factory', Interchange:'Interchange', Lighthouse:'Lighthouse', Reserve:'Reserve', GroundZero:'Ground Zero', Shoreline:'Shoreline', Streets:'Streets', Woods:'Woods' };
+
+  var ZOMBIE_TYPES = ['infectedAssault','infectedPmc','infectedCivil','infectedLaborant','infectedTagilla','cursedAssault'];
+  var ZOMBIE_DISPLAY = { infectedAssault:'Infected Assault', infectedPmc:'Infected PMC', infectedCivil:'Infected Civilian', infectedLaborant:'Infected Laborant', infectedTagilla:'Infected Tagilla', cursedAssault:'Cursed Assault' };
+
+  // ═══ PRESETS ═══
+  var PRESETS = {
+    vanilla: { enabled: false },
+    light: {
+      enabled: true,
+      maps: { Labs:25, Customs:25, Factory:25, Interchange:25, Lighthouse:25, Reserve:25, GroundZero:25, Shoreline:25, Streets:25, Woods:25 },
+      disableBosses: { Labs:false, Customs:false, Factory:false, Interchange:false, Lighthouse:false, Reserve:false, GroundZero:false, Shoreline:false, Streets:false, Woods:false }
+    },
+    full: {
+      enabled: true,
+      maps: { Labs:100, Customs:100, Factory:100, Interchange:100, Lighthouse:100, Reserve:100, GroundZero:100, Shoreline:100, Streets:100, Woods:100 },
+      disableBosses: { Labs:true, Customs:false, Factory:false, Interchange:false, Lighthouse:false, Reserve:false, GroundZero:false, Shoreline:false, Streets:false, Woods:false }
+    },
+    labsonly: {
+      enabled: true,
+      maps: { Labs:100, Customs:0, Factory:0, Interchange:0, Lighthouse:0, Reserve:0, GroundZero:0, Shoreline:0, Streets:0, Woods:0 },
+      disableBosses: { Labs:true, Customs:false, Factory:false, Interchange:false, Lighthouse:false, Reserve:false, GroundZero:false, Shoreline:false, Streets:false, Woods:false },
+      zombieSettings: { removeLabsKeycard: true }
+    },
+    nightterror: {
+      enabled: true,
+      maps: { Labs:75, Customs:75, Factory:75, Interchange:75, Lighthouse:75, Reserve:75, GroundZero:75, Shoreline:75, Streets:75, Woods:75 },
+      nightMode: { enabled: true, nightInfectionMultiplier: 2.0, forceNightWeather: true, nightBossChanceMultiplier: 2.0 },
+      waveEscalation: { enabled: true, startInfectionPercent: 25, endInfectionPercent: 150, escalationCurve: 'exponential' }
+    },
+    horde: {
+      enabled: true,
+      maps: { Labs:100, Customs:100, Factory:100, Interchange:100, Lighthouse:100, Reserve:100, GroundZero:100, Shoreline:100, Streets:100, Woods:100 },
+      raidSettings: { extendRaidTime: true, raidTimeMultiplier: 1.5 },
+      waveEscalation: { enabled: true, hordeEventEnabled: true, hordeIntervalMinutes: 5, hordeMultiplier: 5.0, startInfectionPercent: 50, endInfectionPercent: 200 }
+    },
+    apocalypse: {
+      enabled: true,
+      maps: { Labs:100, Customs:100, Factory:100, Interchange:100, Lighthouse:100, Reserve:100, GroundZero:100, Shoreline:100, Streets:100, Woods:100 },
+      disableBosses: { Labs:true, Customs:true, Factory:true, Interchange:true, Lighthouse:true, Reserve:true, GroundZero:true, Shoreline:true, Streets:true, Woods:true },
+      zombieSettings: { zombieMultiplier: 10, crowdsLimit: 5, maxCrowdAttackSpawnLimit: 25, disableNormalScavWaves: true },
+      waveEscalation: { enabled: true, hordeEventEnabled: true, hordeIntervalMinutes: 5, hordeMultiplier: 5.0, startInfectionPercent: 75, endInfectionPercent: 200 },
+      nightMode: { enabled: true, nightInfectionMultiplier: 2.0 }
+    },
+    survival: {
+      enabled: true,
+      maps: { Labs:75, Customs:75, Factory:75, Interchange:75, Lighthouse:75, Reserve:75, GroundZero:75, Shoreline:75, Streets:75, Woods:75 },
+      raidSettings: { extendRaidTime: true, raidTimeMultiplier: 1.5 },
+      lootModifiers: { enabled: true, medicalLootMultiplier: 2.0, ammoLootMultiplier: 1.5 },
+      rewards: { zombieKillXpMultiplier: 1.5, survivalBonusXp: 500 }
+    }
+  };
+
+  // ═══ INIT ═══
+  window.zombiesInit = function() {
+    if (window._zombiesLoaded) return;
+    window._zombiesLoaded = true;
+    loadZombieDetection();
+  };
+
+  function loadZombieDetection() {
+    fetch(BASE + 'zombies').then(function(r) { return r.json(); }).then(function(data) {
+      if (!data.detected) {
+        document.getElementById('zombiesNotDetected').style.display = 'block';
+        document.getElementById('zombiesContent').style.display = 'none';
+        return;
+      }
+      document.getElementById('zombiesNotDetected').style.display = 'none';
+      document.getElementById('zombiesContent').style.display = 'block';
+      document.getElementById('zombieModVersion').textContent = 'v' + (data.version || '?');
+
+      // Show the sub-tab button
+      var btn = document.getElementById('zombiesSubBtn');
+      if (btn) btn.style.display = '';
+
+      if (data.config) {
+        _zombieConfig = data.config;
+        populateUI(_zombieConfig);
+      } else {
+        loadZombieConfig();
+      }
+    }).catch(function(e) {
+      console.warn('Zombie detection failed:', e);
+      document.getElementById('zombiesNotDetected').style.display = 'block';
+      document.getElementById('zombiesContent').style.display = 'none';
+    });
+  }
+
+  function loadZombieConfig() {
+    fetch(BASE + 'zombies/config').then(function(r) { return r.json(); }).then(function(config) {
+      _zombieConfig = config;
+      populateUI(config);
+    }).catch(function(e) { console.warn('Failed to load zombie config:', e); });
+  }
+
+  // ═══ POPULATE UI FROM CONFIG ═══
+  function populateUI(c) {
+    // Master toggle
+    document.getElementById('zombieMasterToggle').checked = c.enabled;
+    updateStatusBadge(c.enabled);
+
+    // Map grid
+    renderMapGrid(c);
+
+    // Behaviour toggles
+    setCheck('zb_replaceBotHostility', c.zombieSettings.replaceBotHostility);
+    setCheck('zb_enableSummoning', c.zombieSettings.enableSummoning);
+    setCheck('zb_removeLabsKeycard', c.zombieSettings.removeLabsKeycard);
+    setCheck('zb_disableNormalScavWaves', c.zombieSettings.disableNormalScavWaves);
+
+    // Behaviour sliders
+    setSlider('zb_zombieMultiplier', c.zombieSettings.zombieMultiplier);
+    setSlider('zb_crowdsLimit', c.zombieSettings.crowdsLimit);
+    setSlider('zb_maxCrowdAttackSpawnLimit', c.zombieSettings.maxCrowdAttackSpawnLimit);
+    setSlider('zb_crowdCooldownPerPlayerSec', c.zombieSettings.crowdCooldownPerPlayerSec);
+    setSlider('zb_crowdAttackBlockRadius', c.zombieSettings.crowdAttackBlockRadius);
+    setSlider('zb_minSpawnDistToPlayer', c.zombieSettings.minSpawnDistToPlayer);
+    setSlider('zb_targetPointSearchRadiusLimit', c.zombieSettings.targetPointSearchRadiusLimit);
+    setSlider('zb_zombieCallDeltaRadius', c.zombieSettings.zombieCallDeltaRadius);
+    setSlider('zb_zombieCallPeriodSec', c.zombieSettings.zombieCallPeriodSec);
+    setSlider('zb_zombieCallRadiusLimit', c.zombieSettings.zombieCallRadiusLimit);
+    setSlider('zb_infectedLookCoeff', c.zombieSettings.infectedLookCoeff);
+
+    // Spawn weights
+    renderSpawnWeights(c.spawnWeights);
+    renderBossZombies(c.bossZombies);
+
+    // Infection effects
+    setCheck('ze_enabled', c.infectionEffects.enabled);
+    setCheck('ze_displayUI', c.infectionEffects.displayUI);
+    setSlider('ze_zombieBleedMultiplier', c.infectionEffects.zombieBleedMultiplier);
+    setSlider('ze_dehydrationRate', c.infectionEffects.dehydrationRate);
+    setSlider('ze_hearingDebuffPercentage', c.infectionEffects.hearingDebuffPercentage);
+
+    // Night mode
+    setCheck('zn_enabled', c.nightMode.enabled);
+    setSlider('zn_nightInfectionMultiplier', c.nightMode.nightInfectionMultiplier);
+    setCheck('zn_forceNightWeather', c.nightMode.forceNightWeather);
+    setSlider('zn_nightBossChanceMultiplier', c.nightMode.nightBossChanceMultiplier);
+
+    // Raid settings
+    setCheck('zr_extendRaidTime', c.raidSettings.extendRaidTime);
+    setCheck('zr_scavsAffected', c.raidSettings.scavsAffected);
+    setSlider('zr_raidTimeMultiplier', c.raidSettings.raidTimeMultiplier);
+    setSlider('zr_scavCooldownMultiplier', c.raidSettings.scavCooldownMultiplier);
+    setSelect('zr_forceWeather', c.raidSettings.forceWeather);
+    setSelect('zr_forceSeason', c.raidSettings.forceSeason);
+
+    // Loot modifiers
+    setCheck('zl_enabled', c.lootModifiers.enabled);
+    setSlider('zl_globalLootMultiplier', c.lootModifiers.globalLootMultiplier);
+    setSlider('zl_medicalLootMultiplier', c.lootModifiers.medicalLootMultiplier);
+    setSlider('zl_ammoLootMultiplier', c.lootModifiers.ammoLootMultiplier);
+    setSlider('zl_valuableLootMultiplier', c.lootModifiers.valuableLootMultiplier);
+    setSlider('zl_looseLootMultiplier', c.lootModifiers.looseLootMultiplier);
+    setSlider('zl_containerLootMultiplier', c.lootModifiers.containerLootMultiplier);
+
+    // XP & Rewards
+    setSlider('zx_zombieKillXpMultiplier', c.rewards.zombieKillXpMultiplier);
+    setSlider('zx_survivalBonusXp', c.rewards.survivalBonusXp);
+    setSlider('zx_raidXpMultiplier', c.rewards.raidXpMultiplier);
+
+    // Difficulty scaling
+    setCheck('zd_enabled', c.difficultyScaling.enabled);
+    setSelect('zd_scalingMode', c.difficultyScaling.scalingMode);
+    renderDiffScalePreview(c.difficultyScaling);
+
+    // Wave escalation
+    setCheck('zw_enabled', c.waveEscalation.enabled);
+    setSlider('zw_startInfectionPercent', c.waveEscalation.startInfectionPercent);
+    setSlider('zw_endInfectionPercent', c.waveEscalation.endInfectionPercent);
+    setSelect('zw_escalationCurve', c.waveEscalation.escalationCurve);
+    setCheck('zw_hordeEventEnabled', c.waveEscalation.hordeEventEnabled);
+    setSlider('zw_hordeIntervalMinutes', c.waveEscalation.hordeIntervalMinutes);
+    setSlider('zw_hordeMultiplier', c.waveEscalation.hordeMultiplier);
+  }
+
+  // ═══ READ UI INTO CONFIG ═══
+  function readUI() {
+    var c = JSON.parse(JSON.stringify(_zombieConfig || {}));
+    c.enabled = document.getElementById('zombieMasterToggle').checked;
+
+    // Maps
+    c.maps = c.maps || {};
+    c.disableBosses = c.disableBosses || {};
+    MAP_NAMES.forEach(function(m) {
+      var slider = document.getElementById('zm_' + m);
+      if (slider) c.maps[m] = parseInt(slider.value) || 0;
+      var chk = document.getElementById('zbd_' + m);
+      if (chk) c.disableBosses[m] = chk.checked;
+    });
+
+    // Behaviour
+    c.zombieSettings = c.zombieSettings || {};
+    c.zombieSettings.replaceBotHostility = getCheck('zb_replaceBotHostility');
+    c.zombieSettings.enableSummoning = getCheck('zb_enableSummoning');
+    c.zombieSettings.removeLabsKeycard = getCheck('zb_removeLabsKeycard');
+    c.zombieSettings.disableNormalScavWaves = getCheck('zb_disableNormalScavWaves');
+    c.zombieSettings.zombieMultiplier = getNum('zb_zombieMultiplier');
+    c.zombieSettings.crowdsLimit = getNum('zb_crowdsLimit');
+    c.zombieSettings.maxCrowdAttackSpawnLimit = getNum('zb_maxCrowdAttackSpawnLimit');
+    c.zombieSettings.crowdCooldownPerPlayerSec = getNum('zb_crowdCooldownPerPlayerSec');
+    c.zombieSettings.crowdAttackBlockRadius = getNum('zb_crowdAttackBlockRadius');
+    c.zombieSettings.minSpawnDistToPlayer = getNum('zb_minSpawnDistToPlayer');
+    c.zombieSettings.targetPointSearchRadiusLimit = getNum('zb_targetPointSearchRadiusLimit');
+    c.zombieSettings.zombieCallDeltaRadius = getNum('zb_zombieCallDeltaRadius');
+    c.zombieSettings.zombieCallPeriodSec = getNum('zb_zombieCallPeriodSec');
+    c.zombieSettings.zombieCallRadiusLimit = getNum('zb_zombieCallRadiusLimit');
+    c.zombieSettings.infectedLookCoeff = getFloat('zb_infectedLookCoeff');
+
+    // Spawn weights
+    c.spawnWeights = c.spawnWeights || {};
+    ZOMBIE_TYPES.forEach(function(t) {
+      c.spawnWeights[t] = c.spawnWeights[t] || {};
+      ['easy','normal','hard'].forEach(function(d) {
+        var el = document.getElementById('zsw_' + t + '_' + d);
+        if (el) c.spawnWeights[t][d] = parseInt(el.value) || 0;
+      });
+    });
+
+    // Boss zombies
+    c.bossZombies = c.bossZombies || {};
+    ['infectedTagilla','cursedAssault'].forEach(function(boss) {
+      c.bossZombies[boss] = c.bossZombies[boss] || {};
+      var enEl = document.getElementById('zboss_' + boss + '_enabled');
+      if (enEl) c.bossZombies[boss].enabled = enEl.checked;
+      var chEl = document.getElementById('zboss_' + boss + '_spawnChance');
+      if (chEl) c.bossZombies[boss].spawnChance = parseInt(chEl.value) || 0;
+      var mpEl = document.getElementById('zboss_' + boss + '_maxPerRaid');
+      if (mpEl) c.bossZombies[boss].maxPerRaid = parseInt(mpEl.value) || 1;
+    });
+
+    // Effects
+    c.infectionEffects = c.infectionEffects || {};
+    c.infectionEffects.enabled = getCheck('ze_enabled');
+    c.infectionEffects.displayUI = getCheck('ze_displayUI');
+    c.infectionEffects.zombieBleedMultiplier = getFloat('ze_zombieBleedMultiplier');
+    c.infectionEffects.dehydrationRate = getFloat('ze_dehydrationRate');
+    c.infectionEffects.hearingDebuffPercentage = getFloat('ze_hearingDebuffPercentage');
+
+    // Night mode
+    c.nightMode = c.nightMode || {};
+    c.nightMode.enabled = getCheck('zn_enabled');
+    c.nightMode.nightInfectionMultiplier = getFloat('zn_nightInfectionMultiplier');
+    c.nightMode.forceNightWeather = getCheck('zn_forceNightWeather');
+    c.nightMode.nightBossChanceMultiplier = getFloat('zn_nightBossChanceMultiplier');
+
+    // Raid settings
+    c.raidSettings = c.raidSettings || {};
+    c.raidSettings.extendRaidTime = getCheck('zr_extendRaidTime');
+    c.raidSettings.scavsAffected = getCheck('zr_scavsAffected');
+    c.raidSettings.raidTimeMultiplier = getFloat('zr_raidTimeMultiplier');
+    c.raidSettings.scavCooldownMultiplier = getFloat('zr_scavCooldownMultiplier');
+    c.raidSettings.forceWeather = getSelect('zr_forceWeather');
+    c.raidSettings.forceSeason = getSelect('zr_forceSeason');
+
+    // Loot
+    c.lootModifiers = c.lootModifiers || {};
+    c.lootModifiers.enabled = getCheck('zl_enabled');
+    c.lootModifiers.globalLootMultiplier = getFloat('zl_globalLootMultiplier');
+    c.lootModifiers.medicalLootMultiplier = getFloat('zl_medicalLootMultiplier');
+    c.lootModifiers.ammoLootMultiplier = getFloat('zl_ammoLootMultiplier');
+    c.lootModifiers.valuableLootMultiplier = getFloat('zl_valuableLootMultiplier');
+    c.lootModifiers.looseLootMultiplier = getFloat('zl_looseLootMultiplier');
+    c.lootModifiers.containerLootMultiplier = getFloat('zl_containerLootMultiplier');
+
+    // XP
+    c.rewards = c.rewards || {};
+    c.rewards.zombieKillXpMultiplier = getFloat('zx_zombieKillXpMultiplier');
+    c.rewards.survivalBonusXp = getNum('zx_survivalBonusXp');
+    c.rewards.raidXpMultiplier = getFloat('zx_raidXpMultiplier');
+
+    // Difficulty
+    c.difficultyScaling = c.difficultyScaling || {};
+    c.difficultyScaling.enabled = getCheck('zd_enabled');
+    c.difficultyScaling.scalingMode = getSelect('zd_scalingMode');
+
+    // Wave escalation
+    c.waveEscalation = c.waveEscalation || {};
+    c.waveEscalation.enabled = getCheck('zw_enabled');
+    c.waveEscalation.startInfectionPercent = getNum('zw_startInfectionPercent');
+    c.waveEscalation.endInfectionPercent = getNum('zw_endInfectionPercent');
+    c.waveEscalation.escalationCurve = getSelect('zw_escalationCurve');
+    c.waveEscalation.hordeEventEnabled = getCheck('zw_hordeEventEnabled');
+    c.waveEscalation.hordeIntervalMinutes = getNum('zw_hordeIntervalMinutes');
+    c.waveEscalation.hordeMultiplier = getFloat('zw_hordeMultiplier');
+
+    return c;
+  }
+
+  // ═══ MAP GRID RENDER ═══
+  function renderMapGrid(c) {
+    var grid = document.getElementById('zombieMapGrid');
+    grid.innerHTML = '';
+    MAP_NAMES.forEach(function(m) {
+      var pct = c.maps[m] || 0;
+      var bossDis = c.disableBosses[m] || false;
+      var color = pct === 0 ? '#666' : pct < 25 ? '#4caf50' : pct < 75 ? '#ff9800' : '#f44336';
+      var card = document.createElement('div');
+      card.style.cssText = 'background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;position:relative;overflow:hidden';
+      card.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+        + '<span style="font-weight:600;color:var(--text)">' + (MAP_DISPLAY[m] || m) + '</span>'
+        + '<span style="font-size:1.1rem;font-weight:700;color:' + color + '" id="zm_' + m + '_display">' + pct + '%</span>'
+        + '</div>'
+        + '<input type="range" min="0" max="200" value="' + pct + '" id="zm_' + m + '" '
+        + 'oninput="window.zombieMapSliderUpdate(\'' + m + '\',this.value)" '
+        + 'style="width:100%;accent-color:' + color + '">'
+        + '<div style="display:flex;align-items:center;gap:6px;margin-top:6px">'
+        + '<label style="font-size:0.75rem;color:var(--text-dim);display:flex;align-items:center;gap:4px;cursor:pointer">'
+        + '<input type="checkbox" id="zbd_' + m + '"' + (bossDis ? ' checked' : '') + '> Disable Bosses</label>'
+        + '</div>'
+        + '<div style="position:absolute;bottom:0;left:0;height:3px;background:' + color + ';width:' + Math.min(pct, 100) + '%;transition:width 0.3s"></div>';
+      grid.appendChild(card);
+    });
+  }
+
+  window.zombieMapSliderUpdate = function(mapName, val) {
+    val = parseInt(val);
+    var display = document.getElementById('zm_' + mapName + '_display');
+    if (display) {
+      display.textContent = val + '%';
+      var color = val === 0 ? '#666' : val < 25 ? '#4caf50' : val < 75 ? '#ff9800' : '#f44336';
+      display.style.color = color;
+    }
+  };
+
+  // ═══ SPAWN WEIGHTS RENDER ═══
+  function renderSpawnWeights(weights) {
+    var grid = document.getElementById('zombieSpawnWeightsGrid');
+    grid.innerHTML = '';
+    ZOMBIE_TYPES.forEach(function(t) {
+      var w = weights[t] || { easy:0, normal:0, hard:0 };
+      var card = document.createElement('div');
+      card.style.cssText = 'background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px';
+      card.innerHTML = '<div style="font-weight:600;color:var(--text);margin-bottom:8px;font-size:0.9rem">' + (ZOMBIE_DISPLAY[t] || t) + '</div>'
+        + makeWeightSlider(t, 'easy', w.easy, '#4caf50')
+        + makeWeightSlider(t, 'normal', w.normal, '#ff9800')
+        + makeWeightSlider(t, 'hard', w.hard, '#f44336');
+      grid.appendChild(card);
+    });
+  }
+
+  function makeWeightSlider(type, diff, val, color) {
+    var id = 'zsw_' + type + '_' + diff;
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+      + '<span style="width:50px;font-size:0.75rem;color:' + color + ';text-transform:capitalize">' + diff + '</span>'
+      + '<input type="range" min="0" max="200" value="' + val + '" id="' + id + '" '
+      + 'oninput="document.getElementById(\'' + id + '_val\').textContent=this.value" '
+      + 'style="flex:1;accent-color:' + color + '">'
+      + '<span style="width:30px;text-align:right;font-size:0.8rem;color:var(--text)" id="' + id + '_val">' + val + '</span>'
+      + '</div>';
+  }
+
+  // ═══ BOSS ZOMBIES RENDER ═══
+  function renderBossZombies(bosses) {
+    var grid = document.getElementById('zombieBossGrid');
+    grid.innerHTML = '';
+    ['infectedTagilla','cursedAssault'].forEach(function(boss) {
+      var b = bosses[boss] || { enabled: false, spawnChance: 10, maps: [], maxPerRaid: 1 };
+      var card = document.createElement('div');
+      card.style.cssText = 'background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px';
+      card.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+        + '<span style="font-weight:600;color:var(--text)">' + (ZOMBIE_DISPLAY[boss] || boss) + '</span>'
+        + '<label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer;color:var(--text-dim)">'
+        + '<input type="checkbox" id="zboss_' + boss + '_enabled"' + (b.enabled ? ' checked' : '') + '> Enabled</label>'
+        + '</div>'
+        + '<div class="slider-row"><label style="font-size:0.8rem">Spawn Chance %</label>'
+        + '<input type="range" min="0" max="100" value="' + b.spawnChance + '" id="zboss_' + boss + '_spawnChance" '
+        + 'oninput="document.getElementById(\'zboss_' + boss + '_spawnChance_val\').textContent=this.value+\'%\'">'
+        + '<span class="slider-val" id="zboss_' + boss + '_spawnChance_val">' + b.spawnChance + '%</span></div>'
+        + '<div class="slider-row"><label style="font-size:0.8rem">Max Per Raid</label>'
+        + '<input type="range" min="1" max="5" value="' + b.maxPerRaid + '" id="zboss_' + boss + '_maxPerRaid" '
+        + 'oninput="document.getElementById(\'zboss_' + boss + '_maxPerRaid_val\').textContent=this.value">'
+        + '<span class="slider-val" id="zboss_' + boss + '_maxPerRaid_val">' + b.maxPerRaid + '</span></div>';
+      grid.appendChild(card);
+    });
+  }
+
+  // ═══ DIFFICULTY SCALE PREVIEW ═══
+  function renderDiffScalePreview(ds) {
+    var el = document.getElementById('zombieDiffScalePreview');
+    if (!el) return;
+    var scale = ds.playerCountInfectionScale || {};
+    var parts = [];
+    for (var k in scale) {
+      var label = k === '1' ? 'Solo' : k === '2' ? 'Duo' : k === '3' ? 'Trio' : k === '4' ? 'Quad' : k + '-man';
+      parts.push(label + ' = ' + scale[k] + 'x');
+    }
+    el.textContent = parts.join('  |  ') || 'No scaling configured';
+  }
+
+  // ═══ ACTIONS ═══
+  window.zombieToggleMaster = function() {
+    updateStatusBadge(document.getElementById('zombieMasterToggle').checked);
+  };
+
+  window.zombieApplyConfig = function() {
+    var config = readUI();
+    fetch(BASE + 'zombies/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      _zombieConfig = config;
+      showToast(data.success ? 'Zombie config applied!' : 'Failed to apply config', data.success ? 'success' : 'error');
+    }).catch(function(e) { showToast('Error: ' + e.message, 'error'); });
+  };
+
+  window.zombieResetDefaults = function() {
+    if (!confirm('Reset all zombie settings to defaults?')) return;
+    fetch(BASE + 'zombies/reset', { method: 'POST' }).then(function(r) { return r.json(); }).then(function() {
+      showToast('Zombie settings reset', 'success');
+      loadZombieConfig();
+    }).catch(function(e) { showToast('Error: ' + e.message, 'error'); });
+  };
+
+  window.zombieApplyPreset = function(name) {
+    if (!name || !PRESETS[name]) return;
+    var preset = PRESETS[name];
+    var config = readUI();
+
+    // Apply preset fields on top of current config
+    if (preset.enabled !== undefined) config.enabled = preset.enabled;
+    if (preset.maps) Object.assign(config.maps, preset.maps);
+    if (preset.disableBosses) Object.assign(config.disableBosses, preset.disableBosses);
+    if (preset.zombieSettings) Object.assign(config.zombieSettings, preset.zombieSettings);
+    if (preset.nightMode) Object.assign(config.nightMode, preset.nightMode);
+    if (preset.raidSettings) Object.assign(config.raidSettings, preset.raidSettings);
+    if (preset.waveEscalation) Object.assign(config.waveEscalation, preset.waveEscalation);
+    if (preset.lootModifiers) Object.assign(config.lootModifiers, preset.lootModifiers);
+    if (preset.rewards) Object.assign(config.rewards, preset.rewards);
+
+    _zombieConfig = config;
+    populateUI(config);
+    document.getElementById('zombiePresetSelect').value = '';
+    showToast('Preset "' + name + '" loaded — click Apply Changes to save', 'info');
+  };
+
+  window.zombieToggleSection = function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
+  };
+
+  window.zombieSliderUpdate = function(el) {
+    var valEl = document.getElementById(el.id + '_val');
+    if (valEl) valEl.textContent = el.value;
+  };
+
+  // ═══ HELPERS ═══
+  function updateStatusBadge(enabled) {
+    var badge = document.getElementById('zombieStatusBadge');
+    if (badge) {
+      badge.textContent = enabled ? 'ACTIVE' : 'INACTIVE';
+      badge.style.background = enabled ? 'rgba(76,175,80,0.2)' : 'rgba(158,158,158,0.2)';
+      badge.style.color = enabled ? '#4caf50' : '#999';
+    }
+  }
+
+  function setCheck(id, val) { var el = document.getElementById(id); if (el) el.checked = !!val; }
+  function getCheck(id) { var el = document.getElementById(id); return el ? el.checked : false; }
+  function setSlider(id, val) {
+    var el = document.getElementById(id);
+    if (el) { el.value = val; var v = document.getElementById(id + '_val'); if (v) v.textContent = val; }
+  }
+  function getNum(id) { var el = document.getElementById(id); return el ? parseInt(el.value) || 0 : 0; }
+  function getFloat(id) { var el = document.getElementById(id); return el ? parseFloat(el.value) || 0 : 0; }
+  function setSelect(id, val) { var el = document.getElementById(id); if (el) el.value = val || ''; }
+  function getSelect(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+
+  function showToast(msg, type) {
+    // Use the global alert/toast if available
+    if (window.showAlert) { window.showAlert(msg, type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'); return; }
+    console.log('[Zombies] ' + type + ': ' + msg);
+  }
+
+  // ═══ EARLY DETECTION ═══
+  // Check zombie mod presence early to show/hide the tab button
+  fetch(BASE + 'zombies').then(function(r) { return r.json(); }).then(function(data) {
+    if (data.detected) {
+      var btn = document.getElementById('zombiesSubBtn');
+      if (btn) btn.style.display = '';
+    }
+  }).catch(function() {});
 
 })();
 </script>

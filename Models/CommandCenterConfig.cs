@@ -34,9 +34,6 @@ public record CommandCenterConfig
     [JsonPropertyName("progression")]
     public ProgressionConfig Progression { get; set; } = new();
 
-    [JsonPropertyName("progressionPresets")]
-    public Dictionary<string, ProgressionPresetEntry> ProgressionPresets { get; set; } = new();
-
     [JsonPropertyName("activeProgressionPreset")]
     public string? ActiveProgressionPreset { get; set; }
 

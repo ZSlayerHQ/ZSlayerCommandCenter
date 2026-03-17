@@ -270,3 +270,12 @@ public record ProgressionPresetEntry
     [JsonPropertyName("config")]
     public ProgressionConfig Config { get; set; } = new();
 }
+
+/// <summary>File-based progression preset (saved to config/progression-presets/*.json)</summary>
+public record ProgressionPresetFile
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("description")] public string Description { get; set; } = "";
+    [JsonPropertyName("createdUtc")] public DateTime CreatedUtc { get; set; }
+    [JsonPropertyName("config")] public ProgressionConfig Config { get; set; } = new();
+}

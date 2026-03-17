@@ -1632,6 +1632,31 @@ public class GameValuesService(
     }
 
     // ═══════════════════════════════════════════════════════
+    // PRESET FILE HELPERS
+    // ═══════════════════════════════════════════════════════
+
+    private static readonly System.Text.Json.JsonSerializerOptions PresetJsonOptions = new()
+    {
+        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    private string GetPresetsDir()
+    {
+        var dir = System.IO.Path.Combine(configService.ModPath, "config", "gamevalues-presets");
+        if (!System.IO.Directory.Exists(dir))
+            System.IO.Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = System.IO.Path.GetInvalidFileNameChars();
+        var clean = new string(name.Where(c => !invalid.Contains(c)).ToArray()).Trim();
+        return string.IsNullOrEmpty(clean) ? "preset" : clean;
+    }
+
+    // ═══════════════════════════════════════════════════════
     // PRESETS
     // ═══════════════════════════════════════════════════════
 
@@ -1688,7 +1713,6 @@ public class GameValuesService(
 
     public List<GameValuesPresetInfo> GetPresets()
     {
-        var config = configService.GetConfig().GameValues;
         var result = new List<GameValuesPresetInfo>();
 
         foreach (var (name, preset) in BuiltInPresets)
@@ -1713,15 +1737,26 @@ public class GameValuesService(
             });
         }
 
-        foreach (var (name, preset) in config.Presets)
+        // File-based custom presets
+        var dir = GetPresetsDir();
+        foreach (var file in System.IO.Directory.GetFiles(dir, "*.json"))
         {
-            result.Add(new GameValuesPresetInfo
+            try
             {
-                Name = name,
-                Description = preset.Description,
-                Category = preset.Category,
-                IsBuiltIn = false,
-            });
+                var json = System.IO.File.ReadAllText(file);
+                var preset = System.Text.Json.JsonSerializer.Deserialize<GameValuesPresetFile>(json, PresetJsonOptions);
+                if (preset != null)
+                {
+                    result.Add(new GameValuesPresetInfo
+                    {
+                        Name = preset.Name,
+                        Description = preset.Description,
+                        Category = preset.Category,
+                        IsBuiltIn = false,
+                    });
+                }
+            }
+            catch { /* skip corrupt files */ }
         }
 
         return result;
@@ -1735,27 +1770,29 @@ public class GameValuesService(
                 return new GameValuesApplyResult { Success = false, Message = "Cannot overwrite built-in preset" };
 
             var config = configService.GetConfig().GameValues;
-            var entry = new GameValuesPresetEntry
+            var preset = new GameValuesPresetFile
             {
+                Name = name,
                 Description = description,
                 Category = category,
+                CreatedUtc = DateTime.UtcNow,
             };
 
             if (category is "ammo" or "all")
-                entry.AmmoOverrides = new Dictionary<string, AmmoOverride>(config.AmmoOverrides);
+                preset.AmmoOverrides = new Dictionary<string, AmmoOverride>(config.AmmoOverrides);
             if (category is "armor" or "all")
-                entry.ArmorOverrides = new Dictionary<string, ArmorOverride>(config.ArmorOverrides);
+                preset.ArmorOverrides = new Dictionary<string, ArmorOverride>(config.ArmorOverrides);
             if (category is "weapons" or "all")
-                entry.WeaponOverrides = new Dictionary<string, WeaponOverride>(config.WeaponOverrides);
+                preset.WeaponOverrides = new Dictionary<string, WeaponOverride>(config.WeaponOverrides);
             if (category is "medical" or "all")
-                entry.MedicalOverrides = new Dictionary<string, MedicalOverride>(config.MedicalOverrides);
+                preset.MedicalOverrides = new Dictionary<string, MedicalOverride>(config.MedicalOverrides);
             if (category is "backpacks" or "all")
-                entry.BackpackOverrides = new Dictionary<string, BackpackOverride>(config.BackpackOverrides);
+                preset.BackpackOverrides = new Dictionary<string, BackpackOverride>(config.BackpackOverrides);
             if (category is "medical" or "all")
-                entry.StimBuffOverrides = new Dictionary<string, StimBuffOverride>(config.StimBuffOverrides);
+                preset.StimBuffOverrides = new Dictionary<string, StimBuffOverride>(config.StimBuffOverrides);
 
-            config.Presets[name] = entry;
-            configService.SaveConfig();
+            var filePath = System.IO.Path.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+            System.IO.File.WriteAllText(filePath, System.Text.Json.JsonSerializer.Serialize(preset, PresetJsonOptions));
 
             return new GameValuesApplyResult { Success = true, Message = $"Preset '{name}' saved" };
         }
@@ -1768,30 +1805,54 @@ public class GameValuesService(
             var sw = Stopwatch.StartNew();
             var config = configService.GetConfig().GameValues;
 
-            // Check built-in presets (static + dynamic) first, then custom
-            var preset = FindBuiltIn(name);
-            if (preset == null && !config.Presets.TryGetValue(name, out preset))
+            // Check built-in presets (static + dynamic) first
+            var presetEntry = FindBuiltIn(name);
+
+            // Then check file-based custom presets
+            if (presetEntry == null)
             {
-                return new GameValuesApplyResult { Success = false, Message = "Preset not found" };
+                var filePath = System.IO.Path.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+                if (System.IO.File.Exists(filePath))
+                {
+                    var json = System.IO.File.ReadAllText(filePath);
+                    var presetFile = System.Text.Json.JsonSerializer.Deserialize<GameValuesPresetFile>(json, PresetJsonOptions);
+                    if (presetFile != null)
+                    {
+                        presetEntry = new GameValuesPresetEntry
+                        {
+                            Description = presetFile.Description,
+                            Category = presetFile.Category,
+                            AmmoOverrides = presetFile.AmmoOverrides,
+                            ArmorOverrides = presetFile.ArmorOverrides,
+                            WeaponOverrides = presetFile.WeaponOverrides,
+                            MedicalOverrides = presetFile.MedicalOverrides,
+                            BackpackOverrides = presetFile.BackpackOverrides,
+                            StimBuffOverrides = presetFile.StimBuffOverrides,
+                        };
+                    }
+                }
             }
+
+            if (presetEntry == null)
+                return new GameValuesApplyResult { Success = false, Message = "Preset not found" };
 
             // Per-category loading: only replace the categories this preset covers
             // A null dict means "don't touch this category"
             // An empty dict means "clear all overrides for this category"
-            var cat = preset.Category ?? "all";
+            var cat = presetEntry.Category ?? "all";
 
-            if (cat is "ammo" or "all" && preset.AmmoOverrides != null)
-                config.AmmoOverrides = new Dictionary<string, AmmoOverride>(preset.AmmoOverrides);
-            if (cat is "armor" or "all" && preset.ArmorOverrides != null)
-                config.ArmorOverrides = new Dictionary<string, ArmorOverride>(preset.ArmorOverrides);
-            if (cat is "weapons" or "all" && preset.WeaponOverrides != null)
-                config.WeaponOverrides = new Dictionary<string, WeaponOverride>(preset.WeaponOverrides);
-            if (cat is "medical" or "all" && preset.MedicalOverrides != null)
-                config.MedicalOverrides = new Dictionary<string, MedicalOverride>(preset.MedicalOverrides);
-            if (cat is "backpacks" or "all" && preset.BackpackOverrides != null)
-                config.BackpackOverrides = new Dictionary<string, BackpackOverride>(preset.BackpackOverrides);
-            if (cat is "medical" or "all" && preset.StimBuffOverrides != null)
-                config.StimBuffOverrides = new Dictionary<string, StimBuffOverride>(preset.StimBuffOverrides);
+            if (cat is "ammo" or "all" && presetEntry.AmmoOverrides != null)
+                config.AmmoOverrides = new Dictionary<string, AmmoOverride>(presetEntry.AmmoOverrides);
+            if (cat is "armor" or "all" && presetEntry.ArmorOverrides != null)
+                config.ArmorOverrides = new Dictionary<string, ArmorOverride>(presetEntry.ArmorOverrides);
+            if (cat is "weapons" or "all" && presetEntry.WeaponOverrides != null)
+                config.WeaponOverrides = new Dictionary<string, WeaponOverride>(presetEntry.WeaponOverrides);
+            if (cat is "medical" or "all" && presetEntry.MedicalOverrides != null)
+                config.MedicalOverrides = new Dictionary<string, MedicalOverride>(presetEntry.MedicalOverrides);
+            if (cat is "backpacks" or "all" && presetEntry.BackpackOverrides != null)
+                config.BackpackOverrides = new Dictionary<string, BackpackOverride>(presetEntry.BackpackOverrides);
+            if (cat is "medical" or "all" && presetEntry.StimBuffOverrides != null)
+                config.StimBuffOverrides = new Dictionary<string, StimBuffOverride>(presetEntry.StimBuffOverrides);
 
             ApplyAll();
             configService.GetConfig().ActiveGameValuesPreset = name;
@@ -1816,10 +1877,17 @@ public class GameValuesService(
             if (IsBuiltIn(name))
                 return new GameValuesApplyResult { Success = false, Message = "Cannot delete built-in preset" };
 
-            var removed = configService.GetConfig().GameValues.Presets.Remove(name);
-            if (configService.GetConfig().ActiveGameValuesPreset == name)
-                configService.GetConfig().ActiveGameValuesPreset = null;
-            if (removed) configService.SaveConfig();
+            var filePath = System.IO.Path.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+            var removed = System.IO.File.Exists(filePath);
+            if (removed)
+            {
+                System.IO.File.Delete(filePath);
+                if (configService.GetConfig().ActiveGameValuesPreset == name)
+                {
+                    configService.GetConfig().ActiveGameValuesPreset = null;
+                    configService.SaveConfig();
+                }
+            }
             return new GameValuesApplyResult { Success = removed, Message = removed ? $"Preset '{name}' deleted" : "Preset not found" };
         }
     }
@@ -1836,8 +1904,25 @@ public class GameValuesService(
     {
         var builtIn = FindBuiltIn(name);
         if (builtIn != null) return builtIn;
-        var config = configService.GetConfig().GameValues;
-        return config.Presets.GetValueOrDefault(name);
+
+        var filePath = System.IO.Path.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+        if (!System.IO.File.Exists(filePath)) return null;
+
+        var json = System.IO.File.ReadAllText(filePath);
+        var presetFile = System.Text.Json.JsonSerializer.Deserialize<GameValuesPresetFile>(json, PresetJsonOptions);
+        if (presetFile == null) return null;
+
+        return new GameValuesPresetEntry
+        {
+            Description = presetFile.Description,
+            Category = presetFile.Category,
+            AmmoOverrides = presetFile.AmmoOverrides,
+            ArmorOverrides = presetFile.ArmorOverrides,
+            WeaponOverrides = presetFile.WeaponOverrides,
+            MedicalOverrides = presetFile.MedicalOverrides,
+            BackpackOverrides = presetFile.BackpackOverrides,
+            StimBuffOverrides = presetFile.StimBuffOverrides,
+        };
     }
 
     public GameValuesApplyResult ImportPreset(string name, GameValuesPresetEntry preset)
@@ -1847,8 +1932,22 @@ public class GameValuesService(
             if (IsBuiltIn(name))
                 return new GameValuesApplyResult { Success = false, Message = "Cannot overwrite built-in preset" };
 
-            configService.GetConfig().GameValues.Presets[name] = preset;
-            configService.SaveConfig();
+            var file = new GameValuesPresetFile
+            {
+                Name = name,
+                Description = preset.Description,
+                Category = preset.Category,
+                CreatedUtc = DateTime.UtcNow,
+                AmmoOverrides = preset.AmmoOverrides,
+                ArmorOverrides = preset.ArmorOverrides,
+                WeaponOverrides = preset.WeaponOverrides,
+                MedicalOverrides = preset.MedicalOverrides,
+                BackpackOverrides = preset.BackpackOverrides,
+                StimBuffOverrides = preset.StimBuffOverrides,
+            };
+
+            var filePath = System.IO.Path.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+            System.IO.File.WriteAllText(filePath, System.Text.Json.JsonSerializer.Serialize(file, PresetJsonOptions));
             return new GameValuesApplyResult { Success = true, Message = $"Preset '{name}' imported" };
         }
     }

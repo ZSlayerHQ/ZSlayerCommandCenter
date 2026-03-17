@@ -35,6 +35,7 @@ public class CommandCenterMod(
     FleaExpansionService fleaExpansionService,
     RepeatableQuestService repeatableQuestService,
     MiscToggleService miscToggleService,
+    ZombieIntegrationService zombieIntegrationService,
     SeasonalEventService seasonalEventService,
     ConfigServer configServer,
     ISptLogger<CommandCenterMod> logger) : IOnLoad
@@ -175,6 +176,9 @@ public class CommandCenterMod(
 
         // Initialize misc toggles (snapshot chatbots/traders/quests, apply saved overrides)
         miscToggleService.Initialize();
+
+        // Detect ZSlayer Zombies mod (optional integration)
+        zombieIntegrationService.Detect();
 
         // Detect bound IP and build URLs based on bind mode
         var httpCfg = configServer.GetConfig<HttpConfig>();

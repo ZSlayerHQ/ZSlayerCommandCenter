@@ -1201,8 +1201,29 @@ public class ProgressionControlService(
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  PRESETS
+    //  PRESETS — FILE-BASED STORAGE
     // ═══════════════════════════════════════════════════════════════
+
+    private static readonly System.Text.Json.JsonSerializerOptions PresetJsonOptions = new()
+    {
+        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    private string GetPresetsDir()
+    {
+        var dir = System.IO.Path.Combine(configService.ModPath, "config", "progression-presets");
+        if (!System.IO.Directory.Exists(dir))
+            System.IO.Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = System.IO.Path.GetInvalidFileNameChars();
+        var clean = new string(name.Where(c => !invalid.Contains(c)).ToArray()).Trim();
+        return string.IsNullOrEmpty(clean) ? "preset" : clean;
+    }
 
     public static readonly Dictionary<string, (string Description, Action<ProgressionConfig> Apply)> BuiltInPresets = new()
     {
@@ -1274,15 +1295,25 @@ public class ProgressionControlService(
             IsBuiltIn = true
         }).ToList();
 
-        // Add custom presets
-        foreach (var (name, entry) in configService.GetConfig().ProgressionPresets)
+        // Add file-based custom presets
+        var dir = GetPresetsDir();
+        foreach (var file in System.IO.Directory.GetFiles(dir, "*.json"))
         {
-            list.Add(new ProgressionPresetInfo
+            try
             {
-                Name = name,
-                Description = entry.Description,
-                IsBuiltIn = false
-            });
+                var json = System.IO.File.ReadAllText(file);
+                var preset = System.Text.Json.JsonSerializer.Deserialize<ProgressionPresetFile>(json, PresetJsonOptions);
+                if (preset != null)
+                {
+                    list.Add(new ProgressionPresetInfo
+                    {
+                        Name = preset.Name,
+                        Description = preset.Description,
+                        IsBuiltIn = false
+                    });
+                }
+            }
+            catch { /* skip corrupt files */ }
         }
 
         return list;
@@ -1303,15 +1334,21 @@ public class ProgressionControlService(
             return ApplyConfig();
         }
 
-        // Check custom presets
-        if (config.ProgressionPresets.TryGetValue(presetName, out var custom))
+        // Check file-based custom presets
+        var filePath = System.IO.Path.Combine(GetPresetsDir(), SanitizeFileName(presetName) + ".json");
+        if (System.IO.File.Exists(filePath))
         {
-            config.Progression = System.Text.Json.JsonSerializer.Deserialize<ProgressionConfig>(
-                System.Text.Json.JsonSerializer.Serialize(custom.Config))!;
-            _activePreset = presetName;
-            config.ActiveProgressionPreset = _activePreset;
-            configService.SaveConfig();
-            return ApplyConfig();
+            var json = System.IO.File.ReadAllText(filePath);
+            var presetFile = System.Text.Json.JsonSerializer.Deserialize<ProgressionPresetFile>(json, PresetJsonOptions);
+            if (presetFile != null)
+            {
+                config.Progression = System.Text.Json.JsonSerializer.Deserialize<ProgressionConfig>(
+                    System.Text.Json.JsonSerializer.Serialize(presetFile.Config))!;
+                _activePreset = presetName;
+                config.ActiveProgressionPreset = _activePreset;
+                configService.SaveConfig();
+                return ApplyConfig();
+            }
         }
 
         return new ProgressionApplyResult
@@ -1323,34 +1360,37 @@ public class ProgressionControlService(
 
     public bool SaveCustomPreset(string name, string description)
     {
-        if (BuiltInPresets.ContainsKey(name)) return false; // can't overwrite built-in
+        if (BuiltInPresets.ContainsKey(name)) return false;
 
         var config = configService.GetConfig();
         var currentJson = System.Text.Json.JsonSerializer.Serialize(config.Progression);
         var copy = System.Text.Json.JsonSerializer.Deserialize<ProgressionConfig>(currentJson)!;
 
-        config.ProgressionPresets[name] = new ProgressionPresetEntry
+        var preset = new ProgressionPresetFile
         {
+            Name = name,
             Description = description,
+            CreatedUtc = DateTime.UtcNow,
             Config = copy
         };
-        configService.SaveConfig();
+        var filePath = System.IO.Path.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+        System.IO.File.WriteAllText(filePath, System.Text.Json.JsonSerializer.Serialize(preset, PresetJsonOptions));
         return true;
     }
 
     public bool DeleteCustomPreset(string name)
     {
-        var config = configService.GetConfig();
-        if (!config.ProgressionPresets.ContainsKey(name)) return false;
+        var filePath = System.IO.Path.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+        if (!System.IO.File.Exists(filePath)) return false;
 
-        config.ProgressionPresets.Remove(name);
+        System.IO.File.Delete(filePath);
 
         if (_activePreset == name)
         {
             _activePreset = null;
-            config.ActiveProgressionPreset = null;
+            configService.GetConfig().ActiveProgressionPreset = null;
+            configService.SaveConfig();
         }
-        configService.SaveConfig();
         return true;
     }
 

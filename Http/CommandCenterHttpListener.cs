@@ -58,6 +58,7 @@ public class CommandCenterHttpListener(
     FleaExpansionService fleaExpansionService,
     RepeatableQuestService repeatableQuestService,
     MiscToggleService miscToggleService,
+    ZombieIntegrationService zombieIntegrationService,
     ModHelper modHelper,
     ISptLogger<CommandCenterHttpListener> logger) : IHttpListener
 {
@@ -274,6 +275,13 @@ public class CommandCenterHttpListener(
             if (path.StartsWith("misc/") || path == "misc")
             {
                 await HandleMiscRoute(context, headerSessionId, path, method);
+                return;
+            }
+
+            // Handle zombie integration routes
+            if (path.StartsWith("zombies/") || path == "zombies")
+            {
+                await HandleZombieRoute(context, path, method);
                 return;
             }
 
@@ -4828,6 +4836,70 @@ public class CommandCenterHttpListener(
             }
             default:
                 await WriteJson(context, 404, new { error = "Unknown misc route" });
+                break;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // ZOMBIE INTEGRATION ROUTES
+    // ═══════════════════════════════════════════════════════
+
+    private async Task HandleZombieRoute(HttpContext context, string path, string method)
+    {
+        var sub = path == "zombies" ? "" : path["zombies/".Length..];
+
+        switch (sub)
+        {
+            case "" or "detect" when method == "GET":
+            {
+                var info = await zombieIntegrationService.GetDetectionInfo();
+                await WriteJson(context, 200, info);
+                break;
+            }
+            case "config" when method == "GET":
+            {
+                var config = await zombieIntegrationService.GetConfig();
+                if (config == null)
+                {
+                    await WriteJson(context, 503, new { error = "Zombie mod not available" });
+                    return;
+                }
+                await WriteJson(context, 200, config);
+                break;
+            }
+            case "config" when method == "POST":
+            {
+                var config = await ReadBody<ZombieConfigDto>(context);
+                if (config == null)
+                {
+                    await WriteJson(context, 400, new { error = "Invalid config" });
+                    return;
+                }
+                var success = await zombieIntegrationService.UpdateConfig(config);
+                await WriteJson(context, success ? 200 : 503,
+                    success ? new { success = true } : new { success = false });
+                break;
+            }
+            case "status" when method == "GET":
+            {
+                var status = await zombieIntegrationService.GetStatus();
+                if (status == null)
+                {
+                    await WriteJson(context, 503, new { error = "Zombie mod not available" });
+                    return;
+                }
+                await WriteJson(context, 200, status);
+                break;
+            }
+            case "reset" when method == "POST":
+            {
+                var success = await zombieIntegrationService.Reset();
+                await WriteJson(context, success ? 200 : 503,
+                    success ? new { success = true } : new { success = false });
+                break;
+            }
+            default:
+                await WriteJson(context, 404, new { error = "Unknown zombie route" });
                 break;
         }
     }
