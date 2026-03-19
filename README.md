@@ -4,7 +4,7 @@
 
 **The ultimate browser-based admin toolkit for SPT 4.0 / FIKA**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-c8aa6e.svg)](LICENSE)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-c8aa6e.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/v2.22.0-c8aa6e.svg)](https://github.com/ZSlayerHQ/ZSlayerCommandCenter/releases)
 [![Phases](https://img.shields.io/badge/Phases_Complete-12%2F16-c8aa6e.svg)]()
 [![SPT](https://img.shields.io/badge/SPT-4.0.x-c8aa6e.svg)]()
@@ -969,7 +969,7 @@ A special thank you to the **SPT & FIKA team** — this level of complexity in a
 
 <br />
 
-**[MIT License](LICENSE)** &nbsp;&mdash;&nbsp; Built by [ZSlayerHQ / Ben Cole](https://github.com/ZSlayerHQ)
+**[CC BY-NC-SA 4.0](LICENSE)** &nbsp;&mdash;&nbsp; Built by [ZSlayerHQ / Ben Cole](https://github.com/ZSlayerHQ)
 
 <br />
 
