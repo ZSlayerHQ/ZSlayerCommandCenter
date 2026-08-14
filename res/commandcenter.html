@@ -1931,12 +1931,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .telem-kill-entry.kill-border-pmc { border-left-color: var(--success-bright); }
 .telem-kill-entry.kill-border-boss { border-left-color: var(--warning); }
 .telem-kill-entry.kill-border-raider { border-left-color: var(--warning); }
+.telem-kill-entry.kill-border-infected { border-left-color: #7b5ea7; }
 .telem-kill-time { color: var(--text-muted); font-size: 10px; white-space: nowrap; }
 .telem-kill-detail { flex: 1; }
 .telem-kill-dist { color: var(--text-muted); font-size: 10px; white-space: nowrap; font-family: var(--font-mono); }
 .telem-kill-name.pmc { color: var(--success-bright); font-weight: 600; }
 .telem-kill-name.boss { color: var(--warning); font-weight: 600; }
 .telem-kill-name.raider, .telem-kill-name.rogue { color: var(--warning); font-weight: 600; }
+.telem-kill-name.infected { color: #7b5ea7; font-weight: 600; }
 .telem-kill-name.scav, .telem-kill-name.follower { color: var(--text-dim); }
 .telem-kill-weapon { color: var(--text); }
 .telem-kill-meta { color: var(--text-muted); font-size: 10px; }
@@ -9677,20 +9679,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           </label>
           <span id="zombieStatusBadge" class="tag" style="font-size:0.75rem"></span>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <select id="zombiePresetSelect" onchange="window.zombieApplyPreset(this.value)" style="background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:0.8rem">
-            <option value="">Load Preset...</option>
-            <option value="vanilla">Vanilla (All Off)</option>
-            <option value="light">Light Infection (25%)</option>
-            <option value="full">Full Outbreak (100%)</option>
-            <option value="labsonly">Labs Only</option>
-            <option value="nightterror">Night Terror</option>
-            <option value="horde">Horde Mode</option>
-            <option value="apocalypse">Apocalypse</option>
-            <option value="survival">Survival</option>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <select id="zombiePresetSelect" style="background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:0.8rem;min-width:160px">
+            <option value="">Presets...</option>
           </select>
+          <button class="btn btn-sm" onclick="window.zombieLoadPreset()" style="background:rgba(200,170,110,0.12);border:1px solid rgba(200,170,110,0.25);color:var(--accent)">Load</button>
+          <button class="btn btn-sm" onclick="window.zombieSavePresetPrompt()" style="background:rgba(76,175,80,0.12);border:1px solid rgba(76,175,80,0.25);color:#4caf50">Save</button>
+          <button class="btn btn-sm" onclick="window.zombieDeletePreset()" style="background:rgba(244,67,54,0.08);border:1px solid rgba(244,67,54,0.2);color:#f44336;font-size:0.75rem">Delete</button>
+          <button class="btn btn-sm" onclick="window.zombieExportPreset()" title="Export preset as JSON" style="background:var(--bg-panel);border:1px solid var(--border);color:var(--text-dim);font-size:0.75rem">Export</button>
+          <label class="btn btn-sm" style="background:var(--bg-panel);border:1px solid var(--border);color:var(--text-dim);font-size:0.75rem;cursor:pointer;margin:0">Import<input type="file" accept=".json" onchange="window.zombieImportPreset(this)" style="display:none"></label>
+          <span style="color:var(--border);font-size:0.8rem">|</span>
           <button class="btn btn-sm" onclick="window.zombieApplyConfig()" style="background:#c8aa6e;color:#000;font-weight:600">Apply Changes</button>
-          <button class="btn btn-sm" onclick="window.zombieResetDefaults()" style="background:var(--bg-surface);border:1px solid var(--border)">Reset</button>
+          <button class="btn btn-sm" onclick="window.zombieResetDefaults()" style="background:var(--bg-panel);border:1px solid var(--border)">Reset</button>
         </div>
       </div>
 
@@ -9700,20 +9700,44 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <div id="zombieMapGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
       </div>
 
-      <!-- ═══ SECTION: Zombie Behaviour / AI ═══ -->
+      <!-- ═══ SECTION: Popular Settings (synced mirrors of originals) ═══ -->
+      <div class="admin-section" style="margin-bottom:16px;border:1px solid rgba(200,170,110,0.25);background:linear-gradient(135deg,rgba(200,170,110,0.04) 0%,rgba(200,170,110,0.01) 100%)">
+        <h3 style="color:#c8aa6e;margin:0 0 14px;font-size:1.05rem;display:flex;align-items:center;gap:8px">
+          <span style="background:rgba(200,170,110,0.15);border-radius:6px;padding:2px 8px;font-size:0.75rem;letter-spacing:0.5px">QUICK ACCESS</span>
+          Popular Settings
+        </h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 12px;margin-bottom:14px">
+          <label class="toggle-row"><input type="checkbox" id="zpop_replaceBotHostility" onchange="window.zombieSyncPop(this,'zb_replaceBotHostility')"><span>Replace Bot Hostility</span></label>
+          <label class="toggle-row"><input type="checkbox" id="zpop_enableSummoning" onchange="window.zombieSyncPop(this,'zb_enableSummoning')"><span>Enable Summoning</span></label>
+          <label class="toggle-row"><input type="checkbox" id="zpop_removeLabsKeycard" onchange="window.zombieSyncPop(this,'zb_removeLabsKeycard')"><span>Remove Labs Keycard</span></label>
+          <label class="toggle-row"><input type="checkbox" id="zpop_disableNormalScavWaves" onchange="window.zombieSyncPop(this,'zb_disableNormalScavWaves')"><span>Disable Normal Scav Waves</span></label>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px 12px">
+          <div class="slider-row"><label>Zombie Multiplier</label><input type="range" min="1" max="20" id="zpop_zombieMultiplier" oninput="window.zombieSyncPop(this,'zb_zombieMultiplier')"><span class="slider-val" id="zpop_zombieMultiplier_val"></span></div>
+          <div class="slider-row"><label>Max Crowd Spawn</label><input type="range" min="1" max="30" id="zpop_maxCrowdAttackSpawnLimit" oninput="window.zombieSyncPop(this,'zb_maxCrowdAttackSpawnLimit')"><span class="slider-val" id="zpop_maxCrowdAttackSpawnLimit_val"></span></div>
+          <div class="slider-row"><label>Crowds Limit</label><input type="range" min="1" max="10" id="zpop_crowdsLimit" oninput="window.zombieSyncPop(this,'zb_crowdsLimit')"><span class="slider-val" id="zpop_crowdsLimit_val"></span></div>
+          <div class="slider-row"><label>Min Infection %</label><input type="range" min="0" max="100" id="zpop_minInfectionPercentage" oninput="window.zombieSyncPop(this,'zb_minInfectionPercentage')"><span class="slider-val" id="zpop_minInfectionPercentage_val"></span></div>
+          <div class="slider-row"><label>Zombie Kill XP</label><input type="range" min="0.5" max="5" step="0.1" id="zpop_zombieKillXpMultiplier" oninput="window.zombieSyncPop(this,'zx_zombieKillXpMultiplier')"><span class="slider-val" id="zpop_zombieKillXpMultiplier_val"></span></div>
+          <div class="slider-row"><label>Bleed Multiplier</label><input type="range" min="1" max="30" step="0.5" id="zpop_zombieBleedMultiplier" oninput="window.zombieSyncPop(this,'ze_zombieBleedMultiplier')"><span class="slider-val" id="zpop_zombieBleedMultiplier_val"></span></div>
+        </div>
+        <div style="margin-top:8px;font-size:0.7rem;color:var(--text-dim)">Changes here sync to their full sections below.</div>
+      </div>
+
+      <!-- ═══ SECTION: Zombie Behaviour & AI ═══ -->
       <div class="admin-section" style="margin-bottom:16px">
         <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieBehaviourBody')">🧠 Zombie Behaviour & AI <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
         <div id="zombieBehaviourBody">
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:12px">
-            <label class="toggle-row"><input type="checkbox" id="zb_replaceBotHostility"><span>Replace Bot Hostility</span></label>
-            <label class="toggle-row"><input type="checkbox" id="zb_enableSummoning"><span>Enable Summoning</span></label>
-            <label class="toggle-row"><input type="checkbox" id="zb_removeLabsKeycard"><span>Remove Labs Keycard</span></label>
-            <label class="toggle-row"><input type="checkbox" id="zb_disableNormalScavWaves"><span>Disable Normal Scav Waves</span></label>
+            <label class="toggle-row"><input type="checkbox" id="zb_replaceBotHostility" onchange="window.zombieSyncOrig(this)"><span>Replace Bot Hostility</span></label>
+            <label class="toggle-row"><input type="checkbox" id="zb_enableSummoning" onchange="window.zombieSyncOrig(this)"><span>Enable Summoning</span></label>
+            <label class="toggle-row"><input type="checkbox" id="zb_removeLabsKeycard" onchange="window.zombieSyncOrig(this)"><span>Remove Labs Keycard</span></label>
+            <label class="toggle-row"><input type="checkbox" id="zb_disableNormalScavWaves" onchange="window.zombieSyncOrig(this)"><span>Disable Normal Scav Waves</span></label>
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
             <div class="slider-row"><label>Zombie Multiplier</label><input type="range" min="1" max="20" id="zb_zombieMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_zombieMultiplier_val"></span></div>
             <div class="slider-row"><label>Crowds Limit</label><input type="range" min="1" max="10" id="zb_crowdsLimit" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_crowdsLimit_val"></span></div>
             <div class="slider-row"><label>Max Crowd Spawn</label><input type="range" min="1" max="30" id="zb_maxCrowdAttackSpawnLimit" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_maxCrowdAttackSpawnLimit_val"></span></div>
+            <div class="slider-row"><label>Min Infection %</label><input type="range" min="0" max="100" id="zb_minInfectionPercentage" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_minInfectionPercentage_val"></span></div>
             <div class="slider-row"><label>Crowd Cooldown (sec)</label><input type="range" min="30" max="600" step="10" id="zb_crowdCooldownPerPlayerSec" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_crowdCooldownPerPlayerSec_val"></span></div>
             <div class="slider-row"><label>Block Radius</label><input type="range" min="10" max="200" id="zb_crowdAttackBlockRadius" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_crowdAttackBlockRadius_val"></span></div>
             <div class="slider-row"><label>Min Spawn Distance</label><input type="range" min="10" max="100" id="zb_minSpawnDistToPlayer" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zb_minSpawnDistToPlayer_val"></span></div>
@@ -9825,13 +9849,31 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieDiffBody')">📈 Difficulty Scaling (FIKA) <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
         <div id="zombieDiffBody">
           <label class="toggle-row" style="margin-bottom:8px"><input type="checkbox" id="zd_enabled"><span>Enable Difficulty Scaling</span></label>
-          <div style="margin-bottom:8px">
+          <div style="margin-bottom:12px">
             <label style="font-size:0.8rem;color:var(--text-dim)">Scaling Mode</label>
             <select id="zd_scalingMode" style="background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:0.85rem">
               <option value="playerCount">Player Count</option><option value="averageLevel">Average Level</option><option value="both">Both</option>
             </select>
           </div>
-          <div id="zombieDiffScalePreview" style="font-size:0.85rem;color:var(--text-dim);padding:6px 10px;background:var(--bg-panel);border-radius:6px;border:1px solid var(--border)"></div>
+          <div style="margin-bottom:12px">
+            <div style="font-size:0.85rem;color:var(--accent);margin-bottom:6px;font-weight:600">Player Count Infection Scale</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
+              <div class="slider-row"><label>Solo (1)</label><input type="range" min="0.5" max="3" step="0.05" id="zd_pcs_1" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zd_pcs_1_val"></span></div>
+              <div class="slider-row"><label>Duo (2)</label><input type="range" min="0.5" max="3" step="0.05" id="zd_pcs_2" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zd_pcs_2_val"></span></div>
+              <div class="slider-row"><label>Trio (3)</label><input type="range" min="0.5" max="3" step="0.05" id="zd_pcs_3" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zd_pcs_3_val"></span></div>
+              <div class="slider-row"><label>Quad (4)</label><input type="range" min="0.5" max="3" step="0.05" id="zd_pcs_4" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zd_pcs_4_val"></span></div>
+              <div class="slider-row"><label>5-man</label><input type="range" min="0.5" max="3" step="0.05" id="zd_pcs_5" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zd_pcs_5_val"></span></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:0.85rem;color:var(--accent);margin-bottom:6px;font-weight:600">Level Scaling</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
+              <div class="slider-row"><label>Min Level</label><input type="range" min="1" max="60" id="zd_ls_minLevel" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zd_ls_minLevel_val"></span></div>
+              <div class="slider-row"><label>Max Level</label><input type="range" min="1" max="60" id="zd_ls_maxLevel" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zd_ls_maxLevel_val"></span></div>
+              <div class="slider-row"><label>Min Multiplier</label><input type="range" min="0.1" max="3" step="0.1" id="zd_ls_minMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zd_ls_minMultiplier_val"></span></div>
+              <div class="slider-row"><label>Max Multiplier</label><input type="range" min="0.1" max="3" step="0.1" id="zd_ls_maxMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zd_ls_maxMultiplier_val"></span></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -9855,6 +9897,145 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
             <div class="slider-row"><label>Horde Interval (min)</label><input type="range" min="2" max="30" id="zw_hordeIntervalMinutes" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zw_hordeIntervalMinutes_val"></span></div>
             <div class="slider-row"><label>Horde Multiplier</label><input type="range" min="1" max="10" step="0.5" id="zw_hordeMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zw_hordeMultiplier_val"></span></div>
           </div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Zombie AI ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieAIBody')">🧪 Zombie AI Tuning <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieAIBody" style="display:none">
+          <label class="toggle-row" style="margin-bottom:8px"><input type="checkbox" id="zai_enabled"><span>Enable AI Overrides</span></label>
+          <div style="margin-bottom:12px">
+            <div style="display:grid;grid-template-columns:120px 1fr 1fr 1fr;gap:4px 8px;align-items:center;font-size:0.8rem;margin-bottom:4px">
+              <div style="color:var(--text-dim);font-weight:600">Stat</div>
+              <div style="color:#4caf50;font-weight:600;text-align:center">Easy</div>
+              <div style="color:#ff9800;font-weight:600;text-align:center">Normal</div>
+              <div style="color:#f44336;font-weight:600;text-align:center">Hard</div>
+            </div>
+            <div id="zombieAIStatsGrid" style="display:grid;grid-template-columns:120px 1fr 1fr 1fr;gap:4px 8px;align-items:center;font-size:0.8rem"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+            <div class="slider-row"><label>Rotate Speed</label><input type="range" min="90" max="360" step="10" id="zai_rotateSpeed" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zai_rotateSpeed_val"></span></div>
+          </div>
+          <div style="margin-top:8px;font-size:0.75rem;color:var(--text-dim)">Affected types: <span id="zai_affectedTypes" style="color:var(--text)"></span></div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Zombie Health ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieHealthBody')">💀 Zombie Health <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieHealthBody" style="display:none">
+          <label class="toggle-row" style="margin-bottom:12px"><input type="checkbox" id="zhp_enabled"><span>Enable Health Overrides</span></label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+            <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:12px">
+              <div style="font-weight:600;color:var(--text);margin-bottom:8px">Standard Zombie</div>
+              <div class="slider-row"><label>Head</label><input type="range" min="1" max="200" id="zhp_std_head" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_std_head_val"></span></div>
+              <div class="slider-row"><label>Chest</label><input type="range" min="10" max="500" id="zhp_std_chest" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_std_chest_val"></span></div>
+              <div class="slider-row"><label>Stomach</label><input type="range" min="10" max="500" id="zhp_std_stomach" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_std_stomach_val"></span></div>
+              <div class="slider-row"><label>Arms</label><input type="range" min="1" max="300" id="zhp_std_arms" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_std_arms_val"></span></div>
+              <div class="slider-row"><label>Legs</label><input type="range" min="1" max="300" id="zhp_std_legs" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_std_legs_val"></span></div>
+            </div>
+            <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:12px">
+              <div style="font-weight:600;color:#f44336;margin-bottom:8px">Infected Tagilla</div>
+              <div class="slider-row"><label>Head</label><input type="range" min="1" max="500" id="zhp_tag_head" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_tag_head_val"></span></div>
+              <div class="slider-row"><label>Chest</label><input type="range" min="10" max="1000" id="zhp_tag_chest" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_tag_chest_val"></span></div>
+              <div class="slider-row"><label>Stomach</label><input type="range" min="10" max="1000" id="zhp_tag_stomach" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_tag_stomach_val"></span></div>
+              <div class="slider-row"><label>Arms</label><input type="range" min="1" max="500" id="zhp_tag_arms" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_tag_arms_val"></span></div>
+              <div class="slider-row"><label>Legs</label><input type="range" min="1" max="500" id="zhp_tag_legs" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_tag_legs_val"></span></div>
+            </div>
+            <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:12px">
+              <div style="font-weight:600;color:#ff9800;margin-bottom:8px">Cursed Assault</div>
+              <div class="slider-row"><label>Head</label><input type="range" min="1" max="300" id="zhp_cur_head" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_cur_head_val"></span></div>
+              <div class="slider-row"><label>Chest</label><input type="range" min="10" max="500" id="zhp_cur_chest" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_cur_chest_val"></span></div>
+              <div class="slider-row"><label>Stomach</label><input type="range" min="10" max="500" id="zhp_cur_stomach" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_cur_stomach_val"></span></div>
+              <div class="slider-row"><label>Arms</label><input type="range" min="1" max="300" id="zhp_cur_arms" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_cur_arms_val"></span></div>
+              <div class="slider-row"><label>Legs</label><input type="range" min="1" max="300" id="zhp_cur_legs" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zhp_cur_legs_val"></span></div>
+            </div>
+          </div>
+          <div style="margin-top:8px;font-size:0.75rem;color:var(--text-dim)">Standard health applies to: <span id="zhp_standardTypes" style="color:var(--text)"></span></div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Spawn Control ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieSpawnCtrlBody')">⚙ Spawn Control <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieSpawnCtrlBody" style="display:none">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:12px">
+            <label class="toggle-row"><input type="checkbox" id="zsc_overrideBotCaps" onchange="window.zombieToggleSpawnCaps()"><span>Override Bot Caps</span></label>
+            <label class="toggle-row"><input type="checkbox" id="zsc_ignoreMaxBots"><span>Zombies Ignore Max Bots</span></label>
+            <label class="toggle-row"><input type="checkbox" id="zsc_forceSpawn"><span>Force Zombie Spawning</span></label>
+            <label class="toggle-row"><input type="checkbox" id="zsc_injectBossZombies"><span>Inject Boss Zombies</span></label>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-bottom:12px">
+            <div class="slider-row"><label>Max Bots Per Zone</label><input type="range" min="1" max="20" id="zsc_maxBotsPerZone" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zsc_maxBotsPerZone_val"></span></div>
+          </div>
+          <div id="zombieBotCapGrid" style="display:none;margin-bottom:16px">
+            <div style="font-size:0.85rem;color:var(--accent);margin-bottom:6px;font-weight:600">Per-Map Bot Caps</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px" id="zombieBotCapCards"></div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+            <label class="toggle-row" style="margin-bottom:8px"><input type="checkbox" id="zsc_enableExtraWaves" onchange="window.zombieToggleExtraWaves()"><span>Enable Extra Waves</span></label>
+            <div id="zombieExtraWavesBody" style="display:none">
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+                <div class="slider-row"><label>Waves Per Map</label><input type="range" min="1" max="20" id="zsc_extraWavesPerMap" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zsc_extraWavesPerMap_val"></span></div>
+                <div class="slider-row"><label>Zombies Per Wave</label><input type="range" min="1" max="15" id="zsc_zombiesPerWave" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zsc_zombiesPerWave_val"></span></div>
+                <div class="slider-row"><label>Wave Spawn Chance %</label><input type="range" min="0" max="100" id="zsc_waveSpawnChance" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zsc_waveSpawnChance_val"></span></div>
+                <div>
+                  <label style="font-size:0.8rem;color:var(--text-dim)">Wave Difficulty</label>
+                  <select id="zsc_waveDifficulty" style="background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:0.85rem;width:100%">
+                    <option value="easy">Easy</option><option value="normal">Normal</option><option value="hard">Hard</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Bot Limits ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieBotLimitsBody')">🤖 Bot Limits <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieBotLimitsBody" style="display:none">
+          <label class="toggle-row" style="margin-bottom:8px"><input type="checkbox" id="zbl_enabled"><span>Enable Bot Limits</span></label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-bottom:8px">
+            <div class="slider-row"><label>Max PMCs</label><input type="range" min="1" max="30" id="zbl_maxPmcs" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zbl_maxPmcs_val"></span></div>
+            <div class="slider-row"><label>Max Scavs</label><input type="range" min="1" max="30" id="zbl_maxScavs" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zbl_maxScavs_val"></span></div>
+            <div class="slider-row"><label>Max Bosses</label><input type="range" min="0" max="10" id="zbl_maxBosses" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zbl_maxBosses_val"></span></div>
+            <div class="slider-row"><label>Max Zombies</label><input type="range" min="1" max="60" id="zbl_maxZombies" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zbl_maxZombies_val"></span></div>
+          </div>
+          <label class="toggle-row"><input type="checkbox" id="zbl_zombiesIgnoreMaxBots"><span>Zombies Ignore Max Bots (separate pool)</span></label>
+          <div style="margin-top:8px;font-size:0.75rem;color:var(--text-dim)">When enabled, total non-zombie cap = PMCs + Scavs + Bosses. Zombie limit is enforced separately.</div>
+        </div>
+      </div>
+
+      <!-- ═══ SECTION: Advanced Map Overrides ═══ -->
+      <div class="admin-section" style="margin-bottom:16px">
+        <h3 style="color:#c8aa6e;margin:0 0 12px;font-size:1rem;cursor:pointer" onclick="window.zombieToggleSection('zombieAdvMapsBody')">🗺 Advanced Map Overrides <span style="font-size:0.7rem;color:var(--text-dim)">▼</span></h3>
+        <div id="zombieAdvMapsBody" style="display:none">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <select id="zombieAdvMapSelect" onchange="window.zombieRenderAdvMap()" style="background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:0.85rem">
+              <option value="">Select a map...</option>
+            </select>
+            <button class="btn btn-sm" onclick="window.zombieAddAdvMap()" style="background:rgba(200,170,110,0.12);border:1px solid rgba(200,170,110,0.25);color:var(--accent);font-size:0.8rem">Add Override</button>
+            <button class="btn btn-sm" onclick="window.zombieRemoveAdvMap()" style="background:rgba(244,67,54,0.1);border:1px solid rgba(244,67,54,0.25);color:#f44336;font-size:0.8rem">Remove</button>
+          </div>
+          <div id="zombieAdvMapEditor" style="display:none">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+              <div class="slider-row"><label>Zombie Multiplier</label><input type="range" min="1" max="20" id="zam_zombieMultiplier" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_zombieMultiplier_val"></span></div>
+              <div class="slider-row"><label>Crowds Limit</label><input type="range" min="1" max="10" id="zam_crowdsLimit" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_crowdsLimit_val"></span></div>
+              <div class="slider-row"><label>Max Crowd Spawn</label><input type="range" min="1" max="30" id="zam_maxCrowdAttackSpawnLimit" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_maxCrowdAttackSpawnLimit_val"></span></div>
+              <div class="slider-row"><label>Crowd Cooldown (sec)</label><input type="range" min="30" max="600" step="10" id="zam_crowdCooldownPerPlayerSec" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_crowdCooldownPerPlayerSec_val"></span></div>
+              <div class="slider-row"><label>Block Radius</label><input type="range" min="10" max="200" id="zam_crowdAttackBlockRadius" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_crowdAttackBlockRadius_val"></span></div>
+              <div class="slider-row"><label>Min Spawn Distance</label><input type="range" min="10" max="100" id="zam_minSpawnDistToPlayer" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_minSpawnDistToPlayer_val"></span></div>
+              <div class="slider-row"><label>Search Radius Limit</label><input type="range" min="20" max="200" id="zam_targetPointSearchRadiusLimit" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_targetPointSearchRadiusLimit_val"></span></div>
+              <div class="slider-row"><label>Call Delta Radius</label><input type="range" min="5" max="50" id="zam_zombieCallDeltaRadius" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_zombieCallDeltaRadius_val"></span></div>
+              <div class="slider-row"><label>Call Period (sec)</label><input type="range" min="1" max="10" id="zam_zombieCallPeriodSec" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_zombieCallPeriodSec_val"></span></div>
+              <div class="slider-row"><label>Call Radius Limit</label><input type="range" min="10" max="100" id="zam_zombieCallRadiusLimit" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_zombieCallRadiusLimit_val"></span></div>
+              <div class="slider-row"><label>Infected Look Coeff</label><input type="range" min="0" max="1" step="0.05" id="zam_infectedLookCoeff" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_infectedLookCoeff_val"></span></div>
+              <div class="slider-row"><label>Min Infection %</label><input type="range" min="0" max="100" id="zam_minInfectionPercentage" oninput="window.zombieSliderUpdate(this)"><span class="slider-val" id="zam_minInfectionPercentage_val"></span></div>
+            </div>
+          </div>
+          <div style="margin-top:8px;font-size:0.75rem;color:var(--text-dim)">Per-map overrides replace global zombie behaviour values for that specific map.</div>
         </div>
       </div>
 
@@ -10104,7 +10285,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           return;
         }
         var lastUsedSid = localStorage.getItem('zslayer_session') || '';
-        profiles = profiles.filter(function(p) { return !(p.nickname || '').toLowerCase().includes('headless'); });
+        profiles = profiles.filter(function(p) { return !p.isHeadless && !(p.nickname || '').toLowerCase().includes('headless'); });
         profiles.sort(function(a, b) { return (b.level || 0) - (a.level || 0); });
         var html = '';
         window._profileCache = profiles;
@@ -10375,6 +10556,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     initDashboard();
     loadConsoleHistory();
     loadHeadlessHistory();
+    // Source list polling is dashboard-wide (headless console panel needs it),
+    // not raid-info-tab-scoped. Bootstrap here so tabs appear even if user never opens Raid Info.
+    fetchTelemetrySources();
+    fetchConsoleSources();
+    startSourcePolling();
     if (currentMainTab === 'players' && !playersLoaded) loadPlayerRoster();
   }
 
@@ -10876,14 +11062,27 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     arc.setAttribute('stroke', gaugeColor(100 - pct));
   }
 
+  function watchdogProcessRunning(proc) {
+    return !!(proc && proc.running);
+  }
+
+  function watchdogProcessCrashes(proc) {
+    if (!proc) return 0;
+    return Number(proc.crashes) || 0;
+  }
+
   window.updateAdminMetrics = function() {
     // Card 1: Active Instances
     var wds = (watchdogData && watchdogData.watchdogs) ? watchdogData.watchdogs : [];
     var totalInstances = 0, runningInstances = 0;
     wds.forEach(function(wd) {
       if (wd.manages) {
-        if (wd.manages.sptServer) { totalInstances++; if (wd.sptServer && wd.sptServer.running) runningInstances++; }
-        if (wd.manages.headlessClient) { totalInstances++; if (wd.headless && wd.headless.running) runningInstances++; }
+        if (wd.manages.sptServer) { totalInstances++; if (watchdogProcessRunning(wd.sptServer)) runningInstances++; }
+        if (wd.manages.headlessClient) {
+          var headlessClients = (wd.headlessClients && wd.headlessClients.length) ? wd.headlessClients : (wd.headlessClient ? [wd.headlessClient] : [{}]);
+          totalInstances += headlessClients.length;
+          runningInstances += headlessClients.filter(watchdogProcessRunning).length;
+        }
       }
     });
     var instEl = document.getElementById('adminMetricInstancesVal');
@@ -10906,9 +11105,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     var headlessUp = false;
     var crashCount = 0;
     wds.forEach(function(wd) {
-      if (wd.headless && wd.headless.running) headlessUp = true;
-      if (wd.sptServer && wd.sptServer.crashCount) crashCount += wd.sptServer.crashCount;
-      if (wd.headless && wd.headless.crashCount) crashCount += wd.headless.crashCount;
+      var headlessClients = (wd.headlessClients && wd.headlessClients.length) ? wd.headlessClients : (wd.headlessClient ? [wd.headlessClient] : []);
+      if (headlessClients.some(watchdogProcessRunning)) headlessUp = true;
+      crashCount += watchdogProcessCrashes(wd.sptServer);
+      headlessClients.forEach(function(h) { crashCount += watchdogProcessCrashes(h); });
     });
     var score = 0;
     score += serverUp ? 40 : 0;
@@ -11779,6 +11979,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   window.selectTelemetrySource = function(sourceId) {
     selectedTelemetrySource = sourceId;
     renderSourceSelector();
+    // Clear stale per-source visuals immediately — different source may be on a different map.
+    _mapPositions = [];
+    drawMap();
     loadTelemetry();
     loadRaidHistory();
     loadMapPositions();
@@ -11839,7 +12042,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
   function stopRaidInfoPolling() {
     if (raidInfoTimer) { clearInterval(raidInfoTimer); raidInfoTimer = null; }
-    stopSourcePolling();
+    // Note: source polling stays running — the headless console panel on the dashboard depends on it.
   }
 
   function loadTelemetry() {
@@ -11987,11 +12190,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         Object.keys(_mapConfig.layers).forEach(function(lv) { tryLoadMapImage(rs.map, lv); });
       }
 
-      // Status badge
+      // Status badge — in multi-source "All" mode, summarise active raid count
       var badge = document.getElementById('telemRaidStatusBadge');
       var statusClass = (rs.status || 'idle').replace(/\s+/g, '-');
       badge.className = 'telem-raid-status ' + statusClass;
-      badge.textContent = rs.status || 'idle';
+      var badgeText = rs.status || 'idle';
+      if (multiSourceMode && !selectedTelemetrySource) {
+        var activeCount = telemetrySources.filter(function(s) { return s.raidStatus === 'active'; }).length;
+        if (activeCount > 1) badgeText = activeCount + ' raids active';
+      }
+      badge.textContent = badgeText;
 
       // Header stats
       document.getElementById('telemMap').textContent = mapDisplayName(rs.map || '');
@@ -12141,6 +12349,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         if (k.victim.type === 'pmc') borderCls = ' kill-border-pmc';
         else if (k.victim.type === 'boss') borderCls = ' kill-border-boss';
         else if (k.victim.type === 'raider' || k.victim.type === 'rogue') borderCls = ' kill-border-raider';
+        else if (k.victim.type === 'infected') borderCls = ' kill-border-infected';
 
         // Handle unknown/environmental deaths
         var killerHtml = '';
@@ -12360,6 +12569,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           var borderCls = '';
           if (k.victim.type === 'pmc') borderCls = ' kill-border-pmc';
           else if (k.victim.type === 'boss') borderCls = ' kill-border-boss';
+          else if (k.victim.type === 'infected') borderCls = ' kill-border-infected';
 
           var killerHtml = '';
           var weaponHtml = '';
@@ -12707,6 +12917,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       '  <span><span class="pop-legend-dot" style="background:#c87a3e"></span>Boss</span>',
       '  <span><span class="pop-legend-dot" style="background:#b06030"></span>Raider/Rogue</span>',
       '  <span><span class="pop-legend-dot" style="background:#6e4a7c"></span>Follower</span>',
+      '  <span><span class="pop-legend-dot" style="background:#7b5ea7"></span>Infected</span>',
       '  <span><span class="pop-legend-dot" style="background:rgba(255,255,255,0.25)"></span>Dead</span>',
       '</div>',
       '<script>',
@@ -12732,6 +12943,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       '    case "boss": _drawSkull(ctx,x,y,r,color); break;',
       '    case "raider": case "rogue": _drawTriangle(ctx,x,y,r,color); break;',
       '    case "follower": _drawDiamond(ctx,x,y,r*0.8,color); break;',
+      '    case "infected": var s=r*0.7; ctx.beginPath(); ctx.moveTo(x-s,y-s); ctx.lineTo(x+s,y+s); ctx.moveTo(x+s,y-s); ctx.lineTo(x-s,y+s); ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke(); ctx.lineWidth=0.8; break;',
       '    default: _drawCircle(ctx,x,y,r,color); break;',
       '  }',
       '  ctx.globalAlpha = 1;',
@@ -13079,7 +13291,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     document.getElementById('wdRestartDelay').textContent = spt && spt.startDelay ? spt.startDelay : '--';
 
     // Crash count
-    var crashCount = spt ? (spt.crashes || 0) : 0;
+    var crashCount = watchdogProcessCrashes(spt);
     var ccEl = document.getElementById('wdCrashCount');
     ccEl.textContent = crashCount;
     ccEl.style.color = crashCount >= 3 ? '#8b3a3a' : crashCount >= 1 ? '#c87a3e' : 'var(--text-dim)';
@@ -13112,14 +13324,43 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   // ── Headless Client Card ──
+  function getHeadlessInstancesFromWatchdogs() {
+    var instances = [];
+    var wds = watchdogData.watchdogs || [];
+    wds.forEach(function(wd) {
+      if (!(wd.manages && wd.manages.headlessClient && wd.connected)) return;
+      var clients = (wd.headlessClients && wd.headlessClients.length) ? wd.headlessClients : (wd.headlessClient ? [wd.headlessClient] : []);
+      if (clients.length === 0) {
+        instances.push({ watchdog: wd, status: {}, instanceId: '', target: 'headlessClient' });
+        return;
+      }
+      clients.forEach(function(hl, idx) {
+        var instanceId = hl.instanceId || '';
+        instances.push({
+          watchdog: wd,
+          status: hl || {},
+          instanceId: instanceId,
+          target: instanceId ? 'headlessClient:' + instanceId : 'headlessClient',
+          displayName: hl.instanceName || hl.profile || ('Headless ' + (idx + 1))
+        });
+      });
+    });
+    return instances;
+  }
+
+  function usesWatchdogHeadlessProfiles(instances) {
+    instances = instances || getHeadlessInstancesFromWatchdogs();
+    return instances.length > 1 || instances.some(function(i) { return !!i.instanceId; });
+  }
+
   function renderHeadlessCard() {
     var wds = watchdogData.watchdogs || [];
-    var hlWatchdogs = wds.filter(function(w) { return w.manages && w.manages.headlessClient && w.connected; });
+    var hlInstances = getHeadlessInstancesFromWatchdogs();
     var badge = document.getElementById('headlessStatusBadge');
     var label = document.getElementById('hlManagerLabel');
     var body = document.getElementById('headlessCardBody');
 
-    if (hlWatchdogs.length === 0) {
+    if (hlInstances.length === 0) {
       // No watchdog — degraded state
       badge.className = 'hl-status-pill pill-unavailable';
       badge.textContent = 'Offline';
@@ -13134,17 +13375,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
     // Show settings card
     var settingsCard = document.getElementById('headlessSettingsCard');
-    if (settingsCard) settingsCard.style.display = 'block';
+    if (settingsCard) settingsCard.style.display = usesWatchdogHeadlessProfiles(hlInstances) ? 'none' : 'block';
 
-    if (hlWatchdogs.length === 1) {
+    if (hlInstances.length === 1) {
       // Single headless watchdog — same layout as before
-      var wd = hlWatchdogs[0];
-      var hl = wd.headlessClient || {};
-      var actionKey = getActionKey(wd.watchdogId, 'headlessClient');
+      var inst = hlInstances[0];
+      var wd = inst.watchdog;
+      var hl = inst.status || {};
+      var actionKey = getActionKey(wd.watchdogId, inst.target);
       var action = watchdogActions[actionKey];
 
-      if (wds.length > 1) {
-        label.textContent = '(' + (wd.name || wd.watchdogId) + ')';
+      if (wds.length > 1 || inst.instanceId) {
+        label.textContent = '(' + (inst.displayName || wd.name || wd.watchdogId) + ')';
       } else {
         label.textContent = '';
       }
@@ -13173,7 +13415,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       html += '<div class="dash-stat"><div class="dash-stat-label">Profile</div><div class="dash-stat-value sm">' + (hl.profile ? '\uD83E\uDD16 ' + escH(hl.profile) : '<span style="color:var(--text-muted)">Not set</span>') + '</div></div>';
       html += '</div>';
 
-      var crashCount = hl.crashes || 0;
+      var crashCount = watchdogProcessCrashes(hl);
       var crashColor = crashCount >= 3 ? '#8b3a3a' : crashCount >= 1 ? '#c87a3e' : 'var(--text-dim)';
       html += '<div class="dash-stat-row"><div class="dash-stat"><div class="dash-stat-label">Crashes Today</div><div class="dash-stat-value sm" style="color:' + crashColor + '">' + crashCount + '</div></div></div>';
 
@@ -13186,41 +13428,42 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         html += '<button class="btn btn-sm btn-disabled" disabled>Restart</button>';
       } else if (hl.running) {
         html += '<button class="btn btn-sm btn-disabled" disabled>Start</button>';
-        html += '<button class="btn btn-sm" onclick="stopHeadless(\'' + escH(wd.watchdogId) + '\')">Stop</button>';
-        html += '<button class="btn btn-sm" onclick="restartHeadless(\'' + escH(wd.watchdogId) + '\')">Restart</button>';
+        html += '<button class="btn btn-sm" onclick="stopHeadless(\'' + escH(wd.watchdogId) + '\',\'' + escH(inst.instanceId) + '\')">Stop</button>';
+        html += '<button class="btn btn-sm" onclick="restartHeadless(\'' + escH(wd.watchdogId) + '\',\'' + escH(inst.instanceId) + '\')">Restart</button>';
       } else {
-        html += '<button class="btn btn-sm" onclick="startHeadless(\'' + escH(wd.watchdogId) + '\')">Start</button>';
+        html += '<button class="btn btn-sm" onclick="startHeadless(\'' + escH(wd.watchdogId) + '\',\'' + escH(inst.instanceId) + '\')">Start</button>';
         html += '<button class="btn btn-sm btn-disabled" disabled>Stop</button>';
         html += '<button class="btn btn-sm btn-disabled" disabled>Restart</button>';
       }
       html += '</div>';
       body.innerHTML = html;
     } else {
-      // Multiple headless watchdogs
+      // Multiple headless instances across one or more watchdogs
       label.textContent = '';
-      var anyRunning = hlWatchdogs.some(function(w) { return w.headlessClient && w.headlessClient.running; });
+      var anyRunning = hlInstances.some(function(i) { return i.status && i.status.running; });
       badge.className = 'hl-status-pill';
       if (anyRunning) {
         badge.classList.add('pill-running');
-        var runCount = hlWatchdogs.filter(function(w) { return w.headlessClient && w.headlessClient.running; }).length;
-        badge.textContent = runCount + '/' + hlWatchdogs.length + ' Running';
+        var runCount = hlInstances.filter(function(i) { return i.status && i.status.running; }).length;
+        badge.textContent = runCount + '/' + hlInstances.length + ' Running';
       } else {
         badge.classList.add('pill-stopped');
         badge.textContent = '\u25CF All Stopped';
       }
 
       var html = '';
-      hlWatchdogs.forEach(function(wd) {
-        var hl = wd.headlessClient || {};
+      hlInstances.forEach(function(inst) {
+        var wd = inst.watchdog;
+        var hl = inst.status || {};
         var sys = wd.system || {};
-        var actionKey = getActionKey(wd.watchdogId, 'headlessClient');
+        var actionKey = getActionKey(wd.watchdogId, inst.target);
         var action = watchdogActions[actionKey];
 
         html += '<div style="padding:10px;margin-bottom:8px;background:#1a1810;border:1px solid var(--border-subtle);border-radius:var(--radius)">';
 
         // Header: Name @ hostname + status badge
         html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-        var nameLabel = escH(wd.name || wd.watchdogId);
+        var nameLabel = escH(inst.displayName || wd.name || wd.watchdogId);
         if (wd.hostname) nameLabel += ' <span style="color:var(--text-muted);font-weight:400">@ ' + escH(wd.hostname) + '</span>';
         html += '<span style="font-size:12px;font-weight:600;color:var(--text-bright)">' + nameLabel + '</span>';
 
@@ -13247,7 +13490,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
         html += '</div>';
 
         // Stats row 2: Auto-Start, Auto-Restart, Crashes
-        var crashCount = hl.crashes || 0;
+        var crashCount = watchdogProcessCrashes(hl);
         var crashColor = crashCount >= 3 ? '#8b3a3a' : crashCount >= 1 ? '#c87a3e' : 'var(--text-dim)';
         html += '<div class="dash-stat-row" style="margin-bottom:4px">';
         html += '<div class="dash-stat"><div class="dash-stat-label">Auto-Start</div><div class="dash-stat-value sm">' + (hl.autoStart ? 'Yes' : 'No') + '</div></div>';
@@ -13279,10 +13522,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
           html += '<button class="btn btn-sm btn-disabled" disabled>Restart</button>';
         } else if (hl.running) {
           html += '<button class="btn btn-sm btn-disabled" disabled>Start</button>';
-          html += '<button class="btn btn-sm" onclick="stopHeadless(\'' + escH(wd.watchdogId) + '\')">Stop</button>';
-          html += '<button class="btn btn-sm" onclick="restartHeadless(\'' + escH(wd.watchdogId) + '\')">Restart</button>';
+          html += '<button class="btn btn-sm" onclick="stopHeadless(\'' + escH(wd.watchdogId) + '\',\'' + escH(inst.instanceId) + '\')">Stop</button>';
+          html += '<button class="btn btn-sm" onclick="restartHeadless(\'' + escH(wd.watchdogId) + '\',\'' + escH(inst.instanceId) + '\')">Restart</button>';
         } else {
-          html += '<button class="btn btn-sm" onclick="startHeadless(\'' + escH(wd.watchdogId) + '\')">Start</button>';
+          html += '<button class="btn btn-sm" onclick="startHeadless(\'' + escH(wd.watchdogId) + '\',\'' + escH(inst.instanceId) + '\')">Start</button>';
           html += '<button class="btn btn-sm btn-disabled" disabled>Stop</button>';
           html += '<button class="btn btn-sm btn-disabled" disabled>Restart</button>';
         }
@@ -13299,22 +13542,21 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   function renderHeadlessBadge() {
     var hlBadge = document.getElementById('dashHeadlessBadge');
     if (!hlBadge) return;
-    var wds = watchdogData.watchdogs || [];
-    var hlWatchdogs = wds.filter(function(w) { return w.manages && w.manages.headlessClient && w.connected; });
+    var hlInstances = getHeadlessInstancesFromWatchdogs();
 
-    if (hlWatchdogs.length === 0) {
+    if (hlInstances.length === 0) {
       hlBadge.style.display = '';
       hlBadge.innerHTML = '\uD83E\uDD16 Headless Client <span class="hl-status-pill pill-unavailable" style="font-size:10px;padding:1px 8px;margin-left:4px;vertical-align:middle">Unknown</span>';
-    } else if (hlWatchdogs.length === 1) {
-      var hl = hlWatchdogs[0].headlessClient || {};
+    } else if (hlInstances.length === 1) {
+      var hl = hlInstances[0].status || {};
       hlBadge.style.display = '';
       var pillClass = hl.running ? 'pill-running' : 'pill-stopped';
       var pillText = hl.running ? 'Running' : 'Stopped';
       hlBadge.innerHTML = '\uD83E\uDD16 Headless Client <span class="hl-status-pill ' + pillClass + '" style="font-size:10px;padding:1px 8px;margin-left:4px;vertical-align:middle">' + pillText + '</span>';
     } else {
-      var runCount = hlWatchdogs.filter(function(w) { return w.headlessClient && w.headlessClient.running; }).length;
+      var runCount = hlInstances.filter(function(i) { return i.status && i.status.running; }).length;
       hlBadge.style.display = '';
-      hlBadge.innerHTML = '\uD83E\uDD16 Headless Clients: ' + runCount + '/' + hlWatchdogs.length + ' Running';
+      hlBadge.innerHTML = '\uD83E\uDD16 Headless Clients: ' + runCount + '/' + hlInstances.length + ' Running';
     }
   }
 
@@ -13322,6 +13564,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   function loadHeadlessSettings() {
     api('headless/status').then(function(d) {
       var settingsCard = document.getElementById('headlessSettingsCard');
+      if (usesWatchdogHeadlessProfiles()) {
+        if (settingsCard) settingsCard.style.display = 'none';
+        return;
+      }
       if (!d.available && !(watchdogData.watchdogs || []).some(function(w) { return w.manages && w.manages.headlessClient; })) {
         if (settingsCard) settingsCard.style.display = 'none';
         return;
@@ -13339,7 +13585,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   // ── Command Sending ──
-  function sendWatchdogCommand(target, action, watchdogId) {
+  function sendWatchdogCommand(target, action, watchdogId, instanceId) {
     var actionKey = getActionKey(watchdogId, target);
     watchdogActions[actionKey] = action === 'start' ? 'starting' : action === 'stop' ? 'stopping' : 'restarting';
     // Immediate re-render with transition state
@@ -13347,7 +13593,10 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     else renderHeadlessCard();
 
     var endpoint = (target === 'sptServer' ? 'watchdog/' : 'headless/') + action;
-    if (watchdogId) endpoint += '?watchdogId=' + encodeURIComponent(watchdogId);
+    var query = [];
+    if (watchdogId) query.push('watchdogId=' + encodeURIComponent(watchdogId));
+    if (instanceId) query.push('instanceId=' + encodeURIComponent(instanceId));
+    if (query.length) endpoint += '?' + query.join('&');
 
     fetch(BASE + endpoint, {
       method: 'POST',
@@ -13397,17 +13646,20 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     sendWatchdogCommand('sptServer', 'restart', wd ? wd.watchdogId : null);
   };
 
-  window.startHeadless = function(watchdogId) {
-    sendWatchdogCommand('headlessClient', 'start', watchdogId || null);
+  window.startHeadless = function(watchdogId, instanceId) {
+    var target = instanceId ? 'headlessClient:' + instanceId : 'headlessClient';
+    sendWatchdogCommand(target, 'start', watchdogId || null, instanceId || null);
   };
 
-  window.stopHeadless = function(watchdogId) {
+  window.stopHeadless = function(watchdogId, instanceId) {
     if (!confirm('Stop the headless client?')) return;
-    sendWatchdogCommand('headlessClient', 'stop', watchdogId || null);
+    var target = instanceId ? 'headlessClient:' + instanceId : 'headlessClient';
+    sendWatchdogCommand(target, 'stop', watchdogId || null, instanceId || null);
   };
 
-  window.restartHeadless = function(watchdogId) {
-    sendWatchdogCommand('headlessClient', 'restart', watchdogId || null);
+  window.restartHeadless = function(watchdogId, instanceId) {
+    var target = instanceId ? 'headlessClient:' + instanceId : 'headlessClient';
+    sendWatchdogCommand(target, 'restart', watchdogId || null, instanceId || null);
   };
 
   window.saveHeadlessConfig = function() {
@@ -14162,6 +14414,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     raider: '#b06030',   // darker orange
     rogue: '#b06030',
     follower: '#6e4a7c', // purple
+    infected: '#7b5ea7', // zombie purple
     unknown: '#888'
   };
 
@@ -14306,6 +14559,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       case 'raider':
       case 'rogue':  _drawTriangle(ctx, x, y, r, color); break;
       case 'follower': _drawSmallDiamond(ctx, x, y, r, color); break;
+      case 'infected': _drawX(ctx, x, y, r, color); break;
       default:       _drawCircle(ctx, x, y, r, color); break; // scav, unknown
     }
     ctx.globalAlpha = 1;
@@ -14379,6 +14633,18 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     ctx.strokeStyle = 'rgba(255,255,255,0.15)';
     ctx.lineWidth = 0.8;
     ctx.stroke();
+  }
+
+  function _drawX(ctx, x, y, r, color) {
+    // X mark for infected/zombie bots
+    var s = r * 0.7;
+    ctx.beginPath();
+    ctx.moveTo(x - s, y - s); ctx.lineTo(x + s, y + s);
+    ctx.moveTo(x + s, y - s); ctx.lineTo(x - s, y + s);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.lineWidth = 0.8;
   }
 
   function _drawSkull(ctx, x, y, r, color) {
@@ -17329,13 +17595,27 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     expCfg.enableFleaExpansion = true;
     expCfg.disableFleaBlacklist = blChecked || null;
 
-    Promise.all([
+    // Use allSettled so a failure in flea/expanded-apply doesn't silently abort regenerate.
+    // Previous Promise.all would skip the regenerate chain on any leg rejection (root cause of
+    // "stays at vanilla prices" reports — config saved but offers never regenerated).
+    Promise.allSettled([
       fleaLoggedFetch('flea/config', { method: 'POST', body: JSON.stringify(cfg) }),
       api('flea/expanded-apply', 'POST', expCfg)
     ])
     .then(function(results) {
-      fleaConfig = results[0];
-      if (fleaExpandedConfig && fleaExpandedConfig.config) fleaExpandedConfig.config.disableFleaBlacklist = blChecked || null;
+      var configRes = results[0];
+      var expandRes = results[1];
+      if (configRes.status === 'rejected') {
+        // Config save failed — abort, regenerate would use stale config.
+        throw new Error('Failed to save flea config: ' + (configRes.reason && configRes.reason.message || configRes.reason));
+      }
+      fleaConfig = configRes.value;
+      if (expandRes.status === 'rejected') {
+        // Expansion failed — surface but continue, regenerate will still pick up new flea config.
+        toast('Flea expansion apply failed (continuing): ' + (expandRes.reason && expandRes.reason.message || expandRes.reason), 'warning');
+      } else if (fleaExpandedConfig && fleaExpandedConfig.config) {
+        fleaExpandedConfig.config.disableFleaBlacklist = blChecked || null;
+      }
       txt.textContent = 'Regenerating offers...';
       return fleaLoggedFetch('flea/regenerate', { method: 'POST' });
     })
@@ -24869,38 +25149,38 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   var ZOMBIE_TYPES = ['infectedAssault','infectedPmc','infectedCivil','infectedLaborant','infectedTagilla','cursedAssault'];
   var ZOMBIE_DISPLAY = { infectedAssault:'Infected Assault', infectedPmc:'Infected PMC', infectedCivil:'Infected Civilian', infectedLaborant:'Infected Laborant', infectedTagilla:'Infected Tagilla', cursedAssault:'Cursed Assault' };
 
-  // ═══ PRESETS ═══
-  var PRESETS = {
-    vanilla: { enabled: false },
-    light: {
+  // ═══ BUILT-IN PRESETS (always available, not deletable) ═══
+  var BUILTIN_PRESETS = {
+    'Vanilla (All Off)': { enabled: false },
+    'Light Infection (25%)': {
       enabled: true,
       maps: { Labs:25, Customs:25, Factory:25, Interchange:25, Lighthouse:25, Reserve:25, GroundZero:25, Shoreline:25, Streets:25, Woods:25 },
       disableBosses: { Labs:false, Customs:false, Factory:false, Interchange:false, Lighthouse:false, Reserve:false, GroundZero:false, Shoreline:false, Streets:false, Woods:false }
     },
-    full: {
+    'Full Outbreak (100%)': {
       enabled: true,
       maps: { Labs:100, Customs:100, Factory:100, Interchange:100, Lighthouse:100, Reserve:100, GroundZero:100, Shoreline:100, Streets:100, Woods:100 },
       disableBosses: { Labs:true, Customs:false, Factory:false, Interchange:false, Lighthouse:false, Reserve:false, GroundZero:false, Shoreline:false, Streets:false, Woods:false }
     },
-    labsonly: {
+    'Labs Only': {
       enabled: true,
       maps: { Labs:100, Customs:0, Factory:0, Interchange:0, Lighthouse:0, Reserve:0, GroundZero:0, Shoreline:0, Streets:0, Woods:0 },
       disableBosses: { Labs:true, Customs:false, Factory:false, Interchange:false, Lighthouse:false, Reserve:false, GroundZero:false, Shoreline:false, Streets:false, Woods:false },
       zombieSettings: { removeLabsKeycard: true }
     },
-    nightterror: {
+    'Night Terror': {
       enabled: true,
       maps: { Labs:75, Customs:75, Factory:75, Interchange:75, Lighthouse:75, Reserve:75, GroundZero:75, Shoreline:75, Streets:75, Woods:75 },
       nightMode: { enabled: true, nightInfectionMultiplier: 2.0, forceNightWeather: true, nightBossChanceMultiplier: 2.0 },
       waveEscalation: { enabled: true, startInfectionPercent: 25, endInfectionPercent: 150, escalationCurve: 'exponential' }
     },
-    horde: {
+    'Horde Mode': {
       enabled: true,
       maps: { Labs:100, Customs:100, Factory:100, Interchange:100, Lighthouse:100, Reserve:100, GroundZero:100, Shoreline:100, Streets:100, Woods:100 },
       raidSettings: { extendRaidTime: true, raidTimeMultiplier: 1.5 },
       waveEscalation: { enabled: true, hordeEventEnabled: true, hordeIntervalMinutes: 5, hordeMultiplier: 5.0, startInfectionPercent: 50, endInfectionPercent: 200 }
     },
-    apocalypse: {
+    'Apocalypse': {
       enabled: true,
       maps: { Labs:100, Customs:100, Factory:100, Interchange:100, Lighthouse:100, Reserve:100, GroundZero:100, Shoreline:100, Streets:100, Woods:100 },
       disableBosses: { Labs:true, Customs:true, Factory:true, Interchange:true, Lighthouse:true, Reserve:true, GroundZero:true, Shoreline:true, Streets:true, Woods:true },
@@ -24908,7 +25188,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       waveEscalation: { enabled: true, hordeEventEnabled: true, hordeIntervalMinutes: 5, hordeMultiplier: 5.0, startInfectionPercent: 75, endInfectionPercent: 200 },
       nightMode: { enabled: true, nightInfectionMultiplier: 2.0 }
     },
-    survival: {
+    'Survival': {
       enabled: true,
       maps: { Labs:75, Customs:75, Factory:75, Interchange:75, Lighthouse:75, Reserve:75, GroundZero:75, Shoreline:75, Streets:75, Woods:75 },
       raidSettings: { extendRaidTime: true, raidTimeMultiplier: 1.5 },
@@ -24945,6 +25225,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
       } else {
         loadZombieConfig();
       }
+      refreshPresetDropdown();
     }).catch(function(e) {
       console.warn('Zombie detection failed:', e);
       document.getElementById('zombiesNotDetected').style.display = 'block';
@@ -24986,6 +25267,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     setSlider('zb_zombieCallPeriodSec', c.zombieSettings.zombieCallPeriodSec);
     setSlider('zb_zombieCallRadiusLimit', c.zombieSettings.zombieCallRadiusLimit);
     setSlider('zb_infectedLookCoeff', c.zombieSettings.infectedLookCoeff);
+    setSlider('zb_minInfectionPercentage', c.zombieSettings.minInfectionPercentage);
 
     // Spawn weights
     renderSpawnWeights(c.spawnWeights);
@@ -25029,7 +25311,17 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     // Difficulty scaling
     setCheck('zd_enabled', c.difficultyScaling.enabled);
     setSelect('zd_scalingMode', c.difficultyScaling.scalingMode);
-    renderDiffScalePreview(c.difficultyScaling);
+    if (c.difficultyScaling.playerCountInfectionScale) {
+      for (var k in c.difficultyScaling.playerCountInfectionScale) {
+        setSlider('zd_pcs_' + k, c.difficultyScaling.playerCountInfectionScale[k]);
+      }
+    }
+    if (c.difficultyScaling.levelScaling) {
+      setSlider('zd_ls_minLevel', c.difficultyScaling.levelScaling.minLevel);
+      setSlider('zd_ls_maxLevel', c.difficultyScaling.levelScaling.maxLevel);
+      setSlider('zd_ls_minMultiplier', c.difficultyScaling.levelScaling.minMultiplier);
+      setSlider('zd_ls_maxMultiplier', c.difficultyScaling.levelScaling.maxMultiplier);
+    }
 
     // Wave escalation
     setCheck('zw_enabled', c.waveEscalation.enabled);
@@ -25039,6 +25331,63 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     setCheck('zw_hordeEventEnabled', c.waveEscalation.hordeEventEnabled);
     setSlider('zw_hordeIntervalMinutes', c.waveEscalation.hordeIntervalMinutes);
     setSlider('zw_hordeMultiplier', c.waveEscalation.hordeMultiplier);
+
+    // Zombie AI
+    if (c.zombieAI) {
+      setCheck('zai_enabled', c.zombieAI.enabled);
+      setSlider('zai_rotateSpeed', c.zombieAI.rotateSpeed);
+      renderZombieAIStats(c.zombieAI);
+      var atEl = document.getElementById('zai_affectedTypes');
+      if (atEl) atEl.textContent = (c.zombieAI.affectedTypes || []).join(', ') || 'none';
+    }
+
+    // Zombie Health
+    if (c.zombieHealth) {
+      setCheck('zhp_enabled', c.zombieHealth.enabled);
+      var hpProfiles = { std: c.zombieHealth.standard, tag: c.zombieHealth.tagilla, cur: c.zombieHealth.cursedAssault };
+      ['std','tag','cur'].forEach(function(pfx) {
+        var hp = hpProfiles[pfx];
+        if (!hp) return;
+        ['head','chest','stomach','arms','legs'].forEach(function(part) {
+          setSlider('zhp_' + pfx + '_' + part, hp[part]);
+        });
+      });
+      var stEl = document.getElementById('zhp_standardTypes');
+      if (stEl) stEl.textContent = (c.zombieHealth.standardTypes || []).join(', ') || 'none';
+    }
+
+    // Spawn control
+    if (c.spawnControl) {
+      setCheck('zsc_overrideBotCaps', c.spawnControl.overrideBotCaps);
+      setCheck('zsc_ignoreMaxBots', c.spawnControl.ignoreMaxBots);
+      setCheck('zsc_forceSpawn', c.spawnControl.forceSpawn);
+      setCheck('zsc_injectBossZombies', c.spawnControl.injectBossZombies);
+      setSlider('zsc_maxBotsPerZone', c.spawnControl.maxBotsPerZone);
+      setCheck('zsc_enableExtraWaves', c.spawnControl.enableExtraWaves);
+      setSlider('zsc_extraWavesPerMap', c.spawnControl.extraWavesPerMap);
+      setSlider('zsc_zombiesPerWave', c.spawnControl.zombiesPerWave);
+      setSlider('zsc_waveSpawnChance', c.spawnControl.waveSpawnChance);
+      setSelect('zsc_waveDifficulty', c.spawnControl.waveDifficulty);
+      renderBotCapCards(c.spawnControl.maxBotCap || {});
+      window.zombieToggleSpawnCaps();
+      window.zombieToggleExtraWaves();
+    }
+
+    // Bot limits
+    if (c.botLimits) {
+      setCheck('zbl_enabled', c.botLimits.enabled);
+      setSlider('zbl_maxPmcs', c.botLimits.maxPmcs);
+      setSlider('zbl_maxScavs', c.botLimits.maxScavs);
+      setSlider('zbl_maxBosses', c.botLimits.maxBosses);
+      setSlider('zbl_maxZombies', c.botLimits.maxZombies);
+      setCheck('zbl_zombiesIgnoreMaxBots', c.botLimits.zombiesIgnoreMaxBots);
+    }
+
+    // Advanced maps — populate dropdown
+    populateAdvMapDropdown(c.advancedMaps || {});
+
+    // Sync popular settings mirrors from originals
+    zombieSyncToPop();
   }
 
   // ═══ READ UI INTO CONFIG ═══
@@ -25073,6 +25422,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     c.zombieSettings.zombieCallPeriodSec = getNum('zb_zombieCallPeriodSec');
     c.zombieSettings.zombieCallRadiusLimit = getNum('zb_zombieCallRadiusLimit');
     c.zombieSettings.infectedLookCoeff = getFloat('zb_infectedLookCoeff');
+    c.zombieSettings.minInfectionPercentage = getNum('zb_minInfectionPercentage');
 
     // Spawn weights
     c.spawnWeights = c.spawnWeights || {};
@@ -25140,6 +25490,16 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     c.difficultyScaling = c.difficultyScaling || {};
     c.difficultyScaling.enabled = getCheck('zd_enabled');
     c.difficultyScaling.scalingMode = getSelect('zd_scalingMode');
+    c.difficultyScaling.playerCountInfectionScale = c.difficultyScaling.playerCountInfectionScale || {};
+    for (var pi = 1; pi <= 5; pi++) {
+      var pcsEl = document.getElementById('zd_pcs_' + pi);
+      if (pcsEl) c.difficultyScaling.playerCountInfectionScale[String(pi)] = parseFloat(pcsEl.value) || 1;
+    }
+    c.difficultyScaling.levelScaling = c.difficultyScaling.levelScaling || {};
+    c.difficultyScaling.levelScaling.minLevel = getNum('zd_ls_minLevel');
+    c.difficultyScaling.levelScaling.maxLevel = getNum('zd_ls_maxLevel');
+    c.difficultyScaling.levelScaling.minMultiplier = getFloat('zd_ls_minMultiplier');
+    c.difficultyScaling.levelScaling.maxMultiplier = getFloat('zd_ls_maxMultiplier');
 
     // Wave escalation
     c.waveEscalation = c.waveEscalation || {};
@@ -25150,6 +25510,61 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     c.waveEscalation.hordeEventEnabled = getCheck('zw_hordeEventEnabled');
     c.waveEscalation.hordeIntervalMinutes = getNum('zw_hordeIntervalMinutes');
     c.waveEscalation.hordeMultiplier = getFloat('zw_hordeMultiplier');
+
+    // Zombie AI
+    c.zombieAI = c.zombieAI || {};
+    c.zombieAI.enabled = getCheck('zai_enabled');
+    c.zombieAI.rotateSpeed = getFloat('zai_rotateSpeed');
+    var aiStats = ['sightRange','fieldOfView','hearingSensitivity','hearingChance','aggressionChance','reactionTime','scatteringPerMeter'];
+    aiStats.forEach(function(stat) {
+      c.zombieAI[stat] = c.zombieAI[stat] || {};
+      ['easy','normal','hard'].forEach(function(d) {
+        var el = document.getElementById('zai_' + stat + '_' + d);
+        if (el) c.zombieAI[stat][d] = parseFloat(el.value) || 0;
+      });
+    });
+
+    // Zombie Health
+    c.zombieHealth = c.zombieHealth || {};
+    c.zombieHealth.enabled = getCheck('zhp_enabled');
+    var hpMap = { std: 'standard', tag: 'tagilla', cur: 'cursedAssault' };
+    ['std','tag','cur'].forEach(function(pfx) {
+      var key = hpMap[pfx];
+      c.zombieHealth[key] = c.zombieHealth[key] || {};
+      ['head','chest','stomach','arms','legs'].forEach(function(part) {
+        c.zombieHealth[key][part] = getNum('zhp_' + pfx + '_' + part);
+      });
+    });
+
+    // Spawn control
+    c.spawnControl = c.spawnControl || {};
+    c.spawnControl.overrideBotCaps = getCheck('zsc_overrideBotCaps');
+    c.spawnControl.ignoreMaxBots = getCheck('zsc_ignoreMaxBots');
+    c.spawnControl.forceSpawn = getCheck('zsc_forceSpawn');
+    c.spawnControl.injectBossZombies = getCheck('zsc_injectBossZombies');
+    c.spawnControl.maxBotsPerZone = getNum('zsc_maxBotsPerZone');
+    c.spawnControl.enableExtraWaves = getCheck('zsc_enableExtraWaves');
+    c.spawnControl.extraWavesPerMap = getNum('zsc_extraWavesPerMap');
+    c.spawnControl.zombiesPerWave = getNum('zsc_zombiesPerWave');
+    c.spawnControl.waveSpawnChance = getNum('zsc_waveSpawnChance');
+    c.spawnControl.waveDifficulty = getSelect('zsc_waveDifficulty');
+    c.spawnControl.maxBotCap = c.spawnControl.maxBotCap || {};
+    MAP_NAMES.forEach(function(m) {
+      var el = document.getElementById('zsc_cap_' + m);
+      if (el) c.spawnControl.maxBotCap[m] = parseInt(el.value) || 15;
+    });
+
+    // Bot limits
+    c.botLimits = c.botLimits || {};
+    c.botLimits.enabled = getCheck('zbl_enabled');
+    c.botLimits.maxPmcs = getNum('zbl_maxPmcs');
+    c.botLimits.maxScavs = getNum('zbl_maxScavs');
+    c.botLimits.maxBosses = getNum('zbl_maxBosses');
+    c.botLimits.maxZombies = getNum('zbl_maxZombies');
+    c.botLimits.zombiesIgnoreMaxBots = getCheck('zbl_zombiesIgnoreMaxBots');
+
+    // Advanced maps
+    c.advancedMaps = readAdvancedMaps(c.advancedMaps || {});
 
     return c;
   }
@@ -25242,17 +25657,148 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     });
   }
 
-  // ═══ DIFFICULTY SCALE PREVIEW ═══
-  function renderDiffScalePreview(ds) {
-    var el = document.getElementById('zombieDiffScalePreview');
-    if (!el) return;
-    var scale = ds.playerCountInfectionScale || {};
-    var parts = [];
-    for (var k in scale) {
-      var label = k === '1' ? 'Solo' : k === '2' ? 'Duo' : k === '3' ? 'Trio' : k === '4' ? 'Quad' : k + '-man';
-      parts.push(label + ' = ' + scale[k] + 'x');
+  // ═══ ZOMBIE AI STATS GRID ═══
+  var AI_STATS = [
+    { key: 'sightRange', label: 'Sight Range', min: 50, max: 200, step: 5 },
+    { key: 'fieldOfView', label: 'Field of View', min: 90, max: 180, step: 5 },
+    { key: 'hearingSensitivity', label: 'Hearing Sens.', min: 0.1, max: 5, step: 0.05 },
+    { key: 'hearingChance', label: 'Hearing Chance', min: 0, max: 1, step: 0.05 },
+    { key: 'aggressionChance', label: 'Aggression %', min: 0, max: 100, step: 5 },
+    { key: 'reactionTime', label: 'Reaction Time', min: 0.1, max: 3, step: 0.05 },
+    { key: 'scatteringPerMeter', label: 'Scattering/m', min: 0.01, max: 0.5, step: 0.01 }
+  ];
+
+  function renderZombieAIStats(ai) {
+    var grid = document.getElementById('zombieAIStatsGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    AI_STATS.forEach(function(stat) {
+      var vals = ai[stat.key] || { easy: 0, normal: 0, hard: 0 };
+      grid.innerHTML += '<div style="color:var(--text);font-size:0.8rem;line-height:28px">' + stat.label + '</div>';
+      ['easy','normal','hard'].forEach(function(d) {
+        var id = 'zai_' + stat.key + '_' + d;
+        var v = vals[d] != null ? vals[d] : 0;
+        grid.innerHTML += '<input type="number" id="' + id + '" value="' + v + '" min="' + stat.min + '" max="' + stat.max + '" step="' + stat.step + '" '
+          + 'style="background:var(--bg-panel);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:0.8rem;width:100%;text-align:center">';
+      });
+    });
+  }
+
+  // ═══ BOT CAP CARDS ═══
+  function renderBotCapCards(caps) {
+    var grid = document.getElementById('zombieBotCapCards');
+    if (!grid) return;
+    grid.innerHTML = '';
+    MAP_NAMES.forEach(function(m) {
+      var val = caps[m] || 15;
+      grid.innerHTML += '<div style="display:flex;align-items:center;gap:6px;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:6px 10px">'
+        + '<span style="font-size:0.8rem;color:var(--text);min-width:80px">' + (MAP_DISPLAY[m] || m) + '</span>'
+        + '<input type="number" id="zsc_cap_' + m + '" value="' + val + '" min="5" max="50" '
+        + 'style="background:var(--bg-dark,#111);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.85rem;width:60px;text-align:center">'
+        + '</div>';
+    });
+  }
+
+  window.zombieToggleSpawnCaps = function() {
+    var checked = document.getElementById('zsc_overrideBotCaps');
+    var grid = document.getElementById('zombieBotCapGrid');
+    if (checked && grid) grid.style.display = checked.checked ? '' : 'none';
+  };
+
+  window.zombieToggleExtraWaves = function() {
+    var checked = document.getElementById('zsc_enableExtraWaves');
+    var body = document.getElementById('zombieExtraWavesBody');
+    if (checked && body) body.style.display = checked.checked ? '' : 'none';
+  };
+
+  // ═══ ADVANCED MAP OVERRIDES ═══
+  var _advMapData = {};
+
+  function populateAdvMapDropdown(advMaps) {
+    _advMapData = JSON.parse(JSON.stringify(advMaps || {}));
+    var sel = document.getElementById('zombieAdvMapSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Select a map...</option>';
+    MAP_NAMES.forEach(function(m) {
+      if (_advMapData[m]) {
+        sel.innerHTML += '<option value="' + m + '">' + (MAP_DISPLAY[m] || m) + ' (overridden)</option>';
+      } else {
+        sel.innerHTML += '<option value="' + m + '">' + (MAP_DISPLAY[m] || m) + '</option>';
+      }
+    });
+  }
+
+  window.zombieRenderAdvMap = function() {
+    var sel = document.getElementById('zombieAdvMapSelect');
+    var editor = document.getElementById('zombieAdvMapEditor');
+    if (!sel || !editor) return;
+    var mapName = sel.value;
+    if (!mapName || !_advMapData[mapName]) {
+      editor.style.display = 'none';
+      return;
     }
-    el.textContent = parts.join('  |  ') || 'No scaling configured';
+    editor.style.display = '';
+    var d = _advMapData[mapName];
+    var fields = ['zombieMultiplier','crowdsLimit','maxCrowdAttackSpawnLimit','crowdCooldownPerPlayerSec',
+      'crowdAttackBlockRadius','minSpawnDistToPlayer','targetPointSearchRadiusLimit',
+      'zombieCallDeltaRadius','zombieCallPeriodSec','zombieCallRadiusLimit','infectedLookCoeff','minInfectionPercentage'];
+    fields.forEach(function(f) {
+      if (d[f] != null) setSlider('zam_' + f, d[f]);
+    });
+  };
+
+  window.zombieAddAdvMap = function() {
+    var sel = document.getElementById('zombieAdvMapSelect');
+    if (!sel || !sel.value) { showToast('Select a map first', 'error'); return; }
+    var m = sel.value;
+    if (_advMapData[m]) { showToast(m + ' already has overrides', 'info'); return; }
+    // Create with global defaults
+    _advMapData[m] = {
+      zombieMultiplier: _zombieConfig ? _zombieConfig.zombieSettings.zombieMultiplier : 5,
+      crowdsLimit: _zombieConfig ? _zombieConfig.zombieSettings.crowdsLimit : 2,
+      maxCrowdAttackSpawnLimit: _zombieConfig ? _zombieConfig.zombieSettings.maxCrowdAttackSpawnLimit : 13,
+      crowdCooldownPerPlayerSec: _zombieConfig ? _zombieConfig.zombieSettings.crowdCooldownPerPlayerSec : 300,
+      crowdAttackBlockRadius: _zombieConfig ? _zombieConfig.zombieSettings.crowdAttackBlockRadius : 100,
+      minSpawnDistToPlayer: _zombieConfig ? _zombieConfig.zombieSettings.minSpawnDistToPlayer : 40,
+      targetPointSearchRadiusLimit: _zombieConfig ? _zombieConfig.zombieSettings.targetPointSearchRadiusLimit : 80,
+      zombieCallDeltaRadius: _zombieConfig ? _zombieConfig.zombieSettings.zombieCallDeltaRadius : 20,
+      zombieCallPeriodSec: _zombieConfig ? _zombieConfig.zombieSettings.zombieCallPeriodSec : 1,
+      zombieCallRadiusLimit: _zombieConfig ? _zombieConfig.zombieSettings.zombieCallRadiusLimit : 50,
+      infectedLookCoeff: _zombieConfig ? _zombieConfig.zombieSettings.infectedLookCoeff : 0.5,
+      minInfectionPercentage: _zombieConfig ? _zombieConfig.zombieSettings.minInfectionPercentage : 0
+    };
+    populateAdvMapDropdown(_advMapData);
+    sel.value = m;
+    window.zombieRenderAdvMap();
+    showToast('Added override for ' + m, 'success');
+  };
+
+  window.zombieRemoveAdvMap = function() {
+    var sel = document.getElementById('zombieAdvMapSelect');
+    if (!sel || !sel.value) return;
+    var m = sel.value;
+    if (!_advMapData[m]) return;
+    delete _advMapData[m];
+    populateAdvMapDropdown(_advMapData);
+    document.getElementById('zombieAdvMapEditor').style.display = 'none';
+    showToast('Removed override for ' + m, 'success');
+  };
+
+  function readAdvancedMaps(existing) {
+    // Save current editor values back to _advMapData
+    var sel = document.getElementById('zombieAdvMapSelect');
+    if (sel && sel.value && _advMapData[sel.value]) {
+      var m = sel.value;
+      var fields = ['zombieMultiplier','crowdsLimit','maxCrowdAttackSpawnLimit','crowdCooldownPerPlayerSec',
+        'crowdAttackBlockRadius','minSpawnDistToPlayer','targetPointSearchRadiusLimit',
+        'zombieCallDeltaRadius','zombieCallPeriodSec','zombieCallRadiusLimit'];
+      fields.forEach(function(f) { var el = document.getElementById('zam_' + f); if (el) _advMapData[m][f] = parseInt(el.value) || 0; });
+      var flEl = document.getElementById('zam_infectedLookCoeff');
+      if (flEl) _advMapData[m].infectedLookCoeff = parseFloat(flEl.value) || 0;
+      var miEl = document.getElementById('zam_minInfectionPercentage');
+      if (miEl) _advMapData[m].minInfectionPercentage = parseInt(miEl.value) || 0;
+    }
+    return JSON.parse(JSON.stringify(_advMapData));
   }
 
   // ═══ ACTIONS ═══
@@ -25280,26 +25826,163 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     }).catch(function(e) { showToast('Error: ' + e.message, 'error'); });
   };
 
-  window.zombieApplyPreset = function(name) {
-    if (!name || !PRESETS[name]) return;
-    var preset = PRESETS[name];
+  // ═══ PRESET SYSTEM ═══
+
+  function refreshPresetDropdown() {
+    var sel = document.getElementById('zombiePresetSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Presets...</option>';
+
+    // Built-in presets
+    sel.innerHTML += '<optgroup label="Built-in">';
+    for (var name in BUILTIN_PRESETS) {
+      sel.innerHTML += '<option value="builtin:' + name + '">' + name + '</option>';
+    }
+    sel.innerHTML += '</optgroup>';
+
+    // Fetch saved presets from server
+    fetch(BASE + 'zombies/presets').then(function(r) { return r.json(); }).then(function(data) {
+      if (data.presets && data.presets.length > 0) {
+        var group = '<optgroup label="Saved">';
+        data.presets.forEach(function(p) {
+          group += '<option value="saved:' + p.name + '">' + p.name + (p.description ? ' — ' + p.description : '') + '</option>';
+        });
+        group += '</optgroup>';
+        sel.innerHTML += group;
+      }
+    }).catch(function() {});
+  }
+
+  window.zombieLoadPreset = function() {
+    var sel = document.getElementById('zombiePresetSelect');
+    if (!sel || !sel.value) { showToast('Select a preset first', 'error'); return; }
+    var val = sel.value;
+
+    if (val.startsWith('builtin:')) {
+      var name = val.substring('builtin:'.length);
+      var preset = BUILTIN_PRESETS[name];
+      if (!preset) return;
+      var config = readUI();
+      // Apply built-in preset fields on top of current config
+      if (preset.enabled !== undefined) config.enabled = preset.enabled;
+      if (preset.maps) Object.assign(config.maps, preset.maps);
+      if (preset.disableBosses) Object.assign(config.disableBosses, preset.disableBosses);
+      if (preset.zombieSettings) Object.assign(config.zombieSettings, preset.zombieSettings);
+      if (preset.nightMode) Object.assign(config.nightMode, preset.nightMode);
+      if (preset.raidSettings) Object.assign(config.raidSettings, preset.raidSettings);
+      if (preset.waveEscalation) Object.assign(config.waveEscalation, preset.waveEscalation);
+      if (preset.lootModifiers) Object.assign(config.lootModifiers, preset.lootModifiers);
+      if (preset.rewards) Object.assign(config.rewards, preset.rewards);
+      _zombieConfig = config;
+      populateUI(config);
+      showToast('Loaded built-in preset "' + name + '" — click Apply to save', 'info');
+      return;
+    }
+
+    if (val.startsWith('saved:')) {
+      var savedName = val.substring('saved:'.length);
+      fetch(BASE + 'zombies/presets/load', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: savedName })
+      }).then(function(r) { return r.json(); }).then(function(preset) {
+        if (preset.config) {
+          _zombieConfig = preset.config;
+          populateUI(preset.config);
+          showToast('Loaded preset "' + savedName + '" — click Apply to save', 'success');
+        } else {
+          showToast('Preset has no config data', 'error');
+        }
+      }).catch(function(e) { showToast('Failed to load preset: ' + e.message, 'error'); });
+    }
+  };
+
+  window.zombieSavePresetPrompt = function() {
+    var name = prompt('Preset name:');
+    if (!name || !name.trim()) return;
+    name = name.trim();
+    var desc = prompt('Description (optional):') || '';
     var config = readUI();
 
-    // Apply preset fields on top of current config
-    if (preset.enabled !== undefined) config.enabled = preset.enabled;
-    if (preset.maps) Object.assign(config.maps, preset.maps);
-    if (preset.disableBosses) Object.assign(config.disableBosses, preset.disableBosses);
-    if (preset.zombieSettings) Object.assign(config.zombieSettings, preset.zombieSettings);
-    if (preset.nightMode) Object.assign(config.nightMode, preset.nightMode);
-    if (preset.raidSettings) Object.assign(config.raidSettings, preset.raidSettings);
-    if (preset.waveEscalation) Object.assign(config.waveEscalation, preset.waveEscalation);
-    if (preset.lootModifiers) Object.assign(config.lootModifiers, preset.lootModifiers);
-    if (preset.rewards) Object.assign(config.rewards, preset.rewards);
+    fetch(BASE + 'zombies/presets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, description: desc.trim(), config: config })
+    }).then(function(r) { return r.json(); }).then(function() {
+      showToast('Saved preset "' + name + '"', 'success');
+      refreshPresetDropdown();
+    }).catch(function(e) { showToast('Failed to save: ' + e.message, 'error'); });
+  };
 
-    _zombieConfig = config;
-    populateUI(config);
-    document.getElementById('zombiePresetSelect').value = '';
-    showToast('Preset "' + name + '" loaded — click Apply Changes to save', 'info');
+  window.zombieDeletePreset = function() {
+    var sel = document.getElementById('zombiePresetSelect');
+    if (!sel || !sel.value) { showToast('Select a preset first', 'error'); return; }
+    if (!sel.value.startsWith('saved:')) { showToast('Cannot delete built-in presets', 'error'); return; }
+    var name = sel.value.substring('saved:'.length);
+    if (!confirm('Delete preset "' + name + '"?')) return;
+
+    fetch(BASE + 'zombies/presets/' + encodeURIComponent(name) + '/delete', {
+      method: 'POST'
+    }).then(function(r) { return r.json(); }).then(function() {
+      showToast('Deleted preset "' + name + '"', 'success');
+      sel.value = '';
+      refreshPresetDropdown();
+    }).catch(function(e) { showToast('Failed to delete: ' + e.message, 'error'); });
+  };
+
+  window.zombieExportPreset = function() {
+    var sel = document.getElementById('zombiePresetSelect');
+    if (!sel || !sel.value) {
+      // Export current config as preset
+      var config = readUI();
+      var preset = { name: 'Exported Config', description: 'Exported from ZSlayer CC', config: config };
+      var blob = new Blob([JSON.stringify(preset, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'zombie-preset-export.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('Exported current config as preset', 'success');
+      return;
+    }
+
+    if (sel.value.startsWith('builtin:')) {
+      var name = sel.value.substring('builtin:'.length);
+      var preset = { name: name, description: 'Built-in preset', config: BUILTIN_PRESETS[name] };
+      var blob = new Blob([JSON.stringify(preset, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'zombie-preset-' + name.replace(/\s+/g, '-').toLowerCase() + '.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      return;
+    }
+
+    if (sel.value.startsWith('saved:')) {
+      var savedName = sel.value.substring('saved:'.length);
+      window.open(BASE + 'zombies/presets/' + encodeURIComponent(savedName) + '/download', '_blank');
+    }
+  };
+
+  window.zombieImportPreset = function(input) {
+    if (!input.files || !input.files[0]) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var preset = JSON.parse(e.target.result);
+        if (!preset.name || !preset.config) { showToast('Invalid preset file — needs name and config', 'error'); return; }
+        fetch(BASE + 'zombies/presets/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(preset)
+        }).then(function(r) { return r.json(); }).then(function() {
+          showToast('Imported preset "' + preset.name + '"', 'success');
+          refreshPresetDropdown();
+        }).catch(function(err) { showToast('Import failed: ' + err.message, 'error'); });
+      } catch (ex) { showToast('Invalid JSON file', 'error'); }
+    };
+    reader.readAsText(input.files[0]);
+    input.value = '';
   };
 
   window.zombieToggleSection = function(id) {
@@ -25310,7 +25993,68 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   window.zombieSliderUpdate = function(el) {
     var valEl = document.getElementById(el.id + '_val');
     if (valEl) valEl.textContent = el.value;
+    // Sync original slider → pop mirror if one exists
+    var popId = 'zpop_' + el.id.replace(/^[a-z]+_/, '');
+    var pop = document.getElementById(popId);
+    if (pop) {
+      pop.value = el.value;
+      var popVal = document.getElementById(popId + '_val');
+      if (popVal) popVal.textContent = el.value;
+    }
   };
+
+  // ═══ POPULAR SETTINGS SYNC ═══
+  // zpop_ controls are mirrors of originals — bidirectional sync keeps them in lockstep.
+
+  // Pop control changed → push value to original
+  window.zombieSyncPop = function(el, origId) {
+    var orig = document.getElementById(origId);
+    if (!orig) return;
+    if (el.type === 'checkbox') {
+      orig.checked = el.checked;
+    } else {
+      orig.value = el.value;
+      var origVal = document.getElementById(origId + '_val');
+      if (origVal) origVal.textContent = el.value;
+    }
+    var popVal = document.getElementById(el.id + '_val');
+    if (popVal) popVal.textContent = el.value;
+  };
+
+  // Original toggle changed → push state to pop mirror
+  window.zombieSyncOrig = function(el) {
+    var popId = 'zpop_' + el.id.replace(/^[a-z]+_/, '');
+    var pop = document.getElementById(popId);
+    if (pop) pop.checked = el.checked;
+  };
+
+  // Initialize all pop mirrors from originals (called at end of populateUI)
+  var ZPOP_SYNC_MAP = [
+    ['zpop_replaceBotHostility', 'zb_replaceBotHostility'],
+    ['zpop_enableSummoning', 'zb_enableSummoning'],
+    ['zpop_removeLabsKeycard', 'zb_removeLabsKeycard'],
+    ['zpop_disableNormalScavWaves', 'zb_disableNormalScavWaves'],
+    ['zpop_zombieMultiplier', 'zb_zombieMultiplier'],
+    ['zpop_maxCrowdAttackSpawnLimit', 'zb_maxCrowdAttackSpawnLimit'],
+    ['zpop_crowdsLimit', 'zb_crowdsLimit'],
+    ['zpop_minInfectionPercentage', 'zb_minInfectionPercentage'],
+    ['zpop_zombieKillXpMultiplier', 'zx_zombieKillXpMultiplier'],
+    ['zpop_zombieBleedMultiplier', 'ze_zombieBleedMultiplier']
+  ];
+  function zombieSyncToPop() {
+    ZPOP_SYNC_MAP.forEach(function(pair) {
+      var pop = document.getElementById(pair[0]);
+      var orig = document.getElementById(pair[1]);
+      if (!pop || !orig) return;
+      if (pop.type === 'checkbox') {
+        pop.checked = orig.checked;
+      } else {
+        pop.value = orig.value;
+        var popVal = document.getElementById(pair[0] + '_val');
+        if (popVal) popVal.textContent = orig.value;
+      }
+    });
+  }
 
   // ═══ HELPERS ═══
   function updateStatusBadge(enabled) {

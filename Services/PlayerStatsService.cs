@@ -12,7 +12,8 @@ public class PlayerStatsService(
     ProfileActivityService profileActivityService,
     ConfigService configService,
     HandbookHelper handbookHelper,
-    RaidTrackingService raidTrackingService)
+    RaidTrackingService raidTrackingService,
+    WatchdogManager watchdogManager)
 {
     private const string RoublesTpl = "5449016a4bdc2d6f028b456f";
     private const string DollarsTpl = "5696686a4bdc2da3298b456a";
@@ -28,7 +29,7 @@ public class PlayerStatsService(
         var activeIds = profileActivityService.GetActiveProfileIdsWithinMinutes(5);
         var activeSet = new HashSet<string>(activeIds.Select(id => id.ToString()));
         var config = configService.GetConfig();
-        var headlessId = config.Headless.ProfileId;
+        var headlessIds = GetHeadlessProfileIds();
         inRaidPlayerIds ??= [];
 
         // Build a lookup of last map played per sessionId from raid history
@@ -48,7 +49,7 @@ public class PlayerStatsService(
             if (pmc?.Info == null) continue;
 
             var sid = sessionId.ToString();
-            var isHeadless = !string.IsNullOrEmpty(headlessId) && sid == headlessId;
+            var isHeadless = headlessIds.Contains(sid);
             var roubles = CalculateRoubles(pmc.Inventory?.Items);
             var isOnline = activeSet.Contains(sid);
             var isInRaid = inRaidPlayerIds.Contains(sid);
@@ -150,7 +151,7 @@ public class PlayerStatsService(
     public ProfileRaidStatsDto GetServerRaidStats()
     {
         var profiles = saveServer.GetProfiles();
-        var headlessId = configService.GetConfig().Headless.ProfileId;
+        var headlessIds = GetHeadlessProfileIds();
 
         int totalRaids = 0, survived = 0, deaths = 0;
         int pmcKills = 0, scavKills = 0, bossKills = 0, headshots = 0;
@@ -161,7 +162,7 @@ public class PlayerStatsService(
             if (pmc?.Info == null) continue;
 
             var sid = sessionId.ToString();
-            if (!string.IsNullOrEmpty(headlessId) && sid == headlessId) continue;
+            if (headlessIds.Contains(sid)) continue;
 
             var stats = ExtractProfileRaidStats(pmc);
             totalRaids += stats.TotalRaids;
@@ -198,6 +199,15 @@ public class PlayerStatsService(
         if (pmc?.Info == null) return null;
 
         return ExtractProfileRaidStats(pmc);
+    }
+
+    private HashSet<string> GetHeadlessProfileIds()
+    {
+        var ids = watchdogManager.GetHeadlessProfileIds();
+        var legacy = configService.GetConfig().Headless.ProfileId;
+        if (!string.IsNullOrWhiteSpace(legacy))
+            ids.Add(legacy);
+        return ids;
     }
 
     private static ProfileRaidStatsDto ExtractProfileRaidStats(SPTarkov.Server.Core.Models.Eft.Common.PmcData pmc)

@@ -23,6 +23,7 @@ public class PlayerManagementService(
     ActivityLogService activityLogService,
     MailSendService mailSendService,
     ConfigService configService,
+    WatchdogManager watchdogManager,
     ISptLogger<PlayerManagementService> logger)
 {
     private const string RoublesTpl = "5449016a4bdc2d6f028b456f";
@@ -34,7 +35,7 @@ public class PlayerManagementService(
         var profiles = saveServer.GetProfiles();
         var activeIds = profileActivityService.GetActiveProfileIdsWithinMinutes(5);
         var activeSet = new HashSet<string>(activeIds.Select(id => id.ToString()));
-        var headlessId = configService.GetConfig().Headless.ProfileId;
+        var headlessIds = GetHeadlessProfileIds();
 
         var players = new List<PlayerRosterEntry>();
 
@@ -46,7 +47,7 @@ public class PlayerManagementService(
             var sid = sessionId.ToString();
 
             // Skip headless profile
-            if (!string.IsNullOrEmpty(headlessId) && sid == headlessId) continue;
+            if (headlessIds.Contains(sid)) continue;
             var nickname = pmc.Info.Nickname ?? "Unknown";
             var side = pmc.Info.Side ?? "";
 
@@ -818,6 +819,15 @@ public class PlayerManagementService(
         return items
             .Where(i => i.Template.ToString() == tpl)
             .Sum(i => (long)(i.Upd?.StackObjectsCount ?? 1));
+    }
+
+    private HashSet<string> GetHeadlessProfileIds()
+    {
+        var ids = watchdogManager.GetHeadlessProfileIds();
+        var legacy = configService.GetConfig().Headless.ProfileId;
+        if (!string.IsNullOrWhiteSpace(legacy))
+            ids.Add(legacy);
+        return ids;
     }
 
     private static void AddCurrencyItems(List<Item> items, string tpl, int amount)

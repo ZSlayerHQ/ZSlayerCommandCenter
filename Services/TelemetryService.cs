@@ -23,9 +23,6 @@ public class TelemetryService(
     private readonly object _lock = new();
 
     // Headless version info (from hello handshake) — global, last reported
-    private string _headlessTelemetryVersion = "";
-    private string _headlessFikaVersion = "";
-
     // Multi-source state
     private readonly Dictionary<string, TelemetrySource> _sources = new();
     private static readonly TimeSpan StaleTimeout = TimeSpan.FromMinutes(30);
@@ -33,12 +30,6 @@ public class TelemetryService(
     // Kill feed — ring buffer, max 100 (global, entries already contain context)
     private readonly List<KillFeedEntry> _killFeed = new();
     private const int MaxKillFeed = 100;
-
-    // Current raid kills (archived to history on raid end) — global
-    private readonly List<KillFeedEntry> _currentRaidKills = new();
-    private readonly List<ExtractPayload> _currentRaidExtracts = new();
-    private string _currentRaidId = "";
-    private DateTime _currentRaidStart;
 
     // Raid history — persisted to disk
     private readonly List<RaidHistoryRecord> _raidHistory = new();
@@ -118,6 +109,7 @@ public class TelemetryService(
                 "raider" => "Raider",
                 "rogue" => "Rogue",
                 "follower" => "Follower",
+                "infected" => "Infected",
                 "boss" => clean,
                 _ => clean
             };
@@ -193,28 +185,49 @@ public class TelemetryService(
         var sourceId = NormalizeSourceId(payload.SourceId);
         lock (_lock)
         {
-            _headlessTelemetryVersion = payload.TelemetryVersion;
-            _headlessFikaVersion = payload.FikaClientVersion;
-
             var source = GetOrCreateSource(sourceId);
             source.LastSeen = DateTime.UtcNow;
+            source.TelemetryVersion = payload.TelemetryVersion;
+            source.FikaClientVersion = payload.FikaClientVersion;
             if (!string.IsNullOrEmpty(payload.Hostname))
                 source.Hostname = payload.Hostname;
             if (!string.IsNullOrEmpty(payload.Ip))
                 source.Ip = payload.Ip;
-            if (!string.IsNullOrEmpty(payload.Hostname))
-                source.DisplayName = payload.Hostname;
+            source.DisplayName = ResolveSourceDisplayName(sourceId);
         }
         logger.Info($"Headless connected — Telemetry: {payload.TelemetryVersion}, Fika.Core: {payload.FikaClientVersion}, Source: {sourceId}");
     }
 
     public (string TelemetryVersion, string FikaClientVersion) GetHeadlessVersions()
     {
-        lock (_lock) { return (_headlessTelemetryVersion, _headlessFikaVersion); }
+        lock (_lock)
+        {
+            return (
+                FormatVersionSummary(_sources.Values.Select(s => s.TelemetryVersion)),
+                FormatVersionSummary(_sources.Values.Select(s => s.FikaClientVersion))
+            );
+        }
+    }
+
+    private static string FormatVersionSummary(IEnumerable<string> versions)
+    {
+        var distinct = versions
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(v => v)
+            .ToList();
+
+        return distinct.Count switch
+        {
+            0 => "",
+            1 => distinct[0],
+            _ => $"Mixed ({string.Join(", ", distinct)})"
+        };
     }
 
     public void UpdateRaidState(RaidStatePayload payload)
     {
+        var rawSourceId = payload.SourceId;
         var sourceId = NormalizeSourceId(payload.SourceId);
         bool wasActive;
         bool wasIdle;
@@ -228,18 +241,17 @@ public class TelemetryService(
             wasIdle = source.RaidState == null || source.RaidState.Status == "idle";
             source.RaidState = payload;
 
-            if (payload.Status is "loading" or "deploying" && string.IsNullOrEmpty(_currentRaidId))
+            if (payload.Status is "loading" or "deploying" && string.IsNullOrEmpty(source.CurrentRaidId))
             {
-                _currentRaidId = Guid.NewGuid().ToString("N")[..12];
-                _currentRaidStart = DateTime.UtcNow;
-                _currentRaidKills.Clear();
-                _currentRaidExtracts.Clear();
+                source.CurrentRaidId = Guid.NewGuid().ToString("N")[..12];
+                source.CurrentRaidStart = DateTime.UtcNow;
+                source.CurrentRaidKills.Clear();
+                source.CurrentRaidExtracts.Clear();
             }
 
             if (payload.Status == "in-raid" && wasIdle)
             {
-                _killFeed.Clear();
-                _currentRaidKills.Clear();
+                source.CurrentRaidKills.Clear();
             }
 
             if (payload.Status == "idle" && wasActive)
@@ -249,7 +261,9 @@ public class TelemetryService(
                 source.Bots = null;
                 source.DamageStats = null;
                 source.Positions = [];
-                _currentRaidId = "";
+                source.CurrentRaidId = "";
+                source.CurrentRaidKills.Clear();
+                source.CurrentRaidExtracts.Clear();
             }
         }
 
@@ -258,7 +272,7 @@ public class TelemetryService(
         if (payload.Status == "idle" && wasActive)
         {
             AddAlert("raid-end", "Raid ended", payload.Map, "flag");
-            watchdogManager.BroadcastRaidEnd(payload.Map ?? "");
+            watchdogManager.BroadcastRaidEnd(string.IsNullOrWhiteSpace(rawSourceId) ? "" : sourceId, payload.Map ?? "");
         }
 
         logger.Info($"[Telemetry] Raid state → {payload.Status}, map: {payload.Map}, timer: {payload.RaidTimer}s, source: {sourceId}");
@@ -333,7 +347,7 @@ public class TelemetryService(
             if (_killFeed.Count > MaxKillFeed)
                 _killFeed.RemoveRange(0, _killFeed.Count - MaxKillFeed);
 
-            _currentRaidKills.Add(entry);
+            source.CurrentRaidKills.Add(entry);
         }
 
         if (payload.Victim.Type == "pmc")
@@ -407,9 +421,12 @@ public class TelemetryService(
 
     public void AddExtract(ExtractPayload payload)
     {
+        var sourceId = NormalizeSourceId(payload.SourceId);
         lock (_lock)
         {
-            _currentRaidExtracts.Add(payload);
+            var source = GetOrCreateSource(sourceId);
+            source.LastSeen = DateTime.UtcNow;
+            source.CurrentRaidExtracts.Add(payload);
         }
         AddAlert("extract", $"{payload.Player.Name} extracted ({payload.Outcome})", payload.Map, "door-open");
     }
@@ -420,26 +437,31 @@ public class TelemetryService(
 
         logger.Info($"[Telemetry] FinishRaid received — map: {payload.Map}, duration: {payload.RaidDuration}s, " +
                      $"players: {payload.Players.Count}, kills: {payload.TotalKills}, deaths: {payload.TotalDeaths}, " +
-                     $"bosses: {payload.Bosses.Count}, currentRaidKills: {_currentRaidKills.Count}, source: {sourceId}");
+                     $"bosses: {payload.Bosses.Count}, source: {sourceId}");
 
         lock (_lock)
         {
-            var actualKills = payload.TotalKills > 0 ? payload.TotalKills : _currentRaidKills.Count;
+            var src = GetOrCreateSource(sourceId);
+            src.LastSeen = DateTime.UtcNow;
 
-            EnrichPlayerKillCounts(payload.Players);
+            logger.Info($"[Telemetry] FinishRaid buffers — currentRaidKills: {src.CurrentRaidKills.Count}, source: {sourceId}");
+
+            var actualKills = payload.TotalKills > 0 ? payload.TotalKills : src.CurrentRaidKills.Count;
+
+            EnrichPlayerKillCounts(payload.Players, src.CurrentRaidKills);
             CalculateRaidProfit(payload.Players);
 
             var record = new RaidHistoryRecord
             {
                 Summary = new RaidHistorySummary
                 {
-                    Id = string.IsNullOrEmpty(_currentRaidId)
+                    Id = string.IsNullOrEmpty(src.CurrentRaidId)
                         ? Guid.NewGuid().ToString("N")[..12]
-                        : _currentRaidId,
+                        : src.CurrentRaidId,
                     SourceId = sourceId,
                     Map = payload.Map,
                     MapName = ResolveMapName(payload.Map),
-                    Timestamp = _currentRaidStart != default ? _currentRaidStart : DateTime.UtcNow,
+                    Timestamp = src.CurrentRaidStart != default ? src.CurrentRaidStart : DateTime.UtcNow,
                     Duration = payload.RaidDuration,
                     PlayerCount = payload.Players.Count,
                     Survived = payload.Players.Count(p =>
@@ -449,17 +471,18 @@ public class TelemetryService(
                     Bosses = payload.Bosses
                 },
                 Players = payload.Players,
-                Kills = new List<KillFeedEntry>(_currentRaidKills),
-                Extracts = new List<ExtractPayload>(_currentRaidExtracts),
-                DamageStats = _sources.TryGetValue(sourceId, out var src) ? src.DamageStats : null
+                Kills = new List<KillFeedEntry>(src.CurrentRaidKills),
+                Extracts = new List<ExtractPayload>(src.CurrentRaidExtracts),
+                DamageStats = src.DamageStats
             };
 
             _raidHistory.Insert(0, record);
 
-            _currentRaidKills.Clear();
-            _currentRaidExtracts.Clear();
-            if (src != null) src.DamageStats = null;
-            _currentRaidId = "";
+            src.CurrentRaidKills.Clear();
+            src.CurrentRaidExtracts.Clear();
+            src.DamageStats = null;
+            src.CurrentRaidId = "";
+            src.CurrentRaidStart = default;
         }
 
         SaveRaidHistory();
@@ -467,11 +490,11 @@ public class TelemetryService(
         logger.Success($"[Telemetry] Raid archived — {payload.Map}, {payload.Players.Count} players, raidHistory now has {_raidHistory.Count} entries");
     }
 
-    private void EnrichPlayerKillCounts(List<RaidSummaryPlayer> players)
+    private void EnrichPlayerKillCounts(List<RaidSummaryPlayer> players, List<KillFeedEntry> raidKills)
     {
         foreach (var player in players)
         {
-            var playerKills = _currentRaidKills
+            var playerKills = raidKills
                 .Where(k => k.Killer.Name.Equals(player.Name, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
@@ -946,6 +969,8 @@ public class TelemetryService(
                 DisplayName = s.DisplayName,
                 Hostname = s.Hostname,
                 Ip = s.Ip,
+                TelemetryVersion = s.TelemetryVersion,
+                FikaClientVersion = s.FikaClientVersion,
                 LastSeen = s.LastSeen,
                 RaidStatus = s.RaidState?.Status ?? "idle",
                 Map = s.RaidState?.Map ?? ""
@@ -1040,6 +1065,8 @@ public class TelemetryService(
         public string DisplayName { get; set; } = "";
         public string Hostname { get; set; } = "";
         public string Ip { get; set; } = "";
+        public string TelemetryVersion { get; set; } = "";
+        public string FikaClientVersion { get; set; } = "";
         public DateTime FirstSeen { get; set; }
         public DateTime LastSeen { get; set; }
 
@@ -1050,5 +1077,9 @@ public class TelemetryService(
         public DamageStatsPayload? DamageStats { get; set; }
         public List<PlayerPositionEntry> Positions { get; set; } = [];
         public List<PerformanceHistoryEntry> PerformanceHistory { get; } = new();
+        public List<KillFeedEntry> CurrentRaidKills { get; } = new();
+        public List<ExtractPayload> CurrentRaidExtracts { get; } = new();
+        public string CurrentRaidId { get; set; } = "";
+        public DateTime CurrentRaidStart { get; set; }
     }
 }

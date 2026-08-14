@@ -14,6 +14,7 @@ public class ConnectedWatchdog
     public WatchdogManages Manages { get; set; } = new();
     public WatchdogProcessStatus? SptServer { get; set; }
     public WatchdogProcessStatus? HeadlessClient { get; set; }
+    public List<WatchdogProcessStatus> HeadlessClients { get; set; } = [];
     public WatchdogSystemStats? System { get; set; }
     public WebSocket Socket { get; set; } = null!;
     public string SessionIdContext { get; set; } = "";
@@ -32,6 +33,14 @@ public record WatchdogManages
 
 public record WatchdogProcessStatus
 {
+    [JsonPropertyName("instanceId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? InstanceId { get; set; }
+
+    [JsonPropertyName("instanceName")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? InstanceName { get; set; }
+
     [JsonPropertyName("running")]
     public bool Running { get; set; }
 
@@ -53,6 +62,10 @@ public record WatchdogProcessStatus
     [JsonPropertyName("profile")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Profile { get; set; }
+
+    [JsonPropertyName("profileId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ProfileId { get; set; }
 
     [JsonPropertyName("restartAfterRaids")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -112,6 +125,9 @@ public record WatchdogStatusMessage : WatchdogMessage
     [JsonPropertyName("headlessClient")]
     public WatchdogProcessStatus? HeadlessClient { get; set; }
 
+    [JsonPropertyName("headlessClients")]
+    public List<WatchdogProcessStatus> HeadlessClients { get; set; } = [];
+
     [JsonPropertyName("system")]
     public WatchdogSystemStats? System { get; set; }
 }
@@ -151,6 +167,7 @@ public record WatchdogCommandMessage
 public record WatchdogRaidEndMessage
 {
     [JsonPropertyName("type")] public string Type { get; set; } = "raidEnd";
+    [JsonPropertyName("sourceId")] public string SourceId { get; set; } = "";
     [JsonPropertyName("map")] public string Map { get; set; } = "";
 }
 
@@ -189,6 +206,9 @@ public record WatchdogStatusEntry
     [JsonPropertyName("headlessClient")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public WatchdogProcessStatus? HeadlessClient { get; set; }
+
+    [JsonPropertyName("headlessClients")]
+    public List<WatchdogProcessStatus> HeadlessClients { get; set; } = [];
 
     [JsonPropertyName("system")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

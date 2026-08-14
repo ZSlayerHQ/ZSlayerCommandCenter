@@ -159,6 +159,9 @@ public record ProfileEntry
 
     [JsonPropertyName("isOnline")]
     public bool IsOnline { get; set; }
+
+    [JsonPropertyName("isHeadless")]
+    public bool IsHeadless { get; set; }
 }
 
 public record ProfileIconSetRequest

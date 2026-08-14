@@ -589,6 +589,10 @@ public class CommandCenterHttpListener(
         var profiles = saveServer.GetProfiles();
         var activeIds = profileActivityService.GetActiveProfileIdsWithinMinutes(5);
         var activeSet = new HashSet<string>(activeIds.Select(id => id.ToString()));
+        var headlessIds = watchdogManager.GetHeadlessProfileIds();
+        var legacyHeadlessId = config.Headless.ProfileId;
+        if (!string.IsNullOrWhiteSpace(legacyHeadlessId))
+            headlessIds.Add(legacyHeadlessId);
         var entries = new List<ProfileEntry>();
 
         foreach (var (sid, profile) in profiles)
@@ -628,7 +632,8 @@ public class CommandCenterHttpListener(
                 AvatarIcon = config.ProfileAvatars.GetValueOrDefault(sidStr),
                 TotalRaids = totalRaids,
                 SurvivalRate = survivalRate,
-                IsOnline = activeSet.Contains(sidStr)
+                IsOnline = activeSet.Contains(sidStr),
+                IsHeadless = headlessIds.Contains(sidStr)
             });
         }
 
@@ -678,7 +683,6 @@ public class CommandCenterHttpListener(
     private async Task HandleServerVitals(HttpContext context)
     {
         var overview = playerStatsService.GetPlayerOverview();
-        var headlessId = configService.GetConfig().Headless.ProfileId;
         var onlinePlayers = overview.Players.Where(p => p.Online && !p.IsHeadless).ToList();
         var online = onlinePlayers.Count;
         var total = overview.Players.Count(p => !p.IsHeadless);
@@ -722,12 +726,9 @@ public class CommandCenterHttpListener(
         var status = serverStatsService.GetStatus();
 
         // Headless status from Watchdog
-        var headlessWatchdogs = watchdogManager.GetWatchdogsForTarget("headlessClient");
-        var headlessRunning = headlessWatchdogs.Any(w => w.HeadlessClient?.Running == true);
-        var headlessUptime = headlessWatchdogs
-            .FirstOrDefault(w => w.HeadlessClient?.Running == true)?.HeadlessClient?.Uptime ?? "";
-
         var headlessInstances = watchdogManager.GetHeadlessInstances();
+        var headlessRunning = headlessInstances.Any(h => h.Running);
+        var headlessUptime = headlessInstances.FirstOrDefault(h => h.Running)?.Uptime ?? "";
 
         await WriteJson(context, 200, new
         {
@@ -1867,22 +1868,26 @@ public class CommandCenterHttpListener(
             case "headless/status" when method == "GET":
             {
                 var (available, wdStatus) = watchdogManager.GetHeadlessStatus();
+                var instances = watchdogManager.GetHeadlessInstances();
                 var config = configService.GetConfig().Headless;
+                var primaryInstance = instances.FirstOrDefault(i => i.Running) ?? instances.FirstOrDefault();
+                var hasInstances = instances.Count > 0;
                 var dto = new HeadlessStatusDto
                 {
-                    Available = available,
-                    Running = wdStatus?.Running ?? false,
-                    Pid = wdStatus?.Pid,
-                    Uptime = wdStatus?.Uptime ?? "",
+                    Available = available || hasInstances,
+                    Running = hasInstances ? instances.Any(i => i.Running) : (wdStatus?.Running ?? false),
+                    Pid = primaryInstance?.Pid ?? wdStatus?.Pid,
+                    Uptime = primaryInstance?.Uptime ?? wdStatus?.Uptime ?? "",
                     UptimeSeconds = 0,
-                    RestartCount = wdStatus?.Crashes ?? 0,
-                    LastCrashReason = available ? null : "No Watchdog connected",
-                    AutoStart = wdStatus?.AutoStart ?? config.AutoStart,
+                    RestartCount = hasInstances ? instances.Sum(i => i.Crashes) : wdStatus?.Crashes ?? 0,
+                    LastCrashReason = available || hasInstances ? null : "No Watchdog connected",
+                    AutoStart = hasInstances ? instances.Any(i => i.AutoStart) : (wdStatus?.AutoStart ?? config.AutoStart),
                     AutoStartDelaySec = config.AutoStartDelaySec,
-                    AutoRestart = wdStatus?.AutoRestart ?? config.AutoRestart,
-                    ProfileId = wdStatus?.Profile ?? config.ProfileId,
-                    ProfileName = "",
-                    ExePath = ""
+                    AutoRestart = hasInstances ? instances.Any(i => i.AutoRestart) : (wdStatus?.AutoRestart ?? config.AutoRestart),
+                    ProfileId = hasInstances ? (primaryInstance?.ProfileId ?? primaryInstance?.Profile ?? "") : (wdStatus?.Profile ?? config.ProfileId),
+                    ProfileName = hasInstances && instances.Count > 1 ? "Multiple" : "",
+                    ExePath = "",
+                    Instances = instances
                 };
                 await WriteJson(context, 200, dto);
                 break;
@@ -1890,8 +1895,10 @@ public class CommandCenterHttpListener(
             case "headless/start" when method == "POST":
             {
                 var wdId = context.Request.Query["watchdogId"].FirstOrDefault();
+                var instanceId = context.Request.Query["instanceId"].FirstOrDefault();
+                var target = string.IsNullOrEmpty(instanceId) ? "headlessClient" : $"headlessClient:{instanceId}";
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: started");
-                var (sent, message) = await watchdogManager.SendCommandToTargetOrId("headlessClient", "start", wdId);
+                var (sent, message) = await watchdogManager.SendCommandToTargetOrId(target, "start", wdId);
                 var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
                 await WriteJson(context, status, new { success = sent, message });
                 break;
@@ -1899,8 +1906,10 @@ public class CommandCenterHttpListener(
             case "headless/stop" when method == "POST":
             {
                 var wdId = context.Request.Query["watchdogId"].FirstOrDefault();
+                var instanceId = context.Request.Query["instanceId"].FirstOrDefault();
+                var target = string.IsNullOrEmpty(instanceId) ? "headlessClient" : $"headlessClient:{instanceId}";
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: stopped");
-                var (sent, message) = await watchdogManager.SendCommandToTargetOrId("headlessClient", "stop", wdId);
+                var (sent, message) = await watchdogManager.SendCommandToTargetOrId(target, "stop", wdId);
                 var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
                 await WriteJson(context, status, new { success = sent, message });
                 break;
@@ -1908,8 +1917,10 @@ public class CommandCenterHttpListener(
             case "headless/restart" when method == "POST":
             {
                 var wdId = context.Request.Query["watchdogId"].FirstOrDefault();
+                var instanceId = context.Request.Query["instanceId"].FirstOrDefault();
+                var target = string.IsNullOrEmpty(instanceId) ? "headlessClient" : $"headlessClient:{instanceId}";
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Headless: restarted");
-                var (sent, message) = await watchdogManager.SendCommandToTargetOrId("headlessClient", "restart", wdId);
+                var (sent, message) = await watchdogManager.SendCommandToTargetOrId(target, "restart", wdId);
                 var status = sent ? 200 : (message.Contains("Rate limited") ? 429 : 503);
                 await WriteJson(context, status, new { success = sent, message });
                 break;
@@ -2004,6 +2015,7 @@ public class CommandCenterHttpListener(
                     return;
                 }
                 var result = fleaPriceService.UpdateGlobalMultiplier(body.BuyMultiplier);
+                offerRegenerationService.RegenerateOffers();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     $"Flea: global buy={body.BuyMultiplier:F2}");
                 await WriteJson(context, 200, result);
@@ -2018,6 +2030,7 @@ public class CommandCenterHttpListener(
                     return;
                 }
                 var result = fleaPriceService.UpdateMarketSettings(body);
+                offerRegenerationService.RegenerateOffers();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Flea: market settings updated");
                 await WriteJson(context, 200, result);
                 break;
@@ -2031,6 +2044,7 @@ public class CommandCenterHttpListener(
                     return;
                 }
                 var result = fleaPriceService.UpdateCategoryMultiplier(body.Category, body.BuyMultiplier);
+                offerRegenerationService.RegenerateOffers();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     $"Flea: category '{body.Category}' buy={body.BuyMultiplier:F2}");
                 await WriteJson(context, 200, result);
@@ -2045,6 +2059,7 @@ public class CommandCenterHttpListener(
                     return;
                 }
                 var result = fleaPriceService.SetItemOverride(body.TemplateId, body.Name, body.BuyMultiplier);
+                offerRegenerationService.RegenerateOffers();
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     $"Flea: item override '{body.Name}' ({body.TemplateId})");
                 await WriteJson(context, 200, result);
@@ -2193,8 +2208,11 @@ public class CommandCenterHttpListener(
                     }
                     var removed = fleaPriceService.RemoveItemOverride(templateId);
                     if (removed)
+                    {
+                        offerRegenerationService.RegenerateOffers();
                         activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                             $"Flea: removed item override {templateId}");
+                    }
                     await WriteJson(context, 200, new { success = removed });
                     break;
                 }
@@ -4898,9 +4916,82 @@ public class CommandCenterHttpListener(
                     success ? new { success = true } : new { success = false });
                 break;
             }
+            case "presets" when method == "GET":
+            {
+                var result = zombieIntegrationService.ListPresets();
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "presets" when method == "POST":
+            {
+                var body = await ReadBody<ZombiePresetSaveRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Missing preset name" });
+                    return;
+                }
+                var result = zombieIntegrationService.SavePreset(body.Name.Trim(), body.Description?.Trim() ?? "", body.Config);
+                await WriteJson(context, 200, result);
+                break;
+            }
+            case "presets/load" when method == "POST":
+            {
+                var body = await ReadBody<ZombiePresetLoadRequest>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Missing preset name" });
+                    return;
+                }
+                var preset = zombieIntegrationService.LoadPreset(body.Name.Trim());
+                if (preset == null)
+                {
+                    await WriteJson(context, 404, new { error = "Preset not found" });
+                    return;
+                }
+                await WriteJson(context, 200, preset);
+                break;
+            }
+            case "presets/import" when method == "POST":
+            {
+                var body = await ReadBody<ZombiePreset>(context);
+                if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                {
+                    await WriteJson(context, 400, new { error = "Invalid preset data" });
+                    return;
+                }
+                var result = zombieIntegrationService.ImportPreset(body);
+                await WriteJson(context, 200, result);
+                break;
+            }
             default:
+            {
+                // Handle zombies/presets/{name}/delete
+                if (method == "POST" && sub.StartsWith("presets/") && sub.EndsWith("/delete"))
+                {
+                    var name = Uri.UnescapeDataString(sub["presets/".Length..^"/delete".Length]);
+                    var deleted = zombieIntegrationService.DeletePreset(name);
+                    await WriteJson(context, deleted ? 200 : 404,
+                        deleted ? new { success = true } : (object)new { error = "Not found" });
+                    break;
+                }
+                // Handle zombies/presets/{name}/download
+                if (method == "GET" && sub.StartsWith("presets/") && sub.EndsWith("/download"))
+                {
+                    var name = Uri.UnescapeDataString(sub["presets/".Length..^"/download".Length]);
+                    var preset = zombieIntegrationService.LoadPreset(name);
+                    if (preset == null)
+                    {
+                        await WriteJson(context, 404, new { error = "Preset not found" });
+                        break;
+                    }
+                    context.Response.ContentType = "application/json";
+                    context.Response.Headers.Append("Content-Disposition", $"attachment; filename=\"zombie-preset-{name}.json\"");
+                    await WriteJson(context, 200, preset);
+                    break;
+                }
                 await WriteJson(context, 404, new { error = "Unknown zombie route" });
                 break;
+            }
         }
     }
 }

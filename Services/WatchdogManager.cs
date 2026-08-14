@@ -23,6 +23,14 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
     private static readonly TimeSpan CommandCooldown = TimeSpan.FromSeconds(5);
     private const string TokenChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
+    private static List<WatchdogProcessStatus> GetEffectiveHeadlessClients(ConnectedWatchdog wd)
+    {
+        if (wd.HeadlessClients.Count > 0)
+            return wd.HeadlessClients;
+
+        return wd.HeadlessClient != null ? [wd.HeadlessClient] : [];
+    }
+
     public void HandleRegister(string sessionIdContext, WebSocket socket, WatchdogRegisterMessage msg)
     {
         using (_lock.EnterScope())
@@ -65,13 +73,17 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
 
             wd.SptServer = msg.SptServer;
             wd.HeadlessClient = msg.HeadlessClient;
+            wd.HeadlessClients = msg.HeadlessClients.Count > 0
+                ? msg.HeadlessClients
+                : (msg.HeadlessClient != null ? [msg.HeadlessClient] : []);
             wd.System = msg.System;
             wd.LastStatusAt = DateTime.UtcNow;
         }
 
         var serverRunning = msg.SptServer?.Running == true;
-        var headlessRunning = msg.HeadlessClient?.Running == true;
-        logger.Debug($"[ZSlayerHQ] Watchdog status from {msg.WatchdogId}: server={serverRunning}, headless={headlessRunning}");
+        var headlessRunning = msg.HeadlessClients.Any(h => h.Running) || msg.HeadlessClient?.Running == true;
+        var headlessCount = msg.HeadlessClients.Count > 0 ? msg.HeadlessClients.Count : (msg.HeadlessClient != null ? 1 : 0);
+        logger.Debug($"[ZSlayerHQ] Watchdog status from {msg.WatchdogId}: server={serverRunning}, headless={headlessRunning} ({headlessCount})");
     }
 
     public void HandleCommandResult(WatchdogCommandResultMessage msg)
@@ -116,6 +128,7 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
                 Manages = wd.Manages,
                 SptServer = wd.Manages.SptServer ? wd.SptServer : null,
                 HeadlessClient = wd.Manages.HeadlessClient ? wd.HeadlessClient : null,
+                HeadlessClients = wd.Manages.HeadlessClient ? GetEffectiveHeadlessClients(wd) : [],
                 System = wd.System
             }).ToList();
         }
@@ -172,6 +185,13 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
                 {
                     "sptServer" => wd.Manages.SptServer,
                     "headlessClient" => wd.Manages.HeadlessClient,
+                    _ when target.StartsWith("headlessClient:") =>
+                        wd.Manages.HeadlessClient &&
+                        !string.IsNullOrWhiteSpace(target["headlessClient:".Length..]) &&
+                        GetEffectiveHeadlessClients(wd).Any(h =>
+                            h.InstanceId == target["headlessClient:".Length..] ||
+                            h.ProfileId == target["headlessClient:".Length..] ||
+                            h.Profile == target["headlessClient:".Length..]),
                     _ => false
                 };
             }).Where(wd => wd.Socket.State == WebSocketState.Open).ToList();
@@ -213,7 +233,8 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
         if (candidates.Count == 0)
             return (false, null);
 
-        return (true, candidates[0].HeadlessClient);
+        var status = GetEffectiveHeadlessClients(candidates[0]).FirstOrDefault();
+        return (true, status);
     }
 
     /// <summary>
@@ -285,24 +306,62 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
             {
                 if (!wd.Manages.HeadlessClient) continue;
 
-                var hc = wd.HeadlessClient;
-                result.Add(new HeadlessInstanceDto
+                var clients = GetEffectiveHeadlessClients(wd);
+                if (clients.Count == 0)
                 {
-                    WatchdogId = wd.WatchdogId,
-                    Name = wd.Name,
-                    Hostname = wd.Hostname,
-                    Running = hc?.Running ?? false,
-                    Uptime = hc?.Uptime ?? "",
-                    UptimeSeconds = 0,
-                    Profile = hc?.Profile ?? "",
-                    ProfileId = "",
-                    Mode = "",
-                    Manages = wd.Manages,
-                    System = wd.System
-                });
+                    result.Add(new HeadlessInstanceDto
+                    {
+                        WatchdogId = wd.WatchdogId,
+                        Name = wd.Name,
+                        Hostname = wd.Hostname,
+                        Manages = wd.Manages,
+                        System = wd.System
+                    });
+                    continue;
+                }
+
+                foreach (var hc in clients)
+                {
+                    result.Add(new HeadlessInstanceDto
+                    {
+                        WatchdogId = wd.WatchdogId,
+                        InstanceId = hc.InstanceId ?? "",
+                        InstanceName = hc.InstanceName ?? "",
+                        Name = wd.Name,
+                        Hostname = wd.Hostname,
+                        Running = hc.Running,
+                        Pid = hc.Pid,
+                        Uptime = hc.Uptime ?? "",
+                        UptimeSeconds = 0,
+                        Profile = hc.Profile ?? "",
+                        ProfileId = hc.ProfileId ?? "",
+                        Crashes = hc.Crashes,
+                        AutoStart = hc.AutoStart,
+                        AutoRestart = hc.AutoRestart,
+                        RestartAfterRaids = hc.RestartAfterRaids,
+                        StartDelay = hc.StartDelay ?? "",
+                        Mode = "",
+                        Manages = wd.Manages,
+                        System = wd.System
+                    });
+                }
             }
         }
         return result;
+    }
+
+    public HashSet<string> GetHeadlessProfileIds()
+    {
+        using (_lock.EnterScope())
+        {
+            return _watchdogs.Values
+                .Where(wd => wd.Manages.HeadlessClient)
+                .SelectMany(GetEffectiveHeadlessClients)
+                .SelectMany(h => new[] { h.ProfileId, h.Profile })
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Select(id => id!)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
     }
 
     public async Task<(bool Sent, string Message)> SendCommandToTargetOrId(string target, string action, string? watchdogId)
@@ -321,16 +380,21 @@ public class WatchdogManager(ISptLogger<WatchdogManager> logger)
         return await SendCommandToTarget(target, action);
     }
 
-    public void BroadcastRaidEnd(string map)
+    public void BroadcastRaidEnd(string sourceId, string map)
     {
-        var targets = GetWatchdogsForTarget("headlessClient");
-        if (targets.Count == 0) return;
+        var target = string.IsNullOrWhiteSpace(sourceId) ? "headlessClient" : $"headlessClient:{sourceId}";
+        var targets = GetWatchdogsForTarget(target);
+        if (targets.Count == 0)
+        {
+            logger.Warning($"[ZSlayerHQ] No watchdog matched raidEnd target {target} (source: {sourceId}, map: {map})");
+            return;
+        }
 
-        var msg = new WatchdogRaidEndMessage { Map = map };
+        var msg = new WatchdogRaidEndMessage { SourceId = sourceId, Map = map };
         var json = JsonSerializer.Serialize(msg, JsonOptions);
         var bytes = Encoding.UTF8.GetBytes(json);
 
-        logger.Info($"[ZSlayerHQ] Broadcasting raidEnd to {targets.Count} watchdog(s) (map: {map})");
+        logger.Info($"[ZSlayerHQ] Broadcasting raidEnd to {targets.Count} watchdog(s) (source: {sourceId}, map: {map})");
 
         foreach (var wd in targets)
         {

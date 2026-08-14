@@ -339,6 +339,9 @@ public record HeadlessStatusDto
 
     [JsonPropertyName("exePath")]
     public string ExePath { get; set; } = "";
+
+    [JsonPropertyName("instances")]
+    public List<HeadlessInstanceDto> Instances { get; set; } = [];
 }
 
 public record HeadlessConfigUpdateRequest
@@ -384,6 +387,12 @@ public record HeadlessInstanceDto
     [JsonPropertyName("watchdogId")]
     public string WatchdogId { get; set; } = "";
 
+    [JsonPropertyName("instanceId")]
+    public string InstanceId { get; set; } = "";
+
+    [JsonPropertyName("instanceName")]
+    public string InstanceName { get; set; } = "";
+
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
 
@@ -392,6 +401,10 @@ public record HeadlessInstanceDto
 
     [JsonPropertyName("running")]
     public bool Running { get; set; }
+
+    [JsonPropertyName("pid")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Pid { get; set; }
 
     [JsonPropertyName("uptime")]
     public string Uptime { get; set; } = "";
@@ -404,6 +417,21 @@ public record HeadlessInstanceDto
 
     [JsonPropertyName("profileId")]
     public string ProfileId { get; set; } = "";
+
+    [JsonPropertyName("crashes")]
+    public int Crashes { get; set; }
+
+    [JsonPropertyName("autoStart")]
+    public bool AutoStart { get; set; }
+
+    [JsonPropertyName("autoRestart")]
+    public bool AutoRestart { get; set; }
+
+    [JsonPropertyName("restartAfterRaids")]
+    public int RestartAfterRaids { get; set; }
+
+    [JsonPropertyName("startDelay")]
+    public string StartDelay { get; set; } = "";
 
     [JsonPropertyName("mode")]
     public string Mode { get; set; } = "";

@@ -188,6 +188,94 @@ public class ZombieIntegrationService(
         }
     }
 
+    // ── Preset Management ──
+
+    private static readonly JsonSerializerOptions PresetJsonOpts = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    private string GetPresetsDir()
+    {
+        var dir = Path.Combine(configService.ModPath, "config", "zombie-presets");
+        if (!Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var clean = new string(name.Where(c => !invalid.Contains(c)).ToArray()).Trim();
+        return string.IsNullOrEmpty(clean) ? "preset" : clean;
+    }
+
+    public ZombiePresetListResponse ListPresets()
+    {
+        var dir = GetPresetsDir();
+        var presets = new List<ZombiePresetSummary>();
+        foreach (var file in Directory.GetFiles(dir, "*.json"))
+        {
+            try
+            {
+                var json = File.ReadAllText(file);
+                var preset = JsonSerializer.Deserialize<ZombiePreset>(json, PresetJsonOpts);
+                if (preset != null)
+                    presets.Add(new ZombiePresetSummary
+                    {
+                        Name = preset.Name,
+                        Description = preset.Description,
+                        CreatedUtc = preset.CreatedUtc
+                    });
+            }
+            catch { }
+        }
+        presets.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        return new ZombiePresetListResponse { Presets = presets };
+    }
+
+    public ZombiePreset SavePreset(string name, string description, ZombieConfigDto config)
+    {
+        var preset = new ZombiePreset
+        {
+            Name = name,
+            Description = description,
+            CreatedUtc = DateTime.UtcNow,
+            Config = config
+        };
+        var filePath = Path.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+        File.WriteAllText(filePath, JsonSerializer.Serialize(preset, PresetJsonOpts));
+        logger.Info($"[ZSlayerHQ] Zombie: saved preset '{name}'");
+        return preset;
+    }
+
+    public ZombiePreset? LoadPreset(string name)
+    {
+        var filePath = Path.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+        if (!File.Exists(filePath)) return null;
+        var json = File.ReadAllText(filePath);
+        return JsonSerializer.Deserialize<ZombiePreset>(json, PresetJsonOpts);
+    }
+
+    public bool DeletePreset(string name)
+    {
+        var filePath = Path.Combine(GetPresetsDir(), SanitizeFileName(name) + ".json");
+        if (!File.Exists(filePath)) return false;
+        File.Delete(filePath);
+        logger.Info($"[ZSlayerHQ] Zombie: deleted preset '{name}'");
+        return true;
+    }
+
+    public ZombiePreset ImportPreset(ZombiePreset preset)
+    {
+        preset.CreatedUtc = DateTime.UtcNow;
+        var filePath = Path.Combine(GetPresetsDir(), SanitizeFileName(preset.Name) + ".json");
+        File.WriteAllText(filePath, JsonSerializer.Serialize(preset, PresetJsonOpts));
+        logger.Info($"[ZSlayerHQ] Zombie: imported preset '{preset.Name}'");
+        return preset;
+    }
+
     private HttpClient GetHttpClient()
     {
         if (_httpClient != null) return _httpClient;

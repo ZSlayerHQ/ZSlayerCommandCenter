@@ -25,6 +25,7 @@ public class ZombieConfigDto
     [JsonPropertyName("zombieAI")] public ZombieAIDto ZombieAI { get; set; } = new();
     [JsonPropertyName("zombieHealth")] public ZombieHealthDto ZombieHealth { get; set; } = new();
     [JsonPropertyName("spawnControl")] public ZombieSpawnControlDto SpawnControl { get; set; } = new();
+    [JsonPropertyName("botLimits")] public ZombieBotLimitsDto BotLimits { get; set; } = new();
     [JsonPropertyName("advancedMaps")] public Dictionary<string, ZombieAdvancedMapDto> AdvancedMaps { get; set; } = new();
 }
 
@@ -253,6 +254,56 @@ public class ZombieMapWaveOverrideDto
     [JsonPropertyName("zombiesPerWave")] public int? ZombiesPerWave { get; set; }
     [JsonPropertyName("waveSpawnChance")] public int? WaveSpawnChance { get; set; }
     [JsonPropertyName("maxBotsPerZone")] public int? MaxBotsPerZone { get; set; }
+}
+
+// ═══════════════════════════════════════════════════════
+// BOT LIMITS DTOs
+// ═══════════════════════════════════════════════════════
+
+public class ZombieBotLimitsDto
+{
+    [JsonPropertyName("enabled")] public bool Enabled { get; set; }
+    [JsonPropertyName("maxPmcs")] public int MaxPmcs { get; set; }
+    [JsonPropertyName("maxScavs")] public int MaxScavs { get; set; }
+    [JsonPropertyName("maxBosses")] public int MaxBosses { get; set; }
+    [JsonPropertyName("maxZombies")] public int MaxZombies { get; set; }
+    [JsonPropertyName("zombiesIgnoreMaxBots")] public bool ZombiesIgnoreMaxBots { get; set; }
+}
+
+// ═══════════════════════════════════════════════════════
+// PRESET DTOs
+// ═══════════════════════════════════════════════════════
+
+public record ZombiePreset
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("description")] public string Description { get; set; } = "";
+    [JsonPropertyName("createdUtc")] public DateTime CreatedUtc { get; set; }
+    [JsonPropertyName("config")] public ZombieConfigDto Config { get; set; } = new();
+}
+
+public record ZombiePresetSummary
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("description")] public string Description { get; set; } = "";
+    [JsonPropertyName("createdUtc")] public DateTime CreatedUtc { get; set; }
+}
+
+public record ZombiePresetListResponse
+{
+    [JsonPropertyName("presets")] public List<ZombiePresetSummary> Presets { get; set; } = [];
+}
+
+public record ZombiePresetSaveRequest
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("description")] public string Description { get; set; } = "";
+    [JsonPropertyName("config")] public ZombieConfigDto Config { get; set; } = new();
+}
+
+public record ZombiePresetLoadRequest
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
 }
 
 // ═══════════════════════════════════════════════════════

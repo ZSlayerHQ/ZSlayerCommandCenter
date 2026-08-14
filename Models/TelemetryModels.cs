@@ -1068,6 +1068,12 @@ public record TelemetrySourceDto
     [JsonPropertyName("ip")]
     public string Ip { get; set; } = "";
 
+    [JsonPropertyName("telemetryVersion")]
+    public string TelemetryVersion { get; set; } = "";
+
+    [JsonPropertyName("fikaClientVersion")]
+    public string FikaClientVersion { get; set; } = "";
+
     [JsonPropertyName("lastSeen")]
     public DateTime LastSeen { get; set; }
 
