@@ -260,6 +260,22 @@ public class CommandCenterMod(
             ? "Public IP not detected — Google 'what is my IP' to find it"
             : null;
 
+        // Security warning — no dashboard access password configured.
+        // Mirrors the Watchdog "OPEN mode" warning in WatchdogWebSocketHandler: warn, never block,
+        // so an upgrade can't lock an operator out of their own dashboard.
+        // NOTE: no emoji here — they render as 2 console columns but count as 1 in Length, which
+        // breaks the box alignment (see the ⚡ subtraction hack below).
+        var securityLines = new List<string>();
+        if (string.IsNullOrEmpty(configService.GetConfig().Access.Password))
+        {
+            securityLines.Add("WARNING: No dashboard password set — anyone who can reach this server can control it");
+            if (publicIp != null)
+            {
+                securityLines.Add("A public IP was detected, so that may include the internet");
+            }
+            securityLines.Add("Fix: set \"password\" under \"access\" in config/config.json, then restart");
+        }
+
         // Pre-compute flea table layout for width calculation and rendering
         var fd = offerRegenerationService.StartupDisplay;
         var fleaTableWidthLines = new List<string>();
@@ -348,6 +364,7 @@ public class CommandCenterMod(
         allContent.AddRange(urlLines);
         if (headlessLine != null) allContent.Add(headlessLine);
         if (noPublicLine != null) allContent.Add(noPublicLine);
+        allContent.AddRange(securityLines);
         allContent.AddRange(fleaTableWidthLines);
 
         var innerWidth = allContent.Max(s => s.Length) + 6;
@@ -383,6 +400,17 @@ public class CommandCenterMod(
         if (noPublicLine != null)
         {
             logger.Info($"{gold}║{reset}\x1b[33m{Center(noPublicLine)}{reset}{gold}║{reset}");
+            logger.Info($"{gold}║{reset}{Center("")}{gold}║{reset}");
+        }
+
+        if (securityLines.Count > 0)
+        {
+            // Red so it reads as a warning, not an informational note like noPublicLine.
+            const string red = "\x1b[91m";
+            foreach (var line in securityLines)
+            {
+                logger.Info($"{gold}║{reset}{red}{Center(line)}{reset}{gold}║{reset}");
+            }
             logger.Info($"{gold}║{reset}{Center("")}{gold}║{reset}");
         }
 

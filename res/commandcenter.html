@@ -10523,10 +10523,35 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     startVitalsPolling();
   };
 
+  // Warn in plain English when no dashboard password is configured. Mirrors the console
+  // banner warning in CommandCenterMod.PrintStartupBanner and the Watchdog "OPEN mode"
+  // warning — warn, never block. Not dismissible: it should stay until it's actually fixed.
+  // window.* because it's called from showMain inside the strict IIFE.
+  window.renderNoPasswordWarning = function() {
+    var existing = document.getElementById('noPasswordWarning');
+    if (serverHasPassword) { if (existing) existing.remove(); return; }
+    if (existing) return;
+    var box = document.createElement('div');
+    box.id = 'noPasswordWarning';
+    box.style.cssText = 'margin:12px 16px;padding:12px 16px;border:1px solid #c0392b;' +
+      'border-left:4px solid #c0392b;border-radius:6px;background:rgba(192,57,43,0.12);' +
+      'color:#f0c9c4;font-size:13px;line-height:1.55';
+    box.innerHTML =
+      '<strong style="color:#e74c3c">No dashboard password is set.</strong> ' +
+      'Anyone who can reach this server on the network can open Command Center and control it — ' +
+      'spawn items, edit profiles, and start or stop the server.' +
+      '<br><span style="opacity:.85">Fix: set <code style="color:#e8b34a">"password"</code> under ' +
+      '<code style="color:#e8b34a">"access"</code> in ' +
+      '<code style="color:#e8b34a">user/mods/ZSlayerCommandCenter/config/config.json</code>, then restart the server.</span>';
+    var main = document.getElementById('mainContainer');
+    main.insertBefore(box, main.firstChild);
+  };
+
   function showMain() {
     stopVitalsPolling();
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainContainer').style.display = 'block';
+    renderNoPasswordWarning();
     document.getElementById('heroBanner').style.display = 'flex';
     document.getElementById('headerProfile').style.display = 'flex';
     document.getElementById('navBar').style.display = 'block';
