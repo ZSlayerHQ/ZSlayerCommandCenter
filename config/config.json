@@ -34,8 +34,8 @@
         "description": "Common ammo types for general use",
         "items": [
           { "tpl": "56dff3afd2720bba668b4567", "count": 120, "note": "5.45x39 PS" },
-          { "tpl": "58dd3ad986f77403051cba8f", "count": 120, "note": "7.62x39 PS" },
-          { "tpl": "5a26abfac4a28200741e1e01", "count": 100, "note": "5.56x45 M855A1" }
+          { "tpl": "5656d7c34bdc2d9d198b4587", "count": 120, "note": "7.62x39 PS" },
+          { "tpl": "54527ac44bdc2d36668b4567", "count": 100, "note": "5.56x45 M855A1" }
         ]
       }
     ]
