@@ -214,6 +214,39 @@ public class OfferRegenerationService(
     {
         var sw = Stopwatch.StartNew();
 
+        // Serialise the WHOLE apply → remove → generate transaction. Previously the lock was
+        // released when ApplyGlobalsAndConfig returned, leaving the mass removal and the
+        // regeneration unguarded.
+        //
+        // That matters because RagfairOfferHolder's top-level containers are ConcurrentDictionary
+        // but their values are plain HashSet<MongoId> — _offersByTemplate, _offersByTrader,
+        // _fakePlayerOffers. Concurrent dictionary operations are safe; mutating a contained
+        // HashSet is not. Two interleaved passes can leave an offer present in _offersById but
+        // missing from the template index that searches read: the listing exists and nobody can
+        // find it.
+        //
+        // Reject rather than queue. Waiting behind a pass that is already mid-mutation tells the
+        // caller nothing useful, and the dashboard fires these in quick succession.
+        //
+        // Residual risk, deliberately not claimed as solved: this serialises CC against CC only.
+        // SPT's own ragfair update never takes this lock (RagfairCallbacks/RagfairServer), so
+        // CC-versus-SPT overlap is reduced — selective removal touches far fewer offers than the
+        // old full clear — but not eliminated. Prefer regenerating when the server is quiet.
+        if (!Monitor.TryEnter(_lock))
+        {
+            sw.Stop();
+            logger.Warning("ZSlayerCC Flea: Regeneration already running — request rejected, nothing changed");
+            return new FleaRegenerateResponse
+            {
+                Success = false,
+                Applied = false,
+                MarketState = FleaMarketStates.Unchanged,
+                Error = "A flea regeneration is already running.",
+                Guidance = "Nothing was changed. Wait for the running regeneration to finish, then retry.",
+                DurationMs = sw.ElapsedMilliseconds
+            };
+        }
+
         try
         {
             // Step 1: Apply globals/config + price multipliers from snapshot
@@ -279,6 +312,10 @@ public class OfferRegenerationService(
                 Error = ex.Message,
                 DurationMs = sw.ElapsedMilliseconds
             };
+        }
+        finally
+        {
+            Monitor.Exit(_lock);
         }
     }
 
