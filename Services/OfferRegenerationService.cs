@@ -252,6 +252,8 @@ public class OfferRegenerationService(
             return new FleaRegenerateResponse
             {
                 Success = true,
+                Applied = true,
+                MarketState = FleaMarketStates.Ok,
                 OfferCount = offerCount,
                 DurationMs = sw.ElapsedMilliseconds,
                 RemovedFakeOffers = fakeOffers.Count,
@@ -262,9 +264,18 @@ public class OfferRegenerationService(
         {
             sw.Stop();
             logger.Error($"ZSlayerCC Flea: Regeneration failed — {ex.Message}");
+
+            // No rollback. By the time an exception can surface here, ApplyGlobalsAndConfig has
+            // already rewritten globals and the price dictionary, and offers may already have been
+            // removed. Reverting the config alone would leave live state partially applied while
+            // telling the operator it was undone — a worse bug than the one being reported.
             return new FleaRegenerateResponse
             {
                 Success = false,
+                Applied = false,
+                MarketState = FleaMarketStates.PartialOrUnknown,
+                Guidance = "Retry the regeneration. If it fails again, restart the server — "
+                         + "globals, prices and live offers may each be partially updated.",
                 Error = ex.Message,
                 DurationMs = sw.ElapsedMilliseconds
             };

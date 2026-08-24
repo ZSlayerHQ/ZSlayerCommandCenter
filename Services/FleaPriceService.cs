@@ -90,6 +90,106 @@ public class FleaPriceService(
     }
 
     /// <summary>
+    /// Check a whole flea config before it is allowed anywhere near disk.
+    /// Returns null when valid, otherwise the first problem found.
+    /// </summary>
+    /// <remarks>
+    /// The granular routes clamp their inputs, but POST /flea/config accepts a whole model and
+    /// stored it verbatim — a null dictionary, a NaN multiplier or an unknown category key went
+    /// straight to config.json and then threw on the next lookup.
+    /// </remarks>
+    public string? ValidateConfig(FleaConfig? cfg)
+    {
+        if (cfg == null) return "Config is missing.";
+
+        if (cfg.CategoryMultipliers == null!) return "categoryMultipliers must be an object, not null.";
+        if (cfg.ItemOverrides == null!) return "itemOverrides must be an object, not null.";
+
+        var scalarError =
+            CheckRange(cfg.GlobalBuyMultiplier, 0.01, 100.0, "globalBuyMultiplier")
+            ?? CheckRange(cfg.FleaTaxMultiplier, 0.0, 5.0, "fleaTaxMultiplier")
+            ?? CheckRange(cfg.DynamicPriceVariance, 0.0, 1.0, "dynamicPriceVariance")
+            ?? CheckRange(cfg.PlayerMaxOffers, 1, 100, "playerMaxOffers")
+            ?? CheckRange(cfg.OfferDurationHours, 1, 168, "offerDurationHours")
+            ?? CheckRange(cfg.RestockIntervalMinutes, 1, 360, "restockIntervalMinutes")
+            ?? CheckRange(cfg.BarterOfferFrequency, 0, 100, "barterOfferFrequency")
+            ?? CheckRange(cfg.MinPriceRoubles, 0, 50_000_000, "minPriceRoubles")
+            ?? CheckRange(cfg.MaxPriceRoubles, 1, 2_000_000_000, "maxPriceRoubles");
+        if (scalarError != null) return scalarError;
+
+        if (cfg.MaxPriceRoubles < cfg.MinPriceRoubles)
+            return $"maxPriceRoubles ({cfg.MaxPriceRoubles}) must be at least minPriceRoubles ({cfg.MinPriceRoubles}).";
+
+        foreach (var (key, entry) in cfg.CategoryMultipliers)
+        {
+            if (!CategoryBaseClasses.ContainsKey(key))
+                return $"Unknown flea category '{key}'. Known categories: {string.Join(", ", CategoryBaseClasses.Keys)}.";
+            if (entry == null) return $"Category '{key}' has no multiplier object.";
+            var err = CheckRange(entry.BuyMultiplier, 0.01, 100.0, $"categoryMultipliers['{key}'].buyMultiplier");
+            if (err != null) return err;
+        }
+
+        var items = databaseService.GetItems();
+        foreach (var (templateId, entry) in cfg.ItemOverrides)
+        {
+            if (string.IsNullOrWhiteSpace(templateId))
+                return "itemOverrides contains an empty template ID.";
+            if (!items.ContainsKey(templateId))
+                return $"Unknown item template '{templateId}' in itemOverrides.";
+            if (entry == null) return $"Item override '{templateId}' has no override object.";
+            var err = CheckRange(entry.BuyMultiplier, 0.01, 100.0, $"itemOverrides['{templateId}'].buyMultiplier");
+            if (err != null) return err;
+        }
+
+        return null;
+    }
+
+    /// <summary>Validate POST flea/config/global. Null when valid.</summary>
+    public string? ValidateGlobalUpdate(FleaGlobalUpdateRequest req) =>
+        CheckRange(req.BuyMultiplier, 0.01, 100.0, "buyMultiplier");
+
+    /// <summary>Validate POST flea/config/market. Null when valid.</summary>
+    public string? ValidateMarketSettings(FleaMarketSettingsRequest req) =>
+        CheckRange(req.FleaTaxMultiplier, 0.0, 5.0, "fleaTaxMultiplier")
+        ?? CheckRange(req.PlayerMaxOffers, 1, 100, "playerMaxOffers")
+        ?? CheckRange(req.OfferDurationHours, 1, 168, "offerDurationHours")
+        ?? CheckRange(req.RestockIntervalMinutes, 1, 360, "restockIntervalMinutes")
+        ?? CheckRange(req.BarterOfferFrequency, 0, 100, "barterOfferFrequency");
+
+    /// <summary>Validate POST flea/config/category. Null when valid.</summary>
+    public string? ValidateCategoryUpdate(FleaCategoryUpdateRequest req)
+    {
+        if (!CategoryBaseClasses.ContainsKey(req.Category))
+            return $"Unknown flea category '{req.Category}'. Known categories: {string.Join(", ", CategoryBaseClasses.Keys)}.";
+        return CheckRange(req.BuyMultiplier, 0.01, 100.0, "buyMultiplier");
+    }
+
+    /// <summary>Validate POST flea/config/item. Null when valid.</summary>
+    public string? ValidateItemOverride(FleaItemOverrideRequest req)
+    {
+        if (!databaseService.GetItems().ContainsKey(req.TemplateId))
+            return $"Unknown item template '{req.TemplateId}'.";
+        return CheckRange(req.BuyMultiplier, 0.01, 100.0, "buyMultiplier");
+    }
+
+    /// <summary>Reject non-finite and out-of-range numbers with a message naming the field.</summary>
+    internal static string? CheckRange(double value, double min, double max, string field)
+    {
+        if (double.IsNaN(value) || double.IsInfinity(value))
+            return $"{field} must be a finite number.";
+        if (value < min || value > max)
+            return $"{field} must be between {min} and {max} (got {value}).";
+        return null;
+    }
+
+    internal static string? CheckRange(int value, int min, int max, string field)
+    {
+        if (value < min || value > max)
+            return $"{field} must be between {min} and {max} (got {value}).";
+        return null;
+    }
+
+    /// <summary>
     /// Replace the full flea config, persist, and return the new config.
     /// </summary>
     public FleaConfig UpdateFullConfig(FleaConfig newConfig)

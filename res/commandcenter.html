@@ -10170,7 +10170,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     if (opts.body) h['Content-Type'] = 'application/json';
     return fetch(BASE + endpoint, Object.assign({}, opts, { headers: Object.assign(h, opts.headers || {}) }))
       .then(function(r) { return r.json().then(function(d) {
-        if (!r.ok) throw new Error(d.error || 'Request failed');
+        if (!r.ok) {
+          // Keep the response body on the error. Flea routes return a partial-success contract
+          // (persisted / applied / marketState / guidance) that callers need after a failure.
+          var err = new Error(d.error || 'Request failed');
+          err.status = r.status;
+          err.body = d;
+          throw err;
+        }
         return d;
       }); });
   }
@@ -17664,6 +17671,14 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     })
     .catch(function(e) {
       toast('Error: ' + e.message, 'error');
+      // A failed regeneration leaves globals, prices and live offers possibly half-updated.
+      // There is no honest rollback, so say what state the market is in and what to do.
+      var b = e.body;
+      if (b && b.marketState === 'partial-or-unknown') {
+        toast(b.guidance || 'The flea market may be partially updated — retry, or restart the server.', 'warning');
+      } else if (b && b.marketState === 'unchanged' && e.status === 409) {
+        toast('Another regeneration is already running — nothing was changed. Try again shortly.', 'warning');
+      }
     })
     .finally(function() {
       btn.disabled = false;

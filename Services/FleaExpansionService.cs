@@ -276,7 +276,94 @@ public class FleaExpansionService(
     // APPLY
     // ═══════════════════════════════════════════════════════
 
-    public void Apply(FleaExpansionConfig config)
+    /// <summary>
+    /// Check an expansion config before it is persisted. Returns null when valid,
+    /// otherwise the first problem found.
+    /// </summary>
+    /// <remarks>
+    /// Apply() writes to disk before it touches live state, so anything that throws inside
+    /// ApplyInternal leaves a bad config persisted and the market half-changed. Every value
+    /// here is optional, so only the fields actually supplied are checked.
+    /// </remarks>
+    public string? ValidateConfig(FleaExpansionConfig? cfg)
+    {
+        if (cfg == null) return "Config is missing.";
+
+        var error =
+            Check(cfg.SellChanceBase, 0, 100, "sellChanceBase")
+            ?? Check(cfg.SellChanceMult, 0.0, 100.0, "sellChanceMult")
+            ?? Check(cfg.RepGainPerSale, 0.0, 100.0, "repGainPerSale")
+            ?? Check(cfg.RepLossPerCancel, 0.0, 100.0, "repLossPerCancel")
+            ?? Check(cfg.BarterChance, 0.0, 100.0, "barterChance")
+            ?? Check(cfg.BundleChance, 0.0, 100.0, "bundleChance")
+            ?? Check(cfg.ExpiredOfferThreshold, 0, 1_000_000, "expiredOfferThreshold")
+            ?? Check(cfg.OfferItemCountMin, 1, 10_000, "offerItemCountMin")
+            ?? Check(cfg.OfferItemCountMax, 1, 10_000, "offerItemCountMax")
+            ?? Check(cfg.PriceRangeDefaultMin, 0.0, 1_000.0, "priceRangeDefaultMin")
+            ?? Check(cfg.PriceRangeDefaultMax, 0.0, 1_000.0, "priceRangeDefaultMax")
+            ?? Check(cfg.PriceRangePresetMin, 0.0, 1_000.0, "priceRangePresetMin")
+            ?? Check(cfg.PriceRangePresetMax, 0.0, 1_000.0, "priceRangePresetMax")
+            ?? Check(cfg.PriceRangePackMin, 0.0, 1_000.0, "priceRangePackMin")
+            ?? Check(cfg.PriceRangePackMax, 0.0, 1_000.0, "priceRangePackMax")
+            ?? Check(cfg.OfferDurationMin, 1, 100_000, "offerDurationMin")
+            ?? Check(cfg.OfferDurationMax, 1, 100_000, "offerDurationMax")
+            ?? Check(cfg.NonStackableCountMin, 1, 10_000, "nonStackableCountMin")
+            ?? Check(cfg.NonStackableCountMax, 1, 10_000, "nonStackableCountMax")
+            ?? Check(cfg.StackablePercentMin, 0.0, 10_000.0, "stackablePercentMin")
+            ?? Check(cfg.StackablePercentMax, 0.0, 10_000.0, "stackablePercentMax")
+            ?? Check(cfg.CurrencyRatioRub, 0.0, 100.0, "currencyRatioRub")
+            ?? Check(cfg.CurrencyRatioUsd, 0.0, 100.0, "currencyRatioUsd")
+            ?? Check(cfg.CurrencyRatioEur, 0.0, 100.0, "currencyRatioEur")
+            ?? Check(cfg.MinUserLevel, 0, 100, "minUserLevel")
+            ?? Check(cfg.MaxActiveOfferCount, 1.0, 100_000.0, "maxActiveOfferCount");
+        if (error != null) return error;
+
+        error = CheckPair(cfg.OfferItemCountMin, cfg.OfferItemCountMax, "offerItemCount")
+                ?? CheckPair(cfg.OfferDurationMin, cfg.OfferDurationMax, "offerDuration")
+                ?? CheckPair(cfg.NonStackableCountMin, cfg.NonStackableCountMax, "nonStackableCount")
+                ?? CheckPair(cfg.PriceRangeDefaultMin, cfg.PriceRangeDefaultMax, "priceRangeDefault")
+                ?? CheckPair(cfg.PriceRangePresetMin, cfg.PriceRangePresetMax, "priceRangePreset")
+                ?? CheckPair(cfg.PriceRangePackMin, cfg.PriceRangePackMax, "priceRangePack")
+                ?? CheckPair(cfg.StackablePercentMin, cfg.StackablePercentMax, "stackablePercent");
+        if (error != null) return error;
+
+        if (cfg.CategoryConditions is { Count: > 0 })
+        {
+            foreach (var (parentId, entry) in cfg.CategoryConditions)
+            {
+                // ApplyInternal builds a MongoId from this key, which throws on a malformed value.
+                if (string.IsNullOrWhiteSpace(parentId) || !MongoId.IsValidMongoId(parentId))
+                    return $"categoryConditions key '{parentId}' is not a valid template ID.";
+                if (entry == null)
+                    return $"categoryConditions['{parentId}'] has no condition object.";
+
+                error = Check(entry.ConditionMin, 0.0, 100.0, $"categoryConditions['{parentId}'].conditionMin")
+                        ?? Check(entry.ConditionMax, 0.0, 100.0, $"categoryConditions['{parentId}'].conditionMax")
+                        ?? CheckPair(entry.ConditionMin, entry.ConditionMax, $"categoryConditions['{parentId}'].condition");
+                if (error != null) return error;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? Check(double? value, double min, double max, string field) =>
+        value.HasValue ? FleaPriceService.CheckRange(value.Value, min, max, field) : null;
+
+    private static string? Check(int? value, int min, int max, string field) =>
+        value.HasValue ? FleaPriceService.CheckRange(value.Value, min, max, field) : null;
+
+    private static string? CheckPair(double? min, double? max, string field) =>
+        min.HasValue && max.HasValue && min.Value > max.Value
+            ? $"{field}Min ({min.Value}) must not exceed {field}Max ({max.Value})."
+            : null;
+
+    private static string? CheckPair(int? min, int? max, string field) =>
+        min.HasValue && max.HasValue && min.Value > max.Value
+            ? $"{field}Min ({min.Value}) must not exceed {field}Max ({max.Value})."
+            : null;
+
+    public FleaRouteResult Apply(FleaExpansionConfig config)
     {
         lock (_lock)
         {
@@ -286,17 +373,43 @@ public class FleaExpansionService(
             configService.GetConfig().FleaExpansion = config;
             configService.SaveConfig();
 
-            // Restore ALL from snapshot first, then apply fresh
-            RestoreAll();
+            try
+            {
+                // Restore ALL from snapshot first, then apply fresh
+                RestoreAll();
 
-            if (config.EnableFleaExpansion)
-            {
-                ApplyInternal(config);
-                logger.Info("FleaExpansionService: applied expansion settings");
+                if (config.EnableFleaExpansion)
+                {
+                    ApplyInternal(config);
+                    logger.Info("FleaExpansionService: applied expansion settings");
+                }
+                else
+                {
+                    logger.Info("FleaExpansionService: disabled — defaults restored");
+                }
+
+                return new FleaRouteResult
+                {
+                    Persisted = true,
+                    Applied = true,
+                    MarketState = FleaMarketStates.Ok
+                };
             }
-            else
+            catch (Exception ex)
             {
-                logger.Info("FleaExpansionService: disabled — defaults restored");
+                // Config is already on disk and ApplyInternal writes to globals and the ragfair
+                // config as it goes, so the live server may now sit between two configurations.
+                // Report that rather than letting the generic 500 handler imply nothing happened.
+                logger.Error($"FleaExpansionService: apply failed — {ex.Message}");
+                return new FleaRouteResult
+                {
+                    Persisted = true,
+                    Applied = false,
+                    MarketState = FleaMarketStates.PartialOrUnknown,
+                    Error = ex.Message,
+                    Guidance = "Settings were saved but only partly applied. Retry, or restart the "
+                             + "server to bring the live market back in line with the saved config."
+                };
             }
         }
     }
@@ -426,7 +539,7 @@ public class FleaExpansionService(
     // RESET
     // ═══════════════════════════════════════════════════════
 
-    public void Reset()
+    public FleaRouteResult Reset()
     {
         lock (_lock)
         {
@@ -435,9 +548,29 @@ public class FleaExpansionService(
             configService.GetConfig().FleaExpansion = new FleaExpansionConfig();
             configService.SaveConfig();
 
-            RestoreAll();
-
-            logger.Info("FleaExpansionService: reset — all values restored to defaults");
+            try
+            {
+                RestoreAll();
+                logger.Info("FleaExpansionService: reset — all values restored to defaults");
+                return new FleaRouteResult
+                {
+                    Persisted = true,
+                    Applied = true,
+                    MarketState = FleaMarketStates.Ok
+                };
+            }
+            catch (Exception ex)
+            {
+                logger.Error($"FleaExpansionService: reset failed — {ex.Message}");
+                return new FleaRouteResult
+                {
+                    Persisted = true,
+                    Applied = false,
+                    MarketState = FleaMarketStates.PartialOrUnknown,
+                    Error = ex.Message,
+                    Guidance = "Defaults were saved but only partly restored. Retry, or restart the server."
+                };
+            }
         }
     }
 

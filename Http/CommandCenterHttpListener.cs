@@ -1981,6 +1981,52 @@ public class CommandCenterHttpListener(
 
     // ── Flea Market Handlers ──
 
+    /// <summary>
+    /// Map a flea result onto an HTTP status. A 200 must mean "the live market matches the
+    /// persisted config" and nothing else — every other outcome gets a non-200 so a caller
+    /// cannot mistake a partial apply for success.
+    /// </summary>
+    private static int FleaStatusFor(FleaRouteResult result)
+    {
+        if (!result.Persisted) return 400;  // rejected before anything changed
+        if (result.Applied) return 200;
+        return result.MarketState == FleaMarketStates.Unchanged
+            ? 409   // nothing was touched — a rejected concurrent regeneration
+            : 500;  // live state may sit between two configurations
+    }
+
+    private Task WriteFleaResult(HttpContext context, FleaRouteResult result) =>
+        WriteJson(context, FleaStatusFor(result), result);
+
+    /// <summary>Input failed validation — nothing persisted, nothing applied.</summary>
+    private static FleaRouteResult FleaRejected(string error) => new()
+    {
+        Persisted = false,
+        Applied = false,
+        MarketState = FleaMarketStates.Unchanged,
+        Error = error
+    };
+
+    /// <summary>
+    /// The shape shared by every route that saves flea config and then rebuilds the market:
+    /// the save already happened, so report whether the rebuild caught up with it.
+    /// </summary>
+    private FleaRouteResult FleaPersistedThenRegenerate(FleaConfig? config = null, bool? changed = null)
+    {
+        var regen = offerRegenerationService.RegenerateOffers();
+        return new FleaRouteResult
+        {
+            Persisted = true,
+            Applied = regen.Applied,
+            MarketState = regen.MarketState,
+            Error = regen.Error,
+            Guidance = regen.Guidance,
+            Config = config,
+            Changed = changed,
+            Regeneration = regen
+        };
+    }
+
     private async Task HandleFleaRoute(HttpContext context, string headerSessionId, string path, string method)
     {
         if (!await ValidateAccess(context, headerSessionId)) return;
@@ -2001,6 +2047,17 @@ public class CommandCenterHttpListener(
                     await WriteJson(context, 400, new { error = "Invalid request body" });
                     return;
                 }
+                // This route stored whatever it was given. A null dictionary, a NaN multiplier or
+                // an unknown category key reached config.json and then threw on the next lookup.
+                var invalid = fleaPriceService.ValidateConfig(body);
+                if (invalid != null)
+                {
+                    await WriteJson(context, 400, new { error = invalid });
+                    return;
+                }
+                // Shape kept deliberately: this route persists but never touches live state, so
+                // there is no applied/persisted distinction to report, and the dashboard and any
+                // third-party caller still get the config object back.
                 var result = fleaPriceService.UpdateFullConfig(body);
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Flea: full config updated");
                 await WriteJson(context, 200, result);
@@ -2014,11 +2071,16 @@ public class CommandCenterHttpListener(
                     await WriteJson(context, 400, new { error = "Invalid request body" });
                     return;
                 }
-                var result = fleaPriceService.UpdateGlobalMultiplier(body.BuyMultiplier);
-                offerRegenerationService.RegenerateOffers();
+                var invalid = fleaPriceService.ValidateGlobalUpdate(body);
+                if (invalid != null)
+                {
+                    await WriteFleaResult(context, FleaRejected(invalid));
+                    return;
+                }
+                var config = fleaPriceService.UpdateGlobalMultiplier(body.BuyMultiplier);
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     $"Flea: global buy={body.BuyMultiplier:F2}");
-                await WriteJson(context, 200, result);
+                await WriteFleaResult(context, FleaPersistedThenRegenerate(config));
                 break;
             }
             case "flea/config/market" when method == "POST":
@@ -2029,10 +2091,15 @@ public class CommandCenterHttpListener(
                     await WriteJson(context, 400, new { error = "Invalid request body" });
                     return;
                 }
-                var result = fleaPriceService.UpdateMarketSettings(body);
-                offerRegenerationService.RegenerateOffers();
+                var invalid = fleaPriceService.ValidateMarketSettings(body);
+                if (invalid != null)
+                {
+                    await WriteFleaResult(context, FleaRejected(invalid));
+                    return;
+                }
+                var config = fleaPriceService.UpdateMarketSettings(body);
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Flea: market settings updated");
-                await WriteJson(context, 200, result);
+                await WriteFleaResult(context, FleaPersistedThenRegenerate(config));
                 break;
             }
             case "flea/config/category" when method == "POST":
@@ -2043,11 +2110,16 @@ public class CommandCenterHttpListener(
                     await WriteJson(context, 400, new { error = "Invalid request body or missing category" });
                     return;
                 }
-                var result = fleaPriceService.UpdateCategoryMultiplier(body.Category, body.BuyMultiplier);
-                offerRegenerationService.RegenerateOffers();
+                var invalid = fleaPriceService.ValidateCategoryUpdate(body);
+                if (invalid != null)
+                {
+                    await WriteFleaResult(context, FleaRejected(invalid));
+                    return;
+                }
+                var config = fleaPriceService.UpdateCategoryMultiplier(body.Category, body.BuyMultiplier);
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     $"Flea: category '{body.Category}' buy={body.BuyMultiplier:F2}");
-                await WriteJson(context, 200, result);
+                await WriteFleaResult(context, FleaPersistedThenRegenerate(config));
                 break;
             }
             case "flea/config/item" when method == "POST":
@@ -2058,11 +2130,16 @@ public class CommandCenterHttpListener(
                     await WriteJson(context, 400, new { error = "Invalid request body or missing templateId" });
                     return;
                 }
-                var result = fleaPriceService.SetItemOverride(body.TemplateId, body.Name, body.BuyMultiplier);
-                offerRegenerationService.RegenerateOffers();
+                var invalid = fleaPriceService.ValidateItemOverride(body);
+                if (invalid != null)
+                {
+                    await WriteFleaResult(context, FleaRejected(invalid));
+                    return;
+                }
+                var config = fleaPriceService.SetItemOverride(body.TemplateId, body.Name, body.BuyMultiplier);
                 activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                     $"Flea: item override '{body.Name}' ({body.TemplateId})");
-                await WriteJson(context, 200, result);
+                await WriteFleaResult(context, FleaPersistedThenRegenerate(config));
                 break;
             }
             case "flea/regenerate" when method == "POST":
@@ -2071,7 +2148,16 @@ public class CommandCenterHttpListener(
                 if (result.Success)
                     activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
                         $"Flea: regenerated {result.OfferCount} offers in {result.DurationMs}ms");
-                await WriteJson(context, 200, result);
+                else
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Flea: regeneration failed ({result.MarketState}) — {result.Error}");
+
+                // Response shape stays FleaRegenerateResponse — persisted/applied/marketState are
+                // additive, so existing callers keep working — but the status code no longer lies.
+                var status = result.Applied
+                    ? 200
+                    : result.MarketState == FleaMarketStates.Unchanged ? 409 : 500;
+                await WriteJson(context, status, result);
                 break;
             }
             case "flea/categories" when method == "GET":
@@ -2166,16 +2252,30 @@ public class CommandCenterHttpListener(
             {
                 var body = await ReadBody<FleaExpansionConfig>(context);
                 if (body == null) { await WriteJson(context, 400, new { error = "Invalid request body" }); return; }
-                fleaExpansionService.Apply(body);
-                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Flea Expansion: applied changes");
-                await WriteJson(context, 200, new { success = true, message = "Flea expansion settings applied" });
+                var invalid = fleaExpansionService.ValidateConfig(body);
+                if (invalid != null)
+                {
+                    await WriteFleaResult(context, FleaRejected(invalid));
+                    return;
+                }
+                // Apply() saves before it mutates globals and the ragfair config, so it reports
+                // persisted and applied separately rather than one blanket success.
+                var result = fleaExpansionService.Apply(body);
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    result.Applied
+                        ? "Flea Expansion: applied changes"
+                        : $"Flea Expansion: apply incomplete ({result.MarketState}) — {result.Error}");
+                await WriteFleaResult(context, result);
                 break;
             }
             case "flea/expanded-reset" when method == "POST":
             {
-                fleaExpansionService.Reset();
-                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId, "Flea Expansion: reset to defaults");
-                await WriteJson(context, 200, new { success = true });
+                var result = fleaExpansionService.Reset();
+                activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                    result.Applied
+                        ? "Flea Expansion: reset to defaults"
+                        : $"Flea Expansion: reset incomplete ({result.MarketState}) — {result.Error}");
+                await WriteFleaResult(context, result);
                 break;
             }
             default:
@@ -2207,13 +2307,22 @@ public class CommandCenterHttpListener(
                         return;
                     }
                     var removed = fleaPriceService.RemoveItemOverride(templateId);
-                    if (removed)
+                    if (!removed)
                     {
-                        offerRegenerationService.RegenerateOffers();
-                        activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
-                            $"Flea: removed item override {templateId}");
+                        // Nothing to remove — nothing persisted, nothing to rebuild.
+                        await WriteFleaResult(context, new FleaRouteResult
+                        {
+                            Persisted = true,
+                            Applied = true,
+                            MarketState = FleaMarketStates.Unchanged,
+                            Changed = false
+                        });
+                        break;
                     }
-                    await WriteJson(context, 200, new { success = removed });
+
+                    activityLogService.LogAction(ActionType.ConfigChange, headerSessionId,
+                        $"Flea: removed item override {templateId}");
+                    await WriteFleaResult(context, FleaPersistedThenRegenerate(changed: true));
                     break;
                 }
 

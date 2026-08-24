@@ -189,6 +189,75 @@ public record FleaRegenerateResponse
     /// <summary>Player, trader and unattributed offers left untouched by this regeneration.</summary>
     [JsonPropertyName("preservedOffers")]
     public int PreservedOffers { get; set; }
+
+    /// <summary>Did any accompanying config change reach disk. True when there was nothing to persist.</summary>
+    [JsonPropertyName("persisted")]
+    public bool Persisted { get; set; } = true;
+
+    /// <summary>Did the live market finish rebuilding. Same value as <see cref="Success"/>, which is kept as the legacy alias.</summary>
+    [JsonPropertyName("applied")]
+    public bool Applied { get; set; }
+
+    /// <summary>One of <see cref="FleaMarketStates"/>.</summary>
+    [JsonPropertyName("marketState")]
+    public string MarketState { get; set; } = FleaMarketStates.Ok;
+
+    /// <summary>What the operator should do next, when anything other than "ok" happened.</summary>
+    [JsonPropertyName("guidance")]
+    public string? Guidance { get; set; }
+}
+
+/// <summary>
+/// What the live flea market looks like after a route ran.
+/// Deliberately not an enum: it is a wire value read by the dashboard and third-party callers.
+/// </summary>
+public static class FleaMarketStates
+{
+    /// <summary>The market matches the persisted config.</summary>
+    public const string Ok = "ok";
+
+    /// <summary>Nothing touched the market — a rejected or skipped regeneration.</summary>
+    public const string Unchanged = "unchanged";
+
+    /// <summary>
+    /// A regeneration failed partway. Globals, prices and the offer holder may each be
+    /// half-updated. There is no honest rollback: RegenerateOffers destroys holder state
+    /// before a failure can be returned, so reverting the config alone would misreport.
+    /// </summary>
+    public const string PartialOrUnknown = "partial-or-unknown";
+}
+
+/// <summary>
+/// The uniform result contract for flea routes that persist config, mutate live state, or both.
+/// </summary>
+public record FleaRouteResult
+{
+    [JsonPropertyName("persisted")]
+    public bool Persisted { get; set; }
+
+    [JsonPropertyName("applied")]
+    public bool Applied { get; set; }
+
+    [JsonPropertyName("marketState")]
+    public string MarketState { get; set; } = FleaMarketStates.Ok;
+
+    [JsonPropertyName("error")]
+    public string? Error { get; set; }
+
+    [JsonPropertyName("guidance")]
+    public string? Guidance { get; set; }
+
+    /// <summary>The resulting flea config, on routes that return one.</summary>
+    [JsonPropertyName("config")]
+    public FleaConfig? Config { get; set; }
+
+    /// <summary>Regeneration detail, on routes that regenerate.</summary>
+    [JsonPropertyName("regeneration")]
+    public FleaRegenerateResponse? Regeneration { get; set; }
+
+    /// <summary>Whether the requested change actually altered anything, on delete-style routes.</summary>
+    [JsonPropertyName("changed")]
+    public bool? Changed { get; set; }
 }
 
 public record FleaItemSearchResult
