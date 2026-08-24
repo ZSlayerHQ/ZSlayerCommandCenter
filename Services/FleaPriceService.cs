@@ -21,6 +21,10 @@ public class FleaPriceService(
 {
     private readonly object _lock = new();
 
+    // Deliberately no naming policy: FleaConfig carries explicit [JsonPropertyName]
+    // attributes, so a round-trip with default options is symmetric.
+    private static readonly JsonSerializerOptions CloneJsonOptions = new();
+
     // Category name → list of base class IDs for that category
     private static readonly Dictionary<string, List<string>> CategoryBaseClasses = new()
     {
@@ -52,14 +56,37 @@ public class FleaPriceService(
     };
 
     /// <summary>
-    /// Get a thread-safe copy of the current flea config.
+    /// Get a detached deep copy of the current flea config, safe to read across a
+    /// concurrent write. Callers that resolve many templates in one pass must take
+    /// one copy and resolve against it via <see cref="ResolveMultiplierFor"/>.
+    /// Mutating the returned object does not affect the persisted config.
     /// </summary>
     public FleaConfig GetConfig()
     {
         lock (_lock)
         {
-            return configService.GetConfig().Flea;
+            return CloneConfig(configService.GetConfig().Flea);
         }
+    }
+
+    /// <summary>
+    /// Deep-clone a flea config. FleaConfig is a record whose state includes dictionaries
+    /// of records, so <c>with</c> would share those dictionaries with the live object.
+    /// A JSON round-trip clones the whole graph and — unlike a hand-written copy — cannot
+    /// silently miss a property added later.
+    /// </summary>
+    private static FleaConfig CloneConfig(FleaConfig source)
+    {
+        var json = JsonSerializer.Serialize(source, CloneJsonOptions);
+        var clone = JsonSerializer.Deserialize<FleaConfig>(json, CloneJsonOptions) ?? new FleaConfig();
+
+        // A round-trip preserves explicit nulls rather than repairing them. The model declares
+        // both dictionaries non-null and every lookup assumes it, so repair here — the clone is
+        // never persisted, so this cannot mask a malformed config on disk.
+        if (clone.CategoryMultipliers == null!) clone.CategoryMultipliers = new Dictionary<string, CategoryMultiplier>();
+        if (clone.ItemOverrides == null!) clone.ItemOverrides = new Dictionary<string, ItemOverride>();
+
+        return clone;
     }
 
     /// <summary>
@@ -171,12 +198,29 @@ public class FleaPriceService(
     /// </summary>
     public (double multiplier, string level) GetEffectiveBuyMultiplier(string templateId)
     {
-        FleaConfig flea;
+        // Resolve inside the lock. Previously the lock was released before ResolveMultiplier
+        // walked ItemOverrides and CategoryMultipliers, so a concurrent write to either
+        // dictionary raced an unsynchronised Dictionary read.
+        //
+        // This deliberately does NOT clone: RagfairPriceServiceOverride calls this once per
+        // template during offer generation, and cloning a config carrying thousands of item
+        // overrides per call would be a serious regression. Bulk callers use
+        // GetConfig() + ResolveMultiplierFor instead.
         lock (_lock)
         {
-            flea = configService.GetConfig().Flea;
+            return ResolveMultiplier(templateId, configService.GetConfig().Flea);
         }
-        return ResolveMultiplier(templateId, flea);
+    }
+
+    /// <summary>
+    /// Resolve the effective buy multiplier against a caller-held config snapshot.
+    /// Use this — not <see cref="GetEffectiveBuyMultiplier"/> — when resolving many templates
+    /// in one pass: the per-call variant re-reads the live config, so a concurrent
+    /// UpdateFullConfig can land mid-loop and yield a table built from two configurations.
+    /// </summary>
+    public (double multiplier, string level) ResolveMultiplierFor(string templateId, FleaConfig snapshot)
+    {
+        return ResolveMultiplier(templateId, snapshot);
     }
 
     /// <summary>

@@ -68,6 +68,10 @@ public class OfferRegenerationService(
         {
             var globals = databaseService.GetGlobals();
             var ragfairConfig = configServer.GetConfig<RagfairConfig>();
+
+            // One detached snapshot for the whole pass. Every multiplier below resolves against
+            // THIS object — never the live config — so a concurrent UpdateFullConfig cannot land
+            // mid-loop and leave the price table built from two different configurations.
             var flea = fleaPriceService.GetConfig();
 
             // Snapshot on first call
@@ -140,7 +144,7 @@ public class OfferRegenerationService(
 
             foreach (var (tplId, originalPrice) in _snapshotPrices!)
             {
-                var (mult, _) = fleaPriceService.GetEffectiveBuyMultiplier(tplId.ToString());
+                var (mult, _) = fleaPriceService.ResolveMultiplierFor(tplId.ToString(), flea);
                 var newPrice = Math.Max(1.0, Math.Round(originalPrice * mult));
                 prices[tplId] = newPrice;
 
@@ -165,7 +169,7 @@ public class OfferRegenerationService(
                     locales.TryGetValue($"{candidateId} Name", out var localeName);
                     exName = !string.IsNullOrEmpty(localeName) ? localeName : fallbackName;
                     exBasePrice = origPrice;
-                    var (mult, multSource) = fleaPriceService.GetEffectiveBuyMultiplier(candidateId);
+                    var (mult, multSource) = fleaPriceService.ResolveMultiplierFor(candidateId, flea);
                     exModPrice = Math.Round(origPrice * mult);
                     exEffMult = mult;
                     exMultSource = multSource;
