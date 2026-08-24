@@ -4,7 +4,7 @@ namespace ZSlayerCommandCenter;
 
 public record ModMetadata : AbstractModMetadata
 {
-    public const string StaticVersion = "2.22.3";
+    public const string StaticVersion = "2.22.4";
 
     public override string ModGuid { get; init; } = "com.zslayerhq.commandcenter";
     public override string Name { get; init; } = "ZSlayer Command Center";
