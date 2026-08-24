@@ -181,6 +181,14 @@ public record FleaRegenerateResponse
 
     [JsonPropertyName("error")]
     public string? Error { get; set; }
+
+    /// <summary>Fake-player offers removed and rebuilt by this regeneration.</summary>
+    [JsonPropertyName("removedFakeOffers")]
+    public int RemovedFakeOffers { get; set; }
+
+    /// <summary>Player, trader and unattributed offers left untouched by this regeneration.</summary>
+    [JsonPropertyName("preservedOffers")]
+    public int PreservedOffers { get; set; }
 }
 
 public record FleaItemSearchResult

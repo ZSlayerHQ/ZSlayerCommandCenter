@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Extensions;
 using SPTarkov.Server.Core.Generators;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Spt.Config;
@@ -214,14 +215,26 @@ public class OfferRegenerationService(
             // Step 1: Apply globals/config + price multipliers from snapshot
             ApplyGlobalsAndConfig();
 
-            // Step 2: Clear ALL existing offers (trader + dynamic/player)
+            // Step 2: Remove ONLY fake-player offers — the population GenerateDynamicOffers
+            // rebuilds. Everything else is preserved:
+            //   Player  — RagfairOfferService.AddPlayerOffers() is one-shot via _playerOffersLoaded,
+            //             so a removed player listing is gone until the server restarts.
+            //   Trader  — recovers at the next resupply, but removing it empties the market meanwhile.
+            //   null    — CreatedBy is nullable and not serialised; IsFakePlayerOffer() returns false
+            //             for null, so preservation is the default. Stated explicitly, not inferred.
             var allOffers = ragfairOfferService.GetOffers().ToList();
-            var clearedCount = allOffers.Count;
-            foreach (var offer in allOffers)
+            var fakeOffers = allOffers.Where(o => o.IsFakePlayerOffer()).ToList();
+            foreach (var offer in fakeOffers)
             {
                 ragfairOfferService.RemoveOfferById(offer.Id);
             }
-            logger.Info($"ZSlayerCC Flea: Cleared {clearedCount} total offers");
+
+            var preservedPlayer = allOffers.Count(o => o.IsPlayerOffer());
+            var preservedTrader = allOffers.Count(o => o.IsTraderOffer());
+            var preservedOther = allOffers.Count - fakeOffers.Count - preservedPlayer - preservedTrader;
+            logger.Info(
+                $"ZSlayerCC Flea: Removed {fakeOffers.Count} fake-player offers; " +
+                $"preserved {preservedPlayer} player, {preservedTrader} trader, {preservedOther} unattributed");
 
             // Step 3: Generate fresh dynamic offers (reads from modified prices dictionary)
             ragfairOfferGenerator.GenerateDynamicOffers(null);
@@ -236,7 +249,9 @@ public class OfferRegenerationService(
             {
                 Success = true,
                 OfferCount = offerCount,
-                DurationMs = sw.ElapsedMilliseconds
+                DurationMs = sw.ElapsedMilliseconds,
+                RemovedFakeOffers = fakeOffers.Count,
+                PreservedOffers = preservedPlayer + preservedTrader + preservedOther
             };
         }
         catch (Exception ex)
