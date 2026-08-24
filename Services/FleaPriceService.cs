@@ -298,17 +298,21 @@ public class FleaPriceService(
     /// </summary>
     public (double multiplier, string level) GetEffectiveBuyMultiplier(string templateId)
     {
-        // Resolve inside the lock. Previously the lock was released before ResolveMultiplier
-        // walked ItemOverrides and CategoryMultipliers, so a concurrent write to either
-        // dictionary raced an unsynchronised Dictionary read.
+        // Resolve the category OUTSIDE the lock: GetItemCategory only reads the item database,
+        // which is immutable after load, and it walks up to twenty base-class chains. Holding the
+        // lock across it would serialise every offer-generation thread on this one monitor.
         //
-        // This deliberately does NOT clone: RagfairPriceServiceOverride calls this once per
-        // template during offer generation, and cloning a config carrying thousands of item
-        // overrides per call would be a serious regression. Bulk callers use
-        // GetConfig() + ResolveMultiplierFor instead.
+        // The config reads then happen inside the lock. Previously they ran lock-free against a
+        // reference captured under it, so a concurrent SetItemOverride or UpdateCategoryMultiplier
+        // raced an unsynchronised Dictionary read.
+        //
+        // Deliberately no clone here: RagfairPriceServiceOverride calls this once per template
+        // during generation, and cloning a config carrying thousands of item overrides per call
+        // would be a serious regression. Bulk callers use GetConfig() + ResolveMultiplierFor.
+        var category = GetItemCategory(templateId);
         lock (_lock)
         {
-            return ResolveMultiplier(templateId, configService.GetConfig().Flea);
+            return ResolveMultiplier(templateId, category, configService.GetConfig().Flea);
         }
     }
 
@@ -320,7 +324,7 @@ public class FleaPriceService(
     /// </summary>
     public (double multiplier, string level) ResolveMultiplierFor(string templateId, FleaConfig snapshot)
     {
-        return ResolveMultiplier(templateId, snapshot);
+        return ResolveMultiplier(templateId, GetItemCategory(templateId), snapshot);
     }
 
     /// <summary>
@@ -508,7 +512,11 @@ public class FleaPriceService(
 
     // ── Private helpers ──
 
-    private (double multiplier, string level) ResolveMultiplier(string templateId, FleaConfig flea)
+    /// <summary>
+    /// Config-only half of the resolve. Takes the already-resolved category so the caller can
+    /// decide what runs under a lock; this method touches nothing but the passed-in config.
+    /// </summary>
+    private static (double multiplier, string level) ResolveMultiplier(string templateId, string? category, FleaConfig flea)
     {
         // Per-item override replaces everything
         if (flea.ItemOverrides.TryGetValue(templateId, out var itemOverride))
@@ -518,7 +526,6 @@ public class FleaPriceService(
 
         // Stacking: global × category
         var globalMult = flea.GlobalBuyMultiplier;
-        var category = GetItemCategory(templateId);
         if (category != null && flea.CategoryMultipliers.TryGetValue(category, out var catMult))
         {
             return (globalMult * catMult.BuyMultiplier, "global×category");
